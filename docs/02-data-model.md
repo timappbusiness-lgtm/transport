@@ -1,0 +1,166 @@
+# Data model
+
+Seven migrations, applied in filename order. Each one is self-contained and
+ends with its own RLS policies — never add a table without its four policies
+in the same file.
+
+| File | Contents |
+|---|---|
+| `20260916120000_core_identity.sql` | `profiles`, `companies`, `company_members`, RLS helper functions |
+| `20260916120100_fleet.sql` | `vehicles`, `drivers` |
+| `20260916120200_documents_compliance.sql` | `document_requirements`, `documents`, `account_suspensions`, compliance views, `run_compliance_sweep()`, `review_document()` |
+| `20260916120300_listings.sql` | `cargo_listings`, `truck_listings`, `listing_contacts`, `saved_searches`, `distance_km()` |
+| `20260916120400_deals.sql` | `offers`, `conversations`, `messages`, `transports`, `ratings`, `reports` |
+| `20260916120500_billing_access.sql` | `plans`, `subscriptions`, `contact_reveals`, `reveal_contact()`, quota guards |
+| `20260916120600_storage_notifications_cron.sql` | storage buckets + policies, `notification_outbox`, `queue_expiry_reminders()`, pg_cron schedule |
+
+## Entity map
+
+```
+auth.users 1─1 profiles
+                 │
+                 ├─< company_members >─ companies ─< vehicles ─< documents (scope='vehicle')
+                 │                          │           │
+                 │                          │           └─< truck_listings ─< offers
+                 │                          ├─< drivers ─< documents (scope='driver')
+                 │                          ├─< documents (scope='company')
+                 │                          ├─< subscriptions ─ plans
+                 │                          └─< account_suspensions
+                 │
+                 └─< cargo_listings ─< offers ─> transports ─< ratings
+                          │
+                          └─1 listing_contacts   (gated by reveal_contact())
+```
+
+## Design decisions worth knowing
+
+### Contact data lives in its own table
+
+`listing_contacts` is separate from the listing so RLS can gate it without
+column-level tricks. A listing row is readable by anyone signed in; the
+contact row is readable only by its owner, by an admin, or through the
+`reveal_contact()` RPC. If contacts were columns on the listing, the only way
+to hide them would be a view plus revoked column grants — harder to reason
+about and easy to leak through a `select *` in a future feature.
+
+### RLS helpers are SECURITY DEFINER on purpose
+
+`is_company_member()` reads `company_members`, and it is called from the RLS
+policy *on* `company_members`. Without `SECURITY DEFINER` that recurses
+infinitely. All five helpers (`is_platform_admin`, `is_company_member`,
+`is_company_manager`, `my_company_ids`, `company_can_act`) pin
+`search_path = public` so they cannot be hijacked by a schema shadowing
+attack.
+
+### Requirements are data, not code
+
+`document_requirements` says which documents are mandatory for which company
+type and vehicle type, how long the grace period is, and when reminders fire.
+Rules in Romanian road transport change; a change should be an `UPDATE`, not
+a deploy. The seeded rows encode the current rules, including the exception
+that vehicles under 3.5 t do not need a `copie conformă`.
+
+### One active document per (target, kind)
+
+Three partial unique indexes enforce it, and a `BEFORE INSERT` trigger
+(`retire_previous_document`) flips the previous one to `replaced` so a
+re-upload never collides. Without this, "which RCA is the current one" becomes
+a query with an `ORDER BY ... LIMIT 1` in fifteen places.
+
+### Derived compliance flags are cached, not computed per query
+
+`companies.is_suspended` and `vehicles.is_compliant` are columns maintained by
+the sweep, not expressions evaluated on every board query. Recomputing
+compliance inside the listing query would mean joining four tables on every
+page load. The views (`v_company_compliance`, `v_vehicle_missing_documents`)
+exist for the admin panel and the sweep, which run rarely.
+
+The trade-off: a stale flag between the moment a document expires and the
+02:00 sweep. Acceptable — `grace_days` is the real control, and the sweep also
+runs synchronously after every document review.
+
+### The sweep is idempotent and forward-compatible
+
+`run_compliance_sweep()` is defined in migration 0003 but touches tables
+created in 0004. It guards those with `to_regclass(...) is not null` so the
+migration file applies cleanly on a fresh database in filename order.
+
+### Publishing is guarded in the database
+
+`guard_truck_listing_publish()` and `guard_cargo_listing_publish()` raise on
+`status = 'active'` when the company is suspended or the vehicle is not
+compliant. Put another way: even if the frontend has a bug, a truck without
+a valid ITP cannot reach the board. The frontend check is a UX affordance; the
+database check is the rule.
+
+`guard_listing_quota()` does the same for plan limits.
+
+### Money never trusts the client
+
+`subscriptions` has no `INSERT`/`UPDATE` policy for regular users — only
+platform admins and the service role (the payment webhook) write to it. A user
+cannot grant themselves a plan by crafting a request.
+
+### Enums over lookup tables
+
+`vehicle_type`, `document_kind`, `listing_status` and friends are Postgres
+enums. They change rarely, they give the frontend a typed union for free via
+generated types, and an invalid value is a hard error rather than a silent
+bad row. Adding a value is `ALTER TYPE ... ADD VALUE`; removing one needs a
+migration, which is the right amount of friction.
+
+### No PostGIS yet
+
+`distance_km()` is a plain SQL haversine, immutable and parallel-safe. It
+covers "loads within 100 km of Cluj". Bring PostGIS in when routing along real
+roads or corridor polygons is actually on the roadmap — not before.
+
+## Generating TypeScript types
+
+```bash
+supabase gen types typescript --project-id <project-id> --schema public \
+  > src/integrations/supabase/types.ts
+```
+
+Re-run it after every migration and commit the result. Lovable reads that file
+to type queries; a stale one is the most common source of "this worked
+yesterday".
+
+## Tests
+
+`supabase/tests/smoke_test.sql` exercises every rule that lives in the
+database rather than in the frontend: the publish guards, the compliance
+sweep, suspension and automatic reactivation, plan quotas, the contact gate,
+and the requirement configuration. 38 checks, abort on first failure.
+
+Run it against a scratch database after touching any migration —
+`supabase/tests/README.md` has both the Supabase and the plain-Postgres
+recipe. A rule the database enforces but nothing tests is a rule that will be
+removed by accident.
+
+## Applying the migrations
+
+Paste each file into the Supabase SQL Editor **in filename order**, or run
+`supabase db push` with the CLI linked to the project.
+
+Before the first one, enable in Dashboard → Database → Extensions:
+`pgcrypto`, `pg_trgm`, `pg_cron`.
+
+`pg_cron` has to be enabled from the Dashboard because it needs an entry in
+`shared_preload_libraries`, which a migration cannot set. Migration 0007
+therefore does not `CREATE EXTENSION` — it checks whether `cron.schedule`
+exists and raises a notice instead of aborting, so the migration set applies
+either way. If you see that notice, enable the extension and re-run the file.
+
+After the last one, verify:
+
+```sql
+-- every public table must have RLS on
+select relname from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
+-- expected: zero rows
+
+-- the three jobs must be scheduled
+select jobname, schedule, active from cron.job;
+```
