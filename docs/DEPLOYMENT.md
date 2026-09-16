@@ -52,7 +52,8 @@ is production under Settings → Git.
 
 | Route | What |
 |---|---|
-| `/` | Holding page. The real homepage is a separate, fully specified task. |
+| `/` | The homepage. Samples are labelled as samples and prices as estimates — the boards hold no real data yet. |
+| `/cerere/noua`, `/trasee`, `/transportatori/inscriere`, `/autentificare`, `/termeni`, `/confidentialitate`, `/contact` | „Pagină în lucru” placeholders, so no link on the homepage is a 404. |
 | `/demo` | The approved design reference, served as a static page from `public/demo.html`. Useful for showing a client a live URL. |
 
 `robots` is set to `noindex, nofollow` in `src/app/layout.tsx`. **Flip it
