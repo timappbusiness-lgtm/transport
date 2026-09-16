@@ -34,7 +34,8 @@ design/        landing.html (the design reference, also served at /demo)
 supabase/
   migrations/  9 SQL files, apply in filename order
   functions/   3 Deno edge functions
-  tests/       smoke_test.sql — 47 checks over the rules Postgres enforces
+  tests/       smoke_test.sql (business rules) and rls_test.sql (who may do
+               what, run as the API roles) — `pnpm db:test` runs both
 prompts/       ARCHIVED Lovable prompts — specifications, not runnable
 n8n/           4 workflows: delivery, nightly sweep, alerts, parse retry
 ```
@@ -119,17 +120,19 @@ where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 select jobname, schedule, active from cron.job;
 ```
 
-Then run the database test suite against a scratch database — it covers the
-rules Postgres enforces rather than the frontend (suspension, reactivation,
-publish guards, plan quotas, the contact gate):
+Then run the database test suites — they cover the rules Postgres enforces
+rather than the frontend (suspension, reactivation, publish guards, plan
+quotas, the contact gate) and who may do what:
 
 ```bash
-psql "$SCRATCH_DB_URL" -f supabase/tests/smoke_test.sql
+pnpm db:test
 ```
 
-47 checks, all of which must print `PASS`. See
-[`supabase/tests/README.md`](supabase/tests/README.md) — including how to run
-it on a plain local Postgres without Supabase.
+It creates a throwaway local database, applies every migration and runs
+`smoke_test.sql` (47 checks, as superuser) and `rls_test.sql` (116 checks, as
+`authenticated`, `anon` and `service_role`), then drops the database. See
+[`supabase/tests/README.md`](supabase/tests/README.md), including how to run
+them against a Supabase branch.
 
 ## Three things to decide before writing code
 

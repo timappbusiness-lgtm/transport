@@ -60,7 +60,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
 select pg_temp.check('profile is auto-created for every new auth user',
   (select count(*) = 3 from public.profiles));
 
-update public.profiles set is_platform_admin = true where id = '22222222-2222-2222-2222-222222222222';
+insert into public.platform_staff (user_id) values ('22222222-2222-2222-2222-222222222222');
 update public.profiles set phone_verified = true, phone = '+40722000333'
   where id = '33333333-3333-3333-3333-333333333333';
 
@@ -269,6 +269,12 @@ select pg_temp.check('running it again queues nothing (dedupe_key holds)',
 -- ---------------------------------------------------------------------
 -- 11. Contact reveal: quota is charged once per listing
 -- ---------------------------------------------------------------------
+-- Contacts are revealed only for active listings. The sweep took this truck
+-- off the board in section 6 (expired ITP); put it back for these checks.
+-- Replacing the ITP properly is exercised in section 16.
+update public.vehicles set is_compliant = true where id = 'bbbbbbbb-0000-0000-0000-000000000001';
+update public.truck_listings set status = 'active' where id = 'cccccccc-0000-0000-0000-000000000001';
+
 set "request.jwt.claim.sub" = '33333333-3333-3333-3333-333333333333';
 select pg_temp.check('an individual on the fast account can reveal a contact',
   (select contact_phone = '+40722000111'
