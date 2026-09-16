@@ -14,7 +14,7 @@
 --
 -- Kinds:
 --   fix    a hole found in the September 2026 audit (P1-P14 and the phase 0
---          list), or a rule added since (INV, ORD). Fails on the schema before
+--          list), or a rule added since (INV, ORD, VEH, MEM, SUSP). Fails on the schema before
 --          the migration that fixes it, passes after.
 --   guard  something that must keep working after the hardening (a
 --          legitimate write, a policy helper still executable). May pass on
@@ -1271,6 +1271,121 @@ select pg_temp.check('INV  the owner can still change a member''s role', 'guard'
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$update public.company_members set role = 'admin'
      where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000003'$a$, 'allowed');
+
+-- =====================================================================
+-- Phase 1 - verification
+-- =====================================================================
+
+select pg_temp.check('VEH  a vehicle cannot be assigned another company''s driver', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$update public.vehicles set assigned_driver_id = 'fd000000-0000-0000-0000-000000000002'
+     where id = 'fe000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$insert into public.drivers (id, company_id, full_name)
+                values ('fd000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000003', 'Șofer C')$s$,
+  p_verify => $v$select assigned_driver_id is null from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('VEH  a vehicle gets an assigned driver from its own company', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$update public.vehicles set assigned_driver_id = 'fd000000-0000-0000-0000-000000000001'
+     where id = 'fe000000-0000-0000-0000-000000000002'$a$, 'allowed',
+  p_verify => $v$select assigned_driver_id = 'fd000000-0000-0000-0000-000000000001'
+                 from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('VEH  a member records the routes a vehicle operates', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$insert into public.vehicle_routes (vehicle_id, from_country, from_city, to_country, to_city)
+     values ('fe000000-0000-0000-0000-000000000001', 'DE', 'München', 'RO', 'Cluj-Napoca')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.vehicle_routes
+                                where vehicle_id = 'fe000000-0000-0000-0000-000000000001' and from_country = 'DE')$v$);
+
+select pg_temp.check('VEH  nobody records routes on another company''s vehicle', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.vehicle_routes (vehicle_id, from_country, to_country)
+     values ('fe000000-0000-0000-0000-000000000001', 'IT', 'RO')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.vehicle_routes where from_country = 'IT')$v$);
+
+select pg_temp.check('VEH  another company cannot read a vehicle''s routes', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.vehicle_routes$a$, 'true',
+  p_setup => $s$insert into public.vehicle_routes (vehicle_id, from_country, to_country)
+                values ('fe000000-0000-0000-0000-000000000001', 'NL', 'RO')$s$);
+
+select pg_temp.check('MEM  a member sees the other members with their names', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select count(*) = 3 and bool_or(full_name = 'Owner A' and role = 'owner')
+     from public.list_company_members('fc000000-0000-0000-0000-000000000001')$a$, 'true');
+
+select pg_temp.check('MEM  a non-member gets no member list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.list_company_members('fc000000-0000-0000-0000-000000000001')$a$, 'true');
+
+select pg_temp.check('INV  the invited person sees the invitation with the company name, even for a draft company', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select count(*) = 1 and bool_and(company_name = 'RLS Draft C SRL' and invited_by_name = 'Owner C')
+     from public.my_invitations()$a$, 'true',
+  p_setup => $s$insert into public.company_invitations (company_id, invited_email, role, invited_by)
+                values ('fc000000-0000-0000-0000-000000000003', 'rls-invitee@test.ro', 'dispatcher',
+                        'f0000000-0000-0000-0000-00000000000a')$s$);
+
+select pg_temp.check('INV  nobody else sees that invitation', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.my_invitations()$a$, 'true',
+  p_setup => $s$insert into public.company_invitations (company_id, invited_email, role)
+                values ('fc000000-0000-0000-0000-000000000003', 'rls-invitee@test.ro', 'dispatcher')$s$);
+
+select pg_temp.check('SUSP a suspended owner''s listing is taken off the board and remembers its status', 'fix',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep()$a$, 'allowed',
+  p_setup => $s$update public.documents set valid_until = current_date - 10 where id = 'fa000000-0000-0000-0000-000000000007'$s$,
+  p_verify => $v$select status = 'suspended' and previous_status = 'active'
+                 from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('SUSP on reactivation a listing returns to its previous status', 'fix',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep()$a$, 'allowed',
+  p_setup => $s$do $d$ begin
+      update public.cargo_listings set status = 'offers_received' where id = 'f1000000-0000-0000-0000-000000000001';
+      update public.documents set valid_until = current_date - 10 where id = 'fa000000-0000-0000-0000-000000000007';
+      perform public.run_compliance_sweep();
+      update public.documents set status = 'approved', valid_until = current_date + 100
+      where id = 'fa000000-0000-0000-0000-000000000007';
+    end $d$$s$,
+  p_verify => $v$select status = 'offers_received' and previous_status is null
+                 from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('SUSP on reactivation a listing whose dates passed becomes expired', 'fix',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep()$a$, 'allowed',
+  p_setup => $s$do $d$ begin
+      update public.documents set valid_until = current_date - 10 where id = 'fa000000-0000-0000-0000-000000000007';
+      perform public.run_compliance_sweep();
+      update public.cargo_listings set loading_from = current_date - 5 where id = 'f1000000-0000-0000-0000-000000000001';
+      update public.documents set status = 'approved', valid_until = current_date + 100
+      where id = 'fa000000-0000-0000-0000-000000000007';
+    end $d$$s$,
+  p_verify => $v$select status = 'expired' and previous_status is null
+                 from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('SUSP an availability leaves with its vehicle''s compliance and comes back with it', 'fix',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep()$a$, 'allowed',
+  p_setup => $s$do $d$ begin
+      update public.documents set valid_until = current_date - 1 where id = 'fa000000-0000-0000-0000-000000000006';
+      perform public.run_compliance_sweep();
+      if (select previous_status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000001') is distinct from 'active' then
+        raise exception 'availability was not suspended with its previous status';
+      end if;
+      update public.documents set status = 'approved', valid_until = current_date + 200
+      where id = 'fa000000-0000-0000-0000-000000000006';
+    end $d$$s$,
+  p_verify => $v$select status = 'active' and previous_status is null
+                 from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('SUSP a listing suspended by hand does not come back on its own', 'guard',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep()$a$, 'allowed',
+  p_setup => $s$update public.truck_listings set status = 'suspended' where id = 'fb000000-0000-0000-0000-000000000005'$s$,
+  p_verify => $v$select status = 'suspended' from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000005'$v$);
 
 -- =====================================================================
 -- P13 - anon and the boards (already closed; kept as a guard)
