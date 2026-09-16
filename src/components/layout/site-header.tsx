@@ -31,6 +31,9 @@ export function SiteHeader() {
             </a>
           ))}
         </nav>
+        <Link href={ROUTES.signIn} className="text-sm text-muted hover:text-foreground">
+          Intră în cont
+        </Link>
         <Link href={ROUTES.newRequest} className={cn(buttonClasses('primary', 'sm'), 'text-[0.8125rem]')}>
           Adaugă cerere
         </Link>

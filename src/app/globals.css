@@ -25,6 +25,10 @@
      this value if a different red is chosen. */
   --color-danger: #e2705f;
 
+  /* Text on an accent-filled control. Same as the ground on the dark
+     landing; stays dark on the light app surface. */
+  --color-on-accent: #0b1216;
+
   --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
@@ -112,3 +116,26 @@
   .d4 { animation-delay: .28s; }
 }
 @keyframes rise { from { transform: translateY(12px); } to { transform: none; } }
+
+/* ===================================================================
+   The app - a light surface (design/README.md: dispatchers work in it for
+   eight hours on a laptop). Same type and accent family as the landing,
+   tuned for a light ground:
+     accent  #c77a12  focus ring 3.2:1 on white, dark text on it 5.9:1
+     muted   #52616a  6.3:1 on white
+     success #1f7a45, warning #8a5a00, danger #b42318 - all >= 4.5:1 on white
+   =================================================================== */
+.app-surface {
+  --color-background: #f4f5f6;
+  --color-surface: #ffffff;
+  --color-border: #d9dee2;
+  --color-foreground: #0b1216;
+  --color-muted: #52616a;
+  --color-accent: #c77a12;
+  --color-success: #1f7a45;
+  --color-warning: #8a5a00;
+  --color-danger: #b42318;
+  color-scheme: light;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}

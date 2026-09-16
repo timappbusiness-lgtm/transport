@@ -65,8 +65,32 @@ pnpm build
 ```
 
 Next.js 16 (App Router, server components by default), TypeScript strict,
-Tailwind v4, Vitest, Playwright. `src/` holds the app; `docs/`, `design/`,
-`supabase/`, `n8n/` and `prompts/` sit alongside it, unmoved.
+Tailwind v4, Vitest, Playwright, Supabase through `@supabase/ssr`. `src/`
+holds the app; `docs/`, `design/`, `supabase/`, `n8n/` and `prompts/` sit
+alongside it, unmoved.
+
+Copy `.env.example` to `.env.local` and fill in the Supabase URL and
+publishable key. The app acts only as the signed-in user: every read and
+write passes RLS, and state changes go through the database RPCs.
+
+| Path | What |
+|---|---|
+| `/autentificare`, `/inregistrare` | Sign in, sign up (company or individual), e-mail confirmation at `/auth/confirm` |
+| `/cont` | Account: companies, invitations received, phone confirmation for individuals |
+| `/cont/firma/noua` | Register a company, autofilled from ANAF |
+| `/cont/firma/[id]` | Verification status, required documents, members, invitations, ownership transfer |
+| `/cont/firma/[id]/documente` | Company documents: what is required, upload, history |
+| `/cont/firma/[id]/flota` | Vehicles and drivers; each vehicle has its specs, assigned driver, operated routes and documents |
+| `/admin/documente`, `/admin/personal` | Staff: document review queue, staff access |
+
+`src/lib/supabase/database.types.ts` is generated:
+`supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts`.
+
+`pnpm test:e2e` runs the public pages everywhere. The phase 1 scenario
+(`tests/e2e/verification.spec.ts`) also runs when `SUPABASE_SECRET_KEY` is
+set: it creates its own confirmed accounts on the linked project, goes
+through signup to verification, suspension and reactivation in the browser,
+and deletes everything it created.
 
 `supabase/functions/` is excluded from the app's `tsconfig.json` — those run on
 Deno, not Node. See `supabase/functions/README.md`.
@@ -129,7 +153,7 @@ pnpm db:test
 ```
 
 It creates a throwaway local database, applies every migration and runs
-`smoke_test.sql` (48 checks, as superuser) and `rls_test.sql` (141 checks, as
+`smoke_test.sql` (48 checks, as superuser) and `rls_test.sql` (155 checks, as
 `authenticated`, `anon` and `service_role`), then drops the database. See
 [`supabase/tests/README.md`](supabase/tests/README.md), including how to run
 them against a Supabase branch.

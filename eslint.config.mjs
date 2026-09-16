@@ -10,6 +10,7 @@ const config = [
       'supabase/**',
       'public/**',
       'next-env.d.ts',
+      'src/lib/supabase/database.types.ts',
       'playwright-report/**',
       'test-results/**',
     ],

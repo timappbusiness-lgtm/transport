@@ -76,6 +76,18 @@ platform, uploads its papers, and is verified by a reviewer without anyone
 touching the database; an expired RCA suspends and a renewal reactivates,
 end to end.
 
+**Status (September 2026): built.** `tests/e2e/verification.spec.ts` runs the
+exit criteria in the browser against the Supabase project. Three parts work
+but depend on credentials not yet set, so they are not tested end to end:
+
+- **Phone OTP** for individuals needs an SMS provider in Supabase Auth; until
+  then the screen explains that SMS is not active.
+- **AI extraction** needs `ANTHROPIC_API_KEY` for `parse-document`; until
+  then the reviewer reads the dates from the document, which the queue shows
+  as "citire automată eșuată".
+- **Expiry reminder e-mails** are queued in `notification_outbox`; delivering
+  them needs the n8n dispatcher and an SMTP sender.
+
 ## Phase 2 — Requests
 
 - Vehicle transport request with **make, model, manufacturing year**,

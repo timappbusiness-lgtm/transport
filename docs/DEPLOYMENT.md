@@ -35,6 +35,22 @@
   pg_cron runs the sweep directly), `ALLOWED_ORIGIN` (unset means `*`; set it
   to the production origin at launch).
 
+### The first platform administrator
+
+Staff access is granted only by `set_platform_staff()`, and only by staff —
+except when called without a signed-in user, which is how the first one is
+created. In the SQL editor, after that person has signed up:
+
+```sql
+select public.set_platform_staff(
+  (select id from auth.users where email = 'nume@firma.ro'),
+  'admin',
+  'Primul administrator'
+);
+```
+
+Every later grant goes through Administrare → Personal.
+
 ### Vercel environment variables for Supabase
 
 | Name | Environments |

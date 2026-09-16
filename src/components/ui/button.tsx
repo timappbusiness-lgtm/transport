@@ -1,14 +1,15 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md';
 
 const VARIANTS: Record<Variant, string> = {
-  // Dark text on accent measures 10.49:1 against this ground.
-  primary: 'bg-accent text-background hover:bg-[#f7bd69]',
+  // Dark text on the accent: 10.49:1 on the landing, 5.9:1 in the app.
+  primary: 'bg-accent text-on-accent hover:brightness-110',
   secondary:
-    'border border-border text-foreground hover:border-muted hover:bg-white/5',
+    'border border-border text-foreground hover:border-muted hover:bg-foreground/5',
+  danger: 'border border-danger/40 text-danger hover:bg-danger/10',
   ghost: 'text-muted hover:text-foreground',
 };
 
@@ -25,7 +26,7 @@ export const buttonClasses = (variant: Variant = 'primary', size: Size = 'md') =
     // outline-color, which makes the focus ring fade in from the element's
     // own text colour — on the primary variant it starts invisible. A focus
     // indicator has to appear on the first frame.
-    'transition-[color,background-color,border-color] duration-150',
+    'transition-[color,background-color,border-color,filter] duration-150',
     'disabled:pointer-events-none disabled:opacity-50',
     VARIANTS[variant],
     SIZES[size],

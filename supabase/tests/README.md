@@ -5,7 +5,7 @@ Two suites, both run on a throwaway database:
 | File | Runs as | Covers |
 |---|---|---|
 | `smoke_test.sql` | superuser | The business rules enforced in Postgres: compliance, suspension, reactivation, publish guards, plan quotas, the contact gate, seats, scheduled jobs. 48 checks; aborts on the first failure. |
-| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log, membership invitations, order creation. Each action runs as an API role, the way PostgREST and the edge functions call the database. 141 checks; reports every result, then fails if any did. |
+| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log, membership invitations, order creation, suspended listings and their return, vehicle routes. Each action runs as an API role, the way PostgREST and the edge functions call the database. 155 checks; reports every result, then fails if any did. |
 
 Superuser skips row-level security and function privileges, so a rule that
 only `smoke_test.sql` checks has never been checked against a real caller.

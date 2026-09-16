@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 
-/** The homepage's carrier call to action: straight to a company signup. */
 export default function Page() {
-  redirect(`${ROUTES.signUp}?tip=firma`);
+  redirect(ROUTES.adminDocuments);
 }
