@@ -28,6 +28,27 @@ begin
   end if;
 end $$;
 
+
+-- Creates a vehicle listing plus the details row the publish guard requires.
+create or replace function pg_temp.new_vehicle_request(
+  p_user uuid, p_title text, p_from text, p_to text,
+  p_running boolean default true, p_status listing_status default 'active'
+) returns uuid language plpgsql as $$
+declare v_id uuid;
+begin
+  insert into public.cargo_listings (posted_by, board, listing_kind, title,
+                                     loading_city, unloading_city, loading_from, weight_kg, status)
+  values (p_user, 'retur', 'vehicul', p_title, p_from, p_to, current_date + 2, 1400, 'draft')
+  returning id into v_id;
+
+  insert into public.cargo_vehicle_details (cargo_listing_id, category, make, model, year, is_running,
+                                            wheels_turn, steering_works)
+  values (v_id, 'autoturism', 'Volkswagen', 'Passat', 2018, p_running, p_running, p_running);
+
+  update public.cargo_listings set status = p_status where id = v_id;
+  return v_id;
+end $$;
+
 -- ---------------------------------------------------------------------
 -- Fixtures
 -- ---------------------------------------------------------------------
@@ -111,17 +132,18 @@ select pg_temp.check('publishing sets published_at and expires_at',
 -- ---------------------------------------------------------------------
 -- 4. Individuals: return board only
 -- ---------------------------------------------------------------------
-insert into public.cargo_listings (posted_by, board, title, loading_city, unloading_city,
-                                   loading_from, weight_kg, status)
-values ('33333333-3333-3333-3333-333333333333','retur','Canapea','Cluj-Napoca','Arad', current_date + 2, 80, 'active');
+do $$ begin perform pg_temp.new_vehicle_request(
+  '33333333-3333-3333-3333-333333333333','Passat 2018','Cluj-Napoca','Arad'); end $$;
 
 select pg_temp.check('individual can publish on the return board',
   (select count(*) = 1 from public.cargo_listings where company_id is null and status = 'active'));
 
 do $$
 begin
-  insert into public.cargo_listings (posted_by, board, title, loading_city, unloading_city, loading_from, status)
-  values ('33333333-3333-3333-3333-333333333333','curse','Marfă','Cluj','Arad', current_date, 'active');
+  perform pg_temp.new_vehicle_request(
+    '33333333-3333-3333-3333-333333333333','Marfă','Cluj','Arad');
+  update public.cargo_listings set board = 'curse'
+    where posted_by = '33333333-3333-3333-3333-333333333333' and title = 'Marfă';
   raise exception 'FAIL  individual was allowed on the curse board';
 exception when check_violation then
   raise notice 'PASS  individual cannot publish on the curse board';
@@ -131,8 +153,8 @@ end $$;
 update public.profiles set phone_verified = false where id = '33333333-3333-3333-3333-333333333333';
 do $$
 begin
-  insert into public.cargo_listings (posted_by, board, title, loading_city, unloading_city, loading_from, status)
-  values ('33333333-3333-3333-3333-333333333333','retur','Frigider','Cluj','Arad', current_date, 'active');
+  perform pg_temp.new_vehicle_request(
+    '33333333-3333-3333-3333-333333333333','Golf 2015','Cluj','Arad');
   raise exception 'FAIL  unverified phone was allowed to publish';
 exception when sqlstate '42501' then
   raise notice 'PASS  unverified phone cannot publish';
@@ -185,10 +207,10 @@ select pg_temp.check('the company has no active listings left',
 
 do $$
 begin
-  insert into public.cargo_listings (company_id, posted_by, board, title, loading_city,
+  insert into public.cargo_listings (company_id, posted_by, board, listing_kind, title, loading_city,
                                      unloading_city, loading_from, status)
   values ('aaaaaaaa-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111',
-          'curse','Marfă','Cluj','Arad', current_date, 'active');
+          'curse','vehicul','Audi A6','Cluj','Arad', current_date, 'active');
   raise exception 'FAIL  suspended company was allowed to publish';
 exception when sqlstate '42501' then
   raise notice 'PASS  suspended company cannot publish';
@@ -268,8 +290,8 @@ do $$
 declare i int;
 begin
   for i in 1..5 loop
-    insert into public.cargo_listings (posted_by, board, title, loading_city, unloading_city, loading_from, status)
-    values ('33333333-3333-3333-3333-333333333333','retur','Cerere '||i,'Cluj','Arad', current_date, 'active');
+    perform pg_temp.new_vehicle_request(
+      '33333333-3333-3333-3333-333333333333','Cerere '||i,'Cluj','Arad');
   end loop;
   raise exception 'FAIL  listing quota was not enforced';
 exception when sqlstate '42501' then
@@ -297,6 +319,89 @@ select pg_temp.check('distance_km tolerates missing coordinates',
   (select public.distance_km(46.77, null, 45.75, 21.23) is null));
 select pg_temp.check('safe_uuid returns null instead of raising on a bad value',
   (select public.safe_uuid('not-a-uuid') is null));
+
+-- ---------------------------------------------------------------------
+-- 15. Vehicle transport model
+-- ---------------------------------------------------------------------
+do $$ begin perform pg_temp.new_vehicle_request(
+  '33333333-3333-3333-3333-333333333333','Duba defecta','Kisigmand','Zalau', false, 'draft'); end $$;
+
+select pg_temp.check('needs_winch is derived from the condition flags',
+  (select d.needs_winch from public.cargo_vehicle_details d
+   join public.cargo_listings l on l.id = d.cargo_listing_id
+   where l.title = 'Duba defecta'));
+select pg_temp.check('a rolling vehicle does not need a winch',
+  (select not d.needs_winch from public.cargo_vehicle_details d
+   join public.cargo_listings l on l.id = d.cargo_listing_id
+   where l.title = 'Passat 2018'));
+
+do $$
+declare v_id uuid;
+begin
+  insert into public.cargo_listings (posted_by, board, listing_kind, title, loading_city,
+                                     unloading_city, loading_from, status)
+  values ('33333333-3333-3333-3333-333333333333','retur','vehicul','Fără detalii',
+          'Cluj','Arad', current_date, 'draft')
+  returning id into v_id;
+  update public.cargo_listings set status = 'active' where id = v_id;
+  raise exception 'FAIL  a listing published without its details row';
+exception when not_null_violation then
+  raise notice 'PASS  a listing cannot publish without its details row';
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 16. Platform slots
+-- ---------------------------------------------------------------------
+-- The carrier replaces the ITP that expired back in section 6, so the
+-- vehicle becomes compliant again and its departure can go back on the board.
+insert into public.documents (id, company_id, vehicle_id, scope, kind, file_path,
+                              valid_until, uploaded_by, status)
+values ('dddddddd-0000-0000-0000-00000000000b','aaaaaaaa-0000-0000-0000-000000000001',
+        'bbbbbbbb-0000-0000-0000-000000000001','vehicle','itp','aaaaaaaa/4-nou.pdf',
+        current_date + 365,'11111111-1111-1111-1111-111111111111','pending');
+set "request.jwt.claim.sub" = '22222222-2222-2222-2222-222222222222';
+do $$ begin perform public.review_document('dddddddd-0000-0000-0000-00000000000b', true); end $$;
+reset "request.jwt.claim.sub";
+
+select pg_temp.check('replacing the ITP makes the vehicle compliant again',
+  (select is_compliant from public.vehicles where id = 'bbbbbbbb-0000-0000-0000-000000000001'));
+
+update public.truck_listings set platform_slots_total = 8, status = 'active'
+  where id = 'cccccccc-0000-0000-0000-000000000001';
+
+insert into public.departure_bookings (truck_listing_id, cargo_listing_id, slots)
+select 'cccccccc-0000-0000-0000-000000000001', id, 6
+from public.cargo_listings where title = 'Passat 2018';
+
+select pg_temp.check('v_departures reports the free slots',
+  (select slots_free = 2 and slots_taken = 6 from public.v_departures
+   where truck_listing_id = 'cccccccc-0000-0000-0000-000000000001'));
+
+do $$
+begin
+  insert into public.departure_bookings (truck_listing_id, cargo_listing_id, slots)
+  select 'cccccccc-0000-0000-0000-000000000001', id, 3
+  from public.cargo_listings where title = 'Duba defecta';
+  raise exception 'FAIL  a platform was overbooked';
+exception when check_violation then
+  raise notice 'PASS  a platform cannot be overbooked';
+end $$;
+
+insert into public.departure_bookings (truck_listing_id, cargo_listing_id, slots)
+select 'cccccccc-0000-0000-0000-000000000001', id, 2
+from public.cargo_listings where title = 'Duba defecta';
+
+select pg_temp.check('a booking that fits the remaining slots is accepted',
+  (select slots_free = 0 and slots_taken = 8 from public.v_departures
+   where truck_listing_id = 'cccccccc-0000-0000-0000-000000000001'));
+
+-- ---------------------------------------------------------------------
+-- 17. Price transparency
+-- ---------------------------------------------------------------------
+select pg_temp.check('editorial benchmarks are seeded for the main corridors',
+  (select count(*) >= 7 from public.price_benchmarks where to_country = 'RO'));
+select pg_temp.check('a corridor with fewer than 5 closed deals publishes no median',
+  (select count(*) = 0 from public.v_corridor_prices));
 
 \echo ''
 \echo 'All checks passed.'

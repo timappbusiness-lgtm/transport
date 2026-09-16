@@ -7,7 +7,14 @@ persoanele fizice care au nevoie doar cu un cont rapid."*
 
 The whole point is that it is fast. Every field you add costs conversions on
 the side of the market that makes the carrier subscription worth buying.
-Target: **under 60 seconds from landing to published request.**
+
+**The incumbent lets people post with no account at all** („Adaugă Cerere
+Transport GRATUIT și FĂRĂ CONT"). We match that: the request is written first,
+and the phone is verified only when the first offer arrives and there is
+something to lose. A signup wall in front of the form sends that person
+straight back to a Facebook group.
+
+Target: **under 45 seconds from landing to published request.**
 
 ---
 
@@ -43,26 +50,32 @@ CREATE
 
 3. src/components/listings/QuickRequestForm.tsx
    The whole point is speed. Exactly these fields, one screen, no wizard:
-   - "Ce transporți?"   -> title            (required)
-   - "De unde?"         -> loading city + county select (required)
-   - "Până unde?"       -> unloading city + county select (required)
-   - "Când?"            -> loading_from date (required), loading_to optional
-   - "Cât cântărește?"  -> weight_kg, with quick-pick chips:
-                           "sub 100 kg", "100-500 kg", "500-1000 kg", "peste 1 tonă"
-   - "Detalii"          -> description (optional, 2 rows)
-   - "Numele tău"       -> full_name      (required)
-   - "Telefon"          -> phone          (required)
-   NOTHING ELSE. No volume, no ldm, no pallets, no ADR, no payment terms -
-   a private person moving a sofa does not know those and will abandon.
+   - "Ce transporți?"  -> category chips, autoturism preselected, then
+                          make + model + year in one row (required: category)
+   - "De unde?"        -> country select + city (required)
+   - "Până unde?"      -> country select + city (required)
+   - "Când?"           -> loading_from date (required)
+   - "Pornește?"       -> a single yes/no control writing is_running,
+                          wheels_turn and steering_works together. If "nu",
+                          show inline: "Ai nevoie de platformă cu troliu.
+                          Găsim transportator, dar prețul e mai mare."
+   - "Numele tău"      -> full_name (required)
+   - "Telefon"         -> phone (required)
+   NOTHING ELSE. No VIN, no dimensions, no damage form, no payment terms -
+   someone who just bought a car in Germany does not have those to hand and
+   will abandon. They can add details after the first offer arrives.
 
-   Flow:
-   - not logged in -> on submit, create the account with phone OTP
-     (account_type "individual"), then publish
-   - logged in but phone_verified false -> open PhoneOtpDialog, then publish
+   Flow - the request is written before any identity check:
+   - not logged in -> sign in anonymously with supabase.auth.signInAnonymously(),
+     write the listing as a DRAFT, then open PhoneOtpDialog. The listing flips
+     to active only after the OTP succeeds, because the database requires a
+     verified phone to publish.
    - logged in and verified -> publish immediately
-   Insert with board = "retur", company_id = null, posted_by = auth user,
-   status = "active", plus the matching listing_contacts row from the name
-   and phone fields.
+   Write in order: cargo_listings (draft) -> cargo_vehicle_details ->
+   listing_contacts -> status active.
+   Show the progress as "Cererea ta e gata. Confirmă numărul ca s-o vadă
+   transportatorii." - the person has already done the work, the OTP is the
+   last small step, not a gate in front of the form.
 
 4. src/pages/QuickRequest.tsx at route /cerere-transport
    PUBLIC route - no auth guard. This page is the funnel entry; requiring
@@ -103,14 +116,16 @@ MODIFY
 - [ ] A phone number as `0722 123 456` normalises to `+40722123456`
 - [ ] Wrong OTP shows the Romanian message and lets you retry
 - [ ] Resend is blocked for 60 seconds with a visible countdown
+- [ ] The form can be filled and submitted with no account
 - [ ] After verification the request publishes with `board = 'retur'` and
-      `company_id IS NULL`
+      `company_id IS NULL`, with its `cargo_vehicle_details` row
+- [ ] Answering "nu pornește" sets `needs_winch` true in the database
 - [ ] Publishing without a verified phone raises the trigger error and the UI
       opens the OTP dialog rather than showing a raw Postgres message
 - [ ] An individual cannot post on `/curse` — the database constraint
       `cargo_listings_owner_ck` rejects it
 - [ ] An individual sees IndividualShell, not the company sidebar
-- [ ] Timed end to end on a phone: **under 60 seconds**
+- [ ] Timed end to end on a phone: **under 45 seconds**
 
 **Cost note.** SMS OTP is not free — roughly 0.05–0.12 RON per message through
 Twilio, and this is the one flow a bot would hammer. Before launch: enable

@@ -69,11 +69,33 @@ CREATE THESE FILES
    Route guard redirecting unauthenticated users to /login.
 
 DESIGN
-Professional and dense - this is a working tool for dispatchers, not a
-consumer app. Neutral base with a single strong accent colour. Tables and
-lists must stay readable at 1366x768. Define the palette as CSS variables in
-index.css and use semantic Tailwind tokens, never hardcoded colours in
-components.
+Use exactly this system - it is implemented in design/landing.html and
+documented in design/README.md. Define every value as a CSS variable in
+index.css, map them to Tailwind theme tokens, and never hardcode a colour in
+a component.
+
+Marketing pages (landing, prices, how it works) use the dark "motorway at
+night" palette:
+  --ground #08151A   --ground-deep #050E12   --surface #0E212A
+  --surface-2 #142C37  --line #1E3D4B  --line-soft #16303C
+  --ink #F2EDE3  --ink-mid #A8BDC6  --ink-dim #6E8A96
+  --accent #FFA92E   (sodium amber - primary CTA and key figures ONLY)
+
+The app itself (everything behind login) uses a light surface with the same
+accent and type system - dispatchers work in it for eight hours on a 1366x768
+laptop.
+
+Status colours, used everywhere and always next to a text label:
+  --ok #3ECF8E (valid)  --warn #FFC366 (expiring)  --danger #FF6B6B (expired)
+
+Type: Archivo 700/800 for display, IBM Plex Sans 400/500/600 for body,
+IBM Plex Mono 400/500 for plates, VINs, kilometres and dates. Anything that
+lines up in a column gets font-variant-numeric: tabular-nums.
+Border radius is 4px throughout. Not rounded-lg - this is a working tool.
+
+Dense and readable at 1366x768. No entrance animation may start from
+opacity: 0 - use transform only, so text is legible in the first painted
+frame.
 
 DO NOT create listing pages, document upload, fleet management or an admin
 panel. Those come in later prompts.

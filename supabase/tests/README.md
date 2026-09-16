@@ -54,6 +54,9 @@ rows.
 | 12 | Plan listing quota is enforced |
 | 13 | Requirements match company and vehicle type (3.5 t exception, forwarder vs carrier) |
 | 14 | `distance_km` and `safe_uuid` behave on edge inputs |
+| 15 | `needs_winch` is derived from the condition flags; a listing cannot publish without its details row |
+| 16 | `v_departures` reports free slots; a platform cannot be overbooked |
+| 17 | Editorial benchmarks are seeded; a corridor under 5 closed deals publishes no median |
 
 Add a check here for every rule you add to a migration. A rule the database
 enforces but nothing tests is a rule that will be removed by accident.

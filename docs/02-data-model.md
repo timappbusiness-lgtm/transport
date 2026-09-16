@@ -13,6 +13,8 @@ in the same file.
 | `20260916120400_deals.sql` | `offers`, `conversations`, `messages`, `transports`, `ratings`, `reports` |
 | `20260916120500_billing_access.sql` | `plans`, `subscriptions`, `contact_reveals`, `reveal_contact()`, quota guards |
 | `20260916120600_storage_notifications_cron.sql` | storage buckets + policies, `notification_outbox`, `queue_expiry_reminders()`, pg_cron schedule |
+| `20260916120700_vehicle_type_additions.sql` | platform taxonomy enum values (separate file — see below) |
+| `20260916120800_vehicle_cargo.sql` | `cargo_vehicle_details`, `cargo_freight_details`, platform slots, `departure_bookings`, `price_benchmarks`, `v_corridor_prices` |
 
 ## Entity map
 
@@ -126,12 +128,50 @@ Re-run it after every migration and commit the result. Lovable reads that file
 to type queries; a stale one is the most common source of "this worked
 yesterday".
 
+### The cargo is a vehicle, and freight is the second case
+
+A listing carries `listing_kind` and shares everything both kinds have —
+route, dates, price, status, contacts, `weight_kg` — on `cargo_listings`. The
+type-specific fields live in `cargo_vehicle_details` or
+`cargo_freight_details`, one row each, so neither kind carries the other's
+empty columns and a board query never has to know which it is looking at.
+
+`weight_kg` deliberately stays on the listing rather than being duplicated
+into both detail tables: every card shows it and every filter uses it, so
+pushing it down would make the commonest query a union.
+
+`needs_winch` is `GENERATED ALWAYS AS (not is_running or not wheels_turn or
+not steering_works) STORED`. It is the single biggest price driver in vehicle
+transport and it must never disagree with the flags it comes from, so the
+database computes it and the client only reads it.
+
+### Enum additions get their own migration
+
+Postgres refuses to *use* an enum value in the same transaction that added it
+with `ALTER TYPE ... ADD VALUE`. Migration 0008 does nothing but add the three
+platform types; 0009 references them. Merging the two files breaks on a fresh
+database.
+
+### Free slots are derived, never stored
+
+`v_departures` computes `slots_free` from `departure_bookings`, and
+`guard_departure_capacity()` refuses a booking that would overfill the
+platform. A stored counter would drift the first time a booking was cancelled
+outside the happy path.
+
+### The price view refuses to publish a thin median
+
+`v_corridor_prices` has `having count(*) >= 5`. A median from two transports is
+a number that misleads someone about to spend 700 €, so a corridor stays on
+the editorial benchmark in `price_benchmarks` until it has a real sample.
+
 ## Tests
 
 `supabase/tests/smoke_test.sql` exercises every rule that lives in the
 database rather than in the frontend: the publish guards, the compliance
 sweep, suspension and automatic reactivation, plan quotas, the contact gate,
-and the requirement configuration. 38 checks, abort on first failure.
+the requirement configuration, the vehicle model, platform slots and the
+price threshold. 47 checks, abort on first failure.
 
 Run it against a scratch database after touching any migration —
 `supabase/tests/README.md` has both the Supabase and the plain-Postgres

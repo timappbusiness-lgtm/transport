@@ -11,24 +11,39 @@ summary, written to be sent to the client.
 
 | Requirement (original wording) | Where |
 |---|---|
-| „secțiune pentru case de expediții să posteze curse" | `cargo_listings` · `prompts/04-cargo-board.md` |
+| „secțiune pentru case de expediții să posteze curse" | `cargo_listings` + `cargo_vehicle_details` · `prompts/04-cargo-board.md` |
 | „secțiune mașini pe tur" | `truck_listings` (`direction = 'tur'`) · `prompts/05-truck-boards.md` |
 | „secțiune mașini pe retur" | `truck_listings` (`direction = 'retur'`) · `prompts/05-truck-boards.md` |
 | „când se loghează să încarce licența de transport / casă de expediții" | `documents` + `document_requirements` · `prompts/02`, `prompts/03` |
 | „să sincronizăm cu asigurările, să vedem când expiră, să suspendăm contul" | `run_compliance_sweep()` · [`docs/03-document-compliance.md`](docs/03-document-compliance.md) — **read this one, it explains what is and is not possible in Romania** |
 | „secțiune să verifice ITP și asigurări la mașină și copiile conforme ARR" | `vehicles` + vehicle-scoped `documents` · `prompts/03` |
-| „persoanele fizice… doar cu un cont rapid" | `account_type = 'individual'` · `prompts/06-individual-quick-account.md` |
+| „persoanele fizice… doar cu un cont rapid" | Postare fără cont, telefon confirmat abia la prima ofertă · `prompts/06-individual-quick-account.md` |
 
 ## Layout
 
 ```
-docs/          specification, data model, compliance, roadmap, pricing, GDPR
+docs/          spec, data model, compliance, roadmap, pricing, GDPR,
+               and 07-competitor-analysis.md — read that one before building
+design/        landing.html (the reference implementation) + the design system
 supabase/
-  migrations/  7 SQL files, apply in filename order
+  migrations/  9 SQL files, apply in filename order
   functions/   3 Deno edge functions
-prompts/       11 sequenced Lovable prompts
+  tests/       smoke_test.sql — 47 checks over the rules Postgres enforces
+prompts/       12 sequenced Lovable prompts
 n8n/           4 workflows: delivery, nightly sweep, alerts, parse retry
 ```
+
+## The market this is built for
+
+Vehicle relocation, not palletized freight. The cargo **is** a vehicle —
+83% of the reference market is cars, and the money corridor is
+Germany / Italy / Netherlands / Spain → Romania, where people buy a used car
+abroad and need it home. The second market is recovery: vehicles that no
+longer roll.
+
+General freight stays addable — a listing carries a `listing_kind` and the
+type-specific fields live in `cargo_vehicle_details` or
+`cargo_freight_details`. Launch is auto-first.
 
 ## Setup
 
@@ -85,7 +100,7 @@ publish guards, plan quotas, the contact gate):
 psql "$SCRATCH_DB_URL" -f supabase/tests/smoke_test.sql
 ```
 
-38 checks, all of which must print `PASS`. See
+47 checks, all of which must print `PASS`. See
 [`supabase/tests/README.md`](supabase/tests/README.md) — including how to run
 it on a plain local Postgres without Supabase.
 

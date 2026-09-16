@@ -1,10 +1,16 @@
 # Prompt 05 — Trucks on tur and on retur
 
-**Prerequisites:** prompts 01–04.
+**Prerequisites:** prompts 01–04; migrations `..._vehicle_type_additions.sql`
+and `..._vehicle_cargo.sql` applied.
 
 Two boards from one table (`truck_listings`, `direction` = `tur` | `retur`).
 Build them as one component with a direction prop — duplicating the page is
 how they drift apart three months later.
+
+A platform carries 7–9 cars and filling it is the carrier's entire economics,
+so a departure is shown with its **free slots**, read from the `v_departures`
+view. That is what makes "pe sens" cheap and it is the thing the competitor
+sells but does not show.
 
 ---
 
@@ -37,7 +43,10 @@ CREATE
 3. src/components/listings/TruckListingCard.tsx
    - Line 1: route "Hamburg (DE) → Cluj-Napoca (CJ)"
    - Line 2: "Disponibil 18.09 - 21.09", vehicle type badge
-   - Line 3: free capacity in kg / ldm / m³, ADR and frigo badges when set
+   - Line 3: slots as "5/8 locuri ocupate" with a compact 8-cell deck where
+     taken slots are filled and free ones are dashed in the accent colour.
+     Read slots_free and slots_taken from the v_departures view - never
+     compute them client-side, they are derived from departure_bookings.
    - When direction is "retur" and waypoints is not empty, render them as small
      chips: "Trece prin: Budapesta, Arad, Deva" - on a return leg this is the
      single most useful piece of information on the card
@@ -46,8 +55,9 @@ CREATE
    - Buttons: "Vezi contact", "Trimite ofertă"
 
 4. src/components/listings/TruckListingForm.tsx
-   - "Mașina": vehicle_id select, listing ONLY vehicles where is_compliant is
-     true. Non-compliant vehicles appear disabled with the reason
+   - "Platforma": vehicle_id select, listing ONLY vehicles where is_compliant
+     is true, plus platform_slots_total (default 8 for platforma_auto, 2 for
+     platforma_tractari) and a service_types multi-select. Non-compliant vehicles appear disabled with the reason
      "Documente expirate - actualizează-le în secțiunea Flota mea" and a link
      to /flota. Do not hide them; a carrier must understand why the truck is
      missing from the list.
@@ -95,3 +105,7 @@ MODIFY
 - [ ] The detour filter only appears on the retur board
 - [ ] The retur banner links to the individual request page
 - [ ] Switching boards resets pagination but keeps the county filters
+- [ ] The slot deck matches `v_departures` — book a request against a
+      departure in SQL and confirm the card drops by one free slot
+- [ ] Booking more slots than the platform has raises 23514 with the Romanian
+      message, and the UI shows it rather than failing silently
