@@ -14,7 +14,7 @@
 --
 -- Kinds:
 --   fix    a hole found in the September 2026 audit (P1-P14 and the phase 0
---          list), or a rule added since (INV). Fails on the schema before
+--          list), or a rule added since (INV, ORD). Fails on the schema before
 --          the migration that fixes it, passes after.
 --   guard  something that must keep working after the hardening (a
 --          legitimate write, a policy helper still executable). May pass on
@@ -932,6 +932,51 @@ select pg_temp.check('P10  the carrier confirms through confirm_departure_bookin
                          where id = 'f6000000-0000-0000-0000-000000000001')
                     and exists (select 1 from public.audit_log where action = 'booking.confirmed'
                                 and entity_id = 'f6000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('ORD  confirming a reservation creates the order and serves the request', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.confirm_departure_booking('f6000000-0000-0000-0000-000000000001', 640)$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.transports t
+                                where t.departure_booking_id = 'f6000000-0000-0000-0000-000000000001'
+                                  and t.carrier_company_id = 'fc000000-0000-0000-0000-000000000001'
+                                  and t.shipper_user_id = 'f0000000-0000-0000-0000-000000000006'
+                                  and t.shipper_company_id is null
+                                  and t.vehicle_id = 'fe000000-0000-0000-0000-000000000001'
+                                  and t.cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'
+                                  and t.agreed_price = 640 and t.status = 'agreed'
+                                  and exists (select 1 from public.audit_log a
+                                              where a.action = 'order.created' and a.entity_id = t.id))
+                    and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'assigned'$v$);
+
+select pg_temp.check('ORD  a reservation cannot be confirmed without an agreed price', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.confirm_departure_booking('f6000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_verify => $v$select status = 'reserved' from public.departure_bookings where id = 'f6000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ORD  accept_offer creates its order through the same function', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.accept_offer('f2000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.transports t
+                                join public.audit_log a on a.entity_id = t.id and a.action = 'order.created'
+                                where t.offer_id = 'f2000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('ORD  an order from a seat offer points at its booking', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.accept_offer('f2000000-0000-0000-0000-000000000005')$a$, 'allowed',
+  p_setup => $s$insert into public.offers (id, truck_listing_id, from_user_id, price_amount, currency, slots, booking_cargo_listing_id)
+                values ('f2000000-0000-0000-0000-000000000005', 'fb000000-0000-0000-0000-000000000002',
+                        'f0000000-0000-0000-0000-000000000006', 650, 'EUR', 1, 'f1000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select exists (select 1 from public.transports t
+                                join public.departure_bookings b on b.id = t.departure_booking_id
+                                where t.offer_id = 'f2000000-0000-0000-0000-000000000005'
+                                  and b.offer_id = 'f2000000-0000-0000-0000-000000000005'
+                                  and b.status = 'confirmed')$v$);
+
+select pg_temp.check('ORD  nobody calls create_order directly, not even service_role', 'fix',
+  null, 'service_role',
+  $a$select public.create_order('fc000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000002', null,
+                                1, 'EUR', p_offer_id => 'f2000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.transports where agreed_price = 1)$v$);
 
 select pg_temp.check('P10  the client cannot call confirm_departure_booking', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
