@@ -129,7 +129,7 @@ pnpm db:test
 ```
 
 It creates a throwaway local database, applies every migration and runs
-`smoke_test.sql` (47 checks, as superuser) and `rls_test.sql` (135 checks, as
+`smoke_test.sql` (47 checks, as superuser) and `rls_test.sql` (140 checks, as
 `authenticated`, `anon` and `service_role`), then drops the database. See
 [`supabase/tests/README.md`](supabase/tests/README.md), including how to run
 them against a Supabase branch.
