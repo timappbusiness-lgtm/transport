@@ -1,8 +1,12 @@
-# Bursă de transport — SaaS build pack
+# Coridor — vehicle transport marketplace
 
-Everything needed to build a Romanian freight exchange (`bursatractari.ro`
-model) on Lovable + Supabase: the database, the edge functions, the workflows,
-and a sequenced pack of Lovable prompts.
+A Romanian vehicle transport marketplace: a Next.js app, a Supabase database
+with a document-compliance engine, edge functions and n8n workflows.
+
+> **Stack decision, September 2026: Next.js.** Lovable is no longer used on
+> this project. `prompts/` is kept as **archived specification** — those files
+> describe what each part of the product must do and are useful as a reference,
+> but they are **not instructions to run**. Do not paste them anywhere.
 
 **Start here:** [`docs/00-rezumat-ro.md`](docs/00-rezumat-ro.md) — the Romanian
 summary, written to be sent to the client.
@@ -24,12 +28,14 @@ summary, written to be sent to the client.
 ```
 docs/          spec, data model, compliance, roadmap, pricing, GDPR,
                and 07-competitor-analysis.md — read that one before building
-design/        landing.html (the reference implementation) + the design system
+src/           the Next.js app
+design/        landing.html (the design reference, also served at /demo)
+               + the design system
 supabase/
   migrations/  9 SQL files, apply in filename order
   functions/   3 Deno edge functions
   tests/       smoke_test.sql — 47 checks over the rules Postgres enforces
-prompts/       12 sequenced Lovable prompts
+prompts/       ARCHIVED Lovable prompts — specifications, not runnable
 n8n/           4 workflows: delivery, nightly sweep, alerts, parse retry
 ```
 
@@ -45,7 +51,28 @@ General freight stays addable — a listing carries a `listing_kind` and the
 type-specific fields live in `cargo_vehicle_details` or
 `cargo_freight_details`. Launch is auto-first.
 
-## Setup
+## The app
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:3000
+pnpm typecheck    # tsc --noEmit, strict
+pnpm lint
+pnpm test         # Vitest unit tests
+pnpm test:e2e     # Playwright
+pnpm build
+```
+
+Next.js 16 (App Router, server components by default), TypeScript strict,
+Tailwind v4, Vitest, Playwright. `src/` holds the app; `docs/`, `design/`,
+`supabase/`, `n8n/` and `prompts/` sit alongside it, unmoved.
+
+`supabase/functions/` is excluded from the app's `tsconfig.json` — those run on
+Deno, not Node. See `supabase/functions/README.md`.
+
+Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+## Setup (database)
 
 1. **Create the Supabase project in `eu-central-1` (Frankfurt).** This cannot
    be changed later and the platform holds EU personal data.

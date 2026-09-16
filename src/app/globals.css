@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* ===================================================================
+   Coridor — design tokens.
+
+   Palette is the one specified in the homepage brief, which is the
+   agreed source of truth. design/README.md still carries the earlier
+   values and is aligned once the reconciliation is approved.
+   =================================================================== */
+
+@theme {
+  --color-background: #0b1216;
+  --color-surface: #121e25;
+  --color-border: #1f2e36;
+  --color-foreground: #f3efe6;
+  --color-muted: #9aa7ae;
+
+  --color-accent: #f2ad4b;
+  --color-success: #5fc98a;
+  --color-warning: #e8c170;
+
+  /* PROPOSED, not part of the approved palette. The compliance UI has
+     three states — valid, expiring, expired — and the brief supplies
+     only success and warning. Raised in the reconciliation; replace
+     this value if a different red is chosen. */
+  --color-danger: #e2705f;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-card: 8px;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-background);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus rings use the accent, never the border colour. #1f2e36 on
+     #0b1216 is 1.35:1 — invisible as a focus indicator. The accent is
+     10.49:1 on the same ground. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+    /* Belt and braces: even if a component reaches for `transition-colors`
+       (whose Tailwind v4 property list includes outline-color), the ring
+       appears on the first frame rather than fading in. */
+    transition-property: none;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.022em;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
