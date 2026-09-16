@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { changeMemberRoleAction, removeMemberAction, revokeInvitationAction } from '@/app/cont/actions';
 import { InviteMemberForm, TransferOwnership } from '@/components/account/member-forms';
 import { buttonClasses } from '@/components/ui/button';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
 import { isManager, requireAccountContext } from '@/lib/auth/account';
@@ -78,12 +78,12 @@ export default async function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>{accountCopy.nav.company}</Eyebrow>
+        <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
       </div>
 
-      <section className="overflow-hidden rounded-[8px] border border-border bg-surface">
+      <section className="overflow-hidden rounded-card border border-border bg-surface">
         <ul className="divide-y divide-border">
           {members.map((member) => {
             const isSelf = member.user_id === context.user.id;
@@ -110,7 +110,7 @@ export default async function Page() {
                       id={`role-${member.user_id}`}
                       name="role"
                       defaultValue={member.role}
-                      className="rounded-[8px] border border-border bg-background px-2.5 py-1.5 text-xs"
+                      className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-xs"
                     >
                       {ROLE_OPTIONS.map((role) => (
                         <option key={role} value={role}>
@@ -146,7 +146,7 @@ export default async function Page() {
       </section>
 
       {invitations.length > 0 ? (
-        <section className="overflow-hidden rounded-[8px] border border-border bg-surface">
+        <section className="overflow-hidden rounded-card border border-border bg-surface">
           <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">{c.pending}</h2>
           <ul className="divide-y divide-border">
             {invitations.map((invitation) => (
@@ -174,14 +174,14 @@ export default async function Page() {
       ) : null}
 
       {canManage ? (
-        <section className="rounded-[8px] border border-border bg-surface p-5">
+        <section className="rounded-card border border-border bg-surface p-5">
           <h2 className="text-[1.0625rem]">{c.invite}</h2>
           <div className="mt-4">
             <InviteMemberForm />
           </div>
         </section>
       ) : (
-        <p className="rounded-[8px] border border-border bg-surface px-5 py-4 text-sm text-muted">
+        <p className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted">
           {c.onlyManagers}
         </p>
       )}

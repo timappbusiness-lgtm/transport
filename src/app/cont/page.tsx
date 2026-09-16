@@ -3,7 +3,7 @@ import { Inbox } from 'lucide-react';
 import { Checklist, type ChecklistStep } from '@/components/account/checklist';
 import { PhoneVerification } from '@/components/account/phone-verification';
 import { buttonClasses } from '@/components/ui/button';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { accountStage, requireAccountContext, type Company } from '@/lib/auth/account';
@@ -43,7 +43,7 @@ export default async function Page() {
   if (stage === 'needs-company') {
     const c = accountCopy.needsCompany;
     return (
-      <div className="rounded-[8px] border border-border bg-surface p-6">
+      <div className="rounded-card border border-border bg-surface p-6">
         <h1 className="text-[1.5rem]">{c.title}</h1>
         <p className="mt-2 max-w-[52ch] text-sm text-muted">{c.lede}</p>
         <Link
@@ -61,7 +61,7 @@ export default async function Page() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <Eyebrow>{c.welcome}</Eyebrow>
+          <EyebrowPill>{c.welcome}</EyebrowPill>
           <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">
             {firstName === '' ? c.welcome : `Bine ai venit, ${firstName}`}
           </h1>
@@ -73,7 +73,7 @@ export default async function Page() {
           verified={context.profile?.phone_verified ?? false}
         />
 
-        <section className="rounded-[8px] border border-border bg-surface">
+        <section className="rounded-card border border-border bg-surface">
           <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">
             {c.requests.title}
           </h2>
@@ -99,7 +99,7 @@ export default async function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Contul meu</Eyebrow>
+        <EyebrowPill>Contul meu</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">
           {firstName === '' ? 'Bine ai venit' : `Bine ai venit, ${firstName}`}
         </h1>

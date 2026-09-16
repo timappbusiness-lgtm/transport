@@ -38,7 +38,7 @@ export function InviteMemberForm() {
             id="invite-role"
             name="role"
             defaultValue={state.values?.role ?? 'dispatcher'}
-            className="rounded-[8px] border border-border bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+            className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
           >
             {INVITABLE_ROLES.map((role) => (
               <option key={role} value={role}>
@@ -71,7 +71,7 @@ export function TransferOwnership({
   const selectedName = candidates.find((x) => x.userId === selected)?.name ?? '';
 
   return (
-    <section className="rounded-[8px] border border-danger/35 bg-danger/5 p-5">
+    <section className="rounded-card border border-danger/40 bg-danger/6 p-5">
       <h2 className="text-[1.0625rem]">{c.transfer}</h2>
       <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.transferHint}</p>
 
@@ -88,7 +88,7 @@ export function TransferOwnership({
               name="userId"
               value={selected}
               onChange={(event) => setSelected(event.target.value)}
-              className="max-w-sm rounded-[8px] border border-border bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+              className="max-w-sm rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
             >
               {candidates.map((candidate) => (
                 <option key={candidate.userId} value={candidate.userId}>

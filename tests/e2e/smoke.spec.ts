@@ -5,7 +5,7 @@ test.describe('homepage', () => {
   test('serves one h1 and the brand in the header', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toContainText('actele la vedere');
+    await expect(page.locator('h1')).toContainText('cu firme verificate');
     await expect(page.locator('header')).toContainText('Coridor');
   });
 
@@ -22,9 +22,16 @@ test.describe('homepage', () => {
     expect(overflows).toBe(false);
   });
 
-  test('focus rings use the accent colour, not the border colour', async ({
-    page,
-  }) => {
+  test('the page does not scroll horizontally at 360px either', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/');
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
+  test('focus rings are ink, not the hairline border', async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Tab');
     const outline = await page.evaluate(() => {
@@ -33,9 +40,9 @@ test.describe('homepage', () => {
       const s = getComputedStyle(el);
       return { color: s.outlineColor, width: s.outlineWidth };
     });
-    // #f2ad4b — the accent. The border #1f2e36 is 1.35:1 here and would be
-    // invisible as a focus indicator.
-    expect(outline?.color).toBe('rgb(242, 173, 75)');
+    // #1c262b — ink, 14.37:1 on the ground. The card hairline #e2e7e9 is
+    // 1.25:1 and would be invisible as a focus indicator.
+    expect(outline?.color).toBe('rgb(28, 38, 43)');
     expect(outline?.width).not.toBe('0px');
   });
 
@@ -45,13 +52,35 @@ test.describe('homepage', () => {
     await expect(page.locator(':focus')).toHaveText('Sari la conținut');
   });
 
-  test('draws the corridor network', async ({ page }) => {
+  test('every demonstration card is labelled as a sample', async ({ page }) => {
     await page.goto('/');
-    const canvas = page.locator('#corridor');
-    await expect(canvas).toBeAttached();
-    await expect
-      .poll(() => canvas.evaluate((c: HTMLCanvasElement) => c.width))
-      .toBeGreaterThan(1);
+    // Legal requirement, not decoration: nothing on this page holds real
+    // data yet, so anything shaped like data says so.
+    await expect(page.getByText('Exemplu').first()).toBeVisible();
+    const count = await page.getByText('Exemplu').count();
+    expect(count).toBeGreaterThanOrEqual(3);
+  });
+
+  test('states no live counters and no social proof', async ({ page }) => {
+    await page.goto('/');
+    const body = (await page.locator('body').innerText()).toLowerCase();
+    expect(body).not.toContain('în timp real');
+    expect(body).not.toMatch(/\d[\d.,]*\+?\s*(de\s+)?(utilizatori|clienți|persoane)/);
+  });
+
+  test('labels prices as orientativ', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText(/orientativ/i).first()).toBeVisible();
+  });
+
+  test('the price tabs are reachable by keyboard', async ({ page }) => {
+    await page.goto('/');
+    const tabs = page.getByRole('tab');
+    await expect(tabs).toHaveCount(2);
+    await tabs.first().click();
+    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowRight');
+    await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
   });
 
   test('every internal link resolves', async ({ page, request }) => {
@@ -64,6 +93,39 @@ test.describe('homepage', () => {
       const res = await request.get(href);
       expect(res.status(), href).toBe(200);
     }
+  });
+
+  test('an anchor jump clears the floating header', async ({ page }) => {
+    await page.goto('/');
+    for (const id of ['cum-functioneaza', 'transportatori', 'verificare', 'tarife']) {
+      await page.evaluate((target) => {
+        location.hash = '';
+        location.hash = target;
+      }, id);
+      const gap = await page.evaluate((target) => {
+        const section = document.getElementById(target)!;
+        const header = document.querySelector('header')!;
+        return section.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+      }, id);
+      // The header floats over the page, so without scroll-padding-top the
+      // heading lands underneath it and the section looks decapitated.
+      expect(gap, id).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  test('the header pills stay on one line on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto('/');
+    const heights = await page
+      .locator('header a, header button')
+      .evaluateAll((els) =>
+        els
+          .filter((el) => (el as HTMLElement).offsetParent !== null)
+          .map((el) => Math.round(el.getBoundingClientRect().height)),
+      );
+    expect(heights.length).toBeGreaterThan(0);
+    // A wrapped label grows the pill past the 56px bar it sits in.
+    for (const height of heights) expect(height).toBeLessThanOrEqual(40);
   });
 
   test('every in-page anchor has a target', async ({ page }) => {
@@ -85,9 +147,4 @@ test.describe('unbuilt routes', () => {
       await expect(page.getByText('Pagină în lucru')).toBeVisible();
     });
   }
-
-  test('the design reference is still served', async ({ page }) => {
-    const res = await page.goto('/demo');
-    expect(res?.status()).toBe(200);
-  });
 });

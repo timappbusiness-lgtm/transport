@@ -6,7 +6,7 @@ import {
   PasswordForm,
   SignOutEverywhere,
 } from '@/components/account/profile-forms';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -19,7 +19,7 @@ export default async function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Cont</Eyebrow>
+        <EyebrowPill>Cont</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{accountCopy.profile.title}</h1>
       </div>
 

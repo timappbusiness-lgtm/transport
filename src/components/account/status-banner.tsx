@@ -34,12 +34,12 @@ function Banner({
   action?: { href: string; label: string } | undefined;
 }) {
   return (
-    <div className={cn('flex flex-col gap-3 rounded-[8px] border p-4 sm:flex-row sm:items-start', TONE[tone])}>
+    <div className={cn('flex flex-col gap-3 rounded-card border p-4 sm:flex-row sm:items-start', TONE[tone])}>
       <span aria-hidden="true" className={cn('mt-0.5 flex-none', ICON_TONE[tone])}>
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-display text-[0.9375rem] font-bold">{title}</p>
+        <p className="font-display text-[0.9375rem] font-medium">{title}</p>
         <div className="mt-1 text-sm text-muted">{body}</div>
       </div>
       {action ? (

@@ -29,8 +29,7 @@ summary, written to be sent to the client.
 docs/          spec, data model, compliance, roadmap, pricing, GDPR,
                and 07-competitor-analysis.md — read that one before building
 src/           the Next.js app
-design/        landing.html (the design reference, also served at /demo)
-               + the design system
+design/        the design system: tokens, type, motion, copy rules
 supabase/
   migrations/  9 SQL files, apply in filename order
   functions/   3 Deno edge functions

@@ -29,9 +29,9 @@ function Choice({
   variant: 'primary' | 'secondary';
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[8px] border border-border bg-surface p-5">
+    <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
       <div className="flex items-center gap-2.5">
-        <span aria-hidden="true" className="text-accent">
+        <span aria-hidden="true" className="text-muted">
           {icon}
         </span>
         <h2 className="text-[1.0625rem]">{title}</h2>

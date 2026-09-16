@@ -14,6 +14,12 @@ export const metadata: Metadata = { title: 'Contul meu' };
  * again here: the middleware is a convenience, the server component is the
  * boundary.
  */
+/**
+ * Never prerendered: the account area is the session. Without this, a build with no Supabase
+ * configuration would prerender the redirect and ship it as a static file.
+ */
+export const dynamic = 'force-dynamic';
+
 export default async function AccountLayout({
   children,
 }: {

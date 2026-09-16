@@ -39,7 +39,7 @@ export function AccountNav({
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'whitespace-nowrap rounded-[8px] px-3 py-2 text-sm',
+              'whitespace-nowrap rounded-pill px-3 py-2 text-sm',
               active ? 'bg-surface text-foreground' : 'text-muted hover:text-foreground',
             )}
           >
@@ -68,7 +68,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
         id="company-switcher"
         name="companyId"
         defaultValue={context.activeCompany.id}
-        className="rounded-[8px] border border-border bg-surface px-3 py-2 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
       >
         {context.memberships.map((m) => (
           <option key={m.company.id} value={m.company.id}>
@@ -78,7 +78,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
       </select>
       <button
         type="submit"
-        className="self-start text-xs text-accent underline-offset-4 hover:underline"
+        className="self-start text-xs text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
       >
         Schimbă firma
       </button>
@@ -91,8 +91,8 @@ export function CompanySummary({ context }: { context: AccountContext }) {
   if (!company) return null;
 
   return (
-    <div className="rounded-[8px] border border-border bg-surface p-4">
-      <p className="font-display text-[0.9375rem] font-bold">{companyDisplayName(company)}</p>
+    <div className="rounded-card border border-border bg-surface p-4">
+      <p className="font-display text-[0.9375rem] font-medium">{companyDisplayName(company)}</p>
       <p className="mt-0.5 font-mono text-xs text-muted">
         CUI {company.cui} · {COMPANY_TYPE_LABELS[company.company_type] ?? company.company_type}
       </p>

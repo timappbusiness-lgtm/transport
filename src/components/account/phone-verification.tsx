@@ -32,12 +32,12 @@ export function PhoneVerification({
 
   if (verified || verifyState.notice) {
     return (
-      <section className="flex items-start gap-3 rounded-[8px] border border-success/35 bg-success/10 p-4">
+      <section className="flex items-start gap-3 rounded-card border border-success/40 bg-success/8 p-4">
         <span aria-hidden="true" className="mt-0.5 text-success">
           <CheckCircle2 size={18} />
         </span>
         <div>
-          <p className="font-display text-[0.9375rem] font-bold">{c.title}</p>
+          <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>
           <p className="mt-1 text-sm text-muted">{c.bodyDone}</p>
         </div>
       </section>
@@ -45,13 +45,13 @@ export function PhoneVerification({
   }
 
   return (
-    <section className="rounded-[8px] border border-border bg-surface p-5">
+    <section className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-start gap-3">
-        <span aria-hidden="true" className="mt-0.5 text-accent">
+        <span aria-hidden="true" className="mt-0.5 text-muted">
           <Phone size={18} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[0.9375rem] font-bold">{c.title}</p>
+          <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>
           <p className="mt-1 text-sm text-muted">{c.body}</p>
           <p className="mt-1 font-mono text-[0.6875rem] text-muted">{c.why}</p>
         </div>
@@ -95,7 +95,7 @@ export function PhoneVerification({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-4 text-sm text-accent underline-offset-4 hover:underline"
+          className="mt-4 text-sm text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
         >
           {c.action}
         </button>

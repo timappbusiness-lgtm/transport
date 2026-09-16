@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { acceptInvitationAction, declineInvitationAction } from '@/app/cont/actions';
 import { buttonClasses } from '@/components/ui/button';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -54,13 +54,13 @@ export default async function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Cont</Eyebrow>
+        <EyebrowPill>Cont</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
       </div>
 
       {invitations.length === 0 ? (
-        <p className="rounded-[8px] border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
+        <p className="rounded-card border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
           {c.empty}
         </p>
       ) : (
@@ -68,10 +68,10 @@ export default async function Page() {
           {invitations.map((invitation) => (
             <li
               key={invitation.id}
-              className="flex flex-wrap items-center gap-4 rounded-[8px] border border-border bg-surface px-5 py-4"
+              className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface px-5 py-4"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[0.9375rem] font-bold">
+                <p className="font-display text-[0.9375rem] font-medium">
                   {invitation.company?.display_name ?? invitation.company?.legal_name ?? '—'}
                 </p>
                 <p className="mt-0.5 text-xs text-muted">

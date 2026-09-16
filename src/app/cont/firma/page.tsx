@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { CompanyForm } from '@/components/account/company-form';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { VERIFICATION_LABELS, accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -16,10 +16,10 @@ export default async function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>{accountCopy.company.status}: {VERIFICATION_LABELS[company.verification_status]}</Eyebrow>
+        <EyebrowPill>{accountCopy.company.status}: {VERIFICATION_LABELS[company.verification_status]}</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{accountCopy.company.title}</h1>
       </div>
-      <section className="rounded-[8px] border border-border bg-surface p-5">
+      <section className="rounded-card border border-border bg-surface p-5">
         <CompanyForm company={company} />
       </section>
     </div>

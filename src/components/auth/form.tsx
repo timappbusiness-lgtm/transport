@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { buttonClasses } from '@/components/ui/button';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 
 /** Centred card used by every page in the authentication flow. */
@@ -18,8 +18,8 @@ export function AuthCard({
   footer?: React.ReactNode | undefined;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-[28rem] flex-col justify-center px-4 py-12 sm:px-6 sm:py-20">
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+    <div className="mx-auto flex w-full max-w-[28rem] flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
+      {eyebrow ? <EyebrowPill>{eyebrow}</EyebrowPill> : null}
       <h1 className="mt-2.5 text-[clamp(1.75rem,5vw,2.25rem)]">{title}</h1>
       {lede ? <p className="mt-3 text-sm text-muted sm:text-base">{lede}</p> : null}
       <div className="mt-8">{children}</div>
@@ -75,9 +75,9 @@ export function Field({
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy === '' ? undefined : describedBy}
         className={cn(
-          'w-full rounded-[8px] border bg-surface px-3.5 py-2.5 text-[0.9375rem]',
-          'placeholder:text-muted/60',
-          error ? 'border-danger' : 'border-border',
+          'w-full rounded-input border bg-surface px-3.5 py-2.5 text-[0.9375rem]',
+          'placeholder:text-muted/70',
+          error ? 'border-danger' : 'border-border-strong',
         )}
       />
       {hint ? (
@@ -100,7 +100,7 @@ export function FormError({ children }: { children?: string | undefined }) {
   return (
     <p
       role="alert"
-      className="rounded-[8px] border border-danger/40 bg-danger/10 px-3.5 py-2.5 text-sm text-danger"
+      className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-sm text-foreground"
     >
       {children}
     </p>
@@ -112,7 +112,7 @@ export function FormNotice({ children }: { children?: React.ReactNode }) {
   return (
     <p
       role="status"
-      className="rounded-[8px] border border-success/35 bg-success/10 px-3.5 py-2.5 text-sm text-success"
+      className="rounded-input border border-success/40 bg-success/8 px-3.5 py-2.5 text-sm text-foreground"
     >
       {children}
     </p>
@@ -135,7 +135,7 @@ export function SubmitButton({
 
 export function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-accent underline-offset-4 hover:underline">
+    <Link href={href} className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground">
       {children}
     </Link>
   );

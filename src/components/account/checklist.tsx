@@ -17,7 +17,7 @@ export interface ChecklistStep {
  */
 export function Checklist({ title, steps }: { title: string; steps: ChecklistStep[] }) {
   return (
-    <section className="rounded-[8px] border border-border bg-surface">
+    <section className="rounded-card border border-border bg-surface">
       <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">{title}</h2>
       <ol className="divide-y divide-border">
         {steps.map((step, index) => (
@@ -33,7 +33,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
               className={cn(
                 'flex size-6 flex-none items-center justify-center rounded-full font-mono text-[0.6875rem]',
                 step.state === 'done' && 'bg-success/15 text-success',
-                step.state === 'current' && 'bg-accent text-background',
+                step.state === 'current' && 'bg-foreground text-white',
                 step.state === 'soon' && 'border border-border text-muted',
               )}
             >
