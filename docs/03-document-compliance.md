@@ -154,7 +154,7 @@ so the client can change it.
 | See the boards and listings | Publish a draft |
 | Upload replacement documents | Reveal any contact |
 | Read its own conversations | Send new offers |
-| See exactly what expired and when | Appear on the boards (listings → `suspended`) |
+| See exactly what expired and when | Appear on the boards (listings → `suspended`, back automatically on reactivation while still in date) |
 
 Locking a suspended customer out of their account is the single most common
 mistake in this pattern. They must be able to walk in, see a clear "your RCA
