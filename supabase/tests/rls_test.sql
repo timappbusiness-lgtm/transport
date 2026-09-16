@@ -14,7 +14,8 @@
 --
 -- Kinds:
 --   fix    a hole found in the September 2026 audit (P1-P14 and the phase 0
---          list). Fails on the first nine migrations, passes after the fix.
+--          list), or a rule added since (INV). Fails on the schema before
+--          the migration that fixes it, passes after.
 --   guard  something that must keep working after the hardening (a
 --          legitimate write, a policy helper still executable). May pass on
 --          both schemas.
@@ -197,6 +198,12 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('f0000000-0000-0000-0000-000000000009', 'rls-newco@test.ro',   '{"full_name":"Firmă Nouă","account_type":"company"}'),
   ('f0000000-0000-0000-0000-00000000000a', 'rls-owner-c@test.ro', '{"full_name":"Owner C","account_type":"company"}');
 
+-- Confirmed e-mail addresses, for the invitation checks.
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('f0000000-0000-0000-0000-00000000000b', 'rls-invitee@test.ro', now(), '{"full_name":"Invitat","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-00000000000c', 'rls-pf-invited@test.ro', now(), '{"full_name":"PF Invitat","account_type":"individual"}'),
+  ('f0000000-0000-0000-0000-00000000000d', 'rls-admin-a@test.ro', now(), '{"full_name":"Admin A","account_type":"company"}');
+
 update public.profiles set phone_verified = true, phone = '+40711000006'
 where id = 'f0000000-0000-0000-0000-000000000006';
 
@@ -220,7 +227,8 @@ insert into public.company_members (company_id, user_id, role) values
   ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000003', 'dispatcher'),
   ('fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'owner'),
   ('fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000005', 'dispatcher'),
-  ('fc000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-00000000000a', 'owner');
+  ('fc000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-00000000000a', 'owner'),
+  ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000d', 'admin');
 
 insert into public.subscriptions (company_id, plan_code, status, current_period_end) values
   ('fc000000-0000-0000-0000-000000000001', 'carrier',   'active', now() + interval '30 days'),
@@ -1059,6 +1067,153 @@ select pg_temp.check('#18  n8n_run_log exists and a user cannot write to it', 'f
 select pg_temp.check('#18  n8n (service_role) writes its run log', 'fix',
   null, 'service_role',
   $a$insert into public.n8n_run_log (workflow, processed) values ('outbox-dispatcher', 3)$a$, 'allowed');
+
+-- =====================================================================
+-- Phase 1 - membership by invitation
+--
+-- f0..0b has a confirmed e-mail and a company account, f0..0c a confirmed
+-- e-mail and an individual account, f0..0d is admin (manager) of A.
+-- =====================================================================
+
+select pg_temp.check('INV  a manager cannot add a user to the company directly', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.company_members (company_id, user_id, role)
+     values ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000b', 'dispatcher')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.company_members
+                 where user_id = 'f0000000-0000-0000-0000-00000000000b')$v$);
+
+select pg_temp.check('INV  a manager invites by e-mail: pending invitation, e-mail queued, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.invite_company_member('fc000000-0000-0000-0000-000000000001', ' RLS-Invitee@test.ro ', 'dispatcher')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.company_invitations i
+                                where i.company_id = 'fc000000-0000-0000-0000-000000000001'
+                                  and i.invited_email = 'rls-invitee@test.ro' and i.status = 'pending'
+                                  and exists (select 1 from public.notification_outbox o
+                                              where o.template = 'company_invitation' and o.dedupe_key = 'invitation:' || i.id)
+                                  and exists (select 1 from public.audit_log a
+                                              where a.action = 'member.invited' and a.entity_id = i.id))$v$);
+
+select pg_temp.check('INV  the owner role cannot be invited', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.invite_company_member('fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'owner')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.company_invitations where invited_email = 'rls-invitee@test.ro')$v$);
+
+select pg_temp.check('INV  a dispatcher cannot invite', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.invite_company_member('fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'dispatcher')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.company_invitations where invited_email = 'rls-invitee@test.ro')$v$);
+
+select pg_temp.check('INV  the invited person accepts and joins with the invited role', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role, invited_by)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001',
+                        'rls-invitee@test.ro', 'dispatcher', 'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select exists (select 1 from public.company_members
+                                where company_id = 'fc000000-0000-0000-0000-000000000001'
+                                  and user_id = 'f0000000-0000-0000-0000-00000000000b' and role = 'dispatcher')
+                    and (select status from public.company_invitations where id = 'f8000000-0000-0000-0000-000000000001') = 'accepted'
+                    and exists (select 1 from public.audit_log where action = 'member.joined'
+                                and entity_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('INV  someone else cannot accept an invitation', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'dispatcher')$s$,
+  p_verify => $v$select not exists (select 1 from public.company_members
+                 where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000004')$v$);
+
+select pg_temp.check('INV  an unconfirmed e-mail address cannot accept', 'fix',
+  'f0000000-0000-0000-0000-000000000008', 'authenticated',
+  $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000001', 'rls-noco@test.ro', 'dispatcher')$s$,
+  p_verify => $v$select not exists (select 1 from public.company_members where user_id = 'f0000000-0000-0000-0000-000000000008')$v$);
+
+select pg_temp.check('INV  an expired invitation cannot be accepted', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role, created_at, expires_at)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro',
+                        'dispatcher', now() - interval '8 days', now() - interval '1 day')$s$,
+  p_verify => $v$select not exists (select 1 from public.company_members where user_id = 'f0000000-0000-0000-0000-00000000000b')$v$);
+
+select pg_temp.check('INV  an individual account cannot join a company', 'fix',
+  'f0000000-0000-0000-0000-00000000000c', 'authenticated',
+  $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000003')$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000003', 'fc000000-0000-0000-0000-000000000001', 'rls-pf-invited@test.ro', 'dispatcher')$s$,
+  p_verify => $v$select not exists (select 1 from public.company_members where user_id = 'f0000000-0000-0000-0000-00000000000c')$v$);
+
+select pg_temp.check('INV  the invited person can decline', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select public.decline_company_invitation('f8000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'dispatcher')$s$,
+  p_verify => $v$select status = 'declined' from public.company_invitations where id = 'f8000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('INV  a manager can revoke a pending invitation, audited', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$select public.revoke_company_invitation('f8000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'dispatcher')$s$,
+  p_verify => $v$select (select status from public.company_invitations where id = 'f8000000-0000-0000-0000-000000000001') = 'revoked'
+                    and exists (select 1 from public.audit_log where action = 'member.invitation_revoked'
+                                and entity_id = 'f8000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('INV  invitations are visible only to the company''s managers and the invited person', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select not exists (select 1 from public.company_invitations)$a$, 'true',
+  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+                values ('f8000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro', 'dispatcher')$s$);
+
+select pg_temp.check('INV  a manager cannot make someone owner by editing their membership', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$update public.company_members set role = 'owner'
+     where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000003'$a$, 'blocked',
+  p_verify => $v$select role = 'dispatcher' from public.company_members
+                 where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('INV  a manager cannot remove the owner', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$delete from public.company_members
+     where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_verify => $v$select exists (select 1 from public.company_members
+                 where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000002'
+                   and role = 'owner')$v$);
+
+select pg_temp.check('INV  the owner transfers ownership to a member and stays on as admin, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.transfer_company_ownership('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000d', 'Vânzarea firmei')$a$, 'allowed',
+  p_verify => $v$select (select role from public.company_members where company_id = 'fc000000-0000-0000-0000-000000000001'
+                         and user_id = 'f0000000-0000-0000-0000-00000000000d') = 'owner'
+                    and (select role from public.company_members where company_id = 'fc000000-0000-0000-0000-000000000001'
+                         and user_id = 'f0000000-0000-0000-0000-000000000002') = 'admin'
+                    and exists (select 1 from public.audit_log where action = 'company.ownership_transferred'
+                                and entity_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('INV  only the owner can transfer ownership', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$select public.transfer_company_ownership('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000d')$a$, 'blocked',
+  p_verify => $v$select role = 'admin' from public.company_members
+                 where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-00000000000d'$v$);
+
+select pg_temp.check('INV  ownership cannot go to someone outside the company', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.transfer_company_ownership('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000006')$a$, 'blocked',
+  p_verify => $v$select role = 'owner' from public.company_members
+                 where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('INV  a member can leave the company', 'guard',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$delete from public.company_members
+     where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = auth.uid()$a$, 'allowed');
+
+select pg_temp.check('INV  the owner can still change a member''s role', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.company_members set role = 'admin'
+     where company_id = 'fc000000-0000-0000-0000-000000000001' and user_id = 'f0000000-0000-0000-0000-000000000003'$a$, 'allowed');
 
 -- =====================================================================
 -- P13 - anon and the boards (already closed; kept as a guard)

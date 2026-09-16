@@ -29,9 +29,12 @@ Product decisions taken with it:
   after the MVP. The homepage still lists „Alerte pe WhatsApp pentru traseele
   tale” as „în curând”; that line must become „Alerte pe email pentru cereri
   pe traseele tale” (not yet changed).
-- **Member invitations belong to phase 1.** The invited user must accept; the
-  owner role cannot be granted by invitation, only transferred by the current
-  owner through an audited RPC. Until then, managers add members directly.
+- **Membership is by invitation.** A manager invites by e-mail
+  (`invite_company_member`); the person accepts from a confirmed address with
+  a company account (`accept_company_invitation`), or declines; invitations
+  expire after 7 days. The owner role is never invited or edited in: the
+  current owner transfers it (`transfer_company_ownership`), audited. One owner
+  per company. Migration `20260916140000`.
 
 ## Phase 1 — MVP (4–6 weeks)
 
