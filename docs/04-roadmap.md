@@ -1,8 +1,19 @@
 # Roadmap
 
-Three phases. Phase 1 is a product someone would pay for; phases 2 and 3 are
-what turns it into a business. Estimates assume our team on Lovable +
-Supabase and shift once design is fixed.
+The MVP is built in ten phases, in this order: verification, requests,
+outbound and return availabilities, matching, offers, order, proof of
+delivery, rating, subscriptions, admin. Each phase ships as one pull request
+and is done when its checks pass: `pnpm db:test` for the rules Postgres
+enforces, Playwright for the screens.
+
+Every requirement in `docs/01-product-spec.md` belongs to exactly one phase
+below, to "After the MVP" or to "Later". Phases that build screens need a
+database to run against: a local Supabase (`supabase start`, which needs
+Docker) for development and Playwright, and a Supabase development project
+for Vercel previews.
+
+The previous estimates assumed Lovable and are removed; they are set per phase
+once the first UI phase has shipped.
 
 ## Phase 0 — Security hardening (done, September 2026)
 
@@ -29,6 +40,8 @@ Product decisions taken with it:
   after the MVP. The homepage still lists „Alerte pe WhatsApp pentru traseele
   tale” as „în curând”; that line must become „Alerte pe email pentru cereri
   pe traseele tale” (not yet changed).
+- **Confirming a seat reservation creates the order**, through the same
+  internal function as `accept_offer()` (phase 0 follow-up).
 - **Membership is by invitation.** A manager invites by e-mail
   (`invite_company_member`); the person accepts from a confirmed address with
   a company account (`accept_company_invitation`), or declines; invitations
@@ -36,59 +49,154 @@ Product decisions taken with it:
   current owner transfers it (`transfer_company_ownership`), audited. One owner
   per company. Migration `20260916140000`.
 
-## Phase 1 — MVP (4–6 weeks)
+## Phase 1 — Verification
 
-The smallest thing that is genuinely better than a Facebook group.
+Who is on the platform, and whether their papers are valid.
 
-**Accounts and compliance**
-- Signup for companies and individuals, phone OTP for individuals
-- CUI lookup via ANAF, autofill + inactive-company flag
-- Document upload with AI extraction, admin review queue
-- Automatic suspension and reactivation, reminder e-mails
+- Company signup with `create_company()`; CUI lookup at ANAF with autofill and
+  the inactive / struck-off flag (`verify-cui-anaf`) *— database done in phase 0*
+- Membership by invitation, ownership transfer *— done*
+- Individual quick account: phone confirmed by OTP
+- Document upload into the company folder; **AI extraction** with
+  `parse-document` pre-fills kind, number, holder and dates; a person from the
+  platform approves or rejects in the review queue (`review_document()`)
+- Document display status: `valid`, `expiring_soon` (30 days or less),
+  `expired`
+- Vehicle registry: plate, VIN, type, **dimensions**, **assigned driver**,
+  **operated routes**
+- Expiry reminders by e-mail at 30, 14, 7 and 1 days
+- Automatic suspension and reactivation; a suspended owner's `active` and
+  `offers_received` listings become `suspended` with their previous status
+  stored, and return to it on reactivation if their dates are still valid,
+  otherwise `expired`
+- Staff management (`set_platform_staff()`)
 
-**The three boards**
-- Post and browse loads (`curse`)
-- Post and browse trucks on `tur` and on `retur`
-- Individuals post return-trip requests
-- Filters: route, dates, vehicle type, weight, radius
-- Contact reveal gated by plan and compliance
+**Exit criteria:** a carrier signs up, invites a dispatcher, registers a
+platform, uploads its papers, and is verified by a reviewer without anyone
+touching the database; an expired RCA suspends and a renewal reactivates,
+end to end.
 
-**Admin**
-- Document review queue with the extracted fields pre-filled
-- Company list with compliance status
-- Manual suspend / reactivate
+## Phase 2 — Requests
 
-**Deliberately not in phase 1:** in-platform messaging, ratings, online
-payments, mobile app. Phone and e-mail carry the first hundred customers.
+- Vehicle transport request with **make, model, manufacturing year**,
+  **starts and drives**, **service level** standard (`pe_sens`) or express
+  (`expres`); `tractare` stays in the schema, hidden in the UI
+- Individuals post a request with the quick account
+- Listing statuses from the product spec: `draft`, `active`, `cancelled`,
+  `expired`, `suspended` in use; `carrier_selected` replaces `assigned` and
+  `delivered` replaces `completed`
+- Boards: browse and filter requests by route, dates, vehicle category,
+  condition
+- Contact reveal gated by eligibility, active listing and plan quota *—
+  database done in phase 0*
 
-**Exit criteria:** 20 verified carriers and 5 forwarders using it weekly
-without us in the loop.
+## Phase 3 — Outbound and return availabilities
 
-## Phase 2 — Transactional (3–4 weeks)
+- Availabilities on `tur` and `retur` with **waypoints**, **accepted vehicle
+  types**, optional **indicative price**
+- Car platforms with seats; **free seats decrease automatically** when an
+  order on the departure is confirmed
+- Seat reservations: pending until the carrier confirms, lapse after 24 hours
+  or at the end of the departure day, one per user per departure; confirming
+  creates the order *— database done in phase 0 and its follow-up*
+- No direct seat booking by clients
 
-Once people are on the platform, keep the deal on the platform.
+## Phase 4 — Matching
 
-- Price offers on listings, accept / reject / counter
-- In-platform messaging with realtime
-- `transports`: an accepted offer becomes a tracked job
-- Mutual ratings after delivery, company profile pages
-- Reports and a fraud review flow
-- Subscriptions with real payments (Netopia or Stripe) and self-serve upgrade
-- Full admin panel: reports, subscriptions, revenue, activity
+- **Compatible carriers message**: when a request is published, the client
+  sees how many verified carriers run a compatible route, without names
+- **Saved-route alerts by e-mail** (MVP; WhatsApp after the MVP)
+- Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
+  email pentru cereri pe traseele tale”
 
-**Exit criteria:** more than half of accepted deals start from an in-platform
-offer rather than a phone call.
+## Phase 5 — Offers
 
-## Phase 3 — Growth (4+ weeks)
+- Offer with price, **estimated pickup date**, **estimated delivery date**,
+  **transport conditions**, and a **link to the carrier profile**
+- Accept, reject, withdraw, and **request clarification** *— accept, reject,
+  withdraw done in the database in phase 0*
+- `offers_received` while at least one offer is pending; back to `active`
+  when every offer is withdrawn or rejected
+- Messaging: conversations through the contact gate *(database done)*;
+  **phone numbers and e-mails masked automatically** until the order is
+  confirmed; **report abusive message**; messages immutable *(database done)*;
+  staff hide a message with an audit entry
 
-- WhatsApp alerts on saved searches (the highest-value feature for carriers —
-  a return trip is worth money for about two hours)
-- Promoted listings, credits included per plan
-- Mobile app (drivers do not use a laptop in the cab)
-- Public company profiles for SEO
-- Optional: insurer / vehicle-data integration through a commercial partner
-  (see `docs/03-document-compliance.md`)
-- Optional: e-CMR, GPS integrations, TMS import
+## Phase 6 — Order
+
+- One internal function creates the order, from an accepted offer or a
+  confirmed reservation *— done*
+- Order statuses: `order_confirmed`, `pickup_scheduled`, `vehicle_picked_up`,
+  `in_transit`, `delivery_scheduled`, `vehicle_delivered`, `order_completed`,
+  each moved by the party allowed to move it, through an RPC
+- The listing follows the order: `carrier_selected` → `in_progress` →
+  `delivered`
+- Cancellation, and complaints that put the order in `disputed`
+
+## Phase 7 — Proof of delivery
+
+- Uploads on the order: **pickup photos**, **vehicle condition report**,
+  **transport documents**, **delivery photos**, **recipient signature or
+  confirmation**, **incident notes** — timestamped, attributed, immutable
+
+## Phase 8 — Rating and reputation
+
+- Ratings after delivery, one per side, companies only (individuals are not
+  rated in the MVP) *— database done in phase 0*
+- Carrier profile with **completed transports**, **rating**, **punctuality**,
+  **response rate**, **resolved complaints**, **last verification date**
+- No paid badge that can be confused with verification
+
+## Phase 9 — Subscriptions and billing
+
+- **Free trial**, starting at verification
+- **Recurring payment**, **update card**, **cancel**
+- **Invoice** for every payment (platform to customer; invoicing transports
+  between the parties is Later)
+- **Renewal reminder**, **suspension for non-payment**
+- **Promo codes**, **payment history**
+
+## Phase 10 — Admin
+
+- **Moderate requests and listings**
+- **Reported conversations** and hidden messages
+- **Complaints** and **refunds**
+- **Grant promotions**
+- **Report export**
+
+**MVP exit criteria:** 20 verified carriers and 5 forwarders using it weekly
+without us in the loop, and more than half of accepted deals starting from an
+in-platform offer rather than a phone call.
+
+## After the MVP
+
+- **Price index**, published only once a corridor has enough completed
+  transports
+- **Temporary location** of the vehicle during an active order
+- **Listing promotions**
+- **PDF contract** with electronic acceptance
+- **Driver PWA** extras
+- WhatsApp delivery for saved-route alerts
+- Public company profiles for SEO (from the previous roadmap)
+
+## Later
+
+Each is a project of its own and out of the MVP by decision:
+
+- Payments for the transport itself
+- Automatic invoicing of transports between the parties
+- Escrow
+- Commission on transports
+- Automatic ARR / RAR / AIDA checks
+- Telematics
+- Full e-CMR
+- Auctions
+- AI pricing
+- Native apps
+- Load optimisation
+- Route optimisation
+- TMS import
+- Public API
 
 ## Sequencing risks
 
@@ -107,6 +215,6 @@ worthless to both sides. Plan for it before launch:
 approval promise needs a named person. If nobody can own it, drop the promise
 to 48 hours on business days and say so on the signup page.
 
-**Do not let the vehicle-data integration slip into phase 1.** It depends on
+**Do not let the vehicle-data integration slip into the MVP.** It depends on
 a commercial agreement outside our control, and the feature the client asked
 for does not need it.
