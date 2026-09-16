@@ -12,6 +12,54 @@
 - `NEXT_PUBLIC_SITE_URL` is set for Production. Preview builds fall back to
   `VERCEL_URL` (see `src/config/brand.ts`).
 
+## Supabase
+
+- **Project:** `SAAS TRANSPORT`, ref `sspgyuavkjmzgbyqvunk`, Central EU
+  (Frankfurt) — https://sspgyuavkjmzgbyqvunk.supabase.co
+- **Linked** from this repo (`supabase link`); `supabase/config.toml` is the
+  source of truth for its Auth settings — change it there and run
+  `supabase config push`, which shows the diff before applying.
+- **Schema:** every migration applied with `supabase db push`. Extensions:
+  `pgcrypto` (preinstalled), `pg_trgm` (in `public`, where migration 0001
+  expects it), `pg_cron`. Three jobs scheduled: `nightly-compliance-sweep`,
+  `nightly-expiry-reminders`, `hourly-listing-cleanup`.
+- **Auth:** site URL `https://coridor-gray.vercel.app`; redirects allowed for
+  `localhost:3000`, production and `coridor-*-eduardooo-s-projects.vercel.app`
+  previews. E-mail confirmation on. Phone OTP needs an SMS provider (not set).
+- **Edge functions deployed:** `parse-document`, `verify-cui-anaf`,
+  `compliance-sweep` (`supabase functions deploy <name> --use-api` bundles
+  without Docker).
+- **Function secrets still to set** (`supabase secrets set`):
+  `ANTHROPIC_API_KEY` (parse-document fails without it), `CRON_SECRET` (when
+  n8n is set up; until then compliance-sweep answers 401 to everyone, and
+  pg_cron runs the sweep directly), `ALLOWED_ORIGIN` (unset means `*`; set it
+  to the production origin at launch).
+
+### Vercel environment variables for Supabase
+
+| Name | Environments |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Preview, Development |
+
+Production is not set yet. The secret key is not in Vercel and must not be:
+every write goes through the user's session and the RPCs.
+
+After merging a pull request that adds migrations:
+
+```bash
+supabase db push --linked --dry-run   # what would be applied
+supabase db push --linked
+supabase db advisors --linked --type security
+```
+
+Advisor findings that are accepted: `security_definer_view` on
+`v_companies_public`, `v_corridor_prices` and `v_departures` (each exposes a
+filtered public subset on purpose; `v_departures` must count other people's
+bookings), `*_security_definer_function_executable` for the RPCs and policy
+helpers granted in migration `130300`, and `extension_in_public` for
+`pg_trgm`.
+
 ## First connection (once, ~4 minutes)
 
 1. https://vercel.com/new → **Import Git Repository** →

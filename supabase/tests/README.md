@@ -4,8 +4,8 @@ Two suites, both run on a throwaway database:
 
 | File | Runs as | Covers |
 |---|---|---|
-| `smoke_test.sql` | superuser | The business rules enforced in Postgres: compliance, suspension, reactivation, publish guards, plan quotas, the contact gate, seats. 47 checks; aborts on the first failure. |
-| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log, membership invitations, order creation. Each action runs as an API role, the way PostgREST and the edge functions call the database. 140 checks; reports every result, then fails if any did. |
+| `smoke_test.sql` | superuser | The business rules enforced in Postgres: compliance, suspension, reactivation, publish guards, plan quotas, the contact gate, seats, scheduled jobs. 48 checks; aborts on the first failure. |
+| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log, membership invitations, order creation. Each action runs as an API role, the way PostgREST and the edge functions call the database. 141 checks; reports every result, then fails if any did. |
 
 Superuser skips row-level security and function privileges, so a rule that
 only `smoke_test.sql` checks has never been checked against a real caller.
@@ -88,6 +88,7 @@ lock, then fail, leaving one accepted offer and one transport.
 | 15 | `needs_winch` is derived from the condition flags; a listing cannot publish without its details row |
 | 16 | `v_departures` reports free slots; a platform cannot be overbooked |
 | 17 | Editorial benchmarks are seeded; a corridor under 5 closed deals publishes no median |
+| 18 | The nightly sweep, reminders and listing cleanup are scheduled in `pg_cron` |
 
 Two fixture changes came with the phase 0 hardening, no assertion changed:
 the admin is created in `platform_staff` instead of through the removed

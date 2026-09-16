@@ -839,6 +839,18 @@ select pg_temp.check('P7   current_plan stays callable', 'guard',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$select (public.current_plan('fc000000-0000-0000-0000-000000000001')).code = 'carrier'$a$, 'true');
 
+select pg_temp.check('P7   every project function pins its search_path', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select not exists (
+       select 1 from pg_proc p
+       join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public'
+         and p.proname <> 'zz_rls_default_privilege_probe'
+         and not exists (select 1 from pg_depend d
+                         where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e')
+         and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%'))$a$,
+  'true');
+
 -- =====================================================================
 -- P8, P14 - views
 -- =====================================================================

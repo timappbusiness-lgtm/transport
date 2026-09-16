@@ -409,5 +409,12 @@ select pg_temp.check('editorial benchmarks are seeded for the main corridors',
 select pg_temp.check('a corridor with fewer than 5 closed deals publishes no median',
   (select count(*) = 0 from public.v_corridor_prices));
 
+-- ---------------------------------------------------------------------
+-- 18. Scheduled jobs
+-- ---------------------------------------------------------------------
+select pg_temp.check('the nightly sweep, the reminders and the listing cleanup are scheduled',
+  (select count(*) = 3 from cron.job
+   where jobname in ('nightly-compliance-sweep', 'nightly-expiry-reminders', 'hourly-listing-cleanup')));
+
 \echo ''
 \echo 'All checks passed.'
