@@ -1,12 +1,10 @@
-import type { Metadata } from 'next';
-import { PlaceholderPage } from '@/components/layout/placeholder-page';
+import { redirect } from 'next/navigation';
+import { ROUTES } from '@/config/routes';
 
-export const metadata: Metadata = { title: 'Înscrierea transportatorilor' };
-
+/**
+ * Historical entry point, kept because it is printed on material already in
+ * circulation. It carries the carrier type into company sign-up.
+ */
 export default function Page() {
-  return (
-    <PlaceholderPage title="Înscrierea transportatorilor">
-      Înscrierea firmelor, cu verificarea CUI la ANAF și încărcarea documentelor, e în construcție.
-    </PlaceholderPage>
-  );
+  redirect(`${ROUTES.signUpCompany}?tip=transport`);
 }

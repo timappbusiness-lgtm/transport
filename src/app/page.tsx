@@ -6,8 +6,6 @@ import { Hero } from '@/components/home/hero';
 import { Platforms } from '@/components/home/platforms';
 import { Prices } from '@/components/home/prices';
 import { SampleRequests } from '@/components/home/sample-requests';
-import { SiteFooter } from '@/components/layout/site-footer';
-import { SiteHeader } from '@/components/layout/site-header';
 import { BRAND_NAME } from '@/config/brand';
 
 const TITLE = `${BRAND_NAME} — transport auto cu actele la vedere`;
@@ -31,14 +29,6 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <a
-        href="#continut"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-card focus:bg-surface focus:px-4 focus:py-2 focus:text-sm"
-      >
-        Sari la conținut
-      </a>
-      <SiteHeader />
-      <main id="continut">
         <Hero />
         <SampleRequests />
         <Compliance />
@@ -46,8 +36,6 @@ export default function Page() {
         <Platforms />
         <Categories />
         <CarrierCta />
-      </main>
-      <SiteFooter />
     </>
   );
 }

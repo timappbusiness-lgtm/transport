@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { SiteFooter } from '@/components/layout/site-footer';
+import { SiteHeader } from '@/components/layout/site-header';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
 import './globals.css';
 
@@ -40,6 +42,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }, // TODO: flip to index on launch
 };
 
+/**
+ * Every page carries the header, which reads the session, so no route can be
+ * prerendered. Declared here rather than left to inference: without it a
+ * build with no Supabase configuration silently prerenders `/cont` as a
+ * redirect and ships it as a static file.
+ *
+ * Worth revisiting with partial prerendering once the marketing pages carry
+ * real traffic.
+ */
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -48,7 +61,17 @@ export default function RootLayout({
       lang="ro"
       className={`${archivo.variable} ${plexSans.variable} ${plexMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <a
+          href="#continut"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-card focus:bg-surface focus:px-4 focus:py-2 focus:text-sm"
+        >
+          Sari la conținut
+        </a>
+        <SiteHeader />
+        <main id="continut">{children}</main>
+        <SiteFooter />
+      </body>
     </html>
   );
 }
