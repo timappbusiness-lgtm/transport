@@ -1,28 +1,16 @@
 # Deployment — Vercel
 
-## Why the agent cannot deploy for you
+## Current setup
 
-This repo is built from a sandboxed environment whose network policy denies
-outbound connections to Vercel:
-
-```
-host: api.vercel.com:443
-kind: connect_rejected
-detail: gateway answered 403 to CONNECT (policy denial)
-```
-
-`vercel.com` and `api.vercel.com` are both unreachable, and the Vercel CLI is
-not installed. That is an environment policy, not a missing token — a token
-would not help.
-
-**It does not matter.** Vercel's normal deployment path is a GitHub
-integration: Vercel pulls from GitHub itself. Nothing needs to reach Vercel
-from here. Connecting the repo is a one-time action in the Vercel dashboard,
-and every later `git push` deploys automatically.
-
-If you do want CLI deploys from an agent session, the environment's network
-policy has to allow `vercel.com` — see
-https://code.claude.com/docs/en/claude-code-on-the-web
+- **Vercel project:** `eduardooo-s-projects/coridor`
+- **Production:** https://coridor-gray.vercel.app
+- **Deploys today:** from a local checkout with the Vercel CLI
+  (`vercel deploy --prod`). The project is not connected to GitHub yet:
+  Vercel refused the link because the logged-in GitHub account has no
+  write access to `timappbusiness-lgtm/transport`. Once it does, connect
+  it under Settings → Git and every push deploys on its own.
+- `NEXT_PUBLIC_SITE_URL` is set for Production. Preview builds fall back to
+  `VERCEL_URL` (see `src/config/brand.ts`).
 
 ## First connection (once, ~4 minutes)
 
