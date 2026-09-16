@@ -4,6 +4,35 @@ Three phases. Phase 1 is a product someone would pay for; phases 2 and 3 are
 what turns it into a business. Estimates assume our team on Lovable +
 Supabase and shift once design is fixed.
 
+## Phase 0 — Security hardening (done, September 2026)
+
+Before any feature work. The September 2026 audit found that the database
+rules could be bypassed by any signed-in user: self-granted staff access,
+self-approved documents, self-accepted offers, forged transports and ratings,
+internal jobs callable by anonymous visitors. Migrations
+`20260916130000`–`130400` close them; `supabase/tests/rls_test.sql` proves it
+as the API roles, and `pnpm db:test` runs both database suites.
+
+Product decisions taken with it:
+
+- **Starting a conversation is a contact.** It uses the same gate as
+  `reveal_contact()` — eligible caller, active listing — and counts against the
+  contact quota once per listing.
+- **Seat reservations lapse.** An unconfirmed reservation expires after 24
+  hours or at the end of the departure day, whichever comes first. One open
+  reservation per user per departure. Clients cannot book a seat directly;
+  the carrier confirms.
+- **Rating individuals is out of the MVP.** A carrier cannot rate a private
+  shipper; only companies are rated. Revisit once there is a moderation flow
+  for ratings of private persons.
+- **Saved-route alerts stay in the MVP, by e-mail only.** WhatsApp alerts move
+  after the MVP. The homepage still lists „Alerte pe WhatsApp pentru traseele
+  tale” as „în curând”; that line must become „Alerte pe email pentru cereri
+  pe traseele tale” (not yet changed).
+- **Member invitations belong to phase 1.** The invited user must accept; the
+  owner role cannot be granted by invitation, only transferred by the current
+  owner through an audited RPC. Until then, managers add members directly.
+
 ## Phase 1 — MVP (4–6 weeks)
 
 The smallest thing that is genuinely better than a Facebook group.

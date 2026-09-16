@@ -9,9 +9,13 @@
 //
 // POST { "cui": "RO12345678", "company_id": "<uuid>" }
 //   company_id is optional; when present the snapshot is saved on the row.
+//   Saving requires the caller to manage that company and the CUI to be the
+//   company's own (see authorize.ts): 403 or 409 otherwise, before ANAF is
+//   even called.
 // =====================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { authorizeCompanyWrite, normaliseCui } from "./authorize.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -34,14 +38,6 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-/** "RO 12 345 678" -> 12345678. Returns null when it cannot be a CUI. */
-function normaliseCui(raw: string): number | null {
-  const digits = raw.replace(/[^0-9]/g, "");
-  if (digits.length < 2 || digits.length > 10) return null;
-  const value = Number(digits);
-  return Number.isFinite(value) ? value : null;
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
   if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
@@ -52,6 +48,35 @@ Deno.serve(async (req: Request) => {
 
     const parsedCui = normaliseCui(String(cui));
     if (parsedCui === null) return jsonResponse({ error: "CUI invalid" }, 400);
+
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
+
+    if (company_id) {
+      // The service role bypasses RLS: decide before writing anything.
+      const caller = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+        auth: { persistSession: false },
+      });
+      const decision = await authorizeCompanyWrite(
+        {
+          callerManages: async (id) => {
+            const { data, error } = await caller.rpc("is_company_manager", { p_company_id: id });
+            if (error) throw error;
+            return data === true;
+          },
+          storedCui: async (id) => {
+            const { data, error } = await admin.from("companies").select("cui").eq("id", id).maybeSingle();
+            if (error) throw error;
+            return data?.cui ?? null;
+          },
+        },
+        String(company_id),
+        parsedCui,
+      );
+      if (!decision.allowed) return jsonResponse({ error: decision.error }, decision.status);
+    }
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -101,9 +126,6 @@ Deno.serve(async (req: Request) => {
     };
 
     if (company_id) {
-      const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-        auth: { persistSession: false },
-      });
       const { error } = await admin
         .from("companies")
         .update({

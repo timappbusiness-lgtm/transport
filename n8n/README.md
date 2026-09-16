@@ -173,30 +173,10 @@ the typing.
 
 ## Run log table
 
-Apply once:
-
-```sql
-create table if not exists public.n8n_run_log (
-  id uuid primary key default gen_random_uuid(),
-  ran_at timestamptz not null default now(),
-  workflow text not null,
-  processed integer not null default 0,
-  failed integer not null default 0,
-  details jsonb
-);
-create index if not exists n8n_run_log_workflow_idx on public.n8n_run_log (workflow, ran_at desc);
-alter table public.n8n_run_log enable row level security;
-
-create policy "n8n_run_log_select_admin" on public.n8n_run_log
-  for select to authenticated using (public.is_platform_admin());
-create policy "n8n_run_log_insert_admin" on public.n8n_run_log
-  for insert to authenticated with check (public.is_platform_admin());
-create policy "n8n_run_log_update_admin" on public.n8n_run_log
-  for update to authenticated
-  using (public.is_platform_admin()) with check (public.is_platform_admin());
-create policy "n8n_run_log_delete_admin" on public.n8n_run_log
-  for delete to authenticated using (public.is_platform_admin());
-```
+`n8n_run_log` is created by migration
+`supabase/migrations/20260916130400_n8n_run_log.sql`. Workflows write to it
+with the `supabase-service` credential; staff read it; nobody writes to it
+through the API.
 
 A workflow that stops running is invisible without this. Add one alert on top:
 if `outbox-dispatcher` has not logged a run in 30 minutes, ping `#alerts`.

@@ -10,9 +10,19 @@ runtime.
 Type-check them with the Supabase CLI instead:
 
 ```bash
-supabase functions serve parse-document   # runs them under Deno
-deno check supabase/functions/**/index.ts # if you have Deno installed
+pnpm check:functions   # deno check on every index.ts
+pnpm test:functions    # deno test, e.g. verify-cui-anaf/authorize_test.ts
+supabase functions serve parse-document   # runs one under Deno
 ```
+
+Both scripts go through `npx deno`, so Deno does not need to be installed.
+`DENO_NO_PACKAGE_JSON=1` stops Deno from reading the app's `package.json` and
+`node_modules`, which belong to Next.js.
+
+`verify-cui-anaf` writes with the service role, which bypasses RLS. Before
+saving a snapshot it asks the database, with the caller's JWT, whether the
+caller manages the company, and checks that the CUI is that company's own
+(`authorize.ts`).
 
 Deploy:
 

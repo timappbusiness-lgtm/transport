@@ -1,28 +1,39 @@
 # Database tests
 
-`smoke_test.sql` exercises the rules that are enforced in Postgres rather than
-in the frontend: compliance, suspension, reactivation, publish guards, plan
-quotas and the contact gate. It prints `PASS` per check and aborts on the first
-failure.
+Two suites, both run on a throwaway database:
 
-Run it against a throwaway database after changing any migration.
+| File | Runs as | Covers |
+|---|---|---|
+| `smoke_test.sql` | superuser | The business rules enforced in Postgres: compliance, suspension, reactivation, publish guards, plan quotas, the contact gate, seats. 47 checks; aborts on the first failure. |
+| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log. Each action runs as an API role, the way PostgREST and the edge functions call the database. 116 checks; reports every result, then fails if any did. |
 
-## Against a local Postgres (no Supabase)
+Superuser skips row-level security and function privileges, so a rule that
+only `smoke_test.sql` checks has never been checked against a real caller.
+Add a check to `rls_test.sql` for every policy, grant or protection you add.
 
-`supabase_shim.sql` stubs the parts of Supabase a plain Postgres lacks —
-`auth.users`, `auth.uid()`, `storage.objects`, `storage.foldername()` and a
-`cron.schedule` stand-in. **Never apply the shim to a Supabase project.**
+## Run them
 
 ```bash
-createdb bursa_test
-psql -d bursa_test -f supabase/tests/supabase_shim.sql
-for f in supabase/migrations/*.sql; do psql -d bursa_test -v ON_ERROR_STOP=1 -f "$f"; done
-psql -d bursa_test -f supabase/tests/smoke_test.sql
-dropdb bursa_test
+pnpm db:test
 ```
 
-`pg_cron` is not available in a plain Postgres. Migration 0007 detects that and
-prints a notice instead of failing, so the run completes.
+`scripts/db-test.sh` creates a uniquely named local database, applies
+`supabase_shim.sql`, every migration, then both suites, and always drops the
+database afterwards. It needs a local Postgres 15+ with contrib (`dblink` is
+used by the concurrency test) and `createdb` / `psql` / `dropdb` on PATH;
+connection settings come from the usual `PG*` variables.
+
+| Variable | Effect |
+|---|---|
+| `DB_TEST_MIGRATIONS=9` | Apply only the first N migrations — how the "before" run of `rls_test.sql` is produced. |
+| `DB_TEST_SUITES=rls` | Run only the named suites (`smoke`, `rls`). |
+| `DB_TEST_VERBOSE=1` | Print why every RLS check passed, not only why one failed. |
+
+`supabase_shim.sql` stubs what a plain Postgres lacks — `auth.users`,
+`auth.uid()`, `storage`, a `cron.schedule` stand-in — and reproduces
+Supabase's default grants to `anon`, `authenticated` and `service_role`, so a
+migration that revokes access is tested from the same starting point it meets
+in production. **Never apply the shim to a Supabase project.**
 
 ## Against a Supabase branch
 
@@ -31,12 +42,31 @@ Skip the shim — Supabase already provides those schemas.
 ```bash
 supabase db reset          # applies every migration
 psql "$SUPABASE_DB_URL" -f supabase/tests/smoke_test.sql
+psql "$SUPABASE_DB_URL" -f supabase/tests/rls_test.sql
 ```
 
-Use a preview branch or a scratch project. The script inserts and deletes real
-rows.
+Use a preview branch or a scratch project. Both scripts insert real rows, and
+the concurrency test in `rls_test.sql` commits.
 
-## What it covers
+## rls_test.sql
+
+Each check runs in its own subtransaction and is rolled back. Fixtures are
+created as superuser (there is no other way to write `auth.users`); only the
+action under test runs as an API role. A check is one of:
+
+- **fix** — a hole found in the September 2026 audit. It fails on the first
+  nine migrations and passes after the phase 0 hardening.
+- **guard** — something that must keep working, such as a legitimate write
+  or a policy helper that has to stay executable. It may pass on both.
+
+A missing table, column or function never counts as "blocked", so a check
+cannot pass just because the code it tests does not exist.
+
+The last check opens two real connections with `dblink` and accepts two
+offers on the same listing at the same time: the second must wait on the row
+lock, then fail, leaving one accepted offer and one transport.
+
+## smoke_test.sql
 
 | # | Check |
 |---|---|
@@ -58,5 +88,8 @@ rows.
 | 16 | `v_departures` reports free slots; a platform cannot be overbooked |
 | 17 | Editorial benchmarks are seeded; a corridor under 5 closed deals publishes no median |
 
-Add a check here for every rule you add to a migration. A rule the database
-enforces but nothing tests is a rule that will be removed by accident.
+Two fixture changes came with the phase 0 hardening, no assertion changed:
+the admin is created in `platform_staff` instead of through the removed
+`profiles.is_platform_admin` column, and section 11 puts the test truck back
+on the board before revealing its contact, because contacts are now revealed
+only for active listings.

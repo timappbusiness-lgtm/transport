@@ -62,12 +62,18 @@ Rules in Romanian road transport change; a change should be an `UPDATE`, not
 a deploy. The seeded rows encode the current rules, including the exception
 that vehicles under 3.5 t do not need a `copie conformă`.
 
-### One active document per (target, kind)
+### One approved and one in-review document per (target, kind)
 
-Three partial unique indexes enforce it, and a `BEFORE INSERT` trigger
-(`retire_previous_document`) flips the previous one to `replaced` so a
-re-upload never collides. Without this, "which RCA is the current one" becomes
-a query with an `ORDER BY ... LIMIT 1` in fifteen places.
+Two sets of partial unique indexes (migration `…130100`): at most one
+`approved` row, and at most one row in `uploaded`/`parsing`/`pending`, per
+company, vehicle or driver and kind. A new upload retires only a previous
+upload still in review. The approved document is retired by
+`review_document()` at the moment its replacement is approved.
+
+This is what makes early renewal safe. The first version kept one row across
+approved and pending and retired the approved one on upload, so a carrier who
+renewed an RCA a month early dropped out of compliance until someone reviewed
+the new policy — and was suspended that night if nobody had.
 
 ### Derived compliance flags are cached, not computed per query
 
@@ -96,6 +102,28 @@ a valid ITP cannot reach the board. The frontend check is a UX affordance; the
 database check is the rule.
 
 `guard_listing_quota()` does the same for plan limits.
+
+### Who may write what is decided in Postgres
+
+Phase 0 hardening (migrations `20260916130000`–`130400`), tested by
+`supabase/tests/rls_test.sql` as the API roles rather than as superuser:
+
+- **Staff** is `platform_staff`, written only by `set_platform_staff()`. It is
+  not a column on `profiles`, which users edit.
+- **Protected columns** — verification, suspension, trust, ANAF, compliance
+  flags, document status and dates — are guarded by triggers that refuse
+  writes from `authenticated`/`anon`. SECURITY DEFINER functions and the
+  service role pass.
+- **State changes are RPCs**: `create_company`, `review_document`,
+  `accept_offer`, `withdraw_offer`, `reject_offer`,
+  `confirm_departure_booking`, `mark_conversation_read`. Transports exist only
+  through `accept_offer`.
+- **`audit_log`** is append-only, even for the service role; only
+  `purge_audit_log()` deletes.
+- **Function privileges start from nothing.** Every function is revoked from
+  the API roles and granted back explicitly, and default privileges no
+  longer grant EXECUTE to new functions. A new function has to be granted in
+  the migration that creates it.
 
 ### Money never trusts the client
 

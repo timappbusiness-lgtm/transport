@@ -15,7 +15,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:test": "bash scripts/db-test.sh",
+    "check:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno check --node-modules-dir=none supabase/functions/*/index.ts",
+    "test:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno test --no-prompt --node-modules-dir=none supabase/functions"
   },
   "dependencies": {
     "clsx": "^2.1.1",
