@@ -5,7 +5,7 @@ Two suites, both run on a throwaway database:
 | File | Runs as | Covers |
 |---|---|---|
 | `smoke_test.sql` | superuser | The business rules enforced in Postgres: compliance, suspension, reactivation, publish guards, plan quotas, the contact gate, seats. 47 checks; aborts on the first failure. |
-| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log. Each action runs as an API role, the way PostgREST and the edge functions call the database. 116 checks; reports every result, then fails if any did. |
+| `rls_test.sql` | `authenticated`, `anon`, `service_role` | Who may do what: RLS policies, protection triggers, RPC authorisation, function privileges, views, storage, the audit log, membership invitations. Each action runs as an API role, the way PostgREST and the edge functions call the database. 135 checks; reports every result, then fails if any did. |
 
 Superuser skips row-level security and function privileges, so a rule that
 only `smoke_test.sql` checks has never been checked against a real caller.
@@ -54,8 +54,9 @@ Each check runs in its own subtransaction and is rolled back. Fixtures are
 created as superuser (there is no other way to write `auth.users`); only the
 action under test runs as an API role. A check is one of:
 
-- **fix** — a hole found in the September 2026 audit. It fails on the first
-  nine migrations and passes after the phase 0 hardening.
+- **fix** — a hole found in the September 2026 audit, or a rule added since
+  (`INV`, invitations). It fails on the schema before the migration that
+  brings the rule, and passes after it.
 - **guard** — something that must keep working, such as a legitimate write
   or a policy helper that has to stay executable. It may pass on both.
 

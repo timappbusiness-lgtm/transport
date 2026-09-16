@@ -120,6 +120,10 @@ Phase 0 hardening (migrations `20260916130000`–`130400`), tested by
   through `accept_offer`.
 - **`audit_log`** is append-only, even for the service role; only
   `purge_audit_log()` deletes.
+- **Membership is by invitation** (`company_invitations`): nobody is added
+  to a company without accepting, and the owner role moves only through
+  `transfer_company_ownership()`. One owner per company, enforced by a partial
+  unique index.
 - **Function privileges start from nothing.** Every function is revoked from
   the API roles and granted back explicitly, and default privileges no
   longer grant EXECUTE to new functions. A new function has to be granted in
