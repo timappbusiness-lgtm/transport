@@ -211,7 +211,15 @@ create or replace function public.create_cargo_request(
   p_contact_phone text default null,
   p_contact_email text default null,
   p_photo_paths text[] default '{}',
-  p_publish boolean default true
+  p_publish boolean default true,
+  -- Looked up from the city list on the server, never taken from the form.
+  -- They feed the straight-line distance a card shows, and a number the
+  -- browser chooses is a number the browser can use to make a request look
+  -- nearer than it is.
+  p_from_lat numeric default null,
+  p_from_lng numeric default null,
+  p_to_lat numeric default null,
+  p_to_lng numeric default null
 )
 returns table (request_id uuid, request_status public.listing_status, publish_error text)
 language plpgsql
@@ -296,7 +304,9 @@ begin
     company_id, posted_by, board, listing_kind,
     title, description, service_type,
     loading_country, loading_county, loading_city, loading_from, loading_to,
+    loading_lat, loading_lng,
     unloading_country, unloading_county, unloading_city,
+    unloading_lat, unloading_lng,
     weight_kg, photo_paths, status
   ) values (
     p_company_id, v_user, v_board, 'vehicul',
@@ -304,8 +314,10 @@ begin
     nullif(trim(p_description), ''), p_service_type,
     coalesce(nullif(trim(p_from_country), ''), 'RO'), nullif(trim(p_from_county), ''),
     trim(p_from_city), p_loading_from, p_loading_to,
+    p_from_lat, p_from_lng,
     coalesce(nullif(trim(p_to_country), ''), 'RO'), nullif(trim(p_to_county), ''),
     trim(p_to_city),
+    p_to_lat, p_to_lng,
     p_weight_kg, coalesce(p_photo_paths, '{}'), 'draft'
   )
   returning id into v_id;
@@ -526,7 +538,7 @@ grant execute on function public.cargo_request_title(text, text, integer, text, 
 grant execute on function public.create_cargo_request(
   text, text, date, cargo_category, text, text, integer, boolean, service_type, uuid,
   text, text, text, text, date, boolean, boolean, boolean, boolean, text, integer,
-  text, text, text, text, text[], boolean
+  text, text, text, text, text[], boolean, numeric, numeric, numeric, numeric
 ) to authenticated;
 grant execute on function public.publish_cargo_request(uuid) to authenticated;
 grant execute on function public.cancel_cargo_request(uuid, text) to authenticated;

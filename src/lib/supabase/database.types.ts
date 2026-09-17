@@ -3641,6 +3641,8 @@ export type Database = {
           p_from_city: string
           p_from_country?: string
           p_from_county?: string
+          p_from_lat?: number
+          p_from_lng?: number
           p_has_keys?: boolean
           p_is_damaged?: boolean
           p_is_running: boolean
@@ -3655,6 +3657,8 @@ export type Database = {
           p_to_city: string
           p_to_country?: string
           p_to_county?: string
+          p_to_lat?: number
+          p_to_lng?: number
           p_weight_kg?: number
           p_wheels_turn?: boolean
           p_year: number

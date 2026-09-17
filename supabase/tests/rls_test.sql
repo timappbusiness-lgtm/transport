@@ -3274,6 +3274,24 @@ select pg_temp.check('REQ  a car that does not start is marked for a winch', 'fi
                  join public.cargo_listings l on l.id = d.cargo_listing_id
                  where l.loading_city = 'Klagenfurt'$v$);
 
+-- Coordinates come from the server's city list, so the straight-line
+-- distance on a card is computed from something the browser did not choose.
+select pg_temp.check('REQ  coordinates put a distance on the card', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true,
+       p_from_lat => 46.6247, p_from_lng => 14.3055,
+       p_to_lat => 46.7712, p_to_lng => 23.6236)$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select v.estimated_km between 680 and 720
+                 from public.v_requests_public v
+                 join public.cargo_listings l on l.id = v.id
+                 where l.loading_city = 'Klagenfurt'$v$);
+
 select pg_temp.check('REQ  the board carries what a carrier filters on', 'guard',
   null, 'anon',
   $a$select board = 'retur' and loading_from is not null and needs_winch = false

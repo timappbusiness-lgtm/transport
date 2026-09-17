@@ -1,4 +1,8 @@
+import type { Database } from './supabase/database.types';
 import type { CargoCategory, ServiceType } from './departures';
+
+export type ListingBoard = Database['public']['Enums']['listing_board'];
+export type ListingStatus = Database['public']['Enums']['listing_status'];
 
 /**
  * Reading a transport request the way the homepage shows it.
@@ -11,7 +15,14 @@ import type { CargoCategory, ServiceType } from './departures';
  * Free of React and of SQL, so every rule below is testable without either.
  */
 
-/** One row of `v_requests_public`. */
+/**
+ * One row of `v_requests_public`.
+ *
+ * The first thirteen columns are what the homepage feed has always shown.
+ * The rest were appended for the board in phase 2 — what a carrier filters
+ * on, and nothing more. There is still no price, no note, no photograph and
+ * nobody's name here; those need a session, and the contact needs a plan.
+ */
 export interface PublicRequest {
   id: string;
   category: CargoCategory;
@@ -26,6 +37,16 @@ export interface PublicRequest {
   to_country: string;
   estimated_km: number | null;
   published_at: string;
+  /** `curse` was posted by a firm, `retur` by a private person. */
+  board: ListingBoard;
+  loading_from: string;
+  loading_to: string | null;
+  weight_kg: number | null;
+  /** Derived in the database from the condition flags, never entered. */
+  needs_winch: boolean;
+  /** How many photographs the request carries, not the photographs. */
+  photo_count: number;
+  is_domestic: boolean;
 }
 
 export interface ActivityStats {
