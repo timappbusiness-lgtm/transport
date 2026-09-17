@@ -82,7 +82,9 @@ test.describe('prices, unpublished', () => {
 
 /**
  * The handoff to the request form, which works without a database because
- * everything it carries is in the URL.
+ * everything it carries is in the URL. The form used to be a placeholder
+ * echoing the choices back in a card; now it is the form, so the check is
+ * that each choice lands in the field it belongs to.
  */
 test.describe('arriving at the request form from the calculator', () => {
   const LINK =
@@ -90,22 +92,42 @@ test.describe('arriving at the request form from the calculator', () => {
 
   test('keeps every choice', async ({ page }) => {
     await page.goto(LINK);
-    const card = page.getByText('Datele din calculator').locator('..');
-    await expect(card).toContainText('München');
-    await expect(card).toContainText('Cluj-Napoca');
-    await expect(card).toContainText('SUV');
-    await expect(card).toContainText('nu pornește');
-    await expect(card).toContainText('Expres');
+
+    await expect(page.getByLabel('Oraș de plecare')).toHaveValue('München');
+    await expect(page.getByLabel('Țara de plecare')).toHaveValue('DE');
+    await expect(page.getByLabel('Oraș de destinație')).toHaveValue('Cluj-Napoca');
+    await expect(page.getByLabel('Țara de destinație')).toHaveValue('RO');
+
+    // The calculator does not ask for dates, so the route step needs one
+    // before it will let go.
+    await page.getByLabel('Poate fi încărcat de la').fill('2030-06-01');
+    await page.getByRole('button', { name: 'Continuă' }).click();
+
+    // SUV is a pricing class; the board files it under autoturism.
+    await expect(page.getByLabel('Categoria')).toHaveValue('autoturism');
+    await page.getByLabel('Marca').fill('Volkswagen');
+    await page.getByLabel('Modelul').fill('Touareg');
+    await page.getByLabel('Anul fabricației').fill('2018');
+    await page.getByRole('button', { name: 'Continuă' }).click();
+
+    // "Nu pornește" in the calculator has to mean the same three things
+    // here, or the carrier is told the opposite of what was priced.
+    await expect(page.getByLabel('Pornește și se deplasează')).not.toBeChecked();
+    await expect(page.getByLabel('Roțile se învârt')).not.toBeChecked();
+    await expect(page.getByLabel('Direcția funcționează')).not.toBeChecked();
+    await expect(page.getByText('Transportatorul vine pregătit cu troliu.')).toBeVisible();
+    await expect(page.getByRole('radio', { name: 'Expres' })).toBeChecked();
   });
 
   test('drops a city it does not know rather than echoing it back', async ({ page }) => {
     await page.goto('/cerere/noua?plecare=Atlantida%7CXX&categorie=suv');
-    await expect(page.getByText('Datele din calculator')).toBeVisible();
+    await expect(page.getByLabel('Oraș de plecare')).toHaveValue('');
     await expect(page.locator('body')).not.toContainText('Atlantida');
   });
 
-  test('says nothing when nobody came from the calculator', async ({ page }) => {
+  test('starts empty when nobody came from the calculator', async ({ page }) => {
     await page.goto('/cerere/noua');
-    await expect(page.getByText('Datele din calculator')).toHaveCount(0);
+    await expect(page.getByLabel('Oraș de plecare')).toHaveValue('');
+    await expect(page.getByLabel('Oraș de destinație')).toHaveValue('');
   });
 });

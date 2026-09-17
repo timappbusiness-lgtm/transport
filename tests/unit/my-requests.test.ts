@@ -80,11 +80,13 @@ describe('what a client can do next', () => {
     }
   });
 
-  it('leaves a suspended request alone except to withdraw the firm out of it', () => {
-    // Suspension is the compliance sweep's doing and only it undoes it, so
-    // the one thing offered is to take the request down.
+  it('leaves a suspended request alone entirely', () => {
+    // Suspension is the compliance sweep's doing and the sweep undoes it
+    // when the papers are back in order. Nothing the client presses here
+    // would change that, so nothing is offered.
     expect(canPublish('suspended')).toBe(false);
     expect(canReopen('suspended')).toBe(false);
+    expect(canCancel('suspended')).toBe(false);
   });
 });
 
