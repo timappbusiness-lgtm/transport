@@ -1,10 +1,12 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager } from '@/lib/auth/account';
+import { DIRECTORY_TAG } from '@/lib/directory-source';
+import { MAX_PUBLIC_DESCRIPTION } from '@/lib/directory';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import { accountCopy } from '@/content/account';
@@ -551,4 +553,86 @@ export async function submitCompanyForReviewAction(
   revalidatePath(ROUTES.accountCompany);
   revalidatePath(ROUTES.account);
   return { notice: accountCopy.review.sent };
+}
+
+// ---------------------------------------------------------------------
+// The public profile
+// ---------------------------------------------------------------------
+
+/**
+ * Opting the firm into the public directory, and what its card says.
+ *
+ * These three columns are the ones `guard_company_write` deliberately
+ * leaves writable after verification: a firm may change its mind about
+ * appearing, and may rewrite its own description, without going back
+ * through review. Everything else about the row stays locked, and the
+ * length limit below is the same one the check constraint enforces — this
+ * copy of it only exists so the user gets a sentence rather than a 23514.
+ */
+export async function updatePublicProfileAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  const description = text(formData, 'publicDescription').trim();
+  if (description.length > MAX_PUBLIC_DESCRIPTION) {
+    return {
+      fieldErrors: {
+        publicDescription: `Descrierea poate avea cel mult ${MAX_PUBLIC_DESCRIPTION} de caractere.`,
+      },
+      values: { publicDescription: description },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('companies')
+    .update({
+      public_profile_enabled: formData.get('publicProfileEnabled') === 'on',
+      public_description: description === '' ? null : description,
+    })
+    .eq('id', company.id);
+
+  if (error) return { error: toAppError(error, 'cont.updatePublicProfile').message };
+
+  revalidatePath(ROUTES.accountCompany);
+  updateTag(DIRECTORY_TAG);
+  return { notice: accountCopy.publicProfile.saved };
+}
+
+/**
+ * The logo, after the browser has already put the file in storage.
+ *
+ * The upload itself goes straight from the browser into the company's own
+ * folder, which is what the bucket policies allow; this only records where
+ * it landed. `null` clears it, and the object is left in place — a stray
+ * 200 KB file is cheaper than a delete that races a page still rendering
+ * the old path.
+ */
+export async function setCompanyLogoAction(path: string | null): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  // The path is built in the browser, so it is checked rather than trusted:
+  // anything outside this company's folder is refused here, and would be
+  // refused by the storage policy as well.
+  if (path !== null && !path.startsWith(`${company.id}/`)) {
+    return { error: 'Calea fișierului nu aparține firmei tale.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('companies')
+    .update({ logo_path: path })
+    .eq('id', company.id);
+
+  if (error) return { error: toAppError(error, 'cont.setCompanyLogo').message };
+
+  revalidatePath(ROUTES.accountCompany);
+  updateTag(DIRECTORY_TAG);
+  return { notice: accountCopy.publicProfile.saved };
 }

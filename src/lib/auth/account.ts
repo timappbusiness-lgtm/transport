@@ -51,6 +51,12 @@ export interface Company {
   city: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  /** Whether the firm asked to appear in the public directory. */
+  public_profile_enabled: boolean;
+  /** Set by trigger from the legal name and city; never editable. */
+  slug: string | null;
+  public_description: string | null;
+  logo_path: string | null;
 }
 
 export interface Membership {
@@ -72,7 +78,7 @@ export interface AccountContext {
 export const ACTIVE_COMPANY_COOKIE = 'coridor_company';
 
 const COMPANY_COLUMNS =
-  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, contact_email, contact_phone';
+  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path';
 
 /**
  * Reads the signed-in user, their profile and their companies.

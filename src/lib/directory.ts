@@ -64,6 +64,23 @@ export interface DirectoryThresholds {
   trialDays: number;
 }
 
+/** What the database's check constraint allows, mirrored for the form. */
+export const MAX_PUBLIC_DESCRIPTION = 300;
+
+/** What the `company-logos` bucket accepts. The bucket enforces both. */
+export const ACCEPTED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+export const MAX_LOGO_BYTES = 1024 * 1024;
+
+/**
+ * Where a logo lives: the company's own folder, which is what the storage
+ * policies check. One file per company, replaced rather than accumulated —
+ * a logo has no history worth keeping.
+ */
+export function logoStoragePath(companyId: string, mime: string): string {
+  const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+  return `${companyId}/logo.${ext}`;
+}
+
 /** Twelve on the homepage, a full page of twenty-four in the directory. */
 export const HOME_GRID_SIZE = 12;
 export const DIRECTORY_PAGE_SIZE = 24;

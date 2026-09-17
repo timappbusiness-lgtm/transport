@@ -114,6 +114,29 @@ export const accountCopy = {
     lockedHint:
       'Datele de identificare nu mai pot fi modificate după verificare. Scrie-ne dacă s-a schimbat ceva.',
   },
+  /** Opting the firm into the public directory, and what that shows. */
+  publicProfile: {
+    title: 'Profil public',
+    lede:
+      'Poți alege ca firma să apară în lista publică de transportatori. Arătăm denumirea, localitatea, starea documentelor și traseele publicate — niciodată telefonul, adresa sau fișierele.',
+    enable: 'Afișează firma în lista publică de transportatori verificați',
+    enableHint:
+      'Profilul apare după ce firma este verificată. Poți ieși din listă oricând, iar profilul dispare imediat.',
+    description: 'Descriere publică',
+    descriptionHint: 'Maximum 300 de caractere. Ce transportați și pe ce rute.',
+    logo: 'Logo',
+    logoHint: 'PNG, JPG sau WEBP, cel mult 1 MB. Se afișează într-un cerc, deci alege o imagine pătrată.',
+    logoUpload: 'Încarcă logo',
+    logoRemove: 'Șterge logo',
+    logoAlt: 'Logoul firmei',
+    saved: 'Profilul public a fost salvat.',
+    pending: 'Firma nu este încă verificată, așa că profilul nu apare deocamdată în listă.',
+    suspended: 'Firma este suspendată, așa că profilul nu apare în listă.',
+    live: 'Vezi profilul public',
+    hiddenByStaff:
+      'Profilul a fost scos din listă de echipa platformei. Scrie-ne dacă vrei să revii în listă.',
+  },
+
   documents: {
     title: 'Documentele firmei',
     lede: 'Un document nou nu îl înlocuiește pe cel valabil până când nu este aprobat.',
