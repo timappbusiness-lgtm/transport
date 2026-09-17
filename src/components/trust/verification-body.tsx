@@ -4,6 +4,7 @@ import { SUPPORT_EMAIL } from '@/config/brand';
 import { verificationCopy } from '@/content/siguranta';
 import {
   appliesTo,
+  exemptVehicles,
   expiryEffect,
   graceLabel,
   remindersLabel,
@@ -131,6 +132,11 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
                 </th>
                 <td className="border-b border-border px-5 py-3.5 align-top text-[0.875rem]">
                   {scopeText(doc)}
+                  {exemptionText(doc) ? (
+                    <span className="mt-1 block text-[0.8125rem] text-muted">
+                      {exemptionText(doc)}
+                    </span>
+                  ) : null}
                 </td>
                 <td className="border-b border-border px-5 py-3.5 align-top text-[0.875rem] text-muted">
                   {expiryText(doc)}
@@ -146,6 +152,9 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
           <li key={`${doc.scope}-${doc.kind}`} className="rounded-card border border-border bg-surface p-4">
             <p className="font-medium">{doc.label_ro}</p>
             <p className="mt-1 text-[0.8125rem] text-muted">{scopeText(doc)}</p>
+            {exemptionText(doc) ? (
+              <p className="mt-1 text-[0.8125rem] text-muted">{exemptionText(doc)}</p>
+            ) : null}
             <p className="mt-2 text-[0.8125rem]">{expiryText(doc)}</p>
             {doc.has_expiry && remindersLabel(doc.reminder_days) ? (
               <p className="mt-1 text-[0.8125rem] text-muted">
@@ -165,6 +174,12 @@ function scopeText(doc: PublicRequirement): string {
   if (only === 'transport') return `${base} · ${c.documents.onlyTransport}`;
   if (only === 'forwarder') return `${base} · ${c.documents.onlyForwarder}`;
   return base;
+}
+
+/** The exemption, where there is one. Empty for a rule that has none. */
+function exemptionText(doc: PublicRequirement): string | null {
+  const vehicles = exemptVehicles(doc);
+  return vehicles === null ? null : c.documents.except(vehicles);
 }
 
 function expiryText(doc: PublicRequirement): string {

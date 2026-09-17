@@ -8,6 +8,8 @@ export const ROUTES = {
   routes: '/trasee',
   requests: '/cereri',
   verification: '/verificare',
+  companies: '/firme',
+  faq: '/intrebari-frecvente',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
@@ -43,6 +45,9 @@ export const ROUTES = {
   admin: '/admin',
   adminDocuments: '/admin/documente',
   adminActivity: '/admin/activitate',
+  adminSettings: '/admin/setari',
+  adminPlans: '/admin/planuri',
+  adminCompanies: '/admin/firme',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -64,6 +69,11 @@ export function departureRoute(id: string): string {
 /** One transport request. */
 export function requestRoute(id: string): string {
   return `${ROUTES.requests}/${id}`;
+}
+
+/** One company's public profile. */
+export function companyRoute(slug: string): string {
+  return `${ROUTES.companies}/${slug}`;
 }
 
 

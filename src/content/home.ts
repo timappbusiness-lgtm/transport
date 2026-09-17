@@ -132,28 +132,6 @@ export const homeCopy = {
     stepLabel: 'Pasul',
   },
 
-  carriers: {
-    eyebrow: 'Pentru transportatori',
-    strong: 'Ai platformă?',
-    soft: 'Nu te mai întoarce gol.',
-    lede:
-      'Publici traseele de tur și de retur, vezi cererile de pe traseul tău și completezi locurile libere înainte să pleci.',
-    plan: {
-      name: 'Plan transportator',
-      price: '149 lei',
-      period: 'pe lună',
-      features: [
-        'Publicare nelimitată pe tur și pe retur',
-        'Acces la cererile compatibile cu traseele tale',
-        'Alerte pe e-mail pentru cereri de pe traseele tale',
-        'Evidența documentelor firmei și ale vehiculelor',
-        'Notificare înainte să expire un document',
-      ],
-      cta: 'Înscrie-ți firma',
-      note: 'Perioada gratuită începe după validarea firmei. Fără card la înscriere.',
-    },
-  },
-
   forwarders: {
     eyebrow: 'Pentru case de expediții',
     strong: 'Publici cursele o dată.',

@@ -1,4 +1,5 @@
 import type { Database } from '@/lib/supabase/database.types';
+import { VEHICLE_TYPE_LABELS } from './vehicles';
 import { pluralRo } from './requests';
 
 /**
@@ -15,6 +16,7 @@ import { pluralRo } from './requests';
 export type DocumentScope = Database['public']['Enums']['document_scope'];
 export type DocumentKind = Database['public']['Enums']['document_kind'];
 export type CompanyType = Database['public']['Enums']['company_type'];
+export type VehicleType = Database['public']['Enums']['vehicle_type'];
 
 /** One row of `v_document_requirements_public`. */
 export interface PublicRequirement {
@@ -22,7 +24,8 @@ export interface PublicRequirement {
   kind: DocumentKind;
   label_ro: string;
   for_company_types: CompanyType[] | null;
-  for_vehicle_types: string[] | null;
+  for_vehicle_types: VehicleType[] | null;
+  excluded_vehicle_types: VehicleType[] | null;
   is_blocking: boolean;
   has_expiry: boolean;
   grace_days: number;
@@ -90,6 +93,23 @@ export function appliesTo(requirement: PublicRequirement): 'transport' | 'forwar
   if (hasTransport && !hasForwarder) return 'transport';
   if (hasForwarder && !hasTransport) return 'forwarder';
   return null;
+}
+
+/**
+ * The vehicles a rule leaves out, named.
+ *
+ * copie conformă is stored as an exclusion — every vehicle type needs it
+ * except a van under 3,5 t — so a page that prints the rule without the
+ * exemption tells a van owner to obtain a document they do not need. Null
+ * when the rule applies to everything, in which case nothing is said.
+ */
+export function exemptVehicles(requirement: PublicRequirement): string | null {
+  const excluded = requirement.excluded_vehicle_types;
+  if (!excluded || excluded.length === 0) return null;
+  const labels = excluded.map((type) => VEHICLE_TYPE_LABELS[type] ?? type);
+  if (labels.length === 1) return labels[0] ?? null;
+  const last = labels[labels.length - 1];
+  return `${labels.slice(0, -1).join(', ')} și ${last}`;
 }
 
 /** "30, 14, 7 și o zi" — the reminder schedule, read from the row. */

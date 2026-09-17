@@ -139,6 +139,7 @@ export const verificationCopy = {
     scopeVehicle: 'Vehicul',
     onlyTransport: 'firme de transport',
     onlyForwarder: 'case de expediții',
+    except: (vehicles: string) => `Nu se cere pentru: ${vehicles.toLowerCase()}.`,
     noExpiry: 'Nu are termen de valabilitate.',
     blocksCompany: 'Firma nu mai poate trimite oferte.',
     blocksCompanyGrace: (days: string) => `Firma nu mai poate trimite oferte, după ${days} de la expirare.`,

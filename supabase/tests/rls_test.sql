@@ -1861,8 +1861,8 @@ select pg_temp.check('CRQ  the RPC refuses a feed threshold of zero', 'fix',
 select pg_temp.check('CTR  the requirements view carries only what the page prints', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'for_company_types','for_vehicle_types','grace_days','has_expiry',
-       'is_blocking','kind','label_ro','reminder_days','scope'
+       'excluded_vehicle_types','for_company_types','for_vehicle_types','grace_days',
+       'has_expiry','is_blocking','kind','label_ro','reminder_days','scope'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_document_requirements_public'$a$, 'true');
@@ -2553,6 +2553,61 @@ select pg_temp.check('DIR  a company that is not listed shows no documents eithe
       update public.companies set public_profile_enabled = false
       where id = 'fc000000-0000-0000-0000-000000000001';
     end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The exemption, in public
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  the public rules carry the exemption, not just the rule', 'fix',
+  null, 'anon',
+  $a$select excluded_vehicle_types = '{autoutilitara_3_5t}'::public.vehicle_type[]
+     from public.v_document_requirements_public where kind = 'copie_conforma'$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The routes on a profile
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a listed company shows the routes it published', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_public_company_routes
+                    where slug = (select slug from zz_base))$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set public_profile_enabled = true, verification_status = 'verified',
+          is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+    end $d$$s$);
+
+select pg_temp.check('DIR  opting out takes the routes with the profile', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_company_routes
+                        where slug = (select slug from zz_base))$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+      update public.companies set public_profile_enabled = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- The board stays anonymous. A company column on it would undo the reason
+-- v_public_company_routes exists at all.
+select pg_temp.check('DIR  the anonymous board is still anonymous', 'guard',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'v_departures_public'
+         and column_name in ('company_id', 'slug', 'company_name'))$a$, 'true');
+
+select pg_temp.check('DIR  a route inside one country is marked as such', 'fix',
+  null, 'anon',
+  $a$select bool_and(is_domestic = (from_country = to_country))
+     from public.v_departures_public$a$, 'true');
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time

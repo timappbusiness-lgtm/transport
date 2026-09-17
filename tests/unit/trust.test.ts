@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   appliesTo,
+  exemptVehicles,
   expiryEffect,
   formatCompanies,
   graceLabel,
@@ -23,6 +24,7 @@ function requirement(over: Partial<PublicRequirement> = {}): PublicRequirement {
     label_ro: 'Licență comunitară',
     for_company_types: null,
     for_vehicle_types: null,
+    excluded_vehicle_types: null,
     is_blocking: true,
     has_expiry: true,
     grace_days: 0,
@@ -184,5 +186,24 @@ describe('whether the homepage states a number of carriers', () => {
     expect(formatCompanies(1)).toBe('o firmă');
     expect(formatCompanies(4)).toBe('4 firme');
     expect(formatCompanies(24)).toBe('24 de firme');
+  });
+});
+
+describe('the exemption a rule carries', () => {
+  it('names the vehicles the rule leaves out', () => {
+    expect(
+      exemptVehicles(requirement({ kind: 'copie_conforma', excluded_vehicle_types: ['autoutilitara_3_5t'] })),
+    ).toBe('Autoutilitară până în 3,5 t');
+  });
+
+  it('joins several of them', () => {
+    expect(
+      exemptVehicles(requirement({ excluded_vehicle_types: ['autoutilitara_3_5t', 'duba'] })),
+    ).toBe('Autoutilitară până în 3,5 t și Dubă');
+  });
+
+  it('says nothing about a rule that applies to everything', () => {
+    expect(exemptVehicles(requirement())).toBeNull();
+    expect(exemptVehicles(requirement({ excluded_vehicle_types: [] }))).toBeNull();
   });
 });

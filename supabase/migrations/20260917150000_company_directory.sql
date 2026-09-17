@@ -526,6 +526,111 @@ create policy "company_logos_delete_own" on storage.objects
   );
 
 -- ---------------------------------------------------------------------
+-- The exemption a rule carries, in public
+--
+-- Migration 20260917140000 made copie conformă an exclusion rather than an
+-- inclusion, so a vehicle type added later keeps the requirement instead of
+-- silently escaping it. The public view never learned about it, which left
+-- /verificare stating the rule without the exemption — true of most
+-- vehicles and wrong for a van under 3,5 t. Adding the column at the end is
+-- what `create or replace view` allows.
+-- ---------------------------------------------------------------------
+create or replace view public.v_document_requirements_public as
+select
+  r.scope,
+  r.kind,
+  r.label_ro,
+  r.for_company_types,
+  r.for_vehicle_types,
+  r.is_blocking,
+  r.has_expiry,
+  r.grace_days,
+  r.reminder_days,
+  r.excluded_vehicle_types
+from public.document_requirements r
+where r.is_active;
+
+-- ---------------------------------------------------------------------
+-- One definition of "stays inside one country"
+--
+-- The board filters by it and a profile states it, so it is computed once,
+-- here, rather than twice in TypeScript where the two could drift. Added at
+-- the end of the column list, which is what `create or replace view`
+-- allows; nothing else about the board changes.
+-- ---------------------------------------------------------------------
+create or replace view public.v_departures_public as
+select
+  t.id as truck_listing_id,
+  t.direction,
+  t.from_country,
+  t.from_county,
+  t.from_city,
+  t.to_country,
+  t.to_county,
+  t.to_city,
+  t.waypoints,
+  t.available_from,
+  t.available_to,
+  t.service_types,
+  t.accepted_vehicle_types,
+  t.platform_slots_total,
+  coalesce(b.taken, 0)::integer as slots_taken,
+  greatest(coalesce(t.platform_slots_total, 0) - coalesce(b.taken, 0), 0)::integer as slots_free,
+  t.price_indicative,
+  t.currency,
+  t.published_at,
+  t.from_country = t.to_country as is_domestic
+from public.truck_listings t
+left join lateral (
+  select sum(bb.slots) as taken
+  from public.departure_bookings bb
+  where bb.truck_listing_id = t.id
+    and (bb.status = 'confirmed' or (bb.status = 'reserved' and bb.expires_at > now()))
+) b on true
+where t.status = 'active'
+  and coalesce(t.available_to, t.available_from) >= current_date;
+
+-- ---------------------------------------------------------------------
+-- The routes a listed company publishes
+--
+-- The board itself stays anonymous: v_departures_public carries no company,
+-- and that is deliberate. This view is the one place the two are joined,
+-- and only for a company that asked to appear in the directory — the same
+-- three conditions as the directory, so opting out removes the routes from
+-- the profile along with the profile.
+--
+-- Nothing here is new information: every column is already on the public
+-- board. What it adds is the association, which is exactly what a company
+-- opts into when it publishes a profile.
+-- ---------------------------------------------------------------------
+create view public.v_public_company_routes as
+select
+  c.slug,
+  d.truck_listing_id,
+  d.direction,
+  d.from_country,
+  d.from_city,
+  d.to_country,
+  d.to_city,
+  d.available_from,
+  d.available_to,
+  d.slots_free,
+  d.is_domestic
+from public.companies c
+join public.truck_listings t on t.company_id = c.id
+join public.v_departures_public d on d.truck_listing_id = t.id
+where c.public_profile_enabled
+  and c.verification_status = 'verified'
+  and not c.is_suspended
+  and c.slug is not null;
+
+comment on view public.v_public_company_routes is
+  'Active departures of a company that opted into the public directory. The anonymous board stays anonymous: this is the only join between the two, and it disappears the moment the company opts out.';
+
+revoke all on public.v_public_company_routes from public;
+grant select on public.v_public_company_routes to anon, authenticated;
+
+-- ---------------------------------------------------------------------
 -- Grants
 -- ---------------------------------------------------------------------
 grant execute on function public.slugify(text) to authenticated;

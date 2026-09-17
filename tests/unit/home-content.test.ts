@@ -74,20 +74,6 @@ describe('homepage copy rules', () => {
     expect(codes).not.toContain('RO');
   });
 
-  it('matches the carrier plan in docs/05-pricing.md', () => {
-    expect(homeCopy.carriers.plan.price).toBe('149 lei');
-  });
-
-  it('promises the trial only after verification', () => {
-    expect(homeCopy.carriers.plan.note).toMatch(/după validarea firmei/i);
-  });
-
-  it('offers e-mail alerts, not WhatsApp, at this stage', () => {
-    const features = homeCopy.carriers.plan.features.join(' ');
-    expect(features).toMatch(/e-mail/i);
-    expect(features).not.toMatch(/whatsapp/i);
-  });
-
   it('writes Romanian with diacritics rather than their ASCII stand-ins', () => {
     // A page that says "firma" where it means "firmă" reads as machine
     // output. Spot-check the words most often stripped.
@@ -106,7 +92,6 @@ describe('homepage copy rules', () => {
       `${homeCopy.hero.strong} ${homeCopy.hero.soft}`,
       `${homeCopy.panel.strong} ${homeCopy.panel.soft}`,
       `${homeCopy.comparison.strong} ${homeCopy.comparison.soft}`,
-      `${homeCopy.carriers.strong} ${homeCopy.carriers.soft}`,
       `${homeCopy.forwarders.strong} ${homeCopy.forwarders.soft}`,
       `${homeCopy.prices.strong} ${homeCopy.prices.soft}`,
       `${homeCopy.finalCta.strong} ${homeCopy.finalCta.soft}`,
