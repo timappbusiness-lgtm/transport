@@ -3444,18 +3444,25 @@ export type Database = {
       }
       v_requests_public: {
         Row: {
+          board: Database["public"]["Enums"]["listing_board"] | null
           category: Database["public"]["Enums"]["cargo_category"] | null
           estimated_km: number | null
           from_city: string | null
           from_country: string | null
           id: string | null
+          is_domestic: boolean | null
           is_running: boolean | null
+          loading_from: string | null
+          loading_to: string | null
           make: string | null
           model: string | null
+          needs_winch: boolean | null
+          photo_count: number | null
           published_at: string | null
           service_type: Database["public"]["Enums"]["service_type"] | null
           to_city: string | null
           to_country: string | null
+          weight_kg: number | null
           year: number | null
         }
         Relationships: []
@@ -3565,6 +3572,20 @@ export type Database = {
         Args: { p_listing_id: string }
         Returns: boolean
       }
+      cancel_cargo_request: {
+        Args: { p_id: string; p_reason?: string }
+        Returns: Database["public"]["Enums"]["listing_status"]
+      }
+      cargo_request_title: {
+        Args: {
+          p_from_city: string
+          p_make: string
+          p_model: string
+          p_to_city: string
+          p_year: number
+        }
+        Returns: string
+      }
       company_can_act: {
         Args: { p_company_id: string }
         Returns: boolean
@@ -3607,6 +3628,42 @@ export type Database = {
           p_user: string
         }
         Returns: string
+      }
+      create_cargo_request: {
+        Args: {
+          p_category: Database["public"]["Enums"]["cargo_category"]
+          p_company_id?: string
+          p_contact_email?: string
+          p_contact_name?: string
+          p_contact_phone?: string
+          p_damage_notes?: string
+          p_description?: string
+          p_from_city: string
+          p_from_country?: string
+          p_from_county?: string
+          p_has_keys?: boolean
+          p_is_damaged?: boolean
+          p_is_running: boolean
+          p_loading_from: string
+          p_loading_to?: string
+          p_make: string
+          p_model: string
+          p_photo_paths?: string[]
+          p_publish?: boolean
+          p_service_type?: Database["public"]["Enums"]["service_type"]
+          p_steering_works?: boolean
+          p_to_city: string
+          p_to_country?: string
+          p_to_county?: string
+          p_weight_kg?: number
+          p_wheels_turn?: boolean
+          p_year: number
+        }
+        Returns: {
+          publish_error: string
+          request_id: string
+          request_status: Database["public"]["Enums"]["listing_status"]
+        }[]
       }
       create_company: {
         Args: {
@@ -3884,6 +3941,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      publish_cargo_request: {
+        Args: { p_id: string }
+        Returns: Database["public"]["Enums"]["listing_status"]
+      }
       purge_audit_log: {
         Args: { p_older_than: unknown }
         Returns: number
@@ -3929,6 +3990,10 @@ export type Database = {
           status: Database["public"]["Enums"]["subscription_request_status"]
           updated_at: string
         }
+      }
+      reopen_cargo_request: {
+        Args: { p_id: string; p_loading_from: string; p_loading_to?: string }
+        Returns: Database["public"]["Enums"]["listing_status"]
       }
       request_subscription: {
         Args: {
