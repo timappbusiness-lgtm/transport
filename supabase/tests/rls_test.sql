@@ -1996,6 +1996,254 @@ select pg_temp.check('CTR  the RPC refuses a company threshold of zero', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
   $a$select public.set_homepage_settings(50, 6, 0, null)$a$, 'blocked',
   p_verify => $v$select verified_companies_min = 20 from public.homepage_settings where id$v$);
+-- REV - submitting a company, and a person deciding
+--
+-- The path from "I uploaded my documents" to "I can send offers". Two
+-- rules carry it: only a manager may submit, and only staff may approve —
+-- and neither may write the verification column directly, whatever the
+-- form in front of them says.
+-- =====================================================================
+
+select pg_temp.check('REV  a light commercial is not asked for a copie conformă', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not exists (
+       select 1 from public.v_vehicle_missing_documents
+       where vehicle_id = 'fe000000-0000-0000-0000-0000000000e1' and kind = 'copie_conforma')$a$,
+  'true',
+  p_setup => $s$insert into public.vehicles (id, company_id, plate_number, vehicle_type, max_weight_kg)
+                values ('fe000000-0000-0000-0000-0000000000e1',
+                        'fc000000-0000-0000-0000-000000000001', 'TM99RLS',
+                        'autoutilitara_3_5t', 3400)$s$);
+
+select pg_temp.check('REV  a car carrier still is', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select exists (
+       select 1 from public.v_vehicle_missing_documents
+       where vehicle_id = 'fe000000-0000-0000-0000-000000000001' and kind = 'copie_conforma')$a$,
+  'true');
+
+select pg_temp.check('REV  ITP and RCA are asked of the light commercial all the same', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 2 from public.v_vehicle_missing_documents
+     where vehicle_id = 'fe000000-0000-0000-0000-0000000000e1'
+       and kind in ('itp', 'rca')$a$, 'true',
+  p_setup => $s$insert into public.vehicles (id, company_id, plate_number, vehicle_type, max_weight_kg)
+                values ('fe000000-0000-0000-0000-0000000000e1',
+                        'fc000000-0000-0000-0000-000000000001', 'TM99RLS',
+                        'autoutilitara_3_5t', 3400)$s$);
+
+-- ---------------------------------------------------------------------
+-- Readiness
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a forwarder with its papers in is ready, with no fleet', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select is_ready and not needs_vehicles and vehicles_total = 0
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000002')$a$, 'true');
+
+select pg_temp.check('REV  a carrier with a vehicle missing papers is not ready', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready and vehicles_incomplete = 1
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  -- fe...0002 has no documents at all; fe...0001 has all three.
+  p_setup => $s$delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000003'$s$);
+
+select pg_temp.check('REV  a carrier is ready once every vehicle is covered', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select is_ready and needs_vehicles and vehicles_total = 1
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a carrier with no vehicle at all is not ready', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready and vehicles_total = 0
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$delete from public.vehicles where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('REV  an uploaded document counts: approving it is the point of submitting', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select is_ready from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+      -- Only one document per company and kind may be in review at a time.
+      delete from public.documents where id = 'fa000000-0000-0000-0000-00000000000a';
+      update public.documents set status = 'pending'
+      where id = 'fa000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('REV  a rejected document does not count', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+      delete from public.documents where id = 'fa000000-0000-0000-0000-00000000000a';
+      update public.documents set status = 'rejected'
+      where id = 'fa000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- Submitting
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a stranger cannot submit somebody else''s company', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a dispatcher cannot: it is a statement about the paperwork', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft' where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('REV  anon cannot submit anything', 'fix',
+  null, 'anon',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
+select pg_temp.check('REV  a manager cannot submit with documents still missing', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000003')$a$, 'blocked',
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REV  a manager submits a complete company', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a company admin may submit too', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000001')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'draft' where id = 'fc000000-0000-0000-0000-000000000001';
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+    end $d$$s$);
+
+select pg_temp.check('REV  submitting is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  -- A field, not the row: ROW(a, NULL) IS NOT NULL is false in Postgres.
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'company.submitted_for_review'
+                                  and entity_id = 'fc000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('REV  a company already waiting cannot be submitted again', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a company ANAF calls inactive cannot be submitted', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies
+                set anaf_is_inactive = true, verification_status = 'draft'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a rejected company may try again', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_note is null$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set verification_status = 'rejected', verification_note = 'Licență ilizibilă'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+-- ---------------------------------------------------------------------
+-- Deciding
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  the applicant cannot approve their own company', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', true)$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'pending' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  staff approve a company that is waiting', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', true)).verification_status = 'verified'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verified_at is not null and verification_note is null
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  approval is audited and the applicant is written to', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', true)).verification_status = 'verified'$a$, 'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log where action = 'company.verified')
+                    and exists (select 1 from public.notification_outbox
+                                where template = 'company_verified'
+                                  and recipient_company_id = 'fc000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('REV  a rejection without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', false)$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'pending' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a rejection with a reason reaches the applicant', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', false,
+            'Licența încărcată este ilizibilă')).verification_note = 'Licența încărcată este ilizibilă'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'company_rejected')$v$);
+
+select pg_temp.check('REV  a company that is not waiting cannot be decided on', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', true)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The column itself stays out of reach
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a manager cannot verify their own company by hand', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verification_status = 'verified'
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  nor write the approval date', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verified_at = now()
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verified_at = null
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verified_at is null from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  nor clear a rejection note they did not like', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verification_note = null
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_note = 'Licență ilizibilă'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_note = 'Licență ilizibilă' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
