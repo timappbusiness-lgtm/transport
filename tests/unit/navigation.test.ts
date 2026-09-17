@@ -187,9 +187,17 @@ describe('the bottom bar on a phone', () => {
 });
 
 describe('the publish button', () => {
-  it('offers a carrier both directions', () => {
+  it('offers a carrier both directions, and a request as well', () => {
+    // Subcontracting is ordinary in this market: a carrier with a leg it
+    // cannot run itself posts the job rather than turning it down. The
+    // schema has always allowed it — a firm's request goes on the curse
+    // board — and the menu follows the feature map, not the company type.
     const actions = publishActions(context());
-    expect(actions.map((a) => a.label)).toEqual(['Traseu pe tur', 'Traseu pe retur']);
+    expect(actions.map((a) => a.label)).toEqual([
+      'Traseu pe tur',
+      'Traseu pe retur',
+      'Publică o cerere',
+    ]);
   });
 
   it('calls it a cursă for a forwarder and a cerere for everyone else', () => {

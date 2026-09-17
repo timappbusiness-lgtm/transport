@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { ROUTES } from '@/config/routes';
+import { redirect } from 'next/navigation';
+import { ROUTES, requestRoute } from '@/config/routes';
 import { getAccountContext } from '@/lib/auth/account';
+import { signInUrlFor } from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
 import {
   coordinatesFor,
@@ -207,4 +209,51 @@ export async function reopenRequestAction(
   if (error) return { error: toAppError(error, 'requests.reopen').message };
   revalidateRequestPages();
   return { notice: 'Cererea este din nou pe panou.' };
+}
+
+// ---------------------------------------------------------------------
+// The contact on a request
+// ---------------------------------------------------------------------
+
+export interface RevealRequestState {
+  error?: string;
+  contact?: { name: string | null; phone: string | null; email: string | null };
+}
+
+/**
+ * Opening the client's telephone number.
+ *
+ * The decision is entirely `reveal_contact`'s: it checks the caller's
+ * company, its compliance, that the listing is active and that the plan has
+ * a contact left this month, spends one, and logs the opening. It refuses
+ * with a written Romanian message saying what to do next, which is shown as
+ * it is rather than replaced with something generic.
+ */
+export async function revealRequestContactAction(
+  _previous: RevealRequestState,
+  formData: FormData,
+): Promise<RevealRequestState> {
+  const id = String(formData.get('request_id') ?? '');
+
+  const context = await getAccountContext();
+  if (context === null) redirect(signInUrlFor(requestRoute(id)));
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('reveal_contact', {
+    p_cargo_listing_id: id,
+    p_truck_listing_id: undefined,
+  });
+
+  if (error) return { error: toAppError(error, 'cereri.revealContact').message };
+
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return { error: 'Cererea nu are date de contact.' };
+
+  return {
+    contact: {
+      name: row.contact_name ?? null,
+      phone: row.contact_phone ?? null,
+      email: row.contact_email ?? null,
+    },
+  };
 }

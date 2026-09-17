@@ -95,8 +95,6 @@ export function companyRoute(slug: string): string {
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
-  ROUTES.newRequest,
-  ROUTES.requests,
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.contact,
