@@ -121,9 +121,20 @@ export function vehicleLine(request: PublicRequest): string | null {
 /**
  * Romanian plurals: one takes the singular, two to nineteen the plural, and
  * twenty upwards the plural with "de" — două ore, but douăzeci de ore.
+ *
+ * The article at one has to be told, not guessed. Romanian nouns carry
+ * gender that no rule recovers from the word: "o oră" but "un vehicul", and
+ * a helper that assumes one of them writes "o vehicul" on a dashboard. The
+ * default is feminine because most of what this application counts —
+ * cereri, ore, zile, firme — is.
  */
-export function pluralRo(n: number, one: string, many: string): string {
-  if (n === 1) return `o ${one}`;
+export function pluralRo(
+  n: number,
+  one: string,
+  many: string,
+  article: 'o' | 'un' = 'o',
+): string {
+  if (n === 1) return `${article} ${one}`;
   const lastTwo = Math.abs(n) % 100;
   return lastTwo >= 1 && lastTwo <= 19 ? `${n} ${many}` : `${n} de ${many}`;
 }

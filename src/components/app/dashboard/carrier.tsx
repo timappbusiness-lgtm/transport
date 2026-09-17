@@ -69,7 +69,7 @@ export function CarrierHome({
                         {booking.fromCity} → {booking.toCity}
                       </span>
                       <span className="text-muted">
-                        {pluralRo(booking.slots, 'loc', 'locuri')}
+                        {pluralRo(booking.slots, 'loc', 'locuri', 'un')}
                       </span>
                       <Countdown expiresAt={booking.expiresAt} now={now} />
                     </li>
@@ -87,10 +87,10 @@ export function CarrierHome({
               >
                 <ul className="flex flex-col gap-1 text-[0.8125rem]">
                   {data.documentsExpiring > 0 ? (
-                    <li>{c.documents.expiring(pluralRo(data.documentsExpiring, 'document', 'documente'))}</li>
+                    <li>{c.documents.expiring(pluralRo(data.documentsExpiring, 'document', 'documente', 'un'))}</li>
                   ) : null}
                   {data.documentsRejected > 0 ? (
-                    <li>{c.documents.rejected(pluralRo(data.documentsRejected, 'document', 'documente'))}</li>
+                    <li>{c.documents.rejected(pluralRo(data.documentsRejected, 'document', 'documente', 'un'))}</li>
                   ) : null}
                 </ul>
               </Attention>
@@ -104,7 +104,7 @@ export function CarrierHome({
                 action={c.vehicles.action}
               >
                 <p className="text-[0.8125rem]">
-                  {c.vehicles.body(pluralRo(data.vehiclesBlocked, 'vehicul', 'vehicule'))}
+                  {c.vehicles.body(pluralRo(data.vehiclesBlocked, 'vehicul', 'vehicule', 'un'))}
                 </p>
               </Attention>
             ) : null}
@@ -249,7 +249,7 @@ function Countdown({ expiresAt, now }: { expiresAt: string | null; now: Date }) 
   const label =
     hours >= 1
       ? pluralRo(hours, 'oră', 'ore')
-      : pluralRo(Math.max(Math.floor(left / 60_000), 1), 'minut', 'minute');
+      : pluralRo(Math.max(Math.floor(left / 60_000), 1), 'minut', 'minute', 'un');
 
   return (
     <span className={cn(hours < 3 ? 'text-warning' : 'text-muted')}>

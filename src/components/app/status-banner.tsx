@@ -101,7 +101,7 @@ export function StatusBanner({
           tone="warn"
           icon={<FileWarning size={18} />}
           title={a.documentsExpiring.title}
-          body={<p>{a.documentsExpiring.body(pluralRo(expiringDocuments, 'document', 'documente'))}</p>}
+          body={<p>{a.documentsExpiring.body(pluralRo(expiringDocuments, 'document', 'documente', 'un'))}</p>}
           action={{ href: ROUTES.accountDocuments, label: a.documentsExpiring.action }}
         />
       );

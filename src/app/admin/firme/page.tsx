@@ -43,7 +43,7 @@ export default async function Page() {
                 <p className="mt-1 text-[0.8125rem] text-muted">
                   {[company.city, company.county].filter(Boolean).join(' · ')}
                   {company.compliantVehicles > 0
-                    ? ` · ${pluralRo(company.compliantVehicles, 'vehicul', 'vehicule')}`
+                    ? ` · ${pluralRo(company.compliantVehicles, 'vehicul', 'vehicule', 'un')}`
                     : ''}
                 </p>
                 <p className="mt-2 text-sm">

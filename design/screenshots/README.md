@@ -25,6 +25,8 @@ Captured with Chromium at a device pixel ratio of 2, at 1440 (desktop) and
 | `abonamente-6-luni-1440.png` | Six months, where the totals do not divide cleanly, so the saving is stated in lei instead. |
 | `abonamente-expeditii-1440.png` | The forwarder tab. One plan today; the team adds more from /admin/planuri. |
 | `abonamente-goale-1440.png` | `/abonamente` as it ships: no database, so no price is stated at all. |
+| `cont-transportator-1440.png`, `cont-transportator-390.png` | The carrier's home: the sidebar with the plan chip, one status banner, what needs attention, requests matched to the routes, and the activity figures. |
+| `cont-meniu-mobil-390.png` | The overflow sheet on a phone, holding what does not fit the five-slot bottom bar. |
 
 **The ones showing populated data were rendered through a throwaway route**,
 not from a live database: this checkout cannot reach a Supabase instance, and

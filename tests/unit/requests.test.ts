@@ -76,6 +76,19 @@ describe('Romanian plurals', () => {
     expect(pluralRo(1, 'cerere', 'cereri')).toBe('o cerere');
   });
 
+  it('takes the article rather than guessing the gender', () => {
+    // No rule recovers gender from the word, and assuming feminine writes
+    // "o vehicul" onto a dashboard.
+    expect(pluralRo(1, 'vehicul', 'vehicule', 'un')).toBe('un vehicul');
+    expect(pluralRo(1, 'document', 'documente', 'un')).toBe('un document');
+    expect(pluralRo(1, 'loc', 'locuri', 'un')).toBe('un loc');
+  });
+
+  it('leaves everything above one alone, whatever the gender', () => {
+    expect(pluralRo(2, 'vehicul', 'vehicule', 'un')).toBe('2 vehicule');
+    expect(pluralRo(20, 'vehicul', 'vehicule', 'un')).toBe('20 de vehicule');
+  });
+
   it('uses the plural without "de" from two to nineteen', () => {
     expect(pluralRo(2, 'oră', 'ore')).toBe('2 ore');
     expect(pluralRo(19, 'zi', 'zile')).toBe('19 zile');

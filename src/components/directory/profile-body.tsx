@@ -252,7 +252,7 @@ function Routes({ routes }: { routes: CompanyRoute[] }) {
                 </p>
                 <p className="mt-1 text-[0.8125rem] text-muted">
                   {route.slotsFree > 0
-                    ? c.routes.free(pluralRo(route.slotsFree, 'loc', 'locuri'))
+                    ? c.routes.free(pluralRo(route.slotsFree, 'loc', 'locuri', 'un'))
                     : c.routes.full}
                 </p>
               </Link>
