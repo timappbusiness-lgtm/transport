@@ -10,6 +10,9 @@ export const ROUTES = {
   verification: '/verificare',
   companies: '/firme',
   faq: '/intrebari-frecvente',
+  // Two different pages, deliberately: /preturi is what a transport costs,
+  // /abonamente is what the platform costs.
+  prices: '/preturi',
   plans: '/abonamente',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
@@ -53,6 +56,7 @@ export const ROUTES = {
   admin: '/admin',
   adminDocuments: '/admin/documente',
   adminActivity: '/admin/activitate',
+  adminPrices: '/admin/preturi',
   adminSettings: '/admin/setari',
   adminPlans: '/admin/planuri',
   adminCompanies: '/admin/firme',

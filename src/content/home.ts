@@ -146,37 +146,6 @@ export const homeCopy = {
     cta: 'Creează cont de firmă',
   },
 
-  prices: {
-    eyebrow: 'Tarife',
-    strong: 'Un reper de preț,',
-    soft: 'înainte să ceri oferte.',
-    lede:
-      'Tarife orientative pentru un autoturism standard. Oferta finală depinde de vehicul, locație, disponibilitate și termen.',
-    tabs: [
-      { key: 'standard', label: 'Transport standard' },
-      { key: 'expres', label: 'Transport expres' },
-    ],
-    columns: {
-      route: 'Rută',
-      price: 'Preț orientativ',
-      range: 'Interval',
-      duration: 'Durată estimată',
-    },
-    onRequest: 'La cerere',
-    // TODO: valori orientative, de validat cu partenerul de transport
-    // înainte de lansare. Nu sunt calculate din transporturi încheiate.
-    rows: [
-      { country: 'Germania', cc: 'DE' as CountryCode, standard: '650 €', range: '590–780 €', days: '5–7 zile' },
-      { country: 'Italia', cc: 'IT' as CountryCode, standard: '700 €', range: '640–860 €', days: '5–8 zile' },
-      { country: 'Olanda', cc: 'NL' as CountryCode, standard: '700 €', range: '650–830 €', days: '6–8 zile' },
-      { country: 'Belgia', cc: 'BE' as CountryCode, standard: '690 €', range: '620–810 €', days: '6–8 zile' },
-      { country: 'Franța', cc: 'FR' as CountryCode, standard: '720 €', range: '660–880 €', days: '6–9 zile' },
-      { country: 'Spania', cc: 'ES' as CountryCode, standard: '750 €', range: '690–940 €', days: '7–10 zile' },
-      { country: 'Austria', cc: 'AT' as CountryCode, standard: '520 €', range: '470–610 €', days: '3–5 zile' },
-    ],
-    note:
-      'Prețurile de mai sus sunt orientative, stabilite pe baza pieței. Pe măsură ce se încheie transporturi în platformă, vom afișa intervalele reale pentru fiecare rută.',
-  },
 
   finalCta: {
     strong: 'Ai o mașină de mutat',

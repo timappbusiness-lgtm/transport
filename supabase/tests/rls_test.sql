@@ -1590,6 +1590,151 @@ select pg_temp.check('ALR  anon cannot save a search', 'guard',
      values ('f0000000-0000-0000-0000-000000000006', 'Anon', 'truck', '{}')$a$, 'blocked');
 
 -- =====================================================================
+-- PRC - indicative prices
+--
+-- Two rules carry the whole feature: nothing is visible before the team
+-- publishes it, and nothing changes except through an audited RPC. Both
+-- are checked from the roles that would break them.
+-- =====================================================================
+
+select pg_temp.check('PRC  anon sees no rates while they are unpublished', 'fix',
+  null, 'anon', $a$select * from public.price_rates$a$, 'blocked');
+
+select pg_temp.check('PRC  a signed-in user sees no rates while unpublished', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select * from public.price_rates$a$, 'blocked');
+
+select pg_temp.check('PRC  the settings are hidden too, so is_published cannot be read off', 'fix',
+  null, 'anon', $a$select * from public.price_settings$a$, 'blocked');
+
+select pg_temp.check('PRC  staff see the rates while they are still working on them', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 5 from public.price_rates$a$, 'true');
+
+select pg_temp.check('PRC  anon reads the rates once published', 'fix',
+  null, 'anon',
+  $a$select count(*) = 5 from public.price_rates$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$);
+
+select pg_temp.check('PRC  anon reads the settings once published', 'fix',
+  null, 'anon',
+  $a$select express_surcharge_pct = 40 from public.price_settings where id$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$);
+
+select pg_temp.check('PRC  unpublishing hides them again', 'fix',
+  null, 'anon', $a$select * from public.price_rates$a$, 'blocked',
+  p_setup => $s$update public.price_settings set is_published = false where id$s$);
+
+-- =====================================================================
+-- PRW - only staff write, and only through the RPC
+-- =====================================================================
+
+select pg_temp.check('PRW  a user cannot write a rate directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.price_rates set national_ron_per_km = 0.01
+     where vehicle_class = 'sedan'$a$, 'blocked',
+  p_verify => $v$select national_ron_per_km = 3.40 from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  not even staff may write a rate directly', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.price_rates set national_ron_per_km = 0.01
+     where vehicle_class = 'sedan'$a$, 'blocked',
+  p_verify => $v$select national_ron_per_km = 3.40 from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  a non-staff user cannot call the rate RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'furat', 1, 1, 1, 1, 1)$a$, 'blocked',
+  p_verify => $v$select weight_label <> 'furat' from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  anon cannot call the rate RPC', 'fix',
+  null, 'anon',
+  $a$select public.set_price_rate('sedan', 'furat', 1, 1, 1, 1, 1)$a$, 'blocked');
+
+select pg_temp.check('PRW  staff change a rate through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_price_rate('sedan', 'aprox. 1.500 kg',
+             5.60, 3.55, 0.58, 400, 180)).national_ron_per_km = 3.55$a$, 'true');
+
+select pg_temp.check('PRW  a rate change is audited with before and after', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg',
+            5.60, 3.55, 0.58, 400, 180) is not null$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'price_rate.updated'
+                   and (before ->> 'national_ron_per_km')::numeric = 3.40
+                   and (after ->> 'national_ron_per_km')::numeric = 3.55)$v$);
+
+select pg_temp.check('PRW  a change after publication says so in the audit row', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg',
+            5.60, 3.55, 0.58, 400, 180) is not null$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$,
+  p_verify => $v$select reason = 'Modificare după publicare' from public.audit_log
+                 where action = 'price_rate.updated'
+                 order by created_at desc limit 1$v$);
+
+select pg_temp.check('PRW  the RPC refuses a rate that is not a positive number', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg', 0, 3.40, 0.55, 380, 175)$a$, 'blocked');
+
+select pg_temp.check('PRW  the RPC refuses a minimum that is not positive', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg', 5.40, 3.40, 0.55, 0, 175)$a$, 'blocked');
+
+-- =====================================================================
+-- PRP - publishing
+-- =====================================================================
+
+select pg_temp.check('PRP  a non-staff user cannot publish the prices', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_prices_published(true)$a$, 'blocked',
+  p_verify => $v$select not is_published from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  staff publish, and it is recorded who and when', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_prices_published(true)).is_published$a$, 'true',
+  p_verify => $v$select approved_by = 'f0000000-0000-0000-0000-000000000001'
+                        and approved_at is not null
+                 from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  publishing is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_prices_published(true)).is_published$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'prices.published')$v$);
+
+select pg_temp.check('PRP  withdrawing clears the approval and is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_prices_published(false)).is_published$a$, 'true',
+  p_setup => $s$update public.price_settings
+                set is_published = true,
+                    approved_by = 'f0000000-0000-0000-0000-000000000001',
+                    approved_at = now()
+                where id$s$,
+  p_verify => $v$select s.approved_by is null and exists (
+                   select 1 from public.audit_log where action = 'prices.unpublished')
+                 from public.price_settings s where s.id$v$);
+
+select pg_temp.check('PRP  a non-staff user cannot change the surcharges', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_price_settings(99, 99, 2, 50, current_date)$a$, 'blocked',
+  p_verify => $v$select express_surcharge_pct = 40 from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  staff change the surcharges through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_price_settings(35, 45, 1.3, 20, current_date)).express_surcharge_pct = 45$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'price_settings.updated')$v$);
+
+-- The medians of real transports are a different claim from our own rates;
+-- this feature must not have touched them.
+select pg_temp.check('PRP  the corridor medians are still their own thing', 'guard',
+  null, 'anon',
+  $a$select count(*) >= 0 from public.v_corridor_prices$a$, 'true');
 -- CRQ - requests on the homepage
 --
 -- The feature rests on one projection being narrow enough, so these check

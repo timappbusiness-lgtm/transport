@@ -14,11 +14,17 @@ const SECTIONS = [
   { href: '#cum-functioneaza', label: 'Cum funcționează' },
   { href: '#transportatori', label: 'Transportatori' },
   { href: '#siguranta', label: 'Siguranță' },
-  { href: '#tarife', label: 'Tarife' },
 ] as const;
 
-/** Real routes, so these are in the bar wherever you are on the site. */
+/**
+ * Real pages, so they belong in the bar on every route rather than only
+ * where an anchor happens to resolve. Prețuri used to be the homepage
+ * `#tarife` anchor; it is a page now, and a link that leaves the homepage
+ * has to work from the other pages too.
+ */
 const PAGES = [
+  { href: ROUTES.routes, label: 'Trasee' },
+  { href: ROUTES.prices, label: 'Prețuri' },
   { href: ROUTES.companies, label: 'Firme' },
   { href: ROUTES.plans, label: 'Abonamente' },
 ] as const;

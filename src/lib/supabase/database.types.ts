@@ -1947,6 +1947,100 @@ export type Database = {
         }
         Relationships: []
       }
+      price_rates: {
+        Row: {
+          international_eur_per_km: number
+          local_ron_per_km: number
+          minimum_eur: number
+          minimum_ron: number
+          national_ron_per_km: number
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          vehicle_class: Database["public"]["Enums"]["vehicle_class"]
+          weight_label: string
+        }
+        Insert: {
+          international_eur_per_km: number
+          local_ron_per_km: number
+          minimum_eur: number
+          minimum_ron: number
+          national_ron_per_km: number
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_class: Database["public"]["Enums"]["vehicle_class"]
+          weight_label: string
+        }
+        Update: {
+          international_eur_per_km?: number
+          local_ron_per_km?: number
+          minimum_eur?: number
+          minimum_ron?: number
+          national_ron_per_km?: number
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_class?: Database["public"]["Enums"]["vehicle_class"]
+          weight_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_rates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_settings: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          express_surcharge_pct: number
+          id: boolean
+          is_published: boolean
+          not_running_surcharge_pct: number
+          range_spread_pct: number
+          road_distance_factor: number
+          updated_at: string
+          valid_month: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          express_surcharge_pct?: number
+          id?: boolean
+          is_published?: boolean
+          not_running_surcharge_pct?: number
+          range_spread_pct?: number
+          road_distance_factor?: number
+          updated_at?: string
+          valid_month?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          express_surcharge_pct?: number
+          id?: boolean
+          is_published?: boolean
+          not_running_surcharge_pct?: number
+          range_spread_pct?: number
+          road_distance_factor?: number
+          updated_at?: string
+          valid_month?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_settings_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_settings: {
         Row: {
           billing_contact_email: string | null
@@ -3786,6 +3880,10 @@ export type Database = {
         Args: { p_features: Json }
         Returns: boolean
       }
+      prices_are_published: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       purge_audit_log: {
         Args: { p_older_than: unknown }
         Returns: number
@@ -4097,6 +4195,65 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_price_rate: {
+        Args: {
+          p_international_eur_per_km: number
+          p_local_ron_per_km: number
+          p_minimum_eur: number
+          p_minimum_ron: number
+          p_national_ron_per_km: number
+          p_vehicle_class: Database["public"]["Enums"]["vehicle_class"]
+          p_weight_label: string
+        }
+        Returns: {
+          international_eur_per_km: number
+          local_ron_per_km: number
+          minimum_eur: number
+          minimum_ron: number
+          national_ron_per_km: number
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+          vehicle_class: Database["public"]["Enums"]["vehicle_class"]
+          weight_label: string
+        }
+      }
+      set_price_settings: {
+        Args: {
+          p_express_surcharge_pct: number
+          p_not_running_surcharge_pct: number
+          p_range_spread_pct: number
+          p_road_distance_factor: number
+          p_valid_month: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          express_surcharge_pct: number
+          id: boolean
+          is_published: boolean
+          not_running_surcharge_pct: number
+          range_spread_pct: number
+          road_distance_factor: number
+          updated_at: string
+          valid_month: string | null
+        }
+      }
+      set_prices_published: {
+        Args: { p_published: boolean }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          express_surcharge_pct: number
+          id: boolean
+          is_published: boolean
+          not_running_surcharge_pct: number
+          range_spread_pct: number
+          road_distance_factor: number
+          updated_at: string
+          valid_month: string | null
+        }
+      }
       set_pricing_settings: {
         Args: {
           p_billing_contact_email: string
@@ -4293,6 +4450,8 @@ export type Database = {
         | "disputed"
         | "cancelled"
       truck_direction: "tur" | "retur"
+      vehicle_class:
+        "motocicleta" | "hatchback" | "sedan" | "suv" | "autoutilitara"
       vehicle_type:
         | "prelata"
         | "duba"
@@ -4534,6 +4693,13 @@ export const Constants = {
         "cancelled",
       ],
       truck_direction: ["tur", "retur"],
+      vehicle_class: [
+        "motocicleta",
+        "hatchback",
+        "sedan",
+        "suv",
+        "autoutilitara",
+      ],
       vehicle_type: [
         "prelata",
         "duba",

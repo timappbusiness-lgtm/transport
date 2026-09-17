@@ -27,6 +27,10 @@ Captured with Chromium at a device pixel ratio of 2, at 1440 (desktop) and
 | `abonamente-goale-1440.png` | `/abonamente` as it ships: no database, so no price is stated at all. |
 | `cont-transportator-1440.png`, `cont-transportator-390.png` | The carrier's home: the sidebar with the plan chip, one status banner, what needs attention, requests matched to the routes, and the activity figures. |
 | `cont-meniu-mobil-390.png` | The overflow sheet on a phone, holding what does not fit the five-slot bottom bar. |
+| `acasa-tarife-1440.png` | The homepage price band before the team publishes: no figures, one link. |
+| `preturi-nepublicat-1440.png`, `preturi-nepublicat-390.png` | `/preturi` as it ships — nothing published, so no table and no calculator. |
+| `preturi-1440.png`, `preturi-390.png` | `/preturi` with the rates published. |
+| `admin-preturi-1440.png` | `/admin/preturi`, the staff screen. |
 
 **The ones showing populated data were rendered through a throwaway route**,
 not from a live database: this checkout cannot reach a Supabase instance, and
@@ -41,3 +45,11 @@ The `firme-*` captures of a section rather than a whole page were taken with
 the element screenshot, so the sticky site header floats over the top of a
 few of them. That is an artefact of capturing one element out of a page, not
 a layout fault: on the page itself the header sits above the section.
+
+**The last three were rendered through a throwaway route**, not from a live
+database: this checkout cannot reach a Supabase instance, and the rates are
+unpublished everywhere until the team publishes them. The figures in them are
+the placeholder rows seeded by migration `20260917170000`, and the components
+are the real ones — but the admin shot is missing the staff sidebar that the
+`/admin` layout wraps around it. Re-take them from a preview deployment once
+somebody publishes, and this note goes.
