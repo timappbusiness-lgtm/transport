@@ -4,6 +4,7 @@ import { FaqAccordion } from '@/components/faq/accordion';
 import { Lede, SectionHead } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { faqCopy } from '@/content/faq';
+import type { FaqEntry } from '@/content/faq';
 import { homepageFaq } from '@/lib/faq';
 import { loadFaq } from '@/lib/faq-source';
 
@@ -17,8 +18,11 @@ const c = faqCopy;
  * moves up rather than leaving a gap.
  */
 export async function Faq() {
-  const groups = await loadFaq();
-  const entries = homepageFaq(groups);
+  return <FaqBody entries={homepageFaq(await loadFaq())} />;
+}
+
+/** The section, given its questions rather than fetching them. */
+export function FaqBody({ entries }: { entries: FaqEntry[] }) {
   if (entries.length === 0) return null;
 
   return (

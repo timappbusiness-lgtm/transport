@@ -1,6 +1,10 @@
 import { Container } from '@/components/layout/container';
 import { directoryCopy } from '@/content/directory';
-import { showStatsBand } from '@/lib/directory';
+import {
+  showStatsBand,
+  type DirectoryStats,
+  type DirectoryThresholds,
+} from '@/lib/directory';
 import { loadHomepageDirectory } from '@/lib/directory-source';
 import { loadHomepageActivity } from '@/lib/requests-source';
 import { formatNumber } from '@/lib/requests';
@@ -25,6 +29,26 @@ export async function StatsBand() {
     loadHomepageActivity(),
   ]);
 
+  return (
+    <StatsBandBody
+      stats={stats}
+      thresholds={thresholds}
+      publishedTotal={activity.stats?.publishedTotal ?? null}
+    />
+  );
+}
+
+/** The band, given its three numbers rather than fetching them. */
+export function StatsBandBody({
+  stats,
+  thresholds,
+  publishedTotal,
+}: {
+  stats: DirectoryStats | null;
+  thresholds: DirectoryThresholds;
+  /** null when the activity query failed; the figure is then left out. */
+  publishedTotal: number | null;
+}) {
   if (!showStatsBand(stats, thresholds)) return null;
 
   const figures: { value: number | null; label: string }[] = [
@@ -32,7 +56,7 @@ export async function StatsBand() {
     { value: stats.compliantVehicles, label: c.vehicles },
     // Published requests come from homepage_activity(), which is the one
     // definition of that number on this page.
-    { value: activity.stats?.publishedTotal ?? null, label: c.requests },
+    { value: publishedTotal, label: c.requests },
   ];
   const shown = figures.filter(
     (figure): figure is { value: number; label: string } => figure.value !== null,

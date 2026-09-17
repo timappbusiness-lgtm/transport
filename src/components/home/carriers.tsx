@@ -6,7 +6,11 @@ import { buttonClasses } from '@/components/ui/button';
 import { Card, Lede, SectionHead } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { directoryCopy } from '@/content/directory';
-import { companyLogoUrl, loadHomepageDirectory } from '@/lib/directory-source';
+import {
+  companyLogoUrl,
+  loadHomepageDirectory,
+  type HomepageDirectory,
+} from '@/lib/directory-source';
 import { showCompanyGrid } from '@/lib/directory';
 import { formatCompanies } from '@/lib/trust';
 import { formatNumber, pluralRo } from '@/lib/requests';
@@ -28,7 +32,15 @@ const c = directoryCopy.signup;
  * empty one.
  */
 export async function Carriers() {
-  const { companies, stats, thresholds, plan } = await loadHomepageDirectory();
+  return <CarriersBody {...await loadHomepageDirectory()} />;
+}
+
+/**
+ * The section, given its data rather than fetching it — which is what lets
+ * a populated state be rendered for a screenshot without a database, and
+ * what keeps the layout testable.
+ */
+export function CarriersBody({ companies, stats, thresholds, plan }: HomepageDirectory) {
   const showGrid = showCompanyGrid(companies, stats, thresholds);
   const showCount =
     stats !== null && stats.verifiedCompanies >= thresholds.statsMinCompanies;
