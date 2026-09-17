@@ -19,7 +19,8 @@
     "db:test": "bash scripts/db-test.sh",
     "check:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno check --node-modules-dir=none supabase/functions/*/index.ts",
     "test:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno test --no-prompt --node-modules-dir=none supabase/functions",
-    "gen:types": "bash scripts/gen-types.sh"
+    "gen:types": "bash scripts/gen-types.sh",
+    "seed:departures": "bash scripts/seed-departures.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -67,3 +67,46 @@ export async function saveSearchAction(
   if (error) return { error: toAppError(error, 'trasee.saveSearch').message };
   return { notice: departuresCopy.empty.alertSaved };
 }
+
+export interface RevealState {
+  error?: string;
+  contact?: { name: string | null; phone: string | null; email: string | null };
+}
+
+/**
+ * Reveal a carrier's contact details.
+ *
+ * Nothing is decided here. `reveal_contact` is SECURITY DEFINER and applies
+ * the whole rule — a company account or a verified phone, an active listing,
+ * a contact allowance left on the plan — raising a written Romanian message
+ * when it refuses. Those messages tell the person what to do next, so they
+ * are shown exactly as the database wrote them.
+ */
+export async function revealContactAction(
+  _prev: RevealState,
+  formData: FormData,
+): Promise<RevealState> {
+  const truckListingId = String(formData.get('truckListingId') ?? '');
+
+  const context = await getAccountContext();
+  if (!context) redirect(signInUrlFor(`${ROUTES.routes}/${truckListingId}`));
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('reveal_contact', {
+    p_cargo_listing_id: undefined,
+    p_truck_listing_id: truckListingId,
+  });
+
+  if (error) return { error: toAppError(error, 'trasee.revealContact').message };
+
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return { error: 'Transportatorul nu a lăsat date de contact pentru acest traseu.' };
+
+  return {
+    contact: {
+      name: row.contact_name ?? null,
+      phone: row.contact_phone ?? null,
+      email: row.contact_email ?? null,
+    },
+  };
+}
