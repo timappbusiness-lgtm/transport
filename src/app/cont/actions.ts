@@ -7,6 +7,7 @@ import { ROUTES } from '@/config/routes';
 import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+import { accountCopy } from '@/content/account';
 import {
   isCompanyType,
   normaliseCui,
@@ -513,4 +514,41 @@ export async function transferOwnershipAction(
   revalidatePath(ROUTES.accountMembers);
   revalidatePath('/cont', 'layout');
   return { notice: 'Proprietatea a fost transferată.' };
+}
+
+/**
+ * "Trimite firma la verificare".
+ *
+ * Nothing is decided here. `submit_company_for_review()` is SECURITY
+ * DEFINER: it checks that the caller manages the company, that the company
+ * is in draft or rejected, that ANAF does not call it inactive, and that
+ * every blocking document is at least uploaded — then writes the audit row.
+ * A `42501` or `23502` comes back as the Romanian sentence the migration
+ * raised, which is what the user sees.
+ */
+export async function submitCompanyForReviewAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await getAccountContext();
+  if (!context) redirect(ROUTES.signIn);
+
+  const companyId = String(formData.get('company_id') ?? '');
+  // The form field says which company was on screen; membership is the
+  // session's, and the RPC re-checks it against auth.uid().
+  if (!context.memberships.some((m) => m.company.id === companyId)) {
+    return { error: accountCopy.review.notManager };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('submit_company_for_review', {
+    p_company_id: companyId,
+  });
+
+  if (error) return { error: toAppError(error, 'cont.submitForReview').message };
+
+  revalidatePath(ROUTES.accountDocuments);
+  revalidatePath(ROUTES.accountCompany);
+  revalidatePath(ROUTES.account);
+  return { notice: accountCopy.review.sent };
 }

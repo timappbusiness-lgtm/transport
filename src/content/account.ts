@@ -122,6 +122,29 @@ export const accountCopy = {
     upload: 'Încarcă un document',
     history: 'Istoric',
   },
+
+  /** Sending the company to the review queue, and what comes back. */
+  review: {
+    title: 'Trimite firma la verificare',
+    progress: (inPlace: string, total: string) =>
+      `${inPlace} din ${total} documente obligatorii sunt încărcate.`,
+    vehiclesMissing:
+      'Adaugă cel puțin un vehicul și încarcă-i documentele înainte de verificare.',
+    stillMissing: 'Încarcă documentele care lipsesc și revino aici.',
+    ready: 'Totul este încărcat. Poți trimite firma la verificare.',
+    submit: 'Trimite la verificare',
+    pendingTitle: 'Documentele sunt în verificare',
+    pendingBody:
+      'Te anunțăm pe e-mail când firma este aprobată. Poți încărca în continuare documente noi.',
+    verifiedTitle: 'Firma ta este verificată',
+    verifiedBody: 'Poți publica trasee și poți trimite oferte la cereri.',
+    rejectedTitle: 'Verificarea a fost respinsă',
+    rejectedBody: 'Corectează ce este mai jos și trimite din nou.',
+    suspendedTitle: 'Contul este suspendat',
+    suspendedBody: 'Încarcă documentul nou și firma revine pe bursă după aprobare.',
+    sent: 'Am trimis firma la verificare.',
+    notManager: 'Doar administratorii firmei pot trimite firma la verificare.',
+  },
   fleet: {
     title: 'Flotă',
     lede: 'Un vehicul apare pe bursă doar cu ITP, RCA și copia conformă aprobate și valabile.',

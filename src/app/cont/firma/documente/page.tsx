@@ -4,10 +4,13 @@ import { redirect } from 'next/navigation';
 import { DocumentHistory, type HistoryRow } from '@/components/account/document-history';
 import { DocumentUpload } from '@/components/account/document-upload';
 import { RequirementList, type RequirementRow } from '@/components/account/requirement-list';
+import { SubmitForReview } from '@/components/account/submit-for-review';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
+import { isRequirementState } from '@/lib/documents';
+import { reviewProgress } from '@/lib/review';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -39,6 +42,19 @@ export default async function Page() {
   ]);
 
   const requirements = (requirementsResult.data ?? []) as RequirementRow[];
+  const progress = reviewProgress(
+    requirements.map((row) => {
+      const state = row.state ?? null;
+      return {
+        is_blocking: row.is_blocking ?? false,
+        state: isRequirementState(state) ? state : ('missing' as const),
+      };
+    }),
+  );
+
+  // A carrier is not ready until every vehicle is covered too. Forwarders
+  // are not asked for a fleet, and the RPC applies the same rule.
+  const vehiclesReady = await fleetIsCovered(company.id, company.company_type);
   const labels = Object.fromEntries(
     ((labelsResult.data ?? []) as { kind: string; label_ro: string }[]).map((row) => [
       row.kind,
@@ -64,12 +80,23 @@ export default async function Page() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="text-sm font-medium">{c.required}</h2>
-          <div className="mt-3">
-            <RequirementList rows={requirements} />
-          </div>
-        </section>
+        <div className="flex flex-col gap-6">
+          <section className="rounded-card border border-border bg-surface p-5">
+            <h2 className="text-sm font-medium">{c.required}</h2>
+            <div className="mt-3">
+              <RequirementList rows={requirements} />
+            </div>
+          </section>
+
+          <SubmitForReview
+            companyId={company.id}
+            status={company.verification_status}
+            progress={progress}
+            needsVehicles={company.company_type !== 'expeditie'}
+            vehiclesReady={vehiclesReady}
+            note={company.verification_note ?? null}
+          />
+        </div>
 
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
@@ -84,5 +111,29 @@ export default async function Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * True when the company has at least one vehicle and none of them is
+ * missing a blocking document. Mirrors the fleet half of
+ * `company_review_readiness()`.
+ */
+async function fleetIsCovered(companyId: string, companyType: string): Promise<boolean> {
+  if (companyType === 'expeditie') return true;
+
+  const supabase = await createClient();
+  const [vehicles, missing] = await Promise.all([
+    supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('company_id', companyId),
+    supabase
+      .from('v_vehicle_missing_documents')
+      .select('vehicle_id, is_blocking, state')
+      .eq('company_id', companyId),
+  ]);
+
+  if ((vehicles.count ?? 0) === 0) return false;
+
+  return !(missing.data ?? []).some(
+    (row) => row.is_blocking && row.state !== 'ok' && row.state !== 'in_review',
   );
 }

@@ -476,7 +476,9 @@ export type Database = {
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
           website: string | null
         }
         Insert: {
@@ -505,7 +507,9 @@ export type Database = {
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
           website?: string | null
         }
         Update: {
@@ -534,7 +538,9 @@ export type Database = {
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
           website?: string | null
         }
         Relationships: [
@@ -960,6 +966,8 @@ export type Database = {
       document_requirements: {
         Row: {
           created_at: string
+          excluded_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types:
@@ -977,6 +985,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types?:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types?:
@@ -994,6 +1004,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types?:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types?:
@@ -2966,6 +2978,16 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
+      company_review_readiness: {
+        Args: { p_company_id: string }
+        Returns: {
+          is_ready: boolean
+          missing_company_documents: number
+          needs_vehicles: boolean
+          vehicles_incomplete: number
+          vehicles_total: number
+        }[]
+      }
       confirm_departure_booking: {
         Args: { p_agreed_price?: number; p_booking_id: string }
         Returns: {
@@ -3027,7 +3049,9 @@ export type Database = {
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
           website: string | null
         }
       }
@@ -3250,6 +3274,40 @@ export type Database = {
           contact_phone: string
         }[]
       }
+      review_company: {
+        Args: { p_approve: boolean; p_company_id: string; p_reason?: string }
+        Returns: {
+          address: string | null
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          cui: string
+          display_name: string | null
+          id: string
+          is_suspended: boolean
+          legal_name: string
+          rating_avg: number | null
+          rating_count: number
+          reg_com: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
+      }
       review_document: {
         Args: {
           p_approve: boolean
@@ -3329,6 +3387,40 @@ export type Database = {
       show_trgm: {
         Args: { "": string }
         Returns: string[]
+      }
+      submit_company_for_review: {
+        Args: { p_company_id: string }
+        Returns: {
+          address: string | null
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          cui: string
+          display_name: string | null
+          id: string
+          is_suspended: boolean
+          legal_name: string
+          rating_avg: number | null
+          rating_count: number
+          reg_com: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
       }
       transfer_company_ownership: {
         Args: {

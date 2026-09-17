@@ -42,6 +42,8 @@ export interface Company {
   display_name: string | null;
   company_type: CompanyType;
   verification_status: VerificationStatus;
+  /** Why the last review was rejected. Written only by review_company(). */
+  verification_note: string | null;
   is_suspended: boolean;
   suspended_at: string | null;
   suspension_reason: string | null;
@@ -70,7 +72,7 @@ export interface AccountContext {
 export const ACTIVE_COMPANY_COOKIE = 'coridor_company';
 
 const COMPANY_COLUMNS =
-  'id, cui, legal_name, display_name, company_type, verification_status, is_suspended, suspended_at, suspension_reason, county, city, contact_email, contact_phone';
+  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, contact_email, contact_phone';
 
 /**
  * Reads the signed-in user, their profile and their companies.
