@@ -6,6 +6,16 @@ export const ROUTES = {
   home: '/',
   newRequest: '/cerere/noua',
   routes: '/trasee',
+  requests: '/cereri',
+  verification: '/verificare',
+  companies: '/firme',
+  faq: '/intrebari-frecvente',
+  // Two different pages, deliberately: /preturi is what a transport costs,
+  // /abonamente is what the platform costs.
+  prices: '/preturi',
+  plans: '/abonamente',
+  accountDepartures: '/cont/trasee',
+  accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
   privacy: '/confidentialitate',
   contact: '/contact',
@@ -34,10 +44,23 @@ export const ROUTES = {
   accountDocuments: '/cont/firma/documente',
   accountFleet: '/cont/firma/flota',
   accountInvitations: '/cont/invitatii',
+  accountSubscription: '/cont/abonament',
+  accountRequests: '/cont/cereri',
+  accountOffers: '/cont/oferte',
+  accountMessages: '/cont/mesaje',
+  accountTransports: '/cont/transporturi',
+  accountNotifications: '/cont/notificari',
+  accountSettings: '/cont/setari',
 
   // Staff
   admin: '/admin',
   adminDocuments: '/admin/documente',
+  adminActivity: '/admin/activitate',
+  adminPrices: '/admin/preturi',
+  adminSettings: '/admin/setari',
+  adminPlans: '/admin/planuri',
+  adminCompanies: '/admin/firme',
+  adminSubscriptions: '/admin/abonamente',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -51,13 +74,29 @@ export function vehicleRoute(vehicleId: string): string {
   return `${ROUTES.accountFleet}/${vehicleId}`;
 }
 
+/** One departure on the public board. */
+export function departureRoute(id: string): string {
+  return `${ROUTES.routes}/${id}`;
+}
+
+/** One transport request. */
+export function requestRoute(id: string): string {
+  return `${ROUTES.requests}/${id}`;
+}
+
+/** One company's public profile. */
+export function companyRoute(slug: string): string {
+  return `${ROUTES.companies}/${slug}`;
+}
+
+
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
   ROUTES.newRequest,
-  ROUTES.routes,
+  ROUTES.requests,
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.contact,

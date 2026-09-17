@@ -16,7 +16,7 @@ export const homeCopy = {
     subtitle:
       'Publici cererea gratuit și primești oferte doar de la transportatori cu documente valabile.',
     primary: 'Publică o cerere',
-    secondary: 'Cum funcționează',
+    secondary: 'Trasee disponibile',
     photoAlt: 'Platformă auto încărcată, pe un drum european',
   },
 
@@ -59,6 +59,56 @@ export const homeCopy = {
     },
   },
 
+  /**
+   * The activity section. Every number it shows comes from the database —
+   * there is not one figure in this block, only the sentences around them.
+   */
+  activity: {
+    eyebrow: 'Activitate pe platformă',
+    strong: 'Cereri noi',
+    soft: 'de transport auto.',
+
+    stats: {
+      sparklineLabel: 'Cereri publicate în ultimele 30 de zile',
+      sparklineCaption: 'Ultimele 30 de zile',
+      km: (km: string) => `${km} km de transport solicitat`,
+      kmNote: 'Distanțe estimate, însumate din cererile publicate',
+      week: (requests: string) => `${requests} în ultimele 7 zile`,
+      weekNote: 'Cereri publicate de persoane și firme',
+    },
+
+    feed: {
+      title: 'Cele mai noi cereri',
+      running: 'Pornește',
+      notRunning: 'Nu pornește',
+      express: 'Expres',
+      newBadge: 'Cereri noi',
+      showNew: 'Arată-le',
+      all: 'Vezi toate cererile',
+      /** Read out before the route, which is otherwise two names and an arrow. */
+      routeLabel: (from: string, to: string) => `De la ${from} la ${to}`,
+    },
+
+    empty: {
+      body: 'Primele cereri apar aici imediat ce sunt publicate.',
+      primary: 'Publică o cerere',
+      secondary: 'Trasee disponibile',
+    },
+
+    cta: {
+      strong: 'Publici cererea',
+      soft: 'gratuit.',
+      stepsTitle: 'Cum funcționează',
+      steps: [
+        'Completezi traseul și detaliile vehiculului, în două minute.',
+        'Transportatorii verificați văd cererea și îți trimit oferte.',
+        'Compari ofertele și alegi. Datele tale de contact rămân ascunse până decizi tu.',
+      ],
+      button: 'Publică o cerere gratuit',
+      note: 'Fără abonament pentru clienți. Contul se creează la final.',
+    },
+  },
+
   comparison: {
     eyebrow: 'Cum se schimbă',
     strong: 'Ce faci azi',
@@ -82,28 +132,6 @@ export const homeCopy = {
     stepLabel: 'Pasul',
   },
 
-  carriers: {
-    eyebrow: 'Pentru transportatori',
-    strong: 'Ai platformă?',
-    soft: 'Nu te mai întoarce gol.',
-    lede:
-      'Publici traseele de tur și de retur, vezi cererile de pe traseul tău și completezi locurile libere înainte să pleci.',
-    plan: {
-      name: 'Plan transportator',
-      price: '149 lei',
-      period: 'pe lună',
-      features: [
-        'Publicare nelimitată pe tur și pe retur',
-        'Acces la cererile compatibile cu traseele tale',
-        'Alerte pe e-mail pentru cereri de pe traseele tale',
-        'Evidența documentelor firmei și ale vehiculelor',
-        'Notificare înainte să expire un document',
-      ],
-      cta: 'Înscrie-ți firma',
-      note: 'Perioada gratuită începe după validarea firmei. Fără card la înscriere.',
-    },
-  },
-
   forwarders: {
     eyebrow: 'Pentru case de expediții',
     strong: 'Publici cursele o dată.',
@@ -118,57 +146,6 @@ export const homeCopy = {
     cta: 'Creează cont de firmă',
   },
 
-  verification: {
-    eyebrow: 'Verificare continuă',
-    strong: 'Nu verificăm firmele o singură dată.',
-    soft: 'Urmărim fiecare dată de expirare.',
-    body:
-      'Licența comunitară, asigurarea CMR, RCA-ul, ITP-ul și copiile conforme au fiecare o dată de expirare urmărită zilnic. Transportatorul primește notificări înainte să expire.',
-    rules: [
-      {
-        title: 'Dacă expiră un document al firmei',
-        body: 'Firma nu mai poate oferta până la revalidare.',
-        tone: 'danger' as const,
-      },
-      {
-        title: 'Dacă expiră RCA-ul sau ITP-ul unui vehicul',
-        body: 'Doar acel vehicul dispare de pe bursă. Restul flotei rămâne activ.',
-        tone: 'warning' as const,
-      },
-    ],
-  },
-
-  prices: {
-    eyebrow: 'Tarife',
-    strong: 'Un reper de preț,',
-    soft: 'înainte să ceri oferte.',
-    lede:
-      'Tarife orientative pentru un autoturism standard. Oferta finală depinde de vehicul, locație, disponibilitate și termen.',
-    tabs: [
-      { key: 'standard', label: 'Transport standard' },
-      { key: 'expres', label: 'Transport expres' },
-    ],
-    columns: {
-      route: 'Rută',
-      price: 'Preț orientativ',
-      range: 'Interval',
-      duration: 'Durată estimată',
-    },
-    onRequest: 'La cerere',
-    // TODO: valori orientative, de validat cu partenerul de transport
-    // înainte de lansare. Nu sunt calculate din transporturi încheiate.
-    rows: [
-      { country: 'Germania', cc: 'DE' as CountryCode, standard: '650 €', range: '590–780 €', days: '5–7 zile' },
-      { country: 'Italia', cc: 'IT' as CountryCode, standard: '700 €', range: '640–860 €', days: '5–8 zile' },
-      { country: 'Olanda', cc: 'NL' as CountryCode, standard: '700 €', range: '650–830 €', days: '6–8 zile' },
-      { country: 'Belgia', cc: 'BE' as CountryCode, standard: '690 €', range: '620–810 €', days: '6–8 zile' },
-      { country: 'Franța', cc: 'FR' as CountryCode, standard: '720 €', range: '660–880 €', days: '6–9 zile' },
-      { country: 'Spania', cc: 'ES' as CountryCode, standard: '750 €', range: '690–940 €', days: '7–10 zile' },
-      { country: 'Austria', cc: 'AT' as CountryCode, standard: '520 €', range: '470–610 €', days: '3–5 zile' },
-    ],
-    note:
-      'Prețurile de mai sus sunt orientative, stabilite pe baza pieței. Pe măsură ce se încheie transporturi în platformă, vom afișa intervalele reale pentru fiecare rută.',
-  },
 
   finalCta: {
     strong: 'Ai o mașină de mutat',

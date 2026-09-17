@@ -24,7 +24,9 @@ export function AccountNav({
     items.push({ href: ROUTES.accountCompany, label: accountCopy.nav.company });
     items.push({ href: ROUTES.accountDocuments, label: accountCopy.nav.documents });
     items.push({ href: ROUTES.accountFleet, label: accountCopy.nav.fleet });
+    items.push({ href: ROUTES.accountDepartures, label: accountCopy.nav.departures });
     items.push({ href: ROUTES.accountMembers, label: accountCopy.nav.members });
+    items.push({ href: ROUTES.accountSubscription, label: accountCopy.nav.subscription });
   }
   items.push({ href: ROUTES.accountInvitations, label: accountCopy.nav.invitations });
   if (context.isStaff) {

@@ -1462,6 +1462,1734 @@ select pg_temp.check('INV2 anon cannot call my_invitations', 'fix',
   null, 'anon', $a$select * from public.my_invitations()$a$, 'blocked');
 
 -- =====================================================================
+-- PUB - departures are public at city level, and only at city level
+--
+-- The phase 0 rule was "anon sees nothing on departures". That is now a
+-- narrower rule: anon sees the route, never who is driving it. These
+-- checks are what keeps the second sentence true while the first changes.
+-- =====================================================================
+
+select pg_temp.check('PUB  anon can read the public departures board', 'fix',
+  null, 'anon',
+  $a$select count(*) > 0 from public.v_departures_public$a$, 'true',
+  p_setup => $s$update public.truck_listings set status = 'active'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  the carrier view stays closed to anon', 'guard',
+  null, 'anon', $a$select * from public.v_departures$a$, 'blocked');
+
+-- The column list is the protection, so it is what gets pinned. A future
+-- "just add company_id, it is convenient" has to fail here.
+select pg_temp.check('PUB  the public board carries no company column', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'v_departures_public'
+         and column_name in ('company_id', 'posted_by', 'vehicle_id',
+                             'from_lat', 'from_lng', 'to_lat', 'to_lng',
+                             'notes', 'contact_name', 'contact_phone'))$a$, 'true');
+
+select pg_temp.check('PUB  anon still cannot reach truck_listings itself', 'guard',
+  null, 'anon', $a$select * from public.truck_listings$a$, 'blocked');
+
+select pg_temp.check('PUB  anon still cannot reach the vehicles behind a departure', 'guard',
+  null, 'anon', $a$select * from public.vehicles$a$, 'blocked');
+
+select pg_temp.check('PUB  a draft departure is not on the public board', 'fix',
+  null, 'anon',
+  $a$select * from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.truck_listings set status = 'draft'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  a departure whose window has passed drops off the board', 'fix',
+  null, 'anon',
+  $a$select * from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.truck_listings
+               set status = 'active',
+                   available_from = current_date - 20,
+                   available_to = current_date - 10
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  free seats are derived, not stored', 'guard',
+  null, 'anon',
+  $a$select slots_free = platform_slots_total - slots_taken
+     from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'true',
+  p_setup => $s$update public.truck_listings set status = 'active'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+-- =====================================================================
+-- VTY - which vehicles a departure accepts
+-- =====================================================================
+
+select pg_temp.check('VTY  a departure must accept at least one vehicle type', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.truck_listings set accepted_vehicle_types = '{}'
+     where id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked');
+
+select pg_temp.check('VTY  a member sets the types their platform carries', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.truck_listings set accepted_vehicle_types = '{motocicleta}'
+     where id = 'fb000000-0000-0000-0000-000000000002'$a$, 'allowed');
+
+-- =====================================================================
+-- ALR - "tell me when a route appears"
+--
+-- saved_searches already existed with its own policies; what was missing
+-- was a guard on the alert job's own bookkeeping.
+-- =====================================================================
+
+select pg_temp.check('ALR  a saved search lands on the caller, whatever it claims', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.saved_searches (user_id, name, target, filters)
+     values ('f0000000-0000-0000-0000-000000000002', 'Furat', 'truck', '{}')$a$, 'allowed',
+  p_verify => $v$select user_id = 'f0000000-0000-0000-0000-000000000006'
+                 from public.saved_searches where name = 'Furat'$v$);
+
+select pg_temp.check('ALR  a user cannot rewrite the alert job''s bookkeeping', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.saved_searches set last_notified_at = now() - interval '10 years'
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters, last_notified_at)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}', now())$s$);
+
+select pg_temp.check('ALR  a saved search cannot be handed to somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.saved_searches set user_id = 'f0000000-0000-0000-0000-000000000002'
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  the alert job still sets last_notified_at', 'guard',
+  null, 'service_role',
+  $a$update public.saved_searches set last_notified_at = now()
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  somebody else''s saved search is invisible', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select * from public.saved_searches
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  anon cannot save a search', 'guard',
+  null, 'anon',
+  $a$insert into public.saved_searches (user_id, name, target, filters)
+     values ('f0000000-0000-0000-0000-000000000006', 'Anon', 'truck', '{}')$a$, 'blocked');
+
+-- =====================================================================
+-- PRC - indicative prices
+--
+-- Two rules carry the whole feature: nothing is visible before the team
+-- publishes it, and nothing changes except through an audited RPC. Both
+-- are checked from the roles that would break them.
+-- =====================================================================
+
+select pg_temp.check('PRC  anon sees no rates while they are unpublished', 'fix',
+  null, 'anon', $a$select * from public.price_rates$a$, 'blocked');
+
+select pg_temp.check('PRC  a signed-in user sees no rates while unpublished', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select * from public.price_rates$a$, 'blocked');
+
+select pg_temp.check('PRC  the settings are hidden too, so is_published cannot be read off', 'fix',
+  null, 'anon', $a$select * from public.price_settings$a$, 'blocked');
+
+select pg_temp.check('PRC  staff see the rates while they are still working on them', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 5 from public.price_rates$a$, 'true');
+
+select pg_temp.check('PRC  anon reads the rates once published', 'fix',
+  null, 'anon',
+  $a$select count(*) = 5 from public.price_rates$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$);
+
+select pg_temp.check('PRC  anon reads the settings once published', 'fix',
+  null, 'anon',
+  $a$select express_surcharge_pct = 40 from public.price_settings where id$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$);
+
+select pg_temp.check('PRC  unpublishing hides them again', 'fix',
+  null, 'anon', $a$select * from public.price_rates$a$, 'blocked',
+  p_setup => $s$update public.price_settings set is_published = false where id$s$);
+
+-- =====================================================================
+-- PRW - only staff write, and only through the RPC
+-- =====================================================================
+
+select pg_temp.check('PRW  a user cannot write a rate directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.price_rates set national_ron_per_km = 0.01
+     where vehicle_class = 'sedan'$a$, 'blocked',
+  p_verify => $v$select national_ron_per_km = 3.40 from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  not even staff may write a rate directly', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.price_rates set national_ron_per_km = 0.01
+     where vehicle_class = 'sedan'$a$, 'blocked',
+  p_verify => $v$select national_ron_per_km = 3.40 from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  a non-staff user cannot call the rate RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'furat', 1, 1, 1, 1, 1)$a$, 'blocked',
+  p_verify => $v$select weight_label <> 'furat' from public.price_rates
+                 where vehicle_class = 'sedan'$v$);
+
+select pg_temp.check('PRW  anon cannot call the rate RPC', 'fix',
+  null, 'anon',
+  $a$select public.set_price_rate('sedan', 'furat', 1, 1, 1, 1, 1)$a$, 'blocked');
+
+select pg_temp.check('PRW  staff change a rate through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_price_rate('sedan', 'aprox. 1.500 kg',
+             5.60, 3.55, 0.58, 400, 180)).national_ron_per_km = 3.55$a$, 'true');
+
+select pg_temp.check('PRW  a rate change is audited with before and after', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg',
+            5.60, 3.55, 0.58, 400, 180) is not null$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'price_rate.updated'
+                   and (before ->> 'national_ron_per_km')::numeric = 3.40
+                   and (after ->> 'national_ron_per_km')::numeric = 3.55)$v$);
+
+select pg_temp.check('PRW  a change after publication says so in the audit row', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg',
+            5.60, 3.55, 0.58, 400, 180) is not null$a$, 'true',
+  p_setup => $s$update public.price_settings set is_published = true where id$s$,
+  p_verify => $v$select reason = 'Modificare după publicare' from public.audit_log
+                 where action = 'price_rate.updated'
+                 order by created_at desc limit 1$v$);
+
+select pg_temp.check('PRW  the RPC refuses a rate that is not a positive number', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg', 0, 3.40, 0.55, 380, 175)$a$, 'blocked');
+
+select pg_temp.check('PRW  the RPC refuses a minimum that is not positive', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_price_rate('sedan', 'aprox. 1.500 kg', 5.40, 3.40, 0.55, 0, 175)$a$, 'blocked');
+
+-- =====================================================================
+-- PRP - publishing
+-- =====================================================================
+
+select pg_temp.check('PRP  a non-staff user cannot publish the prices', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_prices_published(true)$a$, 'blocked',
+  p_verify => $v$select not is_published from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  staff publish, and it is recorded who and when', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_prices_published(true)).is_published$a$, 'true',
+  p_verify => $v$select approved_by = 'f0000000-0000-0000-0000-000000000001'
+                        and approved_at is not null
+                 from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  publishing is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_prices_published(true)).is_published$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'prices.published')$v$);
+
+select pg_temp.check('PRP  withdrawing clears the approval and is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_prices_published(false)).is_published$a$, 'true',
+  p_setup => $s$update public.price_settings
+                set is_published = true,
+                    approved_by = 'f0000000-0000-0000-0000-000000000001',
+                    approved_at = now()
+                where id$s$,
+  p_verify => $v$select s.approved_by is null and exists (
+                   select 1 from public.audit_log where action = 'prices.unpublished')
+                 from public.price_settings s where s.id$v$);
+
+select pg_temp.check('PRP  a non-staff user cannot change the surcharges', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_price_settings(99, 99, 2, 50, current_date)$a$, 'blocked',
+  p_verify => $v$select express_surcharge_pct = 40 from public.price_settings where id$v$);
+
+select pg_temp.check('PRP  staff change the surcharges through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_price_settings(35, 45, 1.3, 20, current_date)).express_surcharge_pct = 45$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'price_settings.updated')$v$);
+
+-- The medians of real transports are a different claim from our own rates;
+-- this feature must not have touched them.
+select pg_temp.check('PRP  the corridor medians are still their own thing', 'guard',
+  null, 'anon',
+  $a$select count(*) >= 0 from public.v_corridor_prices$a$, 'true');
+-- CRQ - requests on the homepage
+--
+-- The feature rests on one projection being narrow enough, so these check
+-- the column list itself and not only who may read it: a column added to
+-- the view by accident is a leak no policy catches.
+--
+-- The aggregate checks compare against a baseline captured in p_setup
+-- rather than against a fixed number. smoke_test.sql runs first on the same
+-- database and leaves rows behind, so any check written against a constant
+-- count passes or fails depending on what ran before it.
+-- =====================================================================
+
+select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'category','estimated_km','from_city','from_country','id','is_running',
+       'make','model','published_at','service_type','to_city','to_country','year'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
+
+select pg_temp.check('CRQ  the free text a person wrote about their car is not in the view', 'fix',
+  null, 'anon', $a$select description from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true,
+  p_setup => $s$update public.cargo_listings
+                set description = 'Sunați la 0722 000 000, mașina e în curte la Ion'
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  who posted it is not in the view', 'fix',
+  null, 'anon', $a$select posted_by from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the company is not in the view', 'fix',
+  null, 'anon', $a$select company_id from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the photographs are not in the view', 'fix',
+  null, 'anon', $a$select photo_paths from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the exact position is not in the view', 'fix',
+  null, 'anon', $a$select loading_lat from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  what the owner hoped to pay is not in the view', 'fix',
+  null, 'anon', $a$select price_amount from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  anon still cannot reach the listing itself', 'guard',
+  null, 'anon', $a$select * from public.cargo_listings$a$, 'blocked');
+
+select pg_temp.check('CRQ  anon still cannot reach a contact', 'guard',
+  null, 'anon', $a$select * from public.listing_contacts$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- What reaches the feed, and what does not
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon reads a live request', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_requests_public
+                    where id = 'f1000000-0000-0000-0000-000000000002')$a$, 'true');
+
+select pg_temp.check('CRQ  the route and the vehicle come through intact', 'fix',
+  null, 'anon',
+  $a$select from_city = 'Milano' and to_city = 'Timișoara'
+        and make = 'Volkswagen' and model = 'Golf' and year = 2018
+        and is_running
+     from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true');
+
+select pg_temp.check('CRQ  a draft never appears', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000004')$a$, 'true');
+
+select pg_temp.check('CRQ  a cancelled request drops out of the feed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  a request whose loading window has passed drops out', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+                set loading_from = current_date - 5, loading_to = current_date - 1
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  palletized freight is not shown on a vehicle feed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      insert into public.cargo_freight_details (cargo_listing_id, cargo_type)
+      values ('f1000000-0000-0000-0000-000000000001', 'paleți');
+      update public.cargo_listings set listing_kind = 'marfa'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The aggregates
+--
+-- Each one captures homepage_activity() into a temp table before the
+-- change it is about, so the assertion is about the delta the change
+-- caused and not about whatever else happens to be in the database.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon may ask how busy the platform is', 'fix',
+  null, 'anon', $a$select count(*) = 1 from public.homepage_activity()$a$, 'true');
+
+select pg_temp.check('CRQ  a draft counts for nothing', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Ciornă', 'Sibiu', 'Brașov', current_date + 4, 'draft');
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a cancelled request stops counting', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total - 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings set status = 'cancelled'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a delivered request still counts: it happened', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings set status = 'delivered'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  kilometres are counted where there are coordinates', 'fix',
+  null, 'anon',
+  -- Milano -> Timișoara is 935 km in a straight line, which is what the
+  -- total must grow by: not the road distance, and not a guess.
+  $a$select a.total_km between b.total_km + 930 and b.total_km + 940
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings
+      set loading_lat = 45.4642, loading_lng = 9.1900,
+          unloading_lat = 45.7489, unloading_lng = 21.2087
+      where id = 'f1000000-0000-0000-0000-000000000002';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a request without coordinates adds no kilometres, rather than a guess', 'fix',
+  null, 'anon',
+  $a$select a.total_km = b.total_km and a.published_total = b.published_total + 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      -- 'delivered' rather than 'active': it was published once, which is
+      -- what the total counts, and it needs no details row to get there.
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status, published_at)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Fără coordonate', 'Sibiu', 'Brașov', current_date + 4, 'delivered', now());
+    end $d$$s$);
+
+select pg_temp.check('CRQ  the daily series is thirty days long and ends today', 'fix',
+  null, 'anon',
+  $a$select array_length(daily_counts, 1) = 30 and daily_from = current_date - 29
+     from public.homepage_activity()$a$, 'true');
+
+select pg_temp.check('CRQ  a request published today lands on the last day of the series', 'fix',
+  null, 'anon',
+  $a$select a.daily_counts[30] = b.daily_counts[30] + 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status, published_at)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Publicată azi', 'Sibiu', 'Brașov', current_date + 4, 'delivered', now());
+    end $d$$s$);
+
+select pg_temp.check('CRQ  the live count is the one the feed shows', 'fix',
+  null, 'anon',
+  $a$select active_total = (select count(*) from public.v_requests_public)
+     from public.homepage_activity()$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The thresholds
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon reads the thresholds: they are not a secret', 'fix',
+  null, 'anon',
+  $a$select stats_min_requests = 50 and feed_min_requests = 6
+     from public.homepage_settings where id$a$, 'true');
+
+select pg_temp.check('CRQ  a user cannot move a threshold directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.homepage_settings set stats_min_requests = 0 where id$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  not even staff may move one directly', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.homepage_settings set stats_min_requests = 0 where id$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  a non-staff user cannot call the settings RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_homepage_settings(0, 1, 20, null)$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  anon cannot call the settings RPC', 'fix',
+  null, 'anon', $a$select public.set_homepage_settings(0, 1, 20, null)$a$, 'blocked');
+
+select pg_temp.check('CRQ  staff move a threshold through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(10, 3, 20, null)).stats_min_requests = 10$a$, 'true');
+
+select pg_temp.check('CRQ  a threshold change is audited with before and after', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(10, 3, 20, null)).feed_min_requests = 3$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'homepage_settings.updated'
+                   and (before ->> 'stats_min_requests')::integer = 50
+                   and (after ->> 'stats_min_requests')::integer = 10)$v$);
+
+select pg_temp.check('CRQ  the RPC refuses a feed threshold of zero', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(10, 0, 20, null)$a$, 'blocked',
+  p_verify => $v$select feed_min_requests = 6 from public.homepage_settings where id$v$);
+
+-- =====================================================================
+-- CTR - what the homepage and /verificare are allowed to say
+--
+-- Both pages make claims about safety. These check that the two things
+-- they read are readable by somebody with no account, that neither leaks a
+-- row, and that the count means what the sentence next to it says: verified,
+-- not suspended, carrying a transport licence.
+--
+-- Counts are compared against a baseline captured in p_setup, because
+-- smoke_test.sql runs first on the same database and leaves rows behind.
+-- =====================================================================
+
+select pg_temp.check('CTR  the requirements view carries only what the page prints', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'excluded_vehicle_types','for_company_types','for_vehicle_types','grace_days',
+       'has_expiry','is_blocking','kind','label_ro','reminder_days','scope'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_document_requirements_public'$a$, 'true');
+
+select pg_temp.check('CTR  anon reads the document rules without an account', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 10 from public.v_document_requirements_public$a$, 'true');
+
+select pg_temp.check('CTR  a retired rule drops out of the public list', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_document_requirements_public
+                        where kind = 'carte_verde')$a$, 'true',
+  p_setup => $s$update public.document_requirements set is_active = false
+                where kind = 'carte_verde'$s$);
+
+select pg_temp.check('CTR  anon still cannot read the requirements table itself', 'guard',
+  null, 'anon', $a$select * from public.document_requirements$a$, 'blocked');
+
+select pg_temp.check('CTR  the blocking flag and the reminder days come through', 'fix',
+  null, 'anon',
+  $a$select is_blocking and has_expiry and reminder_days = '{30,14,7,1}'
+     from public.v_document_requirements_public
+     where scope = 'vehicle' and kind = 'rca'$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The count
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CTR  anon may ask how many carriers can act', 'fix',
+  null, 'anon', $a$select public.verified_carriers_count() >= 0$a$, 'true');
+
+select pg_temp.check('CTR  anon still cannot read the companies behind the count', 'guard',
+  null, 'anon', $a$select * from public.companies$a$, 'blocked');
+
+select pg_temp.check('CTR  a verified carrier is counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() + 1 as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a company that is not verified is not counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'pending', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a suspended carrier stops being counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+      create temp table zz_base as select public.verified_carriers_count() - 1 as n;
+      grant select on zz_base to anon;
+      update public.companies set is_suspended = true
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a forwarder is not a carrier', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'expeditie'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a company that does both is counted once', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() + 1 as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'both'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The two new settings
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CTR  anon reads the threshold and the review-time text', 'fix',
+  null, 'anon',
+  $a$select verified_companies_min = 20
+        and review_time_label = 'în cel mult o zi lucrătoare'
+     from public.homepage_settings where id$a$, 'true');
+
+select pg_temp.check('CTR  the two-argument settings RPC is gone', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(10, 3)$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CTR  a non-staff user cannot change the company threshold', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_homepage_settings(50, 6, 1, 'imediat')$a$, 'blocked',
+  p_verify => $v$select verified_companies_min = 20 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CTR  staff change both new settings through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(50, 6, 5, 'în două zile lucrătoare')).verified_companies_min = 5$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'homepage_settings.updated'
+                   and (before ->> 'verified_companies_min')::integer = 20
+                   and (after ->> 'verified_companies_min')::integer = 5)$v$);
+
+select pg_temp.check('CTR  an empty review-time text becomes null, and hides the question', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(50, 6, 20, '   ')).review_time_label is null$a$, 'true');
+
+select pg_temp.check('CTR  the RPC refuses a company threshold of zero', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(50, 6, 0, null)$a$, 'blocked',
+  p_verify => $v$select verified_companies_min = 20 from public.homepage_settings where id$v$);
+-- REV - submitting a company, and a person deciding
+--
+-- The path from "I uploaded my documents" to "I can send offers". Two
+-- rules carry it: only a manager may submit, and only staff may approve —
+-- and neither may write the verification column directly, whatever the
+-- form in front of them says.
+-- =====================================================================
+
+select pg_temp.check('REV  a light commercial is not asked for a copie conformă', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not exists (
+       select 1 from public.v_vehicle_missing_documents
+       where vehicle_id = 'fe000000-0000-0000-0000-0000000000e1' and kind = 'copie_conforma')$a$,
+  'true',
+  p_setup => $s$insert into public.vehicles (id, company_id, plate_number, vehicle_type, max_weight_kg)
+                values ('fe000000-0000-0000-0000-0000000000e1',
+                        'fc000000-0000-0000-0000-000000000001', 'TM99RLS',
+                        'autoutilitara_3_5t', 3400)$s$);
+
+select pg_temp.check('REV  a car carrier still is', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select exists (
+       select 1 from public.v_vehicle_missing_documents
+       where vehicle_id = 'fe000000-0000-0000-0000-000000000001' and kind = 'copie_conforma')$a$,
+  'true');
+
+select pg_temp.check('REV  ITP and RCA are asked of the light commercial all the same', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 2 from public.v_vehicle_missing_documents
+     where vehicle_id = 'fe000000-0000-0000-0000-0000000000e1'
+       and kind in ('itp', 'rca')$a$, 'true',
+  p_setup => $s$insert into public.vehicles (id, company_id, plate_number, vehicle_type, max_weight_kg)
+                values ('fe000000-0000-0000-0000-0000000000e1',
+                        'fc000000-0000-0000-0000-000000000001', 'TM99RLS',
+                        'autoutilitara_3_5t', 3400)$s$);
+
+-- ---------------------------------------------------------------------
+-- Readiness
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a forwarder with its papers in is ready, with no fleet', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select is_ready and not needs_vehicles and vehicles_total = 0
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000002')$a$, 'true');
+
+select pg_temp.check('REV  a carrier with a vehicle missing papers is not ready', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready and vehicles_incomplete = 1
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  -- fe...0002 has no documents at all; fe...0001 has all three.
+  p_setup => $s$delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000003'$s$);
+
+select pg_temp.check('REV  a carrier is ready once every vehicle is covered', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select is_ready and needs_vehicles and vehicles_total = 1
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a carrier with no vehicle at all is not ready', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready and vehicles_total = 0
+     from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$delete from public.vehicles where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('REV  an uploaded document counts: approving it is the point of submitting', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select is_ready from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+      -- Only one document per company and kind may be in review at a time.
+      delete from public.documents where id = 'fa000000-0000-0000-0000-00000000000a';
+      update public.documents set status = 'pending'
+      where id = 'fa000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('REV  a rejected document does not count', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not is_ready from public.company_review_readiness('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+      delete from public.documents where id = 'fa000000-0000-0000-0000-00000000000a';
+      update public.documents set status = 'rejected'
+      where id = 'fa000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- Submitting
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a stranger cannot submit somebody else''s company', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a dispatcher cannot: it is a statement about the paperwork', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft' where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('REV  anon cannot submit anything', 'fix',
+  null, 'anon',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
+select pg_temp.check('REV  a manager cannot submit with documents still missing', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000003')$a$, 'blocked',
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REV  a manager submits a complete company', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a company admin may submit too', 'fix',
+  'f0000000-0000-0000-0000-00000000000d', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000001')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'draft' where id = 'fc000000-0000-0000-0000-000000000001';
+      delete from public.vehicles where id = 'fe000000-0000-0000-0000-000000000002';
+    end $d$$s$);
+
+select pg_temp.check('REV  submitting is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  -- A field, not the row: ROW(a, NULL) IS NOT NULL is false in Postgres.
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_status = 'pending'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'company.submitted_for_review'
+                                  and entity_id = 'fc000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('REV  a company already waiting cannot be submitted again', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REV  a company ANAF calls inactive cannot be submitted', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$update public.companies
+                set anaf_is_inactive = true, verification_status = 'draft'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a rejected company may try again', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.submit_company_for_review('fc000000-0000-0000-0000-000000000002')).verification_note is null$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set verification_status = 'rejected', verification_note = 'Licență ilizibilă'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$);
+
+-- ---------------------------------------------------------------------
+-- Deciding
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  the applicant cannot approve their own company', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', true)$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'pending' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  staff approve a company that is waiting', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', true)).verification_status = 'verified'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verified_at is not null and verification_note is null
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  approval is audited and the applicant is written to', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', true)).verification_status = 'verified'$a$, 'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log where action = 'company.verified')
+                    and exists (select 1 from public.notification_outbox
+                                where template = 'company_verified'
+                                  and recipient_company_id = 'fc000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('REV  a rejection without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', false)$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'pending' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  a rejection with a reason reaches the applicant', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000002', false,
+            'Licența încărcată este ilizibilă')).verification_note = 'Licența încărcată este ilizibilă'$a$,
+  'true',
+  p_setup => $s$update public.companies set verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'company_rejected')$v$);
+
+select pg_temp.check('REV  a company that is not waiting cannot be decided on', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_company('fc000000-0000-0000-0000-000000000002', true)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The column itself stays out of reach
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('REV  a manager cannot verify their own company by hand', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verification_status = 'verified'
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_status = 'draft', anaf_is_inactive = false, verification_note = null where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_status = 'draft' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  nor write the approval date', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verified_at = now()
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verified_at = null
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verified_at is null from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REV  nor clear a rejection note they did not like', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set verification_note = null
+     where id = 'fc000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.companies set verification_note = 'Licență ilizibilă'
+                where id = 'fc000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select verification_note = 'Licență ilizibilă' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000002'$v$);
+
+-- =====================================================================
+-- DIR - the public directory of verified companies
+--
+-- Three conditions decide whether a company is listed: it asked to be, it
+-- is verified, and it is not suspended. They live in the view, so no page
+-- can widen them by forgetting a filter — and these check all three from
+-- the role that would notice.
+-- =====================================================================
+
+select pg_temp.check('DIR  the directory carries only what a profile shows', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'city','company_type','compliant_vehicles','county','cui','last_checked_at',
+       'legal_name','logo_path','name','public_description','rating_avg','rating_count',
+       'serves_international','serves_national','slug','verified_since'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_public_companies'$a$, 'true');
+
+select pg_temp.check('DIR  the telephone number is not in the directory', 'fix',
+  null, 'anon', $a$select contact_phone from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  neither is the e-mail address', 'fix',
+  null, 'anon', $a$select contact_email from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  nor the street address', 'fix',
+  null, 'anon', $a$select address from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  nor what ANAF returned about the company', 'fix',
+  null, 'anon', $a$select anaf_payload from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  anon still cannot read the companies table', 'guard',
+  null, 'anon', $a$select * from public.companies$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Who is listed
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a company that opted in and is verified is listed', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that did not opt in is not listed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = false, verification_status = 'verified',
+                    is_suspended = false
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that is not verified is not listed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verification_status = 'pending',
+                    is_suspended = false
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a suspended company disappears from the list', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verification_status = 'verified',
+                    is_suspended = true
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  the count of vehicles with their papers in date is the one shown', 'fix',
+  null, 'anon',
+  $a$select a.compliant_vehicles = b.n
+     from public.v_public_companies a, zz_base b
+     where a.cui = '90000001'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set public_profile_enabled = true, verification_status = 'verified',
+          is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as
+        select count(*)::integer as n from public.vehicles v
+        where v.company_id = 'fc000000-0000-0000-0000-000000000001'
+          and v.is_active and v.is_compliant;
+      grant select on zz_base to anon;
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The slug
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  Romanian letters are transliterated, not dropped', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.slugify('Transport Brașov Țânțăreni SRL') = 'transport-brasov-tantareni-srl'$a$,
+  'true');
+
+select pg_temp.check('DIR  a new company gets a slug without asking', 'fix',
+  null, 'service_role',
+  $a$select slug = 'trans-nou-srl-cluj-napoca' from public.companies
+     where id = 'fc000000-0000-0000-0000-0000000000d1'$a$, 'true',
+  p_setup => $s$insert into public.companies (id, cui, legal_name, company_type, city, created_by)
+                values ('fc000000-0000-0000-0000-0000000000d1', '99000101', 'Trans Nou SRL',
+                        'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('DIR  two firms with the same name in the same city do not collide', 'fix',
+  null, 'service_role',
+  $a$select count(distinct slug) = 2 from public.companies
+     where id in ('fc000000-0000-0000-0000-0000000000d1', 'fc000000-0000-0000-0000-0000000000d2')$a$,
+  'true',
+  p_setup => $s$insert into public.companies (id, cui, legal_name, company_type, city, created_by)
+                values
+                  ('fc000000-0000-0000-0000-0000000000d1', '99000101', 'Trans Nou SRL', 'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002'),
+                  ('fc000000-0000-0000-0000-0000000000d2', '99000102', 'Trans Nou SRL', 'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('DIR  a manager cannot move the slug: shared links would break', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set slug = 'altceva'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select slug <> 'altceva' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- ---------------------------------------------------------------------
+-- What a company may say about itself
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a manager opts the firm into the list', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set public_profile_enabled = true,
+       public_description = 'Transportăm autoturisme între România și Germania.'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed');
+
+select pg_temp.check('DIR  a stranger cannot write somebody else''s description', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.companies set public_description = 'Text străin'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('DIR  a description longer than 300 characters is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set public_description = repeat('a', 301)
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Moderation
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a company cannot hide a rival from the list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_company_public_profile('fc000000-0000-0000-0000-000000000001', false, 'motiv')$a$,
+  'blocked');
+
+select pg_temp.check('DIR  staff hide a profile, with a reason, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_company_public_profile(
+       'fc000000-0000-0000-0000-000000000001', false,
+       'Descriere care nu corespunde activității')).public_profile_enabled$a$, 'true',
+  p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'company.profile_hidden')$v$);
+
+select pg_temp.check('DIR  hiding a profile without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_company_public_profile('fc000000-0000-0000-0000-000000000001', false)$a$,
+  'blocked', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select public_profile_enabled from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('DIR  hiding the profile does not touch the verification', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_company_public_profile(
+       'fc000000-0000-0000-0000-000000000001', false, 'motiv')).verification_status = 'verified'$a$,
+  'true', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- ---------------------------------------------------------------------
+-- The numbers
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon may ask how many verified carriers there are', 'fix',
+  null, 'anon', $a$select count(*) = 1 from public.directory_stats()$a$, 'true');
+
+select pg_temp.check('DIR  a suspended carrier is not counted', 'fix',
+  null, 'anon',
+  $a$select a.verified_companies = b.n - 1 from public.directory_stats() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as select verified_companies as n from public.directory_stats();
+      grant select on zz_base to anon;
+      update public.companies set is_suspended = true
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('DIR  the listed count is the directory itself', 'fix',
+  null, 'anon',
+  $a$select listed_companies = (select count(*) from public.v_public_companies)
+     from public.directory_stats()$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- Prices
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon reads the carrier price', 'guard',
+  null, 'anon',
+  $a$select price_ron_month = 149 from public.plans where code = 'carrier'$a$, 'true');
+
+select pg_temp.check('DIR  not even staff change a price without an audit row', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.plans set price_ron_month = 1 where code = 'carrier'$a$, 'blocked',
+  p_verify => $v$select price_ron_month = 149 from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('DIR  a carrier cannot change the price they pay', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 1, true, true, '[]')$a$,
+  'blocked',
+  p_verify => $v$select price_ron_month = 149 from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('DIR  staff change the price through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('carrier', 'Transportator', null, 'carrier', 169, true, true,
+            '[{"key":"a","label":"Publicare nelimitată","status":"included"}]')).price_ron_month = 169$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log where action = 'plan.updated')$v$);
+
+select pg_temp.check('DIR  a negative price is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', -1, true, true, '[]')$a$,
+  'blocked');
+
+-- ---------------------------------------------------------------------
+-- Thresholds
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon reads the thresholds', 'fix',
+  null, 'anon',
+  $a$select stats_min_companies = 20 and directory_min_companies = 12
+     from public.homepage_settings where id$a$, 'true');
+
+-- The trial length has one home, and it is not this table: migration
+-- 20260917160000 moved it to pricing_settings, where the trial that starts
+-- at approval reads it.
+select pg_temp.check('DIR  the trial length is not kept here as well', 'fix',
+  null, 'anon',
+  $a$select trial_days from public.homepage_settings$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  a non-staff user cannot move them', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_directory_settings(1, 1)$a$, 'blocked',
+  p_verify => $v$select directory_min_companies = 12 from public.homepage_settings where id$v$);
+
+select pg_temp.check('DIR  staff move them through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_directory_settings(5, 3)).directory_min_companies = 3$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'homepage_settings.updated'
+                                  and reason = 'Praguri pentru lista de firme')$v$);
+
+select pg_temp.check('DIR  a threshold of zero is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_directory_settings(0, 12)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The compliance shield
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a profile shows document states, to the month', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'kind','label_ro','slug','state','valid_month'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_public_company_documents'$a$, 'true');
+
+select pg_temp.check('DIR  the exact expiry date is not public', 'fix',
+  null, 'anon',
+  $a$select valid_until from public.v_public_company_documents$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  the month is the first of the month, never the real day', 'fix',
+  null, 'anon',
+  $a$select bool_and(extract(day from valid_month) = 1)
+     from public.v_public_company_documents
+     where valid_month is not null$a$, 'true',
+  p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that is not listed shows no documents either', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_company_documents
+                        where slug = (select slug from zz_base))$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+      update public.companies set public_profile_enabled = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The exemption, in public
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  the public rules carry the exemption, not just the rule', 'fix',
+  null, 'anon',
+  $a$select excluded_vehicle_types = '{autoutilitara_3_5t}'::public.vehicle_type[]
+     from public.v_document_requirements_public where kind = 'copie_conforma'$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The routes on a profile
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a listed company shows the routes it published', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_public_company_routes
+                    where slug = (select slug from zz_base))$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set public_profile_enabled = true, verification_status = 'verified',
+          is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+    end $d$$s$);
+
+select pg_temp.check('DIR  opting out takes the routes with the profile', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_company_routes
+                        where slug = (select slug from zz_base))$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+      update public.companies set public_profile_enabled = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- The board stays anonymous. A company column on it would undo the reason
+-- v_public_company_routes exists at all.
+select pg_temp.check('DIR  the anonymous board is still anonymous', 'guard',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'v_departures_public'
+         and column_name in ('company_id', 'slug', 'company_name'))$a$, 'true');
+
+select pg_temp.check('DIR  a route inside one country is marked as such', 'fix',
+  null, 'anon',
+  $a$select bool_and(is_domestic = (from_country = to_country))
+     from public.v_departures_public$a$, 'true');
+
+-- =====================================================================
+-- ABO - abonamente: prices, periods, settings and the request queue
+--
+-- A price is what a company is asked to pay, so the rules around it are
+-- the ones worth pinning: anon reads only what is public, nobody but staff
+-- writes, a discount is never stored, and a paid plan never touches the
+-- verification. The request queue is a conversation, not a payment, and a
+-- manager sees only their own company's side of it.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- What anon may read
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  anon reads the public plans', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 3 from public.plans where is_public$a$, 'true');
+
+select pg_temp.check('ABO  a plan taken off sale is not readable by anon', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plans where code = 'carrier')$a$, 'true',
+  p_setup => $s$update public.plans set is_public = false where code = 'carrier'$s$);
+
+select pg_temp.check('ABO  anon reads the period totals', 'fix',
+  null, 'anon',
+  $a$select total_price_ron = 1490 from public.plan_billing_periods
+     where plan_code = 'carrier' and months = 12$a$, 'true');
+
+select pg_temp.check('ABO  a period taken off sale is not readable by anon', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plan_billing_periods
+                        where plan_code = 'carrier' and months = 12)$a$, 'true',
+  p_setup => $s$update public.plan_billing_periods set is_public = false
+                where plan_code = 'carrier' and months = 12$s$);
+
+-- A period belonging to a plan nobody can see is itself invisible, even
+-- when its own flag says public: otherwise taking a plan off sale would
+-- leave its prices on the page.
+select pg_temp.check('ABO  hiding the plan hides its periods too', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plan_billing_periods where plan_code = 'carrier')$a$,
+  'true',
+  p_setup => $s$update public.plans set is_public = false where code = 'carrier'$s$);
+
+select pg_temp.check('ABO  anon reads the trial length and the VAT line', 'fix',
+  null, 'anon',
+  $a$select trial_days = 30 and vat_label is not null from public.pricing_settings where id$a$,
+  'true');
+
+select pg_temp.check('ABO  no discount percentage is stored anywhere', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public'
+         and table_name in ('plans', 'plan_billing_periods')
+         and (column_name like '%discount%' or column_name like '%percent%'))$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- Who may write a price
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  nobody writes a period through PostgREST', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.plan_billing_periods set total_price_ron = 1
+     where plan_code = 'carrier' and months = 12$a$, 'blocked',
+  p_verify => $v$select total_price_ron = 1490 from public.plan_billing_periods
+                 where plan_code = 'carrier' and months = 12$v$);
+
+select pg_temp.check('ABO  a carrier cannot change a period total', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_plan_period('carrier', 12, 1, true)$a$, 'blocked',
+  p_verify => $v$select total_price_ron = 1490 from public.plan_billing_periods
+                 where plan_code = 'carrier' and months = 12$v$);
+
+select pg_temp.check('ABO  staff change a period total through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan_period('carrier', 12, 1400, true)).total_price_ron = 1400$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'plan_period.updated')$v$);
+
+-- A "discount" that costs more than paying monthly is a typo in a form,
+-- and it would be printed on the page as a saving.
+select pg_temp.check('ABO  a period dearer than paying monthly is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan_period('carrier', 12, 99999, true)$a$, 'blocked');
+
+select pg_temp.check('ABO  a period other than 1, 6 or 12 months is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan_period('carrier', 3, 400, true)$a$, 'blocked');
+
+select pg_temp.check('ABO  a non-staff user cannot change the billing settings', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_pricing_settings(1, 'TVA inclus', false, 'x@test.ro')$a$, 'blocked',
+  p_verify => $v$select trial_days = 30 from public.pricing_settings where id$v$);
+
+select pg_temp.check('ABO  staff change them through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_pricing_settings(14, 'TVA inclus', false, 'facturi@test.ro')).trial_days = 14$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'pricing_settings.updated')$v$);
+
+-- An empty box means "say nothing about VAT", not an empty sentence under
+-- every price.
+select pg_temp.check('ABO  an empty VAT line becomes no line at all', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_pricing_settings(30, '   ', true, null)).vat_label is null$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The recommendation
+-- ---------------------------------------------------------------------
+
+-- The RPC is the action, not the setup: p_setup runs before the role is
+-- set, so is_platform_admin() would see no caller at all.
+select pg_temp.check('ABO  one plan is recommended per audience, never two', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('business', 'Flotă', null, 'carrier', 449, true, true, '[]')).highlight$a$,
+  'true',
+  p_verify => $v$select count(*) = 1 from public.plans
+                 where highlight and audience = 'carrier'$v$);
+
+select pg_temp.check('ABO  recommending another plan stands the first one down', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('business', 'Flotă', null, 'carrier', 449, true, true, '[]')).highlight$a$,
+  'true',
+  p_verify => $v$select not highlight from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('ABO  a plan with no audience cannot be the recommended one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_plan('individual', 'Persoană fizică', null, null, 0, false, true, '[]')).highlight$a$,
+  'true');
+
+select pg_temp.check('ABO  a feature without a status is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 149, true, true,
+            '[{"key":"a","label":"Ceva"}]')$a$, 'blocked');
+
+select pg_temp.check('ABO  a feature with a status we cannot draw is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 149, true, true,
+            '[{"key":"a","label":"Ceva","status":"maybe"}]')$a$, 'blocked');
+
+-- A dearer plan that appears to lack something the free one has reads as a
+-- mistake in the comparison table, and the first version of this seed had
+-- exactly that. The keys, not the statuses: a paid plan may legitimately
+-- mark something "în curând", but it must at least mention it.
+select pg_temp.check('ABO  every paid plan answers what the free one answers', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1
+       from public.plans free,
+            lateral jsonb_array_elements(free.features) f,
+            public.plans paid
+       where free.code = 'free'
+         and paid.code in ('carrier', 'business')
+         and not exists (
+           select 1 from jsonb_array_elements(paid.features) g
+           where g->>'key' = f->>'key'
+         ))$a$, 'true');
+
+-- Within one audience the same key must carry the same words, or the
+-- comparison table prints one plan's wording in a row covering all of them.
+-- Across audiences it may differ: "dispeceri nelimitați" and "mai mulți
+-- dispeceri" are different offers, and the two tables never share a row.
+select pg_temp.check('ABO  a feature key means one thing in a given table', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1
+       from public.plans p, lateral jsonb_array_elements(p.features) f
+       where p.audience is not null
+       group by p.audience, f->>'key'
+       having count(distinct f->>'label') > 1)$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- Asking for a plan
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  anon cannot read the request queue', 'guard',
+  null, 'anon', $a$select * from public.subscription_requests$a$, 'blocked');
+
+select pg_temp.check('ABO  nobody inserts a request through PostgREST', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.subscription_requests
+       (company_id, plan_code, months, requested_by)
+     values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+             'f0000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
+select pg_temp.check('ABO  a manager asks for a plan', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_subscription(
+       'fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+       'Vrem factură pe firmă')).status = 'new'$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'subscription_request.created')$v$);
+
+-- A dispatcher runs the day-to-day; committing the firm to a bill is the
+-- owner's or an admin's decision.
+select pg_temp.check('ABO  a dispatcher cannot commit the firm to a plan', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked');
+
+select pg_temp.check('ABO  nobody asks on behalf of another firm', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked');
+
+select pg_temp.check('ABO  a period that is not on sale cannot be requested', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked',
+  p_setup => $s$update public.plan_billing_periods set is_public = false
+                where plan_code = 'carrier' and months = 12$s$);
+
+select pg_temp.check('ABO  a second open request is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 6)$a$,
+  'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  the team is told to invoice, and the firm gets it in writing', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_subscription(
+       'fc000000-0000-0000-0000-000000000001', 'carrier', 12)).id is not null$a$, 'true',
+  p_setup => $s$update public.pricing_settings set billing_contact_email = 'facturi@test.ro'$s$,
+  p_verify => $v$select count(*) = 2 from public.notification_outbox
+                 where template in ('subscription_request_staff',
+                                    'subscription_request_received')$v$);
+
+-- ---------------------------------------------------------------------
+-- Who sees a request
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  a manager sees their own firm''s request', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.subscription_requests$a$, 'true',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  another firm''s request is not visible', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.subscription_requests$a$, 'true',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+-- ---------------------------------------------------------------------
+-- Working the queue
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  a company cannot activate its own subscription', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select status = 'new' from public.subscription_requests
+                 order by created_at desc limit 1$v$);
+
+select pg_temp.check('ABO  staff activate it, and the plan is the one asked for', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified', is_suspended = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'carrier' and status = 'active'
+                   and current_period_end > now() + interval '300 days'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'
+                   and status in ('trialing', 'active', 'past_due')$v$);
+
+select pg_temp.check('ABO  activation is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified', is_suspended = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'subscription.activated')$v$);
+
+-- A plan is not a shortcut past the paperwork.
+select pg_temp.check('ABO  an unverified firm cannot be activated', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$);
+
+select pg_temp.check('ABO  paying never changes the verification', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select verified_at is not null and verification_status = 'verified'
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  a rejection without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.reject_subscription_request(
+       (select id from public.subscription_requests limit 1), '   ')$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  a closed request cannot be activated afterwards', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by, status)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002', 'rejected')$s$);
+
+-- ---------------------------------------------------------------------
+-- The trial starts at approval, not at sign-up
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  approving a firm starts its trial on the recommended plan', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.companies set verification_status = 'pending', company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'carrier' and status = 'trialing'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  the trial runs for the length in the settings', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.pricing_settings set trial_days = 45 where id;
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select current_period_end > now() + interval '44 days'
+                   and current_period_end < now() + interval '46 days'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  a trial of zero days starts nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.pricing_settings set trial_days = 0 where id;
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select not exists (select 1 from public.subscriptions
+                                    where company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+-- A firm that already pays must not be dropped back onto a trial by a
+-- later re-approval.
+select pg_temp.check('ABO  approval does not overwrite a subscription that exists', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscriptions
+        (company_id, plan_code, status, current_period_end)
+      values ('fc000000-0000-0000-0000-000000000001', 'business', 'active',
+              now() + interval '200 days');
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'business' and status = 'active'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its

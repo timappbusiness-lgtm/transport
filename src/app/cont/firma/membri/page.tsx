@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { changeMemberRoleAction, removeMemberAction, revokeInvitationAction } from '@/app/cont/actions';
 import { InviteMemberForm, TransferOwnership } from '@/components/account/member-forms';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
-import { isManager, requireAccountContext } from '@/lib/auth/account';
+import { isManager } from '@/lib/auth/account';
+import { requireManagerContext } from '@/lib/auth/guards';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: accountCopy.members.title };
@@ -33,9 +33,9 @@ const dateFormat = new Intl.DateTimeFormat('ro-RO', {
 });
 
 export default async function Page() {
-  const context = await requireAccountContext(ROUTES.accountMembers);
+  // Managing the team is the owner's and the administrators'.
+  const context = await requireManagerContext(ROUTES.accountMembers);
   const company = context.activeCompany;
-  if (!company) redirect(ROUTES.accountCompanyCreate);
 
   const supabase = await createClient();
   const [membersResult, invitationsResult] = await Promise.all([

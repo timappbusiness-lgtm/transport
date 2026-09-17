@@ -73,14 +73,12 @@ test.describe('homepage', () => {
     await expect(page.getByText(/orientativ/i).first()).toBeVisible();
   });
 
-  test('the price tabs are reachable by keyboard', async ({ page }) => {
+  test('the price band points at the prices page rather than holding a table', async ({ page }) => {
+    // The rates moved to /preturi, where the team publishes them. The band
+    // keeps its place in the page and its anchor, and carries no figure.
     await page.goto('/');
-    const tabs = page.getByRole('tab');
-    await expect(tabs).toHaveCount(2);
-    await tabs.first().click();
-    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
-    await page.keyboard.press('ArrowRight');
-    await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#tarife')).toBeVisible();
+    await expect(page.locator('#tarife a[href="/preturi"]')).toHaveCount(1);
   });
 
   test('every internal link resolves', async ({ page, request }) => {
@@ -97,7 +95,7 @@ test.describe('homepage', () => {
 
   test('an anchor jump clears the floating header', async ({ page }) => {
     await page.goto('/');
-    for (const id of ['cum-functioneaza', 'transportatori', 'verificare', 'tarife']) {
+    for (const id of ['cum-functioneaza', 'transportatori', 'siguranta', 'tarife']) {
       await page.evaluate((target) => {
         location.hash = '';
         location.hash = target;

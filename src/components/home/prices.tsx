@@ -1,114 +1,99 @@
-'use client';
-
-import { useId, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight } from '@/components/icons';
 import { Container } from '@/components/layout/container';
-import { CountryTag, Lede, SectionHead } from '@/components/ui/primitives';
-import { homeCopy } from '@/content/home';
-import { cn } from '@/lib/utils';
+import { VehicleIcon } from '@/components/prices/vehicle-icon';
+import { Lede, SectionHead } from '@/components/ui/primitives';
+import { ROUTES } from '@/config/routes';
+import { pricesCopy } from '@/content/preturi';
+import {
+  VEHICLE_CLASS_LABELS,
+  ZONE_LABELS,
+  formatMinimums,
+  formatRatePerKm,
+  formatValidMonth,
+} from '@/lib/pricing';
+import { homeRates, isPublished, loadPrices } from '@/lib/prices-source';
 
-const c = homeCopy.prices;
-type TabKey = (typeof c.tabs)[number]['key'];
+const c = pricesCopy.home;
 
-export function Prices() {
-  const [active, setActive] = useState<TabKey>('standard');
-  const id = useId();
+/**
+ * The price band on the homepage.
+ *
+ * Three classes and two columns, then the link — the whole table, the
+ * minimums and the calculator are a page away, and putting them here would
+ * turn the homepage into the prices page.
+ *
+ * The figures only appear once the team has published them. Until then the
+ * band keeps its place in the page and says what is coming, because an
+ * unapproved rate shown as a price is exactly the invented number this site
+ * does not print.
+ */
+export async function Prices() {
+  const data = await loadPrices();
+  const published = isPublished(data);
+  const rows = published ? homeRates(data.rates) : [];
+  const month = published ? formatValidMonth(data.settings?.valid_month ?? null) : null;
 
   return (
     <section id="tarife" className="bg-background">
       <Container className="py-16 sm:py-20">
         <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
-          <Lede>{c.lede}</Lede>
+          <Lede>{published ? c.lede : c.ledeUnpublished}</Lede>
         </SectionHead>
 
-        <div
-          role="tablist"
-          aria-label={c.eyebrow}
-          className="mt-8 inline-flex gap-1 rounded-pill border border-border bg-surface p-1"
-        >
-          {c.tabs.map((tab) => {
-            const selected = tab.key === active;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                id={`${id}-tab-${tab.key}`}
-                aria-selected={selected}
-                aria-controls={`${id}-panel`}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => setActive(tab.key)}
-                onKeyDown={(event) => {
-                  // Arrow keys move between tabs, as a tablist should.
-                  if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-                  event.preventDefault();
-                  const index = c.tabs.findIndex((t) => t.key === active);
-                  const next = c.tabs[(index + 1) % c.tabs.length];
-                  if (next) {
-                    setActive(next.key);
-                    document.getElementById(`${id}-tab-${next.key}`)?.focus();
-                  }
-                }}
-                className={cn(
-                  'rounded-pill px-4 py-2 text-[0.875rem] transition-[color,background-color] duration-150',
-                  selected ? 'bg-foreground text-white' : 'text-muted hover:text-foreground',
-                )}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div
-          id={`${id}-panel`}
-          role="tabpanel"
-          aria-labelledby={`${id}-tab-${active}`}
-          className="mt-6 overflow-x-auto rounded-card border border-border bg-surface"
-        >
-          <table className="w-full min-w-[34rem] border-collapse text-[0.9375rem]">
-            <thead>
-              <tr>
-                {[c.columns.route, c.columns.price, c.columns.range, c.columns.duration].map(
-                  (heading, index) => (
-                    <th
-                      key={heading}
-                      scope="col"
-                      className={cn(
-                        'border-b border-border px-5 py-3.5 font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted',
-                        index === 0 ? 'text-left' : 'text-right',
-                      )}
-                    >
-                      {heading}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {c.rows.map((row) => (
-                <tr key={row.country}>
-                  <td className="border-b border-border px-5 py-3.5 last:border-b-0">
-                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
-                      {row.country} <CountryTag cc={row.cc} /> → România
+        {rows.length > 0 ? (
+          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+            {rows.map((rate) => (
+              <li key={rate.vehicle_class} className="rounded-card border border-border bg-surface p-5">
+                <p className="flex items-center gap-3">
+                  <VehicleIcon vehicleClass={rate.vehicle_class} />
+                  <span>
+                    <span className="block font-medium">
+                      {VEHICLE_CLASS_LABELS[rate.vehicle_class]}
                     </span>
-                  </td>
-                  <td className="border-b border-border px-5 py-3.5 text-right font-mono tabular-nums">
-                    {active === 'standard' ? row.standard : c.onRequest}
-                  </td>
-                  <td className="border-b border-border px-5 py-3.5 text-right font-mono tabular-nums text-muted">
-                    {active === 'standard' ? row.range : '—'}
-                  </td>
-                  <td className="border-b border-border px-5 py-3.5 text-right font-mono tabular-nums text-muted">
-                    {active === 'standard' ? row.days : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <span className="block text-[0.8125rem] text-muted">{rate.weight_label}</span>
+                  </span>
+                </p>
+                <dl className="mt-4 flex flex-col">
+                  <Line
+                    label={ZONE_LABELS.national}
+                    value={formatRatePerKm(rate.national_ron_per_km, 'RON')}
+                  />
+                  <Line
+                    label={ZONE_LABELS.international}
+                    value={formatRatePerKm(rate.international_eur_per_km, 'EUR')}
+                  />
+                </dl>
+                <p className="mt-3 text-[0.75rem] text-muted">{formatMinimums(rate)}</p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-        <p className="mt-4 max-w-[64ch] text-[0.8125rem] text-muted">{c.note}</p>
+        <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem]">
+          <Link
+            href={ROUTES.prices}
+            className="inline-flex items-center gap-2 text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          >
+            {published ? c.link : c.linkUnpublished}
+            <ArrowRight />
+          </Link>
+          {month ? (
+            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-muted">
+              {pricesCopy.table.updated(month)}
+            </span>
+          ) : null}
+        </p>
       </Container>
     </section>
+  );
+}
+
+function Line({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-border py-2 last:border-b-0">
+      <dt className="min-w-0 flex-1 text-[0.8125rem] text-muted">{label}</dt>
+      <dd className="font-mono text-[0.8125rem] tabular-nums">{value}</dd>
+    </div>
   );
 }
