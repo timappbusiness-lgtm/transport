@@ -11,6 +11,9 @@ const NAV = [
   { href: ROUTES.admin, label: 'Panou' },
   { href: ROUTES.adminDocuments, label: 'Documente de verificat' },
   { href: ROUTES.adminActivity, label: 'Activitate pe prima pagină' },
+  { href: ROUTES.adminSettings, label: 'Setări pentru lista de firme' },
+  { href: ROUTES.adminCompanies, label: 'Firme în lista publică' },
+  { href: ROUTES.adminPlans, label: 'Planuri' },
 ] as const;
 
 /**
