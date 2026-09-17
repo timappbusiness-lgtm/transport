@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 const SECTIONS = [
   { href: '#cum-functioneaza', label: 'Cum funcționează' },
   { href: '#transportatori', label: 'Transportatori' },
-  { href: '#verificare', label: 'Verificare' },
+  { href: '#siguranta', label: 'Siguranță' },
 ] as const;
 
 /**
@@ -25,6 +25,8 @@ const SECTIONS = [
 const PAGES = [
   { href: ROUTES.routes, label: 'Trasee' },
   { href: ROUTES.prices, label: 'Prețuri' },
+  { href: ROUTES.companies, label: 'Firme' },
+  { href: ROUTES.plans, label: 'Abonamente' },
 ] as const;
 
 export interface HeaderUser {
@@ -70,13 +72,18 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
   const accountLinks = [
     { href: ROUTES.account, label: accountCopy.nav.dashboard },
     { href: ROUTES.accountProfile, label: accountCopy.nav.profile },
-    ...(user?.hasCompany ? [{ href: ROUTES.accountCompany, label: accountCopy.nav.company }] : []),
+    ...(user?.hasCompany
+      ? [
+          { href: ROUTES.accountCompany, label: accountCopy.nav.company },
+          { href: ROUTES.accountSubscription, label: accountCopy.nav.subscription },
+        ]
+      : []),
     ...(user?.isStaff ? [{ href: ROUTES.admin, label: accountCopy.nav.admin }] : []),
   ];
 
   return (
     <>
-      <nav aria-label="Secțiuni" className="hidden gap-1 min-[900px]:flex">
+      <nav aria-label="Navigare" className="hidden gap-1 min-[900px]:flex">
         {onHome
           ? SECTIONS.map((section) => (
               <a key={section.href} href={section.href} className={PILL_QUIET}>

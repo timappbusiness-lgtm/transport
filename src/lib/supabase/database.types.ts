@@ -193,6 +193,13 @@ export type Database = {
             referencedRelation: "cargo_listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cargo_freight_details_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cargo_listings: {
@@ -447,6 +454,13 @@ export type Database = {
             referencedRelation: "cargo_listings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cargo_vehicle_details_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       companies: {
@@ -468,15 +482,21 @@ export type Database = {
           id: string
           is_suspended: boolean
           legal_name: string
+          logo_path: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
           website: string | null
         }
         Insert: {
@@ -497,15 +517,21 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           legal_name: string
+          logo_path?: string | null
+          public_description?: string | null
+          public_profile_enabled?: boolean
           rating_avg?: number | null
           rating_count?: number
           reg_com?: string | null
+          slug?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
           website?: string | null
         }
         Update: {
@@ -526,15 +552,21 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           legal_name?: string
+          logo_path?: string | null
+          public_description?: string | null
+          public_profile_enabled?: boolean
           rating_avg?: number | null
           rating_count?: number
           reg_com?: string | null
+          slug?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
+          verified_at?: string | null
           website?: string | null
         }
         Relationships: [
@@ -736,6 +768,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contact_reveals_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contact_reveals_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
@@ -782,6 +821,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "contact_reveals_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_company_routes"
             referencedColumns: ["truck_listing_id"]
           },
           {
@@ -833,6 +879,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_initiator_user_id_fkey"
             columns: ["initiator_user_id"]
             isOneToOne: false
@@ -865,6 +918,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "conversations_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_company_routes"
             referencedColumns: ["truck_listing_id"]
           },
         ]
@@ -921,6 +981,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "departure_bookings_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "departure_bookings_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
@@ -955,11 +1022,20 @@ export type Database = {
             referencedRelation: "v_departures_public"
             referencedColumns: ["truck_listing_id"]
           },
+          {
+            foreignKeyName: "departure_bookings_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_company_routes"
+            referencedColumns: ["truck_listing_id"]
+          },
         ]
       }
       document_requirements: {
         Row: {
           created_at: string
+          excluded_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types:
@@ -977,6 +1053,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types?:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types?:
@@ -994,6 +1072,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
           for_company_types?:
             Database["public"]["Enums"]["company_type"][] | null
           for_vehicle_types?:
@@ -1245,6 +1325,50 @@ export type Database = {
           },
         ]
       }
+      homepage_settings: {
+        Row: {
+          directory_min_companies: number
+          feed_min_requests: number
+          id: boolean
+          review_time_label: string | null
+          stats_min_companies: number
+          stats_min_requests: number
+          updated_at: string
+          updated_by: string | null
+          verified_companies_min: number
+        }
+        Insert: {
+          directory_min_companies?: number
+          feed_min_requests?: number
+          id?: boolean
+          review_time_label?: string | null
+          stats_min_companies?: number
+          stats_min_requests?: number
+          updated_at?: string
+          updated_by?: string | null
+          verified_companies_min?: number
+        }
+        Update: {
+          directory_min_companies?: number
+          feed_min_requests?: number
+          id?: boolean
+          review_time_label?: string | null
+          stats_min_companies?: number
+          stats_min_requests?: number
+          updated_at?: string
+          updated_by?: string | null
+          verified_companies_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_contacts: {
         Row: {
           cargo_listing_id: string | null
@@ -1285,6 +1409,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "listing_contacts_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "listing_contacts_truck_listing_id_fkey"
             columns: ["truck_listing_id"]
             isOneToOne: true
@@ -1303,6 +1434,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: true
             referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "listing_contacts_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_company_routes"
             referencedColumns: ["truck_listing_id"]
           },
         ]
@@ -1536,10 +1674,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "offers_booking_cargo_listing_id_fkey"
+            columns: ["booking_cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "offers_cargo_listing_id_fkey"
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
             referencedColumns: ["id"]
           },
           {
@@ -1598,15 +1750,60 @@ export type Database = {
             referencedRelation: "v_departures_public"
             referencedColumns: ["truck_listing_id"]
           },
+          {
+            foreignKeyName: "offers_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_company_routes"
+            referencedColumns: ["truck_listing_id"]
+          },
+        ]
+      }
+      plan_billing_periods: {
+        Row: {
+          created_at: string
+          is_public: boolean
+          months: number
+          plan_code: string
+          total_price_ron: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_public?: boolean
+          months: number
+          plan_code: string
+          total_price_ron: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_public?: boolean
+          months?: number
+          plan_code?: string
+          total_price_ron?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_billing_periods_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
         ]
       }
       plans: {
         Row: {
+          audience: Database["public"]["Enums"]["plan_audience"] | null
           can_post_cargo: boolean
           can_post_trucks: boolean
           code: string
           created_at: string
           description: string | null
+          features: Json
+          highlight: boolean
           is_public: boolean
           max_active_cargo_listings: number | null
           max_active_truck_listings: number | null
@@ -1616,16 +1813,20 @@ export type Database = {
           price_ron_month: number
           price_ron_year: number | null
           promoted_credits_month: number
+          short_description: string | null
           sort_order: number
           updated_at: string
           whatsapp_alerts: boolean
         }
         Insert: {
+          audience?: Database["public"]["Enums"]["plan_audience"] | null
           can_post_cargo?: boolean
           can_post_trucks?: boolean
           code: string
           created_at?: string
           description?: string | null
+          features?: Json
+          highlight?: boolean
           is_public?: boolean
           max_active_cargo_listings?: number | null
           max_active_truck_listings?: number | null
@@ -1635,16 +1836,20 @@ export type Database = {
           price_ron_month?: number
           price_ron_year?: number | null
           promoted_credits_month?: number
+          short_description?: string | null
           sort_order?: number
           updated_at?: string
           whatsapp_alerts?: boolean
         }
         Update: {
+          audience?: Database["public"]["Enums"]["plan_audience"] | null
           can_post_cargo?: boolean
           can_post_trucks?: boolean
           code?: string
           created_at?: string
           description?: string | null
+          features?: Json
+          highlight?: boolean
           is_public?: boolean
           max_active_cargo_listings?: number | null
           max_active_truck_listings?: number | null
@@ -1654,6 +1859,7 @@ export type Database = {
           price_ron_month?: number
           price_ron_year?: number | null
           promoted_credits_month?: number
+          short_description?: string | null
           sort_order?: number
           updated_at?: string
           whatsapp_alerts?: boolean
@@ -1834,6 +2040,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_settings: {
+        Row: {
+          billing_contact_email: string | null
+          id: boolean
+          manual_billing: boolean
+          trial_days: number
+          updated_at: string
+          vat_label: string | null
+        }
+        Insert: {
+          billing_contact_email?: string | null
+          id?: boolean
+          manual_billing?: boolean
+          trial_days?: number
+          updated_at?: string
+          vat_label?: string | null
+        }
+        Update: {
+          billing_contact_email?: string | null
+          id?: boolean
+          manual_billing?: boolean
+          trial_days?: number
+          updated_at?: string
+          vat_label?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -2179,6 +2412,101 @@ export type Database = {
           },
         ]
       }
+      subscription_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          decision_reason: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          plan_code: string
+          requested_by: string
+          status: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decision_reason?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          months: number
+          notes?: string | null
+          plan_code: string
+          requested_by: string
+          status?: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decision_reason?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          months?: number
+          notes?: string | null
+          plan_code?: string
+          requested_by?: string
+          status?: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_requests_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "subscription_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -2343,6 +2671,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transports_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transports_carrier_company_id_fkey"
             columns: ["carrier_company_id"]
             isOneToOne: false
@@ -2445,6 +2780,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "transports_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_company_routes"
             referencedColumns: ["truck_listing_id"]
           },
           {
@@ -2954,6 +3296,7 @@ export type Database = {
           from_city: string | null
           from_country: string | null
           from_county: string | null
+          is_domestic: boolean | null
           platform_slots_total: number | null
           price_indicative: number | null
           published_at: string | null
@@ -2965,6 +3308,155 @@ export type Database = {
           to_county: string | null
           truck_listing_id: string | null
           waypoints: Json | null
+        }
+        Relationships: []
+      }
+      v_document_requirements_public: {
+        Row: {
+          excluded_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          for_company_types:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days: number | null
+          has_expiry: boolean | null
+          is_blocking: boolean | null
+          kind: Database["public"]["Enums"]["document_kind"] | null
+          label_ro: string | null
+          reminder_days: number[] | null
+          scope: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Insert: {
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          for_company_types?:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days?: number | null
+          has_expiry?: boolean | null
+          is_blocking?: boolean | null
+          kind?: Database["public"]["Enums"]["document_kind"] | null
+          label_ro?: string | null
+          reminder_days?: number[] | null
+          scope?: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Update: {
+          excluded_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          for_company_types?:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days?: number | null
+          has_expiry?: boolean | null
+          is_blocking?: boolean | null
+          kind?: Database["public"]["Enums"]["document_kind"] | null
+          label_ro?: string | null
+          reminder_days?: number[] | null
+          scope?: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Relationships: []
+      }
+      v_public_companies: {
+        Row: {
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"] | null
+          compliant_vehicles: number | null
+          county: string | null
+          cui: string | null
+          last_checked_at: string | null
+          legal_name: string | null
+          logo_path: string | null
+          name: string | null
+          public_description: string | null
+          rating_avg: number | null
+          rating_count: number | null
+          serves_international: boolean | null
+          serves_national: boolean | null
+          slug: string | null
+          verified_since: string | null
+        }
+        Insert: {
+          city?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
+          compliant_vehicles?: never
+          county?: string | null
+          cui?: string | null
+          last_checked_at?: never
+          legal_name?: string | null
+          logo_path?: string | null
+          name?: never
+          public_description?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          serves_international?: never
+          serves_national?: never
+          slug?: string | null
+          verified_since?: string | null
+        }
+        Update: {
+          city?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
+          compliant_vehicles?: never
+          county?: string | null
+          cui?: string | null
+          last_checked_at?: never
+          legal_name?: string | null
+          logo_path?: string | null
+          name?: never
+          public_description?: string | null
+          rating_avg?: number | null
+          rating_count?: number | null
+          serves_international?: never
+          serves_national?: never
+          slug?: string | null
+          verified_since?: string | null
+        }
+        Relationships: []
+      }
+      v_public_company_documents: {
+        Row: {
+          kind: Database["public"]["Enums"]["document_kind"] | null
+          label_ro: string | null
+          slug: string | null
+          state: string | null
+          valid_month: string | null
+        }
+        Relationships: []
+      }
+      v_public_company_routes: {
+        Row: {
+          available_from: string | null
+          available_to: string | null
+          direction: Database["public"]["Enums"]["truck_direction"] | null
+          from_city: string | null
+          from_country: string | null
+          is_domestic: boolean | null
+          slots_free: number | null
+          slug: string | null
+          to_city: string | null
+          to_country: string | null
+          truck_listing_id: string | null
+        }
+        Relationships: []
+      }
+      v_requests_public: {
+        Row: {
+          category: Database["public"]["Enums"]["cargo_category"] | null
+          estimated_km: number | null
+          from_city: string | null
+          from_country: string | null
+          id: string | null
+          is_running: boolean | null
+          make: string | null
+          model: string | null
+          published_at: string | null
+          service_type: Database["public"]["Enums"]["service_type"] | null
+          to_city: string | null
+          to_country: string | null
+          year: number | null
         }
         Relationships: []
       }
@@ -3048,6 +3540,23 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      activate_subscription_request: {
+        Args: { p_id: string }
+        Returns: {
+          company_id: string
+          created_at: string
+          decision_reason: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          plan_code: string
+          requested_by: string
+          status: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at: string
+        }
+      }
       can_edit_cargo_listing: {
         Args: { p_listing_id: string }
         Returns: boolean
@@ -3059,6 +3568,20 @@ export type Database = {
       company_can_act: {
         Args: { p_company_id: string }
         Returns: boolean
+      }
+      company_review_readiness: {
+        Args: { p_company_id: string }
+        Returns: {
+          is_ready: boolean
+          missing_company_documents: number
+          needs_vehicles: boolean
+          vehicles_incomplete: number
+          vehicles_total: number
+        }[]
+      }
+      company_slug: {
+        Args: { p_city: string; p_company_id: string; p_legal_name: string }
+        Returns: string
       }
       confirm_departure_booking: {
         Args: { p_agreed_price?: number; p_booking_id: string }
@@ -3113,15 +3636,21 @@ export type Database = {
           id: string
           is_suspended: boolean
           legal_name: string
+          logo_path: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
           website: string | null
         }
       }
@@ -3165,11 +3694,14 @@ export type Database = {
       current_plan: {
         Args: { p_company_id?: string }
         Returns: {
+          audience: Database["public"]["Enums"]["plan_audience"] | null
           can_post_cargo: boolean
           can_post_trucks: boolean
           code: string
           created_at: string
           description: string | null
+          features: Json
+          highlight: boolean
           is_public: boolean
           max_active_cargo_listings: number | null
           max_active_truck_listings: number | null
@@ -3179,6 +3711,7 @@ export type Database = {
           price_ron_month: number
           price_ron_year: number | null
           promoted_credits_month: number
+          short_description: string | null
           sort_order: number
           updated_at: string
           whatsapp_alerts: boolean
@@ -3202,6 +3735,14 @@ export type Database = {
       departure_seats_taken: {
         Args: { p_except_cargo_listing_id?: string; p_truck_listing_id: string }
         Returns: number
+      }
+      directory_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          compliant_vehicles: number
+          listed_companies: number
+          verified_companies: number
+        }[]
       }
       distance_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
@@ -3230,6 +3771,17 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      homepage_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active_total: number
+          daily_counts: number[]
+          daily_from: string
+          published_last_7d: number
+          published_total: number
+          total_km: number
+        }[]
       }
       invite_company_member: {
         Args: {
@@ -3284,6 +3836,23 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: number
       }
+      mark_subscription_request_contacted: {
+        Args: { p_id: string }
+        Returns: {
+          company_id: string
+          created_at: string
+          decision_reason: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          plan_code: string
+          requested_by: string
+          status: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at: string
+        }
+      }
       my_company_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -3305,6 +3874,10 @@ export type Database = {
       }
       owns_offer_listing: {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
+        Returns: boolean
+      }
+      plan_features_valid: {
+        Args: { p_features: Json }
         Returns: boolean
       }
       prices_are_published: {
@@ -3340,6 +3913,45 @@ export type Database = {
           valid_until: string | null
         }
       }
+      reject_subscription_request: {
+        Args: { p_id: string; p_reason: string }
+        Returns: {
+          company_id: string
+          created_at: string
+          decision_reason: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          plan_code: string
+          requested_by: string
+          status: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at: string
+        }
+      }
+      request_subscription: {
+        Args: {
+          p_company_id: string
+          p_months: number
+          p_notes?: string
+          p_plan_code: string
+        }
+        Returns: {
+          company_id: string
+          created_at: string
+          decision_reason: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          months: number
+          notes: string | null
+          plan_code: string
+          requested_by: string
+          status: Database["public"]["Enums"]["subscription_request_status"]
+          updated_at: string
+        }
+      }
       reveal_contact: {
         Args: { p_cargo_listing_id?: string; p_truck_listing_id?: string }
         Returns: {
@@ -3347,6 +3959,44 @@ export type Database = {
           contact_name: string
           contact_phone: string
         }[]
+      }
+      review_company: {
+        Args: { p_approve: boolean; p_company_id: string; p_reason?: string }
+        Returns: {
+          address: string | null
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          cui: string
+          display_name: string | null
+          id: string
+          is_suspended: boolean
+          legal_name: string
+          logo_path: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
+          rating_avg: number | null
+          rating_count: number
+          reg_com: string | null
+          slug: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
       }
       review_document: {
         Args: {
@@ -3408,9 +4058,134 @@ export type Database = {
         Args: { p_text: string }
         Returns: string
       }
+      set_company_public_profile: {
+        Args: { p_company_id: string; p_enabled: boolean; p_reason?: string }
+        Returns: {
+          address: string | null
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          cui: string
+          display_name: string | null
+          id: string
+          is_suspended: boolean
+          legal_name: string
+          logo_path: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
+          rating_avg: number | null
+          rating_count: number
+          reg_com: string | null
+          slug: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
+      }
+      set_directory_settings: {
+        Args: {
+          p_directory_min_companies: number
+          p_stats_min_companies: number
+        }
+        Returns: {
+          directory_min_companies: number
+          feed_min_requests: number
+          id: boolean
+          review_time_label: string | null
+          stats_min_companies: number
+          stats_min_requests: number
+          updated_at: string
+          updated_by: string | null
+          verified_companies_min: number
+        }
+      }
+      set_homepage_settings: {
+        Args: {
+          p_feed_min_requests: number
+          p_review_time_label: string
+          p_stats_min_requests: number
+          p_verified_companies_min: number
+        }
+        Returns: {
+          directory_min_companies: number
+          feed_min_requests: number
+          id: boolean
+          review_time_label: string | null
+          stats_min_companies: number
+          stats_min_requests: number
+          updated_at: string
+          updated_by: string | null
+          verified_companies_min: number
+        }
+      }
       set_limit: {
         Args: { "": number }
         Returns: number
+      }
+      set_plan: {
+        Args: {
+          p_audience: Database["public"]["Enums"]["plan_audience"]
+          p_code: string
+          p_features: Json
+          p_highlight: boolean
+          p_is_public: boolean
+          p_name: string
+          p_price_ron_month: number
+          p_short_description: string
+        }
+        Returns: {
+          audience: Database["public"]["Enums"]["plan_audience"] | null
+          can_post_cargo: boolean
+          can_post_trucks: boolean
+          code: string
+          created_at: string
+          description: string | null
+          features: Json
+          highlight: boolean
+          is_public: boolean
+          max_active_cargo_listings: number | null
+          max_active_truck_listings: number | null
+          max_contact_reveals_month: number | null
+          max_saved_searches: number | null
+          name: string
+          price_ron_month: number
+          price_ron_year: number | null
+          promoted_credits_month: number
+          short_description: string | null
+          sort_order: number
+          updated_at: string
+          whatsapp_alerts: boolean
+        }
+      }
+      set_plan_period: {
+        Args: {
+          p_code: string
+          p_is_public: boolean
+          p_months: number
+          p_total_price_ron: number
+        }
+        Returns: {
+          created_at: string
+          is_public: boolean
+          months: number
+          plan_code: string
+          total_price_ron: number
+          updated_at: string
+        }
       }
       set_platform_staff: {
         Args: {
@@ -3479,6 +4254,22 @@ export type Database = {
           valid_month: string | null
         }
       }
+      set_pricing_settings: {
+        Args: {
+          p_billing_contact_email: string
+          p_manual_billing: boolean
+          p_trial_days: number
+          p_vat_label: string
+        }
+        Returns: {
+          billing_contact_email: string | null
+          id: boolean
+          manual_billing: boolean
+          trial_days: number
+          updated_at: string
+          vat_label: string | null
+        }
+      }
       show_limit: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -3487,6 +4278,48 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      slugify: {
+        Args: { p_text: string }
+        Returns: string
+      }
+      submit_company_for_review: {
+        Args: { p_company_id: string }
+        Returns: {
+          address: string | null
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          cui: string
+          display_name: string | null
+          id: string
+          is_suspended: boolean
+          legal_name: string
+          logo_path: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
+          rating_avg: number | null
+          rating_count: number
+          reg_com: string | null
+          slug: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
+      }
       transfer_company_ownership: {
         Args: {
           p_company_id: string
@@ -3494,6 +4327,10 @@ export type Database = {
           p_reason?: string
         }
         Returns: undefined
+      }
+      verified_carriers_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       withdraw_offer: {
         Args: { p_offer_id: string }
@@ -3595,9 +4432,12 @@ export type Database = {
         | "disputed"
       offer_status:
         "pending" | "accepted" | "rejected" | "withdrawn" | "expired"
+      plan_audience: "carrier" | "forwarder"
       price_type: "fixed" | "negotiable" | "auction"
       service_type: "pe_sens" | "expres" | "tractare"
       staff_role: "admin"
+      subscription_request_status:
+        "new" | "contacted" | "activated" | "rejected"
       subscription_status:
         "trialing" | "active" | "past_due" | "cancelled" | "expired"
       transport_status:
@@ -3825,9 +4665,16 @@ export const Constants = {
         "disputed",
       ],
       offer_status: ["pending", "accepted", "rejected", "withdrawn", "expired"],
+      plan_audience: ["carrier", "forwarder"],
       price_type: ["fixed", "negotiable", "auction"],
       service_type: ["pe_sens", "expres", "tractare"],
       staff_role: ["admin"],
+      subscription_request_status: [
+        "new",
+        "contacted",
+        "activated",
+        "rejected",
+      ],
       subscription_status: [
         "trialing",
         "active",

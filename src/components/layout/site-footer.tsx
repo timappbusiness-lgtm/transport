@@ -4,8 +4,12 @@ import { ROUTES } from '@/config/routes';
 import { Container } from './container';
 
 const LINKS = [
+  // "Trasee și prețuri" was one link because prices lived on the board.
+  // They are two pages now, so they are two links.
   { href: ROUTES.routes, label: 'Trasee disponibile' },
   { href: ROUTES.prices, label: 'Prețuri orientative' },
+  { href: ROUTES.verification, label: 'Cum verificăm firmele' },
+  { href: ROUTES.plans, label: 'Abonamente' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },

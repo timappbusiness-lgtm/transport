@@ -9,6 +9,7 @@ export const accountCopy = {
     fleet: 'Flotă',
     departures: 'Trasee',
     invitations: 'Invitații',
+    subscription: 'Abonament',
     admin: 'Administrare',
     signOut: 'Ieșire',
   },
@@ -114,6 +115,62 @@ export const accountCopy = {
     lockedHint:
       'Datele de identificare nu mai pot fi modificate după verificare. Scrie-ne dacă s-a schimbat ceva.',
   },
+  /** The company's plan, what it is using of it, and what it is waiting on. */
+  subscription: {
+    title: 'Abonament',
+    lede: 'Planul firmei, ce ai folosit luna aceasta și ce urmează.',
+    none: 'Firma nu are încă un abonament activ. Cererile și traseele se consultă gratuit.',
+    plan: 'Plan',
+    status: 'Stare',
+    /** Takes a formatted date. */
+    trialUntil: (date: string) => `Perioadă gratuită până la ${date}`,
+    renewsOn: (date: string) => `Perioada curentă se încheie la ${date}`,
+    /** Takes "3 zile". */
+    endsIn: (left: string) => `Mai sunt ${left}`,
+    ended: 'Perioada s-a încheiat.',
+    usage: {
+      title: 'Cât ai folosit',
+      contacts: 'Contacte deblocate luna aceasta',
+      trucks: 'Trasee active',
+      members: 'Utilizatori în cont',
+      unlimited: 'nelimitat',
+      /** Takes the used count and the limit. */
+      of: (used: string, limit: string) => `${used} din ${limit}`,
+    },
+    pending: {
+      title: 'Cerere în lucru',
+      /** Takes the plan name and the period. */
+      body: (plan: string, period: string) =>
+        `Ai cerut planul ${plan}, facturat ${period}. Te contactăm pentru factură și activare.`,
+      contacted: 'Am luat legătura cu tine în legătură cu această cerere.',
+    },
+    change: 'Schimbă planul',
+    choose: 'Vezi planurile',
+  },
+
+  /** Opting the firm into the public directory, and what that shows. */
+  publicProfile: {
+    title: 'Profil public',
+    lede:
+      'Poți alege ca firma să apară în lista publică de transportatori. Arătăm denumirea, localitatea, starea documentelor și traseele publicate — niciodată telefonul, adresa sau fișierele.',
+    enable: 'Afișează firma în lista publică de transportatori verificați',
+    enableHint:
+      'Profilul apare după ce firma este verificată. Poți ieși din listă oricând, iar profilul dispare imediat.',
+    description: 'Descriere publică',
+    descriptionHint: 'Maximum 300 de caractere. Ce transportați și pe ce rute.',
+    logo: 'Logo',
+    logoHint: 'PNG, JPG sau WEBP, cel mult 1 MB. Se afișează într-un cerc, deci alege o imagine pătrată.',
+    logoUpload: 'Încarcă logo',
+    logoRemove: 'Șterge logo',
+    logoAlt: 'Logoul firmei',
+    saved: 'Profilul public a fost salvat.',
+    pending: 'Firma nu este încă verificată, așa că profilul nu apare deocamdată în listă.',
+    suspended: 'Firma este suspendată, așa că profilul nu apare în listă.',
+    live: 'Vezi profilul public',
+    hiddenByStaff:
+      'Profilul a fost scos din listă de echipa platformei. Scrie-ne dacă vrei să revii în listă.',
+  },
+
   documents: {
     title: 'Documentele firmei',
     lede: 'Un document nou nu îl înlocuiește pe cel valabil până când nu este aprobat.',
@@ -121,6 +178,29 @@ export const accountCopy = {
     required: 'Ce se cere',
     upload: 'Încarcă un document',
     history: 'Istoric',
+  },
+
+  /** Sending the company to the review queue, and what comes back. */
+  review: {
+    title: 'Trimite firma la verificare',
+    progress: (inPlace: string, total: string) =>
+      `${inPlace} din ${total} documente obligatorii sunt încărcate.`,
+    vehiclesMissing:
+      'Adaugă cel puțin un vehicul și încarcă-i documentele înainte de verificare.',
+    stillMissing: 'Încarcă documentele care lipsesc și revino aici.',
+    ready: 'Totul este încărcat. Poți trimite firma la verificare.',
+    submit: 'Trimite la verificare',
+    pendingTitle: 'Documentele sunt în verificare',
+    pendingBody:
+      'Te anunțăm pe e-mail când firma este aprobată. Poți încărca în continuare documente noi.',
+    verifiedTitle: 'Firma ta este verificată',
+    verifiedBody: 'Poți publica trasee și poți trimite oferte la cereri.',
+    rejectedTitle: 'Verificarea a fost respinsă',
+    rejectedBody: 'Corectează ce este mai jos și trimite din nou.',
+    suspendedTitle: 'Contul este suspendat',
+    suspendedBody: 'Încarcă documentul nou și firma revine pe bursă după aprobare.',
+    sent: 'Am trimis firma la verificare.',
+    notManager: 'Doar administratorii firmei pot trimite firma la verificare.',
   },
   fleet: {
     title: 'Flotă',

@@ -95,7 +95,7 @@ test.describe('homepage', () => {
 
   test('an anchor jump clears the floating header', async ({ page }) => {
     await page.goto('/');
-    for (const id of ['cum-functioneaza', 'transportatori', 'verificare', 'tarife']) {
+    for (const id of ['cum-functioneaza', 'transportatori', 'siguranta', 'tarife']) {
       await page.evaluate((target) => {
         location.hash = '';
         location.hash = target;

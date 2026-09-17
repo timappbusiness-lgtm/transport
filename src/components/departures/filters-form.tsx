@@ -64,6 +64,22 @@ export function FiltersForm({ filters }: { filters: DepartureFilters }) {
         </div>
 
         <div className="flex flex-col gap-1.5">
+          <label htmlFor="f-scope" className="text-xs font-medium">
+            {c.scope}
+          </label>
+          <select
+            id="f-scope"
+            name={FILTER_KEYS.scope}
+            defaultValue={filters.scope ?? ''}
+            className={CONTROL}
+          >
+            <option value="">{c.any}</option>
+            <option value="intern">{c.scopeDomestic}</option>
+            <option value="international">{c.scopeInternational}</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="f-date-from" className="text-xs font-medium">
             {c.dateFrom}
           </label>
