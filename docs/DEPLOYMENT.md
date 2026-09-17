@@ -4,8 +4,9 @@ One source of truth, three systems that agree with it:
 
 - **GitHub** is the only place code lives. `main` is the default branch and
   takes no direct pushes.
-- **SAAS TRANSPORT** (`sspgyuavkjmzgbyqvunk`) is the only database. Nothing
-  but the `main` pipeline writes to it.
+- **timappbusiness-lgtm's Project** (`ytwzydilyiekhexnpziu`), in the
+  TIMAPP Supabase organisation, is the only database. Nothing but the `main`
+  pipeline writes to it.
 - **Vercel** deploys production from `main` and nowhere else.
 
 ## Cum lucrăm
@@ -45,7 +46,7 @@ branch  →  pull request  →  preview  →  merge into main
 **On a pull request** — `.github/workflows/pr.yml` runs typecheck, lint, the
 unit tests, `db:test` against a throwaway Postgres, the edge-function checks
 and the end-to-end suite, then deploys a preview and posts its URL as a
-comment on the pull request. Nothing here touches SAAS TRANSPORT.
+comment on the pull request. Nothing here touches the production database.
 
 **On a push to `main`** — `.github/workflows/main.yml` runs the same checks
 and then, in order, stopping at the first failure:
@@ -72,7 +73,7 @@ a message naming it, rather than an authentication error from inside a CLI.
 | Secret | Where it comes from |
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | https://supabase.com/dashboard/account/tokens |
-| `SUPABASE_PROJECT_REF` | `sspgyuavkjmzgbyqvunk` |
+| `SUPABASE_PROJECT_REF` | `ytwzydilyiekhexnpziu` |
 | `SUPABASE_DB_PASSWORD` | Supabase → Project Settings → Database |
 | `VERCEL_TOKEN` | https://vercel.com/account/tokens |
 | `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |
@@ -94,15 +95,23 @@ Don't. The pipeline is the only path to production, so that what is deployed
 is always what is on `main`. `vercel deploy` from a laptop would put code
 live that never passed the checks and that nobody can find in git history.
 
-The project was never linked to Vercel's own Git integration — Vercel
-refused the link because the logged-in GitHub account has no write access to
-`timappbusiness-lgtm/transport`. The workflow does the same job without
-needing it, and runs the tests first, which the Git integration would not.
+**Today the Vercel project is also linked to the repository through
+Vercel's Git integration** (TIMAPP team, project `transport`, production
+branch `main`), so a push to `main` deploys production directly, and every
+branch gets a preview. That kept production up while `VERCEL_TOKEN` was not
+set. Once the pipeline's step 4 is green, turn the Git integration off for
+production, so the pipeline really is the only path:
+
+```json
+// vercel.json
+{ "git": { "deploymentEnabled": { "main": false } } }
+```
 
 ## Supabase
 
-- **Project:** `SAAS TRANSPORT`, ref `sspgyuavkjmzgbyqvunk`, Central EU
-  (Frankfurt) — https://sspgyuavkjmzgbyqvunk.supabase.co
+- **Project:** `timappbusiness-lgtm's Project`, ref `ytwzydilyiekhexnpziu`,
+  organisation `timappbusiness-lgtm's Org`, Central EU (Frankfurt) —
+  https://ytwzydilyiekhexnpziu.supabase.co
 - **Linked** from this repo (`supabase link`); `supabase/config.toml` is the
   source of truth for its Auth settings — change it there and run
   `supabase config push`, which shows the diff before applying.
@@ -110,8 +119,8 @@ needing it, and runs the tests first, which the Git integration would not.
   `pgcrypto` (preinstalled), `pg_trgm` (in `public`, where migration 0001
   expects it), `pg_cron`. Three jobs scheduled: `nightly-compliance-sweep`,
   `nightly-expiry-reminders`, `hourly-listing-cleanup`.
-- **Auth:** site URL `https://coridor-gray.vercel.app`; redirects allowed for
-  `localhost:3000`, production and `coridor-*-eduardooo-s-projects.vercel.app`
+- **Auth:** site URL `https://transport-seven-sandy.vercel.app`; redirects
+  allowed for `localhost:3000`, production and `transport-*-timapp.vercel.app`
   previews. E-mail confirmation on. Phone OTP needs an SMS provider (not set).
 - **Edge functions deployed:** `parse-document`, `verify-cui-anaf`,
   `compliance-sweep` (`supabase functions deploy <name> --use-api` bundles
@@ -126,14 +135,9 @@ needing it, and runs the tests first, which the Git integration would not.
 
 | Name | Environments |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Preview, Development |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Preview, Development |
-
-**Production is not set, and phase 1 is now on the default branch.** Without
-these two variables the marketing pages render and every protected page
-redirects, but nobody can sign in: `isSupabaseConfigured()` returns false and
-the whole account area is dead. Add them to Production before announcing the
-deployment to anyone.
+| `NEXT_PUBLIC_SUPABASE_URL` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Production, Preview, Development |
+| `NEXT_PUBLIC_SITE_URL` | Production (`https://transport-seven-sandy.vercel.app`); previews fall back to `VERCEL_URL` |
 
 The secret key is not in Vercel and must not be: every write goes through the
 user's session and the RPCs.
@@ -159,7 +163,7 @@ helpers granted in migration `130300`, and `extension_in_public` for
    `.vercel/project.json`:
 
    ```bash
-   vercel link            # pick eduardooo-s-projects / coridor
+   vercel link            # pick timapp / transport
    cat .vercel/project.json
    ```
 

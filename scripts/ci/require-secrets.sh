@@ -34,7 +34,7 @@ fi
   echo '| Secret | Where it comes from |'
   echo '|---|---|'
   echo '| `SUPABASE_ACCESS_TOKEN` | https://supabase.com/dashboard/account/tokens |'
-  echo '| `SUPABASE_PROJECT_REF` | the project ref, e.g. `sspgyuavkjmzgbyqvunk` |'
+  echo '| `SUPABASE_PROJECT_REF` | the project ref, e.g. `ytwzydilyiekhexnpziu` |'
   echo '| `SUPABASE_DB_PASSWORD` | Supabase → Project Settings → Database |'
   echo '| `VERCEL_TOKEN` | https://vercel.com/account/tokens |'
   echo '| `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |'

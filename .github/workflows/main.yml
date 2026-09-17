@@ -1,7 +1,7 @@
 name: Main
 
-# The release pipeline. This is the only place that writes to the SAAS
-# TRANSPORT database or to Vercel production — no session, no laptop, no
+# The release pipeline. This is the only place that writes to the production
+# database or to Vercel production — no session, no laptop, no
 # other workflow.
 #
 # It runs strictly in order and stops at the first failure:
@@ -17,7 +17,7 @@ name: Main
 #
 # Required repository secrets:
 #   SUPABASE_ACCESS_TOKEN   a personal access token (supabase.com/dashboard/account/tokens)
-#   SUPABASE_PROJECT_REF    sspgyuavkjmzgbyqvunk
+#   SUPABASE_PROJECT_REF    ytwzydilyiekhexnpziu
 #   SUPABASE_DB_PASSWORD    the database password for that project
 #   VERCEL_TOKEN            vercel.com/account/tokens
 #   VERCEL_ORG_ID           `orgId` from .vercel/project.json after `vercel link`

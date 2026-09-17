@@ -4,7 +4,7 @@ name: Pull request
 # plus a preview deployment so the change can be looked at rather than
 # imagined.
 #
-# Nothing here touches the SAAS TRANSPORT database. Migrations run against a
+# Nothing here touches the production database. Migrations run against a
 # throwaway Postgres; only the main pipeline talks to the real project.
 #
 # Required repository secrets for the preview step:
@@ -168,7 +168,7 @@ jobs:
               '| Homepage | ' + url + ' |',
               '| Autentificare | ' + url + '/autentificare |',
               '',
-              '_Preview only. The SAAS TRANSPORT database is untouched by this run — ' +
+              '_Preview only. The production database is untouched by this run — ' +
                 'migrations are applied by the main pipeline after merge._',
             ].join('\n');
 
