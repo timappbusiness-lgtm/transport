@@ -42,6 +42,12 @@ export const ROUTES = {
   accountFleet: '/cont/firma/flota',
   accountInvitations: '/cont/invitatii',
   accountSubscription: '/cont/abonament',
+  accountRequests: '/cont/cereri',
+  accountOffers: '/cont/oferte',
+  accountMessages: '/cont/mesaje',
+  accountTransports: '/cont/transporturi',
+  accountNotifications: '/cont/notificari',
+  accountSettings: '/cont/setari',
 
   // Staff
   admin: '/admin',
