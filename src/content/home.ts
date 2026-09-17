@@ -59,6 +59,56 @@ export const homeCopy = {
     },
   },
 
+  /**
+   * The activity section. Every number it shows comes from the database —
+   * there is not one figure in this block, only the sentences around them.
+   */
+  activity: {
+    eyebrow: 'Activitate pe platformă',
+    strong: 'Cereri noi',
+    soft: 'de transport auto.',
+
+    stats: {
+      sparklineLabel: 'Cereri publicate în ultimele 30 de zile',
+      sparklineCaption: 'Ultimele 30 de zile',
+      km: (km: string) => `${km} km de transport solicitat`,
+      kmNote: 'Distanțe estimate, însumate din cererile publicate',
+      week: (requests: string) => `${requests} în ultimele 7 zile`,
+      weekNote: 'Cereri publicate de persoane și firme',
+    },
+
+    feed: {
+      title: 'Cele mai noi cereri',
+      running: 'Pornește',
+      notRunning: 'Nu pornește',
+      express: 'Expres',
+      newBadge: 'Cereri noi',
+      showNew: 'Arată-le',
+      all: 'Vezi toate cererile',
+      /** Read out before the route, which is otherwise two names and an arrow. */
+      routeLabel: (from: string, to: string) => `De la ${from} la ${to}`,
+    },
+
+    empty: {
+      body: 'Primele cereri apar aici imediat ce sunt publicate.',
+      primary: 'Publică o cerere',
+      secondary: 'Trasee disponibile',
+    },
+
+    cta: {
+      strong: 'Publici cererea',
+      soft: 'gratuit.',
+      stepsTitle: 'Cum funcționează',
+      steps: [
+        'Completezi traseul și detaliile vehiculului, în două minute.',
+        'Transportatorii verificați văd cererea și îți trimit oferte.',
+        'Compari ofertele și alegi. Datele tale de contact rămân ascunse până decizi tu.',
+      ],
+      button: 'Publică o cerere gratuit',
+      note: 'Fără abonament pentru clienți. Contul se creează la final.',
+    },
+  },
+
   comparison: {
     eyebrow: 'Cum se schimbă',
     strong: 'Ce faci azi',
@@ -82,28 +132,6 @@ export const homeCopy = {
     stepLabel: 'Pasul',
   },
 
-  carriers: {
-    eyebrow: 'Pentru transportatori',
-    strong: 'Ai platformă?',
-    soft: 'Nu te mai întoarce gol.',
-    lede:
-      'Publici traseele de tur și de retur, vezi cererile de pe traseul tău și completezi locurile libere înainte să pleci.',
-    plan: {
-      name: 'Plan transportator',
-      price: '149 lei',
-      period: 'pe lună',
-      features: [
-        'Publicare nelimitată pe tur și pe retur',
-        'Acces la cererile compatibile cu traseele tale',
-        'Alerte pe e-mail pentru cereri de pe traseele tale',
-        'Evidența documentelor firmei și ale vehiculelor',
-        'Notificare înainte să expire un document',
-      ],
-      cta: 'Înscrie-ți firma',
-      note: 'Perioada gratuită începe după validarea firmei. Fără card la înscriere.',
-    },
-  },
-
   forwarders: {
     eyebrow: 'Pentru case de expediții',
     strong: 'Publici cursele o dată.',
@@ -116,26 +144,6 @@ export const homeCopy = {
       'Istoricul comenzilor rămâne în platformă',
     ],
     cta: 'Creează cont de firmă',
-  },
-
-  verification: {
-    eyebrow: 'Verificare continuă',
-    strong: 'Nu verificăm firmele o singură dată.',
-    soft: 'Urmărim fiecare dată de expirare.',
-    body:
-      'Licența comunitară, asigurarea CMR, RCA-ul, ITP-ul și copiile conforme au fiecare o dată de expirare urmărită zilnic. Transportatorul primește notificări înainte să expire.',
-    rules: [
-      {
-        title: 'Dacă expiră un document al firmei',
-        body: 'Firma nu mai poate oferta până la revalidare.',
-        tone: 'danger' as const,
-      },
-      {
-        title: 'Dacă expiră RCA-ul sau ITP-ul unui vehicul',
-        body: 'Doar acel vehicul dispare de pe bursă. Restul flotei rămâne activ.',
-        tone: 'warning' as const,
-      },
-    ],
   },
 
   prices: {

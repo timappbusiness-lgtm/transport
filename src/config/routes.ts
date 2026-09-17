@@ -6,6 +6,11 @@ export const ROUTES = {
   home: '/',
   newRequest: '/cerere/noua',
   routes: '/trasee',
+  requests: '/cereri',
+  verification: '/verificare',
+  companies: '/firme',
+  faq: '/intrebari-frecvente',
+  plans: '/abonamente',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
@@ -36,10 +41,22 @@ export const ROUTES = {
   accountDocuments: '/cont/firma/documente',
   accountFleet: '/cont/firma/flota',
   accountInvitations: '/cont/invitatii',
+  accountSubscription: '/cont/abonament',
+  accountRequests: '/cont/cereri',
+  accountOffers: '/cont/oferte',
+  accountMessages: '/cont/mesaje',
+  accountTransports: '/cont/transporturi',
+  accountNotifications: '/cont/notificari',
+  accountSettings: '/cont/setari',
 
   // Staff
   admin: '/admin',
   adminDocuments: '/admin/documente',
+  adminActivity: '/admin/activitate',
+  adminSettings: '/admin/setari',
+  adminPlans: '/admin/planuri',
+  adminCompanies: '/admin/firme',
+  adminSubscriptions: '/admin/abonamente',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -58,6 +75,16 @@ export function departureRoute(id: string): string {
   return `${ROUTES.routes}/${id}`;
 }
 
+/** One transport request. */
+export function requestRoute(id: string): string {
+  return `${ROUTES.requests}/${id}`;
+}
+
+/** One company's public profile. */
+export function companyRoute(slug: string): string {
+  return `${ROUTES.companies}/${slug}`;
+}
+
 
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
@@ -65,6 +92,7 @@ export function departureRoute(id: string): string {
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
   ROUTES.newRequest,
+  ROUTES.requests,
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.contact,

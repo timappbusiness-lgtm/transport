@@ -5,6 +5,8 @@ import { Container } from './container';
 
 const LINKS = [
   { href: ROUTES.routes, label: 'Trasee și prețuri' },
+  { href: ROUTES.verification, label: 'Cum verificăm firmele' },
+  { href: ROUTES.plans, label: 'Abonamente' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },
