@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { MobileNav } from '@/components/app/mobile-nav';
 import { Sidebar } from '@/components/app/sidebar';
@@ -7,6 +8,7 @@ import { StatusBanner } from '@/components/app/status-banner';
 import { currentPathname, navContextOf } from '@/components/app/nav-context';
 import { ROUTES } from '@/config/routes';
 import { requireAccountContext } from '@/lib/auth/account';
+import { isDriverAllowed } from '@/lib/auth/guards';
 import { pickBanner } from '@/lib/banners';
 import { EXPIRY_WINDOW_DAYS } from '@/lib/dashboard-source';
 import { activeHref, bottomNav, buildNav } from '@/lib/navigation';
@@ -34,6 +36,11 @@ export const dynamic = 'force-dynamic';
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const context = await requireAccountContext(ROUTES.account);
   const pathname = await currentPathname();
+
+  // A driver's application is two pages. Refusing here rather than on each
+  // of the dozen pages they must not reach means a page added later is
+  // closed to them by default instead of open by oversight.
+  if (context.activeRole === 'driver' && !isDriverAllowed(pathname)) notFound();
 
   const company = context.activeCompany;
   const [subscription, warnings] = await Promise.all([

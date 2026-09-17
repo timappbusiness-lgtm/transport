@@ -1,19 +1,17 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { CompanyForm } from '@/components/account/company-form';
 import { PublicProfileForm } from '@/components/account/public-profile-form';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { VERIFICATION_LABELS, accountCopy } from '@/content/account';
-import { requireAccountContext } from '@/lib/auth/account';
+import { requireManagerContext } from '@/lib/auth/guards';
 import { companyLogoUrl } from '@/lib/directory-source';
 
 export const metadata: Metadata = { title: accountCopy.company.title };
 
 export default async function Page() {
-  const context = await requireAccountContext(ROUTES.accountCompany);
+  const context = await requireManagerContext(ROUTES.accountCompany);
   const company = context.activeCompany;
-  if (!company) redirect(ROUTES.accountCompanyCreate);
 
   return (
     <div className="flex flex-col gap-6">

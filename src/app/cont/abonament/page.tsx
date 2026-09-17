@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { buttonClasses } from '@/components/ui/button';
 import { DataRow, EyebrowPill, StatusBadge, type StatusTone } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
-import { requireAccountContext } from '@/lib/auth/account';
+import { requireManagerContext } from '@/lib/auth/guards';
 import { formatDateRo } from '@/lib/format';
 import { audienceParam, formatLei, limitLabel, type Plan } from '@/lib/plans';
 import { loadPricing } from '@/lib/plans-source';
@@ -29,9 +28,9 @@ export const metadata: Metadata = { title: c.title };
  * will refuse — the page and the rule cannot disagree.
  */
 export default async function Page() {
-  const context = await requireAccountContext(ROUTES.accountSubscription);
+  // A dispatcher is refused here, not merely un-linked from it.
+  const context = await requireManagerContext(ROUTES.accountSubscription);
   const company = context.activeCompany;
-  if (!company) redirect(ROUTES.accountCompanyCreate);
 
   const [pricing, subscription, usage] = await Promise.all([
     loadPricing(),
