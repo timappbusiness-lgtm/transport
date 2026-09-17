@@ -1280,6 +1280,188 @@ select pg_temp.check('P13  anon cannot read listings', 'guard',
   null, 'anon', $a$select * from public.cargo_listings$a$, 'blocked');
 
 -- =====================================================================
+-- FLT - fleet: assigned driver, vehicle routes, and the suspension round
+--       trip. Ported from pull request #6.
+-- =====================================================================
+
+select pg_temp.check('FLT  a vehicle cannot be given a driver from another company', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.vehicles set assigned_driver_id = 'fd000000-0000-0000-0000-0000000000b1'
+     where id = 'fe000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.drivers (id, company_id, full_name)
+               values ('fd000000-0000-0000-0000-0000000000b1',
+                       'fc000000-0000-0000-0000-000000000002', 'Șofer B')$s$,
+  p_verify => $v$select assigned_driver_id is null from public.vehicles
+                 where id = 'fe000000-0000-0000-0000-000000000001'$v$);
+
+-- The check sits before the `current_user not in (authenticated, anon)`
+-- early return, so it holds for the jobs and the edge functions too.
+select pg_temp.check('FLT  not even service_role can cross companies with a driver', 'fix',
+  null, 'service_role',
+  $a$update public.vehicles set assigned_driver_id = 'fd000000-0000-0000-0000-0000000000b1'
+     where id = 'fe000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.drivers (id, company_id, full_name)
+               values ('fd000000-0000-0000-0000-0000000000b1',
+                       'fc000000-0000-0000-0000-000000000002', 'Șofer B')$s$,
+  p_verify => $v$select assigned_driver_id is null from public.vehicles
+                 where id = 'fe000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FLT  a member assigns a driver from their own company', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.vehicles set assigned_driver_id = 'fd000000-0000-0000-0000-000000000001'
+     where id = 'fe000000-0000-0000-0000-000000000001'$a$, 'allowed');
+
+select pg_temp.check('FLT  a member records a route for their own vehicle', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.vehicle_routes (vehicle_id, from_country, from_city, to_country, to_city)
+     values ('fe000000-0000-0000-0000-000000000001', 'DE', 'München', 'RO', 'Cluj-Napoca')$a$, 'allowed');
+
+select pg_temp.check('FLT  a member cannot record a route on another company''s vehicle', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.vehicle_routes (vehicle_id, from_country, to_country)
+     values ('fe000000-0000-0000-0000-000000000001', 'DE', 'RO')$a$, 'blocked');
+
+select pg_temp.check('FLT  another company''s routes are not readable', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select * from public.vehicle_routes
+     where vehicle_id = 'fe000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.vehicle_routes (vehicle_id, from_country, to_country)
+                values ('fe000000-0000-0000-0000-000000000001', 'DE', 'RO')$s$);
+
+select pg_temp.check('FLT  anon cannot read vehicle routes', 'fix',
+  null, 'anon', $a$select * from public.vehicle_routes$a$, 'blocked');
+
+-- The point of previous_status: a listing pulled off the board by the sweep
+-- goes back where it was, instead of staying suspended until someone notices.
+select pg_temp.check('FLT  a swept listing remembers its status and returns to it', 'fix',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep() is not null$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.cargo_listings (id, company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, loading_to, weight_kg, status)
+      values ('f1000000-0000-0000-0000-0000000000f1',
+              'fc000000-0000-0000-0000-000000000001',
+              'f0000000-0000-0000-0000-000000000002', 'curse', 'vehicul',
+              'Audi de dus acasă', 'München', 'Cluj-Napoca',
+              current_date + 5, current_date + 10, 1500, 'draft');
+      -- A listing cannot go active without its vehicle details row.
+      insert into public.cargo_vehicle_details (cargo_listing_id, make, model, year)
+      values ('f1000000-0000-0000-0000-0000000000f1', 'Audi', 'A4', 2019);
+      update public.cargo_listings set status = 'active'
+      where id = 'f1000000-0000-0000-0000-0000000000f1';
+      -- Lose a blocking document, sweep (suspends), fix it, sweep again.
+      update public.documents set status = 'expired'
+      where id = 'fa000000-0000-0000-0000-000000000001';
+      perform public.run_compliance_sweep();
+      update public.documents set status = 'approved', valid_until = current_date + 400
+      where id = 'fa000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select status = 'active' and previous_status is null
+                 from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-0000000000f1'$v$);
+
+-- A listing suspended by hand has no previous_status, so the sweep has
+-- nowhere to put it back and must leave it alone.
+select pg_temp.check('FLT  a listing suspended by hand is not resurrected by the sweep', 'guard',
+  null, 'service_role',
+  $a$select public.run_compliance_sweep() is not null$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified', is_suspended = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.cargo_listings (id, company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, loading_to, weight_kg, status)
+      values ('f1000000-0000-0000-0000-0000000000f2',
+              'fc000000-0000-0000-0000-000000000001',
+              'f0000000-0000-0000-0000-000000000002', 'curse', 'vehicul',
+              'Suspendat manual', 'Viena', 'Arad',
+              current_date + 5, current_date + 10, 1300, 'suspended');
+    end $d$$s$,
+  p_verify => $v$select status = 'suspended' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-0000000000f2'$v$);
+
+-- =====================================================================
+-- MBR - reading colleagues without opening up the profiles table
+--
+-- profiles_select is `id = auth.uid() or is_platform_admin()`, so a member
+-- page cannot join profiles itself: every colleague comes back blank.
+-- list_company_members is the way round it, and it re-checks membership.
+-- =====================================================================
+
+select pg_temp.check('MBR  a colleague''s profile row stays unreadable directly', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select * from public.profiles where id = 'f0000000-0000-0000-0000-000000000003'$a$, 'blocked');
+
+select pg_temp.check('MBR  list_company_members gives a member their colleagues'' names', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select exists (
+       select 1 from public.list_company_members('fc000000-0000-0000-0000-000000000001')
+       where user_id = 'f0000000-0000-0000-0000-000000000003'
+         and full_name = 'Dispatcher A')$a$, 'true');
+
+select pg_temp.check('MBR  the owner comes first', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (select role from public.list_company_members('fc000000-0000-0000-0000-000000000001')
+             limit 1) = 'owner'$a$, 'true');
+
+select pg_temp.check('MBR  a non-member gets nothing from list_company_members', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select * from public.list_company_members('fc000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('MBR  staff can list any company''s members', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) > 0 from public.list_company_members('fc000000-0000-0000-0000-000000000001')$a$, 'true');
+
+select pg_temp.check('MBR  anon cannot call list_company_members', 'fix',
+  null, 'anon',
+  $a$select * from public.list_company_members('fc000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+-- =====================================================================
+-- INV2 - an invitation that says which company it is for
+--
+-- companies_select is members-only, and an invited person is not a member
+-- yet, so the invitation screen could not name the company inviting them.
+-- =====================================================================
+
+select pg_temp.check('INV2 the inviting company stays unreadable directly', 'guard',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select * from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('INV2 my_invitations names the company doing the inviting', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select exists (select 1 from public.my_invitations()
+                    where company_name = 'RLS Carrier A SRL' and role = 'dispatcher')$a$, 'true',
+  p_setup => $s$insert into public.company_invitations
+                 (company_id, invited_email, role, invited_by, status, expires_at)
+               values ('fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro',
+                       'dispatcher', 'f0000000-0000-0000-0000-000000000002',
+                       'pending', now() + interval '7 days')$s$);
+
+select pg_temp.check('INV2 my_invitations shows nobody else''s invitations', 'fix',
+  'f0000000-0000-0000-0000-00000000000c', 'authenticated',
+  $a$select * from public.my_invitations()$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations
+                 (company_id, invited_email, role, invited_by, status, expires_at)
+               values ('fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro',
+                       'dispatcher', 'f0000000-0000-0000-0000-000000000002',
+                       'pending', now() + interval '7 days')$s$);
+
+select pg_temp.check('INV2 an expired invitation is not listed', 'fix',
+  'f0000000-0000-0000-0000-00000000000b', 'authenticated',
+  $a$select * from public.my_invitations()$a$, 'blocked',
+  p_setup => $s$insert into public.company_invitations
+                 (company_id, invited_email, role, invited_by, status, expires_at)
+               values ('fc000000-0000-0000-0000-000000000001', 'rls-invitee@test.ro',
+                       'dispatcher', 'f0000000-0000-0000-0000-000000000002',
+                       'pending', now() - interval '1 day')$s$);
+
+select pg_temp.check('INV2 anon cannot call my_invitations', 'fix',
+  null, 'anon', $a$select * from public.my_invitations()$a$, 'blocked');
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its

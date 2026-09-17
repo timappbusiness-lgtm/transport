@@ -22,6 +22,8 @@ export function AccountNav({
 
   if (context.activeCompany) {
     items.push({ href: ROUTES.accountCompany, label: accountCopy.nav.company });
+    items.push({ href: ROUTES.accountDocuments, label: accountCopy.nav.documents });
+    items.push({ href: ROUTES.accountFleet, label: accountCopy.nav.fleet });
     items.push({ href: ROUTES.accountMembers, label: accountCopy.nav.members });
   }
   items.push({ href: ROUTES.accountInvitations, label: accountCopy.nav.invitations });
