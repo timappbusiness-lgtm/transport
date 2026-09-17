@@ -9,7 +9,7 @@ import {
   type StatusTone,
 } from '@/components/ui/primitives';
 import { homeCopy } from '@/content/home';
-import { SeatDeck } from './seat-deck';
+import { SeatDeck } from '@/components/ui/seat-deck';
 
 const c = homeCopy.panel;
 
@@ -63,7 +63,7 @@ export function DataPanel() {
           </PanelCard>
 
           <PanelCard title={c.seats.title} subtitle={c.seats.subtitle}>
-            <SeatDeck taken={c.seats.taken} total={c.seats.total} />
+            <SeatDeck taken={c.seats.taken} total={c.seats.total} freeLabel={c.seats.free} />
             <p className="mt-4 font-mono text-[0.8125rem] tabular-nums">{c.seats.caption}</p>
           </PanelCard>
 

@@ -6,7 +6,7 @@ import { ROUTES } from '@/config/routes';
 import { homeCopy } from '@/content/home';
 import { cn } from '@/lib/utils';
 import { PhotoSlot } from './photo-slot';
-import { SeatDeck } from './seat-deck';
+import { SeatDeck } from '@/components/ui/seat-deck';
 
 const c = homeCopy.hero;
 
@@ -53,9 +53,9 @@ export function Hero() {
             <Link href={ROUTES.newRequest} className={buttonClasses('onDark', 'md')}>
               {c.primary}
             </Link>
-            <a href="#cum-functioneaza" className={buttonClasses('onDarkGhost', 'md')}>
+            <Link href={ROUTES.routes} className={buttonClasses('onDarkGhost', 'md')}>
               {c.secondary}
-            </a>
+            </Link>
           </div>
         </div>
 

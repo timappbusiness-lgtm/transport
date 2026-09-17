@@ -1462,6 +1462,134 @@ select pg_temp.check('INV2 anon cannot call my_invitations', 'fix',
   null, 'anon', $a$select * from public.my_invitations()$a$, 'blocked');
 
 -- =====================================================================
+-- PUB - departures are public at city level, and only at city level
+--
+-- The phase 0 rule was "anon sees nothing on departures". That is now a
+-- narrower rule: anon sees the route, never who is driving it. These
+-- checks are what keeps the second sentence true while the first changes.
+-- =====================================================================
+
+select pg_temp.check('PUB  anon can read the public departures board', 'fix',
+  null, 'anon',
+  $a$select count(*) > 0 from public.v_departures_public$a$, 'true',
+  p_setup => $s$update public.truck_listings set status = 'active'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  the carrier view stays closed to anon', 'guard',
+  null, 'anon', $a$select * from public.v_departures$a$, 'blocked');
+
+-- The column list is the protection, so it is what gets pinned. A future
+-- "just add company_id, it is convenient" has to fail here.
+select pg_temp.check('PUB  the public board carries no company column', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = 'v_departures_public'
+         and column_name in ('company_id', 'posted_by', 'vehicle_id',
+                             'from_lat', 'from_lng', 'to_lat', 'to_lng',
+                             'notes', 'contact_name', 'contact_phone'))$a$, 'true');
+
+select pg_temp.check('PUB  anon still cannot reach truck_listings itself', 'guard',
+  null, 'anon', $a$select * from public.truck_listings$a$, 'blocked');
+
+select pg_temp.check('PUB  anon still cannot reach the vehicles behind a departure', 'guard',
+  null, 'anon', $a$select * from public.vehicles$a$, 'blocked');
+
+select pg_temp.check('PUB  a draft departure is not on the public board', 'fix',
+  null, 'anon',
+  $a$select * from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.truck_listings set status = 'draft'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  a departure whose window has passed drops off the board', 'fix',
+  null, 'anon',
+  $a$select * from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.truck_listings
+               set status = 'active',
+                   available_from = current_date - 20,
+                   available_to = current_date - 10
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('PUB  free seats are derived, not stored', 'guard',
+  null, 'anon',
+  $a$select slots_free = platform_slots_total - slots_taken
+     from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-000000000002'$a$, 'true',
+  p_setup => $s$update public.truck_listings set status = 'active'
+               where id = 'fb000000-0000-0000-0000-000000000002'$s$);
+
+-- =====================================================================
+-- VTY - which vehicles a departure accepts
+-- =====================================================================
+
+select pg_temp.check('VTY  a departure must accept at least one vehicle type', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.truck_listings set accepted_vehicle_types = '{}'
+     where id = 'fb000000-0000-0000-0000-000000000002'$a$, 'blocked');
+
+select pg_temp.check('VTY  a member sets the types their platform carries', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.truck_listings set accepted_vehicle_types = '{motocicleta}'
+     where id = 'fb000000-0000-0000-0000-000000000002'$a$, 'allowed');
+
+-- =====================================================================
+-- ALR - "tell me when a route appears"
+--
+-- saved_searches already existed with its own policies; what was missing
+-- was a guard on the alert job's own bookkeeping.
+-- =====================================================================
+
+select pg_temp.check('ALR  a saved search lands on the caller, whatever it claims', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.saved_searches (user_id, name, target, filters)
+     values ('f0000000-0000-0000-0000-000000000002', 'Furat', 'truck', '{}')$a$, 'allowed',
+  p_verify => $v$select user_id = 'f0000000-0000-0000-0000-000000000006'
+                 from public.saved_searches where name = 'Furat'$v$);
+
+select pg_temp.check('ALR  a user cannot rewrite the alert job''s bookkeeping', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.saved_searches set last_notified_at = now() - interval '10 years'
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters, last_notified_at)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}', now())$s$);
+
+select pg_temp.check('ALR  a saved search cannot be handed to somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.saved_searches set user_id = 'f0000000-0000-0000-0000-000000000002'
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  the alert job still sets last_notified_at', 'guard',
+  null, 'service_role',
+  $a$update public.saved_searches set last_notified_at = now()
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  somebody else''s saved search is invisible', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select * from public.saved_searches
+     where id = 'f5000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('f5000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'Germania spre România', 'truck', '{}')$s$);
+
+select pg_temp.check('ALR  anon cannot save a search', 'guard',
+  null, 'anon',
+  $a$insert into public.saved_searches (user_id, name, target, filters)
+     values ('f0000000-0000-0000-0000-000000000006', 'Anon', 'truck', '{}')$a$, 'blocked');
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its

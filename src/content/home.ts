@@ -16,7 +16,7 @@ export const homeCopy = {
     subtitle:
       'Publici cererea gratuit și primești oferte doar de la transportatori cu documente valabile.',
     primary: 'Publică o cerere',
-    secondary: 'Cum funcționează',
+    secondary: 'Trasee disponibile',
     photoAlt: 'Platformă auto încărcată, pe un drum european',
   },
 

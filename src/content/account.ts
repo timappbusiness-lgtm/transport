@@ -7,6 +7,7 @@ export const accountCopy = {
     members: 'Membri',
     documents: 'Documente',
     fleet: 'Flotă',
+    departures: 'Trasee',
     invitations: 'Invitații',
     admin: 'Administrare',
     signOut: 'Ieșire',

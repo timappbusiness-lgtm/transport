@@ -6,6 +6,8 @@ export const ROUTES = {
   home: '/',
   newRequest: '/cerere/noua',
   routes: '/trasee',
+  accountDepartures: '/cont/trasee',
+  accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
   privacy: '/confidentialitate',
   contact: '/contact',
@@ -51,13 +53,18 @@ export function vehicleRoute(vehicleId: string): string {
   return `${ROUTES.accountFleet}/${vehicleId}`;
 }
 
+/** One departure on the public board. */
+export function departureRoute(id: string): string {
+  return `${ROUTES.routes}/${id}`;
+}
+
+
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
   ROUTES.newRequest,
-  ROUTES.routes,
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.contact,
