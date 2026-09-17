@@ -48,7 +48,11 @@ const STATS: ActivityStats = {
   dailyFrom: '2026-08-19',
 };
 
-const THRESHOLDS: ActivityThresholds = { statsMinRequests: 50, feedMinRequests: 6 };
+const THRESHOLDS: ActivityThresholds = {
+  statsMinRequests: 50,
+  feedMinRequests: 6,
+  verifiedCompaniesMin: 20,
+};
 
 describe('kilometres and counts, written the Romanian way', () => {
   it('groups thousands with a full stop and marks the estimate', () => {

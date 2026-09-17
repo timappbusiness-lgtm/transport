@@ -108,7 +108,6 @@ describe('homepage copy rules', () => {
       `${homeCopy.comparison.strong} ${homeCopy.comparison.soft}`,
       `${homeCopy.carriers.strong} ${homeCopy.carriers.soft}`,
       `${homeCopy.forwarders.strong} ${homeCopy.forwarders.soft}`,
-      `${homeCopy.verification.strong} ${homeCopy.verification.soft}`,
       `${homeCopy.prices.strong} ${homeCopy.prices.soft}`,
       `${homeCopy.finalCta.strong} ${homeCopy.finalCta.soft}`,
     ];

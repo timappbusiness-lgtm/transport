@@ -1284,23 +1284,29 @@ export type Database = {
         Row: {
           feed_min_requests: number
           id: boolean
+          review_time_label: string | null
           stats_min_requests: number
           updated_at: string
           updated_by: string | null
+          verified_companies_min: number
         }
         Insert: {
           feed_min_requests?: number
           id?: boolean
+          review_time_label?: string | null
           stats_min_requests?: number
           updated_at?: string
           updated_by?: string | null
+          verified_companies_min?: number
         }
         Update: {
           feed_min_requests?: number
           id?: boolean
+          review_time_label?: string | null
           stats_min_requests?: number
           updated_at?: string
           updated_by?: string | null
+          verified_companies_min?: number
         }
         Relationships: [
           {
@@ -2969,6 +2975,48 @@ export type Database = {
         }
         Relationships: []
       }
+      v_document_requirements_public: {
+        Row: {
+          for_company_types:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days: number | null
+          has_expiry: boolean | null
+          is_blocking: boolean | null
+          kind: Database["public"]["Enums"]["document_kind"] | null
+          label_ro: string | null
+          reminder_days: number[] | null
+          scope: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Insert: {
+          for_company_types?:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days?: number | null
+          has_expiry?: boolean | null
+          is_blocking?: boolean | null
+          kind?: Database["public"]["Enums"]["document_kind"] | null
+          label_ro?: string | null
+          reminder_days?: number[] | null
+          scope?: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Update: {
+          for_company_types?:
+            Database["public"]["Enums"]["company_type"][] | null
+          for_vehicle_types?:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          grace_days?: number | null
+          has_expiry?: boolean | null
+          is_blocking?: boolean | null
+          kind?: Database["public"]["Enums"]["document_kind"] | null
+          label_ro?: string | null
+          reminder_days?: number[] | null
+          scope?: Database["public"]["Enums"]["document_scope"] | null
+        }
+        Relationships: []
+      }
       v_requests_public: {
         Row: {
           category: Database["public"]["Enums"]["cargo_category"] | null
@@ -3435,13 +3483,20 @@ export type Database = {
         Returns: string
       }
       set_homepage_settings: {
-        Args: { p_feed_min_requests: number; p_stats_min_requests: number }
+        Args: {
+          p_feed_min_requests: number
+          p_review_time_label: string
+          p_stats_min_requests: number
+          p_verified_companies_min: number
+        }
         Returns: {
           feed_min_requests: number
           id: boolean
+          review_time_label: string | null
           stats_min_requests: number
           updated_at: string
           updated_by: string | null
+          verified_companies_min: number
         }
       }
       set_limit: {
@@ -3471,6 +3526,10 @@ export type Database = {
           p_reason?: string
         }
         Returns: undefined
+      }
+      verified_carriers_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       withdraw_offer: {
         Args: { p_offer_id: string }

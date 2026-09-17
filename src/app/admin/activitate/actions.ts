@@ -6,6 +6,7 @@ import { activityAdminCopy } from '@/content/activitate';
 import { getAccountContext } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { ACTIVITY_TAG } from '@/lib/requests-source';
+import { VERIFICATION_TAG } from '@/lib/trust-source';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -40,6 +41,8 @@ export async function setThresholdsAction(
 
   const statsMin = whole(formData, 'stats_min_requests');
   const feedMin = whole(formData, 'feed_min_requests');
+  const companiesMin = whole(formData, 'verified_companies_min');
+  const reviewTime = String(formData.get('review_time_label') ?? '').trim();
 
   const fieldErrors: Record<string, string> = {};
   if (statsMin === null || statsMin < 0 || statsMin > 100_000) {
@@ -48,7 +51,15 @@ export async function setThresholdsAction(
   if (feedMin === null || feedMin < 1 || feedMin > 1000) {
     fieldErrors.feed_min_requests = c.invalidFeed;
   }
-  if (statsMin === null || feedMin === null || Object.keys(fieldErrors).length > 0) {
+  if (companiesMin === null || companiesMin < 1 || companiesMin > 100_000) {
+    fieldErrors.verified_companies_min = c.invalidCompanies;
+  }
+  if (
+    statsMin === null ||
+    feedMin === null ||
+    companiesMin === null ||
+    Object.keys(fieldErrors).length > 0
+  ) {
     return { fieldErrors };
   }
 
@@ -56,6 +67,10 @@ export async function setThresholdsAction(
   const { error } = await supabase.rpc('set_homepage_settings', {
     p_stats_min_requests: statsMin,
     p_feed_min_requests: feedMin,
+    p_verified_companies_min: companiesMin,
+    // The database trims it and turns an empty string into null, which is
+    // what hides the question on /verificare.
+    p_review_time_label: reviewTime,
   });
 
   if (error) return { error: toAppError(error, 'admin.setHomepageSettings').message };
@@ -65,8 +80,10 @@ export async function setThresholdsAction(
   // so the person who just pressed Save sees the change on the next page
   // view instead of up to a minute later.
   updateTag(ACTIVITY_TAG);
+  updateTag(VERIFICATION_TAG);
   revalidatePath(ROUTES.home);
   revalidatePath(ROUTES.adminActivity);
+  revalidatePath(ROUTES.verification);
 
   return { notice: c.saved };
 }

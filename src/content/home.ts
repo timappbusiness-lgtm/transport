@@ -168,26 +168,6 @@ export const homeCopy = {
     cta: 'Creează cont de firmă',
   },
 
-  verification: {
-    eyebrow: 'Verificare continuă',
-    strong: 'Nu verificăm firmele o singură dată.',
-    soft: 'Urmărim fiecare dată de expirare.',
-    body:
-      'Licența comunitară, asigurarea CMR, RCA-ul, ITP-ul și copiile conforme au fiecare o dată de expirare urmărită zilnic. Transportatorul primește notificări înainte să expire.',
-    rules: [
-      {
-        title: 'Dacă expiră un document al firmei',
-        body: 'Firma nu mai poate oferta până la revalidare.',
-        tone: 'danger' as const,
-      },
-      {
-        title: 'Dacă expiră RCA-ul sau ITP-ul unui vehicul',
-        body: 'Doar acel vehicul dispare de pe bursă. Restul flotei rămâne activ.',
-        tone: 'warning' as const,
-      },
-    ],
-  },
-
   prices: {
     eyebrow: 'Tarife',
     strong: 'Un reper de preț,',

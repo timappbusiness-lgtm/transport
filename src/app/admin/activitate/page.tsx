@@ -2,6 +2,8 @@ import { ThresholdForm } from '@/components/requests/threshold-form';
 import { DataRow, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { activityAdminCopy } from '@/content/activitate';
 import { formatNumber, showFeed, showStats } from '@/lib/requests';
+import { showCarrierCount } from '@/lib/trust';
+import { loadVerification } from '@/lib/trust-source';
 import { loadHomepageActivity } from '@/lib/requests-source';
 
 const c = activityAdminCopy;
@@ -18,9 +20,11 @@ export const dynamic = 'force-dynamic';
  * the numbers are right now, and therefore what a visitor is seeing.
  */
 export default async function Page() {
-  const { stats, thresholds, requests } = await loadHomepageActivity();
+  const [{ stats, thresholds, requests, verifiedCarriers }, { reviewTimeLabel }] =
+    await Promise.all([loadHomepageActivity(), loadVerification()]);
   const statsVisible = showStats(stats, thresholds);
   const feedVisible = showFeed(stats, requests, thresholds);
+  const countVisible = showCarrierCount(verifiedCarriers, thresholds.verifiedCompaniesMin);
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,6 +43,10 @@ export default async function Page() {
               <DataRow label={c.state.activeTotal} value={formatNumber(stats.activeTotal)} />
               <DataRow label={c.state.week} value={formatNumber(stats.publishedLast7d)} />
               <DataRow label={c.state.km} value={`${formatNumber(stats.totalKm)} km`} />
+              <DataRow
+                label={c.state.carriers}
+                value={verifiedCarriers === null ? '—' : formatNumber(verifiedCarriers)}
+              />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <StatusBadge tone={statsVisible ? 'success' : 'neutral'}>
@@ -46,6 +54,9 @@ export default async function Page() {
               </StatusBadge>
               <StatusBadge tone={feedVisible ? 'success' : 'neutral'}>
                 {feedVisible ? c.state.feedShown : c.state.feedHidden}
+              </StatusBadge>
+              <StatusBadge tone={countVisible ? 'success' : 'neutral'}>
+                {countVisible ? c.state.countShown : c.state.countHidden}
               </StatusBadge>
             </div>
             <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">{c.state.cached}</p>
@@ -55,7 +66,7 @@ export default async function Page() {
         )}
       </section>
 
-      <ThresholdForm thresholds={thresholds} />
+      <ThresholdForm thresholds={thresholds} reviewTimeLabel={reviewTimeLabel} />
     </div>
   );
 }

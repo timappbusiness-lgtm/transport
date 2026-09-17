@@ -25,6 +25,8 @@ export interface HomepageActivity {
   stats: ActivityStats | null;
   thresholds: ActivityThresholds;
   requests: PublicRequest[];
+  /** Verified, unsuspended carriers. null when we could not ask. */
+  verifiedCarriers: number | null;
 }
 
 /**
@@ -35,19 +37,21 @@ export interface HomepageActivity {
 export const DEFAULT_THRESHOLDS: ActivityThresholds = {
   statsMinRequests: 50,
   feedMinRequests: 6,
+  verifiedCompaniesMin: 20,
 };
 
 export const NO_ACTIVITY: HomepageActivity = {
   stats: null,
   thresholds: DEFAULT_THRESHOLDS,
   requests: [],
+  verifiedCarriers: null,
 };
 
 async function fetchActivity(): Promise<HomepageActivity> {
   if (!isSupabaseConfigured()) return NO_ACTIVITY;
 
   const supabase = createPublicClient();
-  const [activity, settings, requests] = await Promise.all([
+  const [activity, settings, requests, carriers] = await Promise.all([
     supabase.rpc('homepage_activity'),
     supabase.from('homepage_settings').select('*').maybeSingle(),
     supabase
@@ -55,12 +59,14 @@ async function fetchActivity(): Promise<HomepageActivity> {
       .select('*')
       .order('published_at', { ascending: false })
       .limit(FEED_LIMIT),
+    supabase.rpc('verified_carriers_count'),
   ]);
 
   for (const [label, result] of [
     ['activity', activity],
     ['settings', settings],
     ['requests', requests],
+    ['carriers', carriers],
   ] as const) {
     if (result.error) {
       console.error(`[acasă] ${label} query failed`, {
@@ -78,9 +84,11 @@ async function fetchActivity(): Promise<HomepageActivity> {
       ? {
           statsMinRequests: settings.data.stats_min_requests,
           feedMinRequests: settings.data.feed_min_requests,
+          verifiedCompaniesMin: settings.data.verified_companies_min,
         }
       : DEFAULT_THRESHOLDS,
     requests: (requests.data ?? []) as PublicRequest[],
+    verifiedCarriers: typeof carriers.data === 'number' ? carriers.data : null,
   };
 }
 

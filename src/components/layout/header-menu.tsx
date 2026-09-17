@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 const SECTIONS = [
   { href: '#cum-functioneaza', label: 'Cum funcționează' },
   { href: '#transportatori', label: 'Transportatori' },
-  { href: '#verificare', label: 'Verificare' },
+  { href: '#siguranta', label: 'Siguranță' },
   { href: '#tarife', label: 'Tarife' },
 ] as const;
 

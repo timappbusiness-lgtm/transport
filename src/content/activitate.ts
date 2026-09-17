@@ -16,6 +16,13 @@ export const activityAdminCopy = {
   feedMin: 'Prag pentru lista de cereri',
   feedMinHint:
     'Numărul minim de cereri active. Sub el, în locul cardurilor apare mesajul de așteptare.',
+  companiesMin: 'Prag pentru numărul de firme',
+  companiesMinHint:
+    'Numărul minim de firme verificate. Sub el, banda de pe prima pagină nu spune câte firme sunt.',
+  reviewTime: 'Durata verificării, în cuvinte',
+  reviewTimeHint:
+    'Apare în întrebările de pe /verificare, de exemplu „în cel mult o zi lucrătoare”. Lasă gol ca să ascunzi întrebarea.',
+  invalidCompanies: 'Introdu un număr de cel puțin 1.',
   save: 'Salvează pragurile',
   saved: 'Praguri salvate.',
   invalidStats: 'Introdu un număr între 0 și 100.000.',
@@ -28,10 +35,13 @@ export const activityAdminCopy = {
     activeTotal: 'Cereri active acum',
     week: 'Publicate în ultimele 7 zile',
     km: 'Kilometri estimați, în total',
+    carriers: 'Firme de transport verificate',
     statsShown: 'Statisticile sunt vizibile',
     statsHidden: 'Statisticile sunt ascunse',
     feedShown: 'Lista de cereri este vizibilă',
     feedHidden: 'Lista de cereri este ascunsă',
+    countShown: 'Numărul de firme este vizibil',
+    countHidden: 'Numărul de firme este ascuns',
     unavailable: 'Nu am putut citi activitatea din baza de date.',
     cached:
       'Cifrele sunt citite o dată pe minut. După salvare, prima pagină se actualizează imediat.',

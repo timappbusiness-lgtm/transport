@@ -45,6 +45,8 @@ export interface ActivityStats {
 export interface ActivityThresholds {
   statsMinRequests: number;
   feedMinRequests: number;
+  /** Below this many verified carriers, the homepage states no number. */
+  verifiedCompaniesMin: number;
 }
 
 /** Six on a wide screen; the last two are hidden on a phone, not fetched twice. */

@@ -52,6 +52,8 @@ export const authCopy = {
     stepLabel: 'Pasul 1 din 2',
     stepTitle: 'Datele tale',
     nextStep: 'Pasul 2, după confirmarea e-mailului: CUI-ul și datele firmei.',
+    verifyIntro: 'Documentele firmei sunt verificate de echipa noastră înainte de prima ofertă.',
+    verifyLink: 'Cum verificăm firmele',
     fullName: 'Nume și prenume',
     email: 'Adresă de e-mail de serviciu',
     password: 'Parolă',

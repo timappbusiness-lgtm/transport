@@ -7,6 +7,7 @@ export const ROUTES = {
   newRequest: '/cerere/noua',
   routes: '/trasee',
   requests: '/cereri',
+  verification: '/verificare',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',

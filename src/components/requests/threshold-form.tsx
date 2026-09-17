@@ -11,7 +11,13 @@ import { cn } from '@/lib/utils';
 const EMPTY: ThresholdActionState = {};
 const c = activityAdminCopy;
 
-export function ThresholdForm({ thresholds }: { thresholds: ActivityThresholds }) {
+export function ThresholdForm({
+  thresholds,
+  reviewTimeLabel,
+}: {
+  thresholds: ActivityThresholds;
+  reviewTimeLabel: string | null;
+}) {
   const [state, action] = useActionState(setThresholdsAction, EMPTY);
   const id = useId();
 
@@ -33,6 +39,23 @@ export function ThresholdForm({ thresholds }: { thresholds: ActivityThresholds }
           hint={c.feedMinHint}
           defaultValue={String(thresholds.feedMinRequests)}
           error={state.fieldErrors?.feed_min_requests}
+        />
+        <Field
+          id={`${id}-companies`}
+          name="verified_companies_min"
+          label={c.companiesMin}
+          hint={c.companiesMinHint}
+          defaultValue={String(thresholds.verifiedCompaniesMin)}
+          error={state.fieldErrors?.verified_companies_min}
+        />
+        <Field
+          id={`${id}-review`}
+          name="review_time_label"
+          type="text"
+          label={c.reviewTime}
+          hint={c.reviewTimeHint}
+          defaultValue={reviewTimeLabel ?? ''}
+          error={state.fieldErrors?.review_time_label}
         />
       </div>
 
@@ -58,6 +81,7 @@ function Field({
   hint,
   defaultValue,
   error,
+  type = 'number',
 }: {
   id: string;
   name: string;
@@ -65,6 +89,7 @@ function Field({
   hint: string;
   defaultValue: string;
   error?: string | undefined;
+  type?: 'number' | 'text' | undefined;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
@@ -74,10 +99,10 @@ function Field({
       <input
         id={id}
         name={name}
-        type="number"
-        min={0}
-        step={1}
-        inputMode="numeric"
+        type={type}
+        min={type === 'number' ? 0 : undefined}
+        step={type === 'number' ? 1 : undefined}
+        inputMode={type === 'number' ? 'numeric' : undefined}
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
         className={cn(

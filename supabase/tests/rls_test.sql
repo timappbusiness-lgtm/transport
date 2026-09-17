@@ -1822,19 +1822,19 @@ select pg_temp.check('CRQ  not even staff may move one directly', 'fix',
 
 select pg_temp.check('CRQ  a non-staff user cannot call the settings RPC', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.set_homepage_settings(0, 1)$a$, 'blocked',
+  $a$select public.set_homepage_settings(0, 1, 20, null)$a$, 'blocked',
   p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
 
 select pg_temp.check('CRQ  anon cannot call the settings RPC', 'fix',
-  null, 'anon', $a$select public.set_homepage_settings(0, 1)$a$, 'blocked');
+  null, 'anon', $a$select public.set_homepage_settings(0, 1, 20, null)$a$, 'blocked');
 
 select pg_temp.check('CRQ  staff move a threshold through the RPC', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select (public.set_homepage_settings(10, 3)).stats_min_requests = 10$a$, 'true');
+  $a$select (public.set_homepage_settings(10, 3, 20, null)).stats_min_requests = 10$a$, 'true');
 
 select pg_temp.check('CRQ  a threshold change is audited with before and after', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select (public.set_homepage_settings(10, 3)).feed_min_requests = 3$a$, 'true',
+  $a$select (public.set_homepage_settings(10, 3, 20, null)).feed_min_requests = 3$a$, 'true',
   p_verify => $v$select exists (
                  select 1 from public.audit_log
                  where action = 'homepage_settings.updated'
@@ -1843,8 +1843,159 @@ select pg_temp.check('CRQ  a threshold change is audited with before and after',
 
 select pg_temp.check('CRQ  the RPC refuses a feed threshold of zero', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select public.set_homepage_settings(10, 0)$a$, 'blocked',
+  $a$select public.set_homepage_settings(10, 0, 20, null)$a$, 'blocked',
   p_verify => $v$select feed_min_requests = 6 from public.homepage_settings where id$v$);
+
+-- =====================================================================
+-- CTR - what the homepage and /verificare are allowed to say
+--
+-- Both pages make claims about safety. These check that the two things
+-- they read are readable by somebody with no account, that neither leaks a
+-- row, and that the count means what the sentence next to it says: verified,
+-- not suspended, carrying a transport licence.
+--
+-- Counts are compared against a baseline captured in p_setup, because
+-- smoke_test.sql runs first on the same database and leaves rows behind.
+-- =====================================================================
+
+select pg_temp.check('CTR  the requirements view carries only what the page prints', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'for_company_types','for_vehicle_types','grace_days','has_expiry',
+       'is_blocking','kind','label_ro','reminder_days','scope'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_document_requirements_public'$a$, 'true');
+
+select pg_temp.check('CTR  anon reads the document rules without an account', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 10 from public.v_document_requirements_public$a$, 'true');
+
+select pg_temp.check('CTR  a retired rule drops out of the public list', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_document_requirements_public
+                        where kind = 'carte_verde')$a$, 'true',
+  p_setup => $s$update public.document_requirements set is_active = false
+                where kind = 'carte_verde'$s$);
+
+select pg_temp.check('CTR  anon still cannot read the requirements table itself', 'guard',
+  null, 'anon', $a$select * from public.document_requirements$a$, 'blocked');
+
+select pg_temp.check('CTR  the blocking flag and the reminder days come through', 'fix',
+  null, 'anon',
+  $a$select is_blocking and has_expiry and reminder_days = '{30,14,7,1}'
+     from public.v_document_requirements_public
+     where scope = 'vehicle' and kind = 'rca'$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The count
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CTR  anon may ask how many carriers can act', 'fix',
+  null, 'anon', $a$select public.verified_carriers_count() >= 0$a$, 'true');
+
+select pg_temp.check('CTR  anon still cannot read the companies behind the count', 'guard',
+  null, 'anon', $a$select * from public.companies$a$, 'blocked');
+
+select pg_temp.check('CTR  a verified carrier is counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() + 1 as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a company that is not verified is not counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'pending', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a suspended carrier stops being counted', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+      create temp table zz_base as select public.verified_carriers_count() - 1 as n;
+      grant select on zz_base to anon;
+      update public.companies set is_suspended = true
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a forwarder is not a carrier', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'expeditie'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+select pg_temp.check('CTR  a company that does both is counted once', 'fix',
+  null, 'anon',
+  $a$select public.verified_carriers_count() = (select n from zz_base)$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select public.verified_carriers_count() + 1 as n;
+      grant select on zz_base to anon;
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'both'
+      where id = 'fc000000-0000-0000-0000-000000000003';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The two new settings
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CTR  anon reads the threshold and the review-time text', 'fix',
+  null, 'anon',
+  $a$select verified_companies_min = 20
+        and review_time_label = 'în cel mult o zi lucrătoare'
+     from public.homepage_settings where id$a$, 'true');
+
+select pg_temp.check('CTR  the two-argument settings RPC is gone', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(10, 3)$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CTR  a non-staff user cannot change the company threshold', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_homepage_settings(50, 6, 1, 'imediat')$a$, 'blocked',
+  p_verify => $v$select verified_companies_min = 20 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CTR  staff change both new settings through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(50, 6, 5, 'în două zile lucrătoare')).verified_companies_min = 5$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'homepage_settings.updated'
+                   and (before ->> 'verified_companies_min')::integer = 20
+                   and (after ->> 'verified_companies_min')::integer = 5)$v$);
+
+select pg_temp.check('CTR  an empty review-time text becomes null, and hides the question', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(50, 6, 20, '   ')).review_time_label is null$a$, 'true');
+
+select pg_temp.check('CTR  the RPC refuses a company threshold of zero', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(50, 6, 0, null)$a$, 'blocked',
+  p_verify => $v$select verified_companies_min = 20 from public.homepage_settings where id$v$);
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
