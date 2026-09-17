@@ -6,6 +6,7 @@ export const ROUTES = {
   home: '/',
   newRequest: '/cerere/noua',
   routes: '/trasee',
+  prices: '/preturi',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
@@ -40,6 +41,7 @@ export const ROUTES = {
   // Staff
   admin: '/admin',
   adminDocuments: '/admin/documente',
+  adminPrices: '/admin/preturi',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: 'Administrare' };
 const NAV = [
   { href: ROUTES.admin, label: 'Panou' },
   { href: ROUTES.adminDocuments, label: 'Documente de verificat' },
+  { href: ROUTES.adminPrices, label: 'Prețuri orientative' },
 ] as const;
 
 /**

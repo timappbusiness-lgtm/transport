@@ -69,3 +69,54 @@ paperwork instead of running out while documents sit in the review queue.
 2. Is 3 free contacts the right number? Watch where free users stop.
 3. Do forwarders want per-seat pricing? A 5-dispatcher office on one login is
    revenue left on the table — but only add seats once someone asks twice.
+
+---
+
+# Indicative transport prices
+
+A different thing from everything above, and worth keeping separate in your
+head: this page charges nobody. It is what a person with a car to move sees
+before they fill in a form — a rate per kilometre by vehicle class, and a
+calculator that turns a route into a range.
+
+Two tables, added in migration `20260917104913`:
+
+| Table | Holds |
+|---|---|
+| `price_rates` | one row per vehicle class: three rates per kilometre (local, national, international) and two minimums (lei, euro) |
+| `price_settings` | one row: the not-running and Expres surcharges, the straight-line-to-road factor, the width of the shown range, the month the rates are for, and `is_published` |
+
+## The rules that make it safe to be wrong
+
+**Nothing is visible until the team publishes it.** The read policies on both
+tables ask `prices_are_published()`, so an unfinished table is invisible to a
+visitor no matter what a page renders. Staff see it while they work on it.
+
+**No table grant lets anyone write a rate**, staff included. Every change goes
+through `set_price_rate`, `set_price_settings` or `set_prices_published` —
+SECURITY DEFINER, staff-only, each writing the before/after pair to
+`audit_log`. A change made after publication carries the reason
+`Modificare după publicare`, because that one changed something people had
+already read.
+
+**The seeded rates are placeholders**, shaped like real rates so the page
+could be built and reviewed. They are not a price list and were not copied
+from anybody. `is_published` stays false until the transport partner has
+validated them.
+
+## Where the arithmetic lives
+
+`src/lib/pricing.ts` — no SQL, no React, unit-tested. Straight-line distance,
+a road factor, the class rate, the minimum as a floor, then the surcharges,
+then a range rounded to the nearest ten. Everything the page, the calculator
+and (later) the request form show goes through it, so the three cannot
+disagree.
+
+The output is always a range. A single number reads as a quote, and the
+carrier is the one quoting.
+
+## Not to be confused with
+
+`v_corridor_prices` and `price_benchmarks`, which are medians of transports
+that actually closed. That is what happened; this is what we think. Neither
+was touched by this feature.

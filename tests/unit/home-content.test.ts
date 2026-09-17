@@ -42,16 +42,6 @@ describe('homepage copy rules', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('labels every price as orientativ', () => {
-    expect(homeCopy.prices.columns.price).toMatch(/orientativ/i);
-    expect(homeCopy.prices.lede).toMatch(/orientativ/i);
-    expect(homeCopy.prices.note).toMatch(/orientativ/i);
-  });
-
-  it('says the real intervals are not there yet', () => {
-    expect(homeCopy.prices.note).toMatch(/pe măsură ce se încheie transporturi/i);
-  });
-
   it('keeps the seat deck internally consistent', () => {
     const { taken, total, caption } = homeCopy.panel.seats;
     expect(taken).toBeGreaterThan(0);
@@ -63,12 +53,6 @@ describe('homepage copy rules', () => {
   it('gives the comparison five steps on each side', () => {
     expect(homeCopy.comparison.old).toHaveLength(5);
     expect(homeCopy.comparison.fresh).toHaveLength(5);
-  });
-
-  it('lists each corridor once and never Romania as an origin', () => {
-    const codes = homeCopy.prices.rows.map((row) => row.cc);
-    expect(new Set(codes).size).toBe(codes.length);
-    expect(codes).not.toContain('RO');
   });
 
   it('matches the carrier plan in docs/05-pricing.md', () => {
@@ -100,7 +84,6 @@ describe('homepage copy rules', () => {
       `${homeCopy.carriers.strong} ${homeCopy.carriers.soft}`,
       `${homeCopy.forwarders.strong} ${homeCopy.forwarders.soft}`,
       `${homeCopy.verification.strong} ${homeCopy.verification.soft}`,
-      `${homeCopy.prices.strong} ${homeCopy.prices.soft}`,
       `${homeCopy.finalCta.strong} ${homeCopy.finalCta.soft}`,
     ];
     for (const headline of headlines) {

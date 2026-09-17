@@ -9,13 +9,23 @@ import { Container } from './container';
  * Replace the page file when the real screen is built, and drop the route
  * from UNBUILT_ROUTES.
  */
-export function PlaceholderPage({ title, children }: { title: string; children: React.ReactNode }) {
+export function PlaceholderPage({
+  title,
+  children,
+  extra,
+}: {
+  title: string;
+  children: React.ReactNode;
+  /** Rendered under the lede: anything that is not a sentence. */
+  extra?: React.ReactNode;
+}) {
   return (
     <>
         <Container className="flex min-h-[60vh] flex-col justify-center py-20">
           <EyebrowPill>Pagină în lucru</EyebrowPill>
           <h1 className="mt-4 text-[clamp(2rem,5vw,3.25rem)]">{title}</h1>
           <Lede className="mt-4">{children}</Lede>
+          {extra ? <div className="mt-6">{extra}</div> : null}
           <div className="mt-8">
             <Link href={ROUTES.home} className={buttonClasses('secondary', 'md')}>
               Înapoi la prima pagină

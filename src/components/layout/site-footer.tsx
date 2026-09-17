@@ -4,7 +4,8 @@ import { ROUTES } from '@/config/routes';
 import { Container } from './container';
 
 const LINKS = [
-  { href: ROUTES.routes, label: 'Trasee și prețuri' },
+  { href: ROUTES.routes, label: 'Trasee disponibile' },
+  { href: ROUTES.prices, label: 'Prețuri orientative' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },

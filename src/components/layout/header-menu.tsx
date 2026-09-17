@@ -14,7 +14,17 @@ const SECTIONS = [
   { href: '#cum-functioneaza', label: 'Cum funcționează' },
   { href: '#transportatori', label: 'Transportatori' },
   { href: '#verificare', label: 'Verificare' },
-  { href: '#tarife', label: 'Tarife' },
+] as const;
+
+/**
+ * Real pages, so they belong in the bar on every route rather than only
+ * where an anchor happens to resolve. Prețuri used to be the homepage
+ * `#tarife` anchor; it is a page now, and a link that leaves the homepage
+ * has to work from the other pages too.
+ */
+const PAGES = [
+  { href: ROUTES.routes, label: 'Trasee' },
+  { href: ROUTES.prices, label: 'Prețuri' },
 ] as const;
 
 export interface HeaderUser {
@@ -66,15 +76,20 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
 
   return (
     <>
-      {onHome ? (
-        <nav aria-label="Secțiuni" className="hidden gap-1 min-[900px]:flex">
-          {SECTIONS.map((section) => (
-            <a key={section.href} href={section.href} className={PILL_QUIET}>
-              {section.label}
-            </a>
-          ))}
-        </nav>
-      ) : null}
+      <nav aria-label="Secțiuni" className="hidden gap-1 min-[900px]:flex">
+        {onHome
+          ? SECTIONS.map((section) => (
+              <a key={section.href} href={section.href} className={PILL_QUIET}>
+                {section.label}
+              </a>
+            ))
+          : null}
+        {PAGES.map((page) => (
+          <Link key={page.href} href={page.href} className={PILL_QUIET}>
+            {page.label}
+          </Link>
+        ))}
+      </nav>
 
       {user ? (
         <div ref={menuRef} className="relative">
