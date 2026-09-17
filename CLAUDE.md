@@ -5,29 +5,48 @@ Supabase database in `supabase/`, n8n workflows in `n8n/`.
 
 ## Session rules
 
-These come first because everything else assumes them. They hold the same
-way in VS Code on the Mac and in Claude Code, so the two behave identically.
+Two places work on this repository at once — Claude Code and VS Code on the
+Mac — so these come first. They exist so that neither place is ever
+surprised by what the other did.
 
-1. **Start every session by looking at the remote.** `git fetch`, pull
-   `main`, then list the open pull requests and the remote branches. If
-   another open pull request already touches the area you are about to work
-   on, **stop and say so** rather than building a second version of it.
-2. **Every change goes to a branch and a pull request.** Never leave work
-   only on a laptop or only inside a session. `main` takes no direct pushes.
-3. **End every session by pushing the branch and reporting the pull request
-   link.** A session that ends with unpushed commits has lost the work as
-   far as everyone else is concerned.
-4. **Never commit a secret.** Local configuration comes from
-   `vercel env pull .env.local`, and `.env.local` is gitignored.
-   `.env.example` lists every variable name and no values.
-5. **No session touches the remote database.** Migrations reach SAAS
-   TRANSPORT only through the `main` pipeline — never `supabase db push`
-   from a laptop, never a manual change in the dashboard. Write a migration,
-   open a pull request, and let the merge apply it.
+1. **Start by looking at the remote.** `git fetch --all --prune`, switch to
+   `main`, pull. List the open pull requests **and the files each one
+   touches**. Then say out loud which area this session is taking, before
+   writing anything.
+2. **One branch per task**, named `feature/<area>` or `fix/<area>`. Never
+   work on `main`. Never reuse another open pull request's branch unless you
+   are asked to continue that specific piece of work.
+3. **Stop and ask when another open pull request touches the same files.**
+   Not "work around it" — ask. These are the files where two sessions
+   collide worst, because everything imports them:
 
-One more, learned the hard way: **one session per phase.** Two sessions
-working the same phase produced two complete implementations of phase 1 and
-a reconciliation that cost more than the feature.
+   - `src/app/globals.css`
+   - `src/config/routes.ts`
+   - `src/components/layout/site-header.tsx`
+   - `src/lib/auth/`
+   - `middleware.ts`
+   - `supabase/migrations/`
+
+4. **Commit and push after every working step**, not only at the end. An
+   unpushed commit is invisible to the other place, and two people building
+   the same thing twice costs more than any merge conflict.
+5. **Migrations carry the current timestamp.** Before merging, rebase on
+   `main`; if `main` gained a newer migration in the meantime, rename yours
+   so it sorts after it and re-run `pnpm db:test`. Two migrations that
+   disagree about their order apply in one sequence locally and another on
+   the project.
+6. **Before merging: rebase on `main`, every check green.** No exceptions,
+   including for a one-line change.
+7. **End by pushing, updating the pull request description with what is done
+   and what remains, and reporting the link.** The description is how the
+   other place picks the work up.
+8. **Continuing work started elsewhere:** fetch, check out the existing
+   branch, and **read its pull request description first**. It says where
+   the other place stopped and why.
+
+One more, learned the hard way: **one session per phase.** Two sessions on
+phase 1 produced two complete implementations and a reconciliation that cost
+more than the feature.
 
 ## Sources of truth
 

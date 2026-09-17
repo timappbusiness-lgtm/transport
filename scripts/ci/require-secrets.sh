@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fails with a readable message when a required secret is not set.
 #
-#   bash scripts/ci/require-secrets.sh VERCEL_TOKEN VERCEL_ORG_ID
+#   bash scripts/ci/require-secrets.sh SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF
 #
 # Each argument is the NAME of an environment variable that the calling step
 # has mapped from `secrets`. A missing one is a setup mistake, not a code
@@ -36,9 +36,8 @@ fi
   echo '| `SUPABASE_ACCESS_TOKEN` | https://supabase.com/dashboard/account/tokens |'
   echo '| `SUPABASE_PROJECT_REF` | the project ref, e.g. `ytwzydilyiekhexnpziu` |'
   echo '| `SUPABASE_DB_PASSWORD` | Supabase → Project Settings → Database |'
-  echo '| `VERCEL_TOKEN` | https://vercel.com/account/tokens |'
-  echo '| `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |'
-  echo '| `VERCEL_PROJECT_ID` | `projectId` in the same file |'
+  echo '| `VERCEL_DEPLOY_HOOK_URL` | Vercel → project → Settings → Git → Deploy Hooks, a hook on `main` |'
+  echo '| `VERCEL_AUTOMATION_BYPASS_SECRET` | Vercel → project → Settings → Deployment Protection → Protection Bypass for Automation |'
 } >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 
 echo "::error::Missing repository secret(s): ${missing[*]}. Add them under Settings -> Secrets and variables -> Actions." >&2
