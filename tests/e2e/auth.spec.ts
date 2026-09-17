@@ -63,6 +63,20 @@ test.describe('protected routes', () => {
     await page.goto('/autentificare?next=%2Fcont%2Fprofil');
     await expect(page.locator('input[name="next"]')).toHaveValue('/cont/profil');
   });
+
+  // The fleet and document screens are the ones that hold licence numbers,
+  // ITP dates and a company's papers. They are guarded by the same
+  // middleware as the rest of /cont, and this says so out loud.
+  for (const [path, next] of [
+    ['/cont/firma/documente', '%2Fcont%2Ffirma%2Fdocumente'],
+    ['/cont/firma/flota', '%2Fcont%2Ffirma%2Fflota'],
+    ['/cont/firma/flota/00000000-0000-0000-0000-000000000000', '%2Fcont%2Ffirma%2Fflota%2F00000000-0000-0000-0000-000000000000'],
+  ] as const) {
+    test(`${path} is closed to an anonymous visitor`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page).toHaveURL(new RegExp(`/autentificare\\?next=${next}$`));
+    });
+  }
 });
 
 test.describe('staff area', () => {

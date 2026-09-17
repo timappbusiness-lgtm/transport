@@ -31,6 +31,8 @@ export const ROUTES = {
   accountCompany: '/cont/firma',
   accountCompanyCreate: '/cont/firma/creeaza',
   accountMembers: '/cont/firma/membri',
+  accountDocuments: '/cont/firma/documente',
+  accountFleet: '/cont/firma/flota',
   accountInvitations: '/cont/invitatii',
 
   // Staff
@@ -40,6 +42,14 @@ export const ROUTES = {
 
 export type RouteKey = keyof typeof ROUTES;
 export type Route = (typeof ROUTES)[RouteKey];
+
+/**
+ * One vehicle's page. A function rather than an entry in ROUTES, which
+ * holds literal paths so `Route` stays a union of strings.
+ */
+export function vehicleRoute(vehicleId: string): string {
+  return `${ROUTES.accountFleet}/${vehicleId}`;
+}
 
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
