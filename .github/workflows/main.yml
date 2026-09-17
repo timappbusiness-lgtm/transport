@@ -9,7 +9,7 @@ name: Main
 #   1. checks      typecheck, lint, unit, db:test, edge functions, e2e
 #   2. migrations  supabase db push --dry-run, then the real push
 #   3. functions   deploy the edge functions whose sources changed
-#   4. production  Vercel production deploy
+#   4. production  Vercel production deploy, through a deploy hook
 #   5. advisors    security advisors, written into the run summary
 #
 # Steps 2 and 3 change a system that has no undo, so nothing is allowed to
@@ -19,14 +19,16 @@ name: Main
 #   SUPABASE_ACCESS_TOKEN   a personal access token (supabase.com/dashboard/account/tokens)
 #   SUPABASE_PROJECT_REF    ytwzydilyiekhexnpziu
 #   SUPABASE_DB_PASSWORD    the database password for that project
-#   VERCEL_TOKEN            vercel.com/account/tokens
-#   VERCEL_ORG_ID           `orgId` from .vercel/project.json after `vercel link`
-#   VERCEL_PROJECT_ID       `projectId` from the same file
+#   VERCEL_DEPLOY_HOOK_URL  Vercel → project transport → Settings → Git →
+#                           Deploy Hooks, a hook on branch `main`
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+env:
+  PRODUCTION_URL: https://transport-seven-sandy.vercel.app
 
 # One release at a time. `cancel-in-progress: false` is deliberate: a run
 # that is halfway through `supabase db push` must be allowed to finish.
@@ -191,47 +193,28 @@ jobs:
     name: 4. Vercel production
     runs-on: ubuntu-latest
     needs: functions
+    # vercel.json stops Vercel deploying `main` on push, so production only
+    # changes here, after the migrations and functions above are in. The
+    # build itself runs on Vercel; this job starts it through a deploy hook
+    # and waits for production to report this commit.
     environment:
       name: production
-      url: ${{ steps.deploy.outputs.url }}
+      url: https://transport-seven-sandy.vercel.app
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
-      - name: Require the Vercel secrets
+      - name: Require the Vercel secret
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: bash scripts/ci/require-secrets.sh VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: bash scripts/ci/require-secrets.sh VERCEL_DEPLOY_HOOK_URL
 
-      - name: Install the Vercel CLI
-        run: pnpm add -g vercel@59
-
-      - name: Build and deploy
-        id: deploy
+      - name: Deploy and wait for this commit
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          set -euo pipefail
-          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-          vercel build --prod --token="$VERCEL_TOKEN"
-          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" | tail -1)
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          {
-            echo '## Production'
-            echo
-            echo "Deployed to $url"
-          } >> "$GITHUB_STEP_SUMMARY"
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: bash scripts/ci/release-production.sh "$PRODUCTION_URL" "$GITHUB_SHA"
 
       - name: Check production answers
-        run: bash scripts/ci/smoke-deployment.sh "${{ steps.deploy.outputs.url }}"
+        run: bash scripts/ci/smoke-deployment.sh "$PRODUCTION_URL"
 
   advisors:
     name: 5. Security advisors
