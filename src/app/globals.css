@@ -3,39 +3,70 @@
 /* ===================================================================
    Coridor — design tokens.
 
-   Palette is the one specified in the homepage brief, which is the
-   agreed source of truth. design/README.md still carries the earlier
-   values and is aligned once the reconciliation is approved.
+   Calm, premium, data-driven: a light ground, generous white space, ink
+   type, and one family of blue-greys doing all the structural work. There
+   is no brand accent colour; emphasis comes from weight, space and the
+   dark sections.
+
+   Three values deviate from the brief, each for a measured contrast
+   reason. The numbers are checked by tests/unit/contrast.test.ts.
    =================================================================== */
 
 @theme {
-  --color-background: #0b1216;
-  --color-surface: #121e25;
-  --color-border: #1f2e36;
-  --color-foreground: #f3efe6;
-  --color-muted: #9aa7ae;
+  /* --- grounds and surfaces --- */
+  --color-background: #f6f7f7; /* ground */
+  --color-ground-alt: #eef1f2; /* alternating section */
+  --color-surface: #ffffff; /* card */
+  --color-border: #e2e7e9; /* hairline between surfaces */
 
-  --color-accent: #f2ad4b;
-  --color-success: #5fc98a;
-  --color-warning: #e8c170;
+  /* Form controls need a boundary a person can actually see: WCAG 1.4.11
+     asks 3:1 for the edge of a control, and the hairline above is 1.25:1.
+     That is right for a card and wrong for an input. */
+  --color-border-strong: #7c8a91; /* 3.56:1 on white */
 
-  /* PROPOSED, not part of the approved palette. The compliance UI has
-     three states — valid, expiring, expired — and the brief supplies
-     only success and warning. Raised in the reconciliation; replace
-     this value if a different red is chosen. */
-  --color-danger: #e2705f;
+  /* --- ink --- */
+  --color-foreground: #1c262b; /* 14.37:1 on ground */
+  --color-muted: #5e6d74; /* secondary text, 5.00:1 on ground */
+  --color-ink-soft: #7b8b93; /* 3.28:1 — large headlines only, never body */
 
-  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  /* --- dark sections ---
+     The brief specified #6f7f87 -> #a9b6bc. White text on the light end of
+     that gradient measures 2.08:1, below even the 3:1 large-text floor, so
+     the hero and the closing CTA would have been unreadable. Same hue
+     family, darkened until white is body-safe at both ends. */
+  --color-dark-from: #33434b; /* white 10.27:1 */
+  --color-dark-to: #69787f; /* white  4.57:1 */
+
+  /* --- status ---
+     The hexes are the brief's. As text on white they measure 4.04 and 3.64,
+     so the label is always rendered in ink and these carry the dot, the
+     border and the tint. Colour reinforces the state; the word states it. */
+  --color-success: #2f8f5b;
+  --color-warning: #b7791f;
+  --color-danger: #c2413a;
+
+  /* --- type --- */
+  --font-display: var(--font-inter-tight), "Inter", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
-  --radius-card: 8px;
+  /* --- shape --- */
+  --radius-pill: 999px;
+  --radius-card: 20px;
+  --radius-input: 12px;
 }
 
 @layer base {
   html {
     background-color: var(--color-background);
-    color-scheme: dark;
+    color-scheme: light;
+    /*
+     * The header floats over the page, so an anchor jump would otherwise
+     * land the heading underneath it. 4.25rem of header plus a gap; set
+     * here rather than per section, so the skip link and every future
+     * anchor get it for free.
+     */
+    scroll-padding-top: 5.5rem;
   }
 
   body {
@@ -45,70 +76,62 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Focus rings use the accent, never the border colour. #1f2e36 on
-     #0b1216 is 1.35:1 — invisible as a focus indicator. The accent is
-     10.49:1 on the same ground. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+
+  /* Focus is ink on light ground and white on the dark sections. Both are
+     well past the 3:1 a focus indicator needs. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-foreground);
     outline-offset: 2px;
-    border-radius: 2px;
-    /* Belt and braces: even if a component reaches for `transition-colors`
-       (whose Tailwind v4 property list includes outline-color), the ring
-       appears on the first frame rather than fading in. */
+    border-radius: 4px;
+    /* Instant: Tailwind v4's `transition-colors` includes outline-color, and
+       a focus ring that fades in is a focus ring that is missing on the
+       frame the user needs it. */
     transition-property: none;
   }
 
-  h1, h2, h3 {
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.022em;
-    line-height: 1.05;
-    text-wrap: balance;
+  .on-dark :focus-visible,
+  [data-surface='dark'] :focus-visible {
+    outline-color: #ffffff;
+  }
+}
+
+/* Entrances are transform-only. Nothing starts at opacity 0: the first
+   painted frame is what a thumbnail, a shared link and a fast scroller all
+   get, so everything meant to be read is legible before any animation. */
+@keyframes float-in {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    transform: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
-
-/* ===================================================================
-   Homepage — hero scrim and entrance motion (design/README.md).
-   =================================================================== */
-
-/* The scrim shields the copy, not the artwork: vertical on phones where
-   text spans the full width, diagonal on desktop so the network stays
-   bright in the right half where nothing is read. */
-.hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(to bottom,
-    rgb(11 18 22 / .85) 0%, rgb(11 18 22 / .45) 27%, transparent 54%,
-    rgb(11 18 22 / .72) 89%, var(--color-background) 100%);
-}
-@media (min-width: 900px) {
-  .hero::after {
-    background:
-      linear-gradient(100deg, var(--color-background) 6%, rgb(11 18 22 / .9) 33%, rgb(11 18 22 / .28) 63%, transparent 82%),
-      linear-gradient(to bottom, rgb(11 18 22 / .45) 0%, transparent 22%, transparent 72%, var(--color-background) 100%);
-  }
-}
-
-/* Transform only, never opacity: the first painted frame is what a
-   thumbnail, a shared link and a fast scroller all get, so everything
-   meant to be read is legible before any animation has run. */
-@media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise .6s cubic-bezier(.22,.61,.36,1) both; }
-  .d1 { animation-delay: .06s; }
-  .d2 { animation-delay: .13s; }
-  .d3 { animation-delay: .2s; }
-  .d4 { animation-delay: .28s; }
-}
-@keyframes rise { from { transform: translateY(12px); } to { transform: none; } }

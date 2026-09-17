@@ -10,12 +10,6 @@ const nextConfig: NextConfig = {
   // Next 16 dropped the `eslint` build key; linting runs as its own
   // script and in CI.
   typescript: { ignoreBuildErrors: false },
-  async rewrites() {
-    // The approved design reference, served as a static page at a clean URL.
-    // It is a standalone document, not a React route - it stays in public/
-    // until the real homepage replaces it.
-    return [{ source: '/demo', destination: '/demo.html' }];
-  },
 };
 
 export default nextConfig;

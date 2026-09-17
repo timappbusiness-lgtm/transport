@@ -1,30 +1,30 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'onDark' | 'onDarkGhost';
 type Size = 'sm' | 'md';
 
 const VARIANTS: Record<Variant, string> = {
-  // Dark text on accent measures 10.49:1 against this ground.
-  primary: 'bg-accent text-background hover:bg-[#f7bd69]',
-  secondary:
-    'border border-border text-foreground hover:border-muted hover:bg-white/5',
-  ghost: 'text-muted hover:text-foreground',
+  // Ink pill on light ground: white on #1c262b is 15.42:1.
+  primary: 'bg-foreground text-white hover:bg-[#2a3740]',
+  secondary: 'border border-border-strong text-foreground hover:bg-ground-alt',
+  // White pill on the dark sections: ink on white is 14.37:1.
+  onDark: 'bg-white text-foreground hover:bg-[#eef1f2]',
+  onDarkGhost: 'border border-white/45 text-white hover:bg-white/12',
 };
 
 const SIZES: Record<Size, string> = {
-  sm: 'px-3.5 py-2 text-xs',
-  md: 'px-5 py-3 text-sm',
+  sm: 'px-4 py-2 text-[0.8125rem]',
+  md: 'px-6 py-3 text-[0.9375rem]',
 };
 
 export const buttonClasses = (variant: Variant = 'primary', size: Size = 'md') =>
   cn(
-    'inline-flex items-center justify-center gap-2 rounded-[8px]',
-    'font-display font-bold',
-    // NOT `transition-colors`: in Tailwind v4 that list includes
+    'inline-flex items-center justify-center gap-2 rounded-pill',
+    'font-sans font-medium',
+    // Never `transition-colors`: in Tailwind v4 that list includes
     // outline-color, which makes the focus ring fade in from the element's
-    // own text colour — on the primary variant it starts invisible. A focus
-    // indicator has to appear on the first frame.
+    // own text colour. A focus indicator has to be there on the first frame.
     'transition-[color,background-color,border-color] duration-150',
     'disabled:pointer-events-none disabled:opacity-50',
     VARIANTS[variant],
@@ -33,18 +33,13 @@ export const buttonClasses = (variant: Variant = 'primary', size: Size = 'md') =
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
+  variant?: Variant | undefined;
+  size?: Size | undefined;
 }
 
 /**
- * Minimal primitive for phase 0. shadcn/ui components are copied in as
- * source; ui.shadcn.com is unreachable from this environment, so the CLI
- * cannot fetch them here — add them from a machine with access, or paste
- * the source. components.json is already configured for it.
- *
- * For a link styled as a button, spread `buttonClasses()` onto next/link
- * rather than reaching for an asChild polymorph.
+ * Pill button. For a link styled as a button, spread `buttonClasses()` onto
+ * next/link rather than reaching for an asChild polymorph.
  */
 export function Button({
   className,
