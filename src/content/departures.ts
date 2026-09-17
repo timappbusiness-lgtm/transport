@@ -65,6 +65,7 @@ export const departuresCopy = {
     verified: 'Firmă verificată',
     request: 'Cere transport pe acest traseu',
     contact: 'Contactează transportatorul',
+    seePlans: 'Vezi planurile și limitele',
     full: 'Platforma este plină. Poți publica o cerere și transportatorul te anunță dacă se eliberează un loc.',
     departed: 'Traseul a plecat deja.',
     similar: 'Trasee asemănătoare',

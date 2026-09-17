@@ -14,6 +14,18 @@ export interface AppError {
   fromDatabase: boolean;
 }
 
+/**
+ * Whether a message is a plan running out rather than something broken.
+ *
+ * `consume_contact_access` and the listing guards raise 42501 with a
+ * Romanian sentence about the limit. A wall with no door in it is worse
+ * than the limit itself, so the form that shows one of these adds a link to
+ * /abonamente — and this is the test for which messages get it.
+ */
+export function isQuotaError(message: string): boolean {
+  return /\b(limita|limită)\b/i.test(message) && /\bplan\b/i.test(message);
+}
+
 export const GENERIC_ERROR =
   'A apărut o eroare neașteptată. Încearcă din nou în câteva momente.';
 

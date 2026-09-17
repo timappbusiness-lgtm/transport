@@ -2,9 +2,12 @@
 
 import { useActionState } from 'react';
 import { revealContactAction, type RevealState } from '@/app/trasee/actions';
+import Link from 'next/link';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
+import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
+import { isQuotaError } from '@/lib/errors';
 
 const EMPTY: RevealState = {};
 
@@ -56,6 +59,16 @@ export function RevealContactButton({
         {signedIn ? c.contact : 'Intră în cont ca să contactezi'}
       </button>
       <FormError>{state.error}</FormError>
+      {state.error && isQuotaError(state.error) ? (
+        <p className="text-sm">
+          <Link
+            href={ROUTES.plans}
+            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          >
+            {departuresCopy.detail.seePlans}
+          </Link>
+        </p>
+      ) : null}
     </form>
   );
 }

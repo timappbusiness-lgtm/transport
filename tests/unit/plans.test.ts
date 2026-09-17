@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { isQuotaError } from '@/lib/errors';
 import {
   AUDIENCE_LABELS,
   BILLING_MONTHS,
@@ -303,5 +304,20 @@ describe('rows that cannot be rendered are dropped, not patched', () => {
       { months: 1, total: 149 },
       { months: 12, total: 1490 },
     ]);
+  });
+});
+
+describe('a limit reached is not an error, it is a plan running out', () => {
+  it('recognises the quota message the database raises', () => {
+    expect(
+      isQuotaError(
+        'Ai atins limita de 3 contacte pe luna aceasta (plan Gratuit). Treci la un plan superior.',
+      ),
+    ).toBe(true);
+  });
+
+  it('leaves an ordinary refusal alone', () => {
+    expect(isQuotaError('Cont suspendat sau neverificat.')).toBe(false);
+    expect(isQuotaError('Firma nu există')).toBe(false);
   });
 });
