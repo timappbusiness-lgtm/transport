@@ -4,13 +4,45 @@
 
 - **Vercel project:** `eduardooo-s-projects/coridor`
 - **Production:** https://coridor-gray.vercel.app
-- **Deploys today:** from a local checkout with the Vercel CLI
-  (`vercel deploy --prod`). The project is not connected to GitHub yet:
-  Vercel refused the link because the logged-in GitHub account has no
-  write access to `timappbusiness-lgtm/transport`. Once it does, connect
-  it under Settings → Git and every push deploys on its own.
+- **Deploys run on GitHub Actions** — `.github/workflows/deploy.yml`. A push
+  to `claude/saas-transport-exchange-w6f92q` deploys to production; a pull
+  request gets its own preview URL. Nothing deploys until typecheck, lint,
+  the unit tests and the database suites pass.
 - `NEXT_PUBLIC_SITE_URL` is set for Production. Preview builds fall back to
   `VERCEL_URL` (see `src/config/brand.ts`).
+
+### Three secrets make the pipeline work
+
+Settings → Secrets and variables → Actions:
+
+| Secret | Where it comes from |
+|---|---|
+| `VERCEL_TOKEN` | https://vercel.com/account/tokens |
+| `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |
+| `VERCEL_PROJECT_ID` | `projectId` in the same file |
+
+Until all three are set the checks still run and the deploy step skips
+itself, writing what is missing into the run summary rather than failing
+with an opaque CLI error.
+
+Application environment variables are **not** duplicated into GitHub. The
+workflow runs `vercel pull`, so the Vercel project stays the single place
+they are set.
+
+### Deploying by hand
+
+Still possible, from a checkout with the CLI logged in:
+
+```bash
+vercel deploy            # preview
+vercel deploy --prod     # production
+```
+
+The project was never linked to Vercel's own Git integration: Vercel
+refused the link because the logged-in GitHub account has no write access
+to `timappbusiness-lgtm/transport`. The Actions workflow does the same job
+without needing it, and runs the tests first, which the Git integration
+would not.
 
 ## Supabase
 
@@ -42,8 +74,14 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Preview, Development |
 
-Production is not set yet. The secret key is not in Vercel and must not be:
-every write goes through the user's session and the RPCs.
+**Production is not set, and phase 1 is now on the default branch.** Without
+these two variables the marketing pages render and every protected page
+redirects, but nobody can sign in: `isSupabaseConfigured()` returns false and
+the whole account area is dead. Add them to Production before announcing the
+deployment to anyone.
+
+The secret key is not in Vercel and must not be: every write goes through the
+user's session and the RPCs.
 
 After merging a pull request that adds migrations:
 
@@ -60,29 +98,22 @@ bookings), `*_security_definer_function_executable` for the RPCs and policy
 helpers granted in migration `130300`, and `extension_in_public` for
 `pg_trgm`.
 
-## First connection (once, ~4 minutes)
+## Turning the pipeline on (once)
 
-1. https://vercel.com/new → **Import Git Repository** →
-   `timappbusiness-lgtm/transport`.
-   If the repo is not listed, "Adjust GitHub App Permissions" and grant access.
-2. **Framework preset:** Next.js (detected automatically).
-   **Root directory:** `./` — leave it. The app lives at the repo root
-   alongside `docs/`, `supabase/` and the rest.
-   **Build command / output:** leave the defaults. Vercel reads
-   `packageManager` from `package.json` and uses pnpm.
-3. **Environment variables**, before the first deploy:
+1. Link the project from a checkout, which writes `.vercel/project.json`:
 
-   | Name | Value | Environments |
-   |---|---|---|
-   | `NEXT_PUBLIC_SITE_URL` | the deployment origin, e.g. `https://coridor.vercel.app` | Production, Preview, Development |
+   ```bash
+   vercel link            # pick eduardooo-s-projects / coridor
+   cat .vercel/project.json
+   ```
 
-   It feeds `metadataBase`, canonical links and Open Graph URLs. Set it per
-   environment so preview builds do not advertise the production URL.
-4. **Deploy.**
+2. Copy `orgId` and `projectId` into the repository secrets, together with a
+   token from https://vercel.com/account/tokens. The three names are in the
+   table above.
+3. Push, or run the workflow by hand from the Actions tab.
 
-After that: every push to `claude/saas-transport-exchange-w6f92q` builds a
-preview; pushes to the production branch deploy to production. Set which branch
-is production under Settings → Git.
+`.vercel/` is gitignored and must stay that way — it is machine state, not
+project configuration.
 
 ## What goes live today
 
@@ -102,10 +133,12 @@ curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/
 curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/autentificare
 ```
 
-Both should be 200. If the build fails, it will be on one of two things:
-`pnpm build` running lint/type errors that pass locally but not on a clean
-install, or a missing `NEXT_PUBLIC_SITE_URL` making `new URL()` throw in
-`metadataBase`.
+Both should be 200 — the workflow checks exactly these two after deploying.
+
+If a run fails before the deploy step, it is the checks doing their job; read
+the failing job. If it fails inside the deploy step, the usual causes are a
+missing or expired `VERCEL_TOKEN`, or a missing `NEXT_PUBLIC_SITE_URL` making
+`new URL()` throw in `metadataBase`.
 
 ## Custom domain
 
