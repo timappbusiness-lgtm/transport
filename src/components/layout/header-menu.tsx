@@ -3,19 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { signOutAction } from '@/app/auth-actions';
-import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { cn } from '@/lib/utils';
 
 /** Anchors that only mean anything on the homepage. */
 const SECTIONS = [
-  { href: '#cereri', label: 'Cereri' },
-  { href: '#preturi', label: 'Prețuri' },
-  { href: '#platforme', label: 'Platforme' },
+  { href: '#cum-functioneaza', label: 'Cum funcționează' },
   { href: '#transportatori', label: 'Transportatori' },
+  { href: '#verificare', label: 'Verificare' },
+  { href: '#tarife', label: 'Tarife' },
 ] as const;
 
 export interface HeaderUser {
@@ -24,15 +23,22 @@ export interface HeaderUser {
   isStaff: boolean;
 }
 
+/** Pill button sized for the floating bar, in its on-dark colours. */
+// `whitespace-nowrap` is load-bearing: without it a label wraps to two or
+// three lines on a phone and the pill grows taller than the bar it sits in.
+const PILL_SOLID =
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-[0.8125rem] font-medium text-foreground transition-[background-color] duration-150 hover:bg-[#eef1f2] sm:px-4';
+const PILL_QUIET =
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-[0.8125rem] text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
+
 export function HeaderNav({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname();
   const onHome = pathname === ROUTES.home;
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // A dropdown that does not close when you click elsewhere or press Escape
-  // is a dropdown people learn to distrust.
+  // A dropdown that does not close on an outside click or Escape is one
+  // people learn to distrust.
   useEffect(() => {
     if (!menuOpen) return;
     function onPointerDown(event: MouseEvent) {
@@ -54,18 +60,16 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
   const accountLinks = [
     { href: ROUTES.account, label: accountCopy.nav.dashboard },
     { href: ROUTES.accountProfile, label: accountCopy.nav.profile },
-    ...(user?.hasCompany
-      ? [{ href: ROUTES.accountCompany, label: accountCopy.nav.company }]
-      : []),
+    ...(user?.hasCompany ? [{ href: ROUTES.accountCompany, label: accountCopy.nav.company }] : []),
     ...(user?.isStaff ? [{ href: ROUTES.admin, label: accountCopy.nav.admin }] : []),
   ];
 
   return (
     <>
       {onHome ? (
-        <nav aria-label="Secțiuni" className="hidden gap-6 text-sm text-muted min-[900px]:flex">
+        <nav aria-label="Secțiuni" className="hidden gap-1 min-[900px]:flex">
           {SECTIONS.map((section) => (
-            <a key={section.href} href={section.href} className="hover:text-foreground">
+            <a key={section.href} href={section.href} className={PILL_QUIET}>
               {section.label}
             </a>
           ))}
@@ -79,22 +83,22 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
             onClick={() => setMenuOpen((open) => !open)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            className="flex items-center gap-2 rounded-[8px] border border-border px-2.5 py-1.5 text-sm hover:border-muted"
+            className={cn(PILL_QUIET, 'gap-2 border border-white/30')}
           >
             <span
               aria-hidden="true"
-              className="flex size-6 items-center justify-center rounded-full bg-accent font-display text-[0.6875rem] font-bold text-background"
+              className="flex size-5 items-center justify-center rounded-full bg-white text-[0.625rem] font-medium text-foreground"
             >
               {user.name.slice(0, 1).toUpperCase()}
             </span>
-            <span className="hidden max-w-[10rem] truncate sm:inline">{user.name}</span>
-            <ChevronDown size={14} aria-hidden="true" />
+            <span className="hidden max-w-[9rem] truncate sm:inline">{user.name}</span>
+            <ChevronDown size={13} aria-hidden="true" />
           </button>
 
           {menuOpen ? (
             <div
               role="menu"
-              className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-[8px] border border-border bg-surface shadow-lg"
+              className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-[0_24px_48px_-24px_rgba(28,38,43,.5)]"
             >
               {accountLinks.map((link) => (
                 <Link
@@ -102,7 +106,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                   href={link.href}
                   role="menuitem"
                   onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2.5 text-sm hover:bg-white/5"
+                  className="block px-4 py-2.5 text-sm hover:bg-ground-alt"
                 >
                   {link.label}
                 </Link>
@@ -111,7 +115,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 <button
                   type="submit"
                   role="menuitem"
-                  className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-white/5"
+                  className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-ground-alt"
                 >
                   {accountCopy.nav.signOut}
                 </button>
@@ -120,57 +124,21 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
           ) : null}
         </div>
       ) : (
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Visible at every width: off the homepage there is no other way
               into sign-in from the header on a phone. */}
-          <Link
-            href={ROUTES.signIn}
-            className={cn(buttonClasses('ghost', 'sm'), 'px-2 text-[0.8125rem] sm:px-3.5')}
-          >
+          <Link href={ROUTES.signIn} className={PILL_QUIET}>
             Autentificare
           </Link>
-          <Link
-            href={ROUTES.newRequest}
-            className={cn(buttonClasses('primary', 'sm'), 'px-2.5 text-[0.8125rem] sm:px-3.5')}
-          >
-            Publică o cerere
+          <Link href={ROUTES.newRequest} className={PILL_SOLID}>
+            {/* The full label and the brand and sign-in together need more
+                room than a 360px phone has. Only one of the two is in the
+                DOM at a time, so the accessible name is never doubled. */}
+            <span className="sm:hidden">Cerere nouă</span>
+            <span className="hidden sm:inline">Publică o cerere</span>
           </Link>
         </div>
       )}
-
-      {onHome ? (
-        <button
-          type="button"
-          onClick={() => setMobileOpen((open) => !open)}
-          aria-expanded={mobileOpen}
-          aria-label={mobileOpen ? 'Închide meniul' : 'Deschide meniul'}
-          className="rounded-[8px] border border-border p-1.5 min-[900px]:hidden"
-        >
-          {mobileOpen ? <Menu size={16} /> : <X size={16} className="rotate-45" />}
-        </button>
-      ) : null}
-
-      {onHome && mobileOpen ? (
-        <div className="absolute inset-x-0 top-[60px] z-40 border-b border-border bg-background px-4 py-3 min-[900px]:hidden">
-          <nav aria-label="Secțiuni" className="flex flex-col">
-            {SECTIONS.map((section) => (
-              <a
-                key={section.href}
-                href={section.href}
-                onClick={() => setMobileOpen(false)}
-                className="py-2 text-sm text-muted"
-              >
-                {section.label}
-              </a>
-            ))}
-            {user ? null : (
-              <Link href={ROUTES.signIn} className="py-2 text-sm text-muted">
-                Autentificare
-              </Link>
-            )}
-          </nav>
-        </div>
-      ) : null}
     </>
   );
 }

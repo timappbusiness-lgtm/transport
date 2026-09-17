@@ -89,8 +89,8 @@ is production under Settings → Git.
 | Route | What |
 |---|---|
 | `/` | The homepage. Samples are labelled as samples and prices as estimates — the boards hold no real data yet. |
-| `/cerere/noua`, `/trasee`, `/transportatori/inscriere`, `/autentificare`, `/termeni`, `/confidentialitate`, `/contact` | „Pagină în lucru” placeholders, so no link on the homepage is a 404. |
-| `/demo` | The approved design reference, served as a static page from `public/demo.html`. Useful for showing a client a live URL. |
+| `/autentificare`, `/inregistrare`, `/cont`, `/admin` | Authentication and the account area. |
+| `/cerere/noua`, `/trasee`, `/termeni`, `/confidentialitate`, `/contact` | „Pagină în lucru” placeholders, so no link on the homepage is a 404. The list is `UNBUILT_ROUTES` in `src/config/routes.ts`. |
 
 `robots` is set to `noindex, nofollow` in `src/app/layout.tsx`. **Flip it
 before launch** — there is a `TODO` on that line.
@@ -99,7 +99,7 @@ before launch** — there is a `TODO` on that line.
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/
-curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/demo
+curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/autentificare
 ```
 
 Both should be 200. If the build fails, it will be on one of two things:

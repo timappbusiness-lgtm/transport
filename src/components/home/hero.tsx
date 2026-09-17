@@ -1,51 +1,93 @@
 import Link from 'next/link';
 import { Container } from '@/components/layout/container';
-import { ArrowRight } from '@/components/icons';
 import { buttonClasses } from '@/components/ui/button';
-import { Eyebrow, Lede } from '@/components/ui/primitives';
+import { EyebrowPill, Headline, SampleTag, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
-import { HERO_FACTS } from '@/content/home';
-import { CorridorCanvas } from './corridor-canvas';
+import { homeCopy } from '@/content/home';
+import { cn } from '@/lib/utils';
+import { PhotoSlot } from './photo-slot';
+import { SeatDeck } from './seat-deck';
+
+const c = homeCopy.hero;
+
+/** One of the cards floating over the hero photograph. */
+function FloatCard({
+  className,
+  children,
+}: {
+  className?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-card border border-border bg-surface/95 p-3.5 shadow-[0_18px_40px_-24px_rgba(28,38,43,.55)] backdrop-blur-sm',
+        'motion-safe:animate-[float-in_.7s_cubic-bezier(.22,.61,.36,1)_both]',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function Hero() {
   return (
-    <section className="hero relative isolate flex min-h-[min(620px,84vh)] items-center overflow-hidden border-b border-border">
-      <CorridorCanvas />
-      <Container className="py-[clamp(3rem,7vw,5.5rem)]">
-        <div className="max-w-[43rem]">
-          <Eyebrow className="rise">Bursă de transport auto · național și internațional</Eyebrow>
-          <h1 className="rise d1 mt-[1.125rem] mb-3.5 text-[clamp(2.3rem,6.2vw,4.35rem)]">
-            Transport auto, cu <em className="not-italic text-accent">actele la vedere</em>.
-          </h1>
-          <Lede className="rise d2">
-            Postezi cererea gratuit și fără cont. Primești oferte de la transportatori
-            care își țin documentele la zi — și vezi data exactă până la care sunt
-            valabile, înainte să dai telefon.
-          </Lede>
-          <div className="rise d3 mt-7 flex flex-wrap gap-3">
-            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
-              Adaugă cerere — gratuit, fără cont
-              <ArrowRight />
+    <section
+      data-surface="dark"
+      className="-mt-[4.25rem] bg-[linear-gradient(135deg,var(--color-dark-from),var(--color-dark-to))] pt-[4.25rem] text-white"
+    >
+      <Container className="grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-[1fr_1.05fr] lg:gap-14 lg:py-24">
+        <div className="min-w-0">
+          <EyebrowPill tone="dark">{c.eyebrow}</EyebrowPill>
+          <Headline
+            as="h1"
+            strong={c.strong}
+            soft={c.soft}
+            className="mt-6 text-[clamp(2.25rem,5.6vw,4rem)] text-white [&_span:last-child]:text-white/60"
+          />
+          <p className="mt-5 max-w-[46ch] text-[1.0625rem] leading-relaxed text-white/80">
+            {c.subtitle}
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href={ROUTES.newRequest} className={buttonClasses('onDark', 'md')}>
+              {c.primary}
             </Link>
-            <a href="#platforme" className={buttonClasses('secondary', 'md')}>
-              Cum iese prețul mic
+            <a href="#cum-functioneaza" className={buttonClasses('onDarkGhost', 'md')}>
+              {c.secondary}
             </a>
           </div>
-          <p className="rise d4 mt-3.5 text-[0.8125rem] text-muted">
-            Fără card, fără abonament. Transportatorii plătesc, tu nu.
-          </p>
         </div>
 
-        <dl className="rise d4 mt-[clamp(2.5rem,5vw,3.5rem)] grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border min-[720px]:grid-cols-4">
-          {HERO_FACTS.map((f) => (
-            <div key={f.label} className="flex min-w-0 flex-col-reverse justify-end bg-surface/75 px-4 py-4">
-              <dt className="mt-0.5 text-xs text-muted">{f.label}</dt>
-              <dd className="font-display text-[clamp(1.2rem,2.4vw,1.7rem)] leading-tight font-extrabold tracking-[-0.03em] tabular-nums">
-                {f.value}
-              </dd>
+        <div className="relative min-w-0">
+          <PhotoSlot label={c.photoAlt} className="aspect-[4/3] w-full" />
+
+          <FloatCard className="absolute -bottom-4 left-2 w-[min(17rem,78%)] sm:-left-6">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+                Documente
+              </span>
+              <SampleTag />
             </div>
-          ))}
-        </dl>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusBadge tone="success">Licență valabilă</StatusBadge>
+              <StatusBadge tone="warning">RCA expiră curând</StatusBadge>
+            </div>
+          </FloatCard>
+
+          <FloatCard className="absolute -top-4 right-0 w-[min(13rem,60%)] sm:-right-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+                Platformă
+              </span>
+              <SampleTag />
+            </div>
+            <SeatDeck taken={5} total={8} compact />
+            <p className="mt-2 font-mono text-[0.6875rem] tabular-nums text-foreground">
+              3 locuri libere din 8
+            </p>
+          </FloatCard>
+        </div>
       </Container>
     </section>
   );

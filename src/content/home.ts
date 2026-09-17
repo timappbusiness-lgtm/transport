@@ -1,184 +1,180 @@
 /**
- * Homepage content.
+ * Romanian copy for the homepage. Components never contain hardcoded text.
  *
- * The design reference (design/landing.html) is a mock-up: its live
- * counters, category counts and request cards are the competitor's figures
- * read off bursatractari.ro (docs/07-competitor-analysis.md). None of that
- * can be shown as ours. Until the boards hold real data, the page shows
- * the mechanism — deadlines, rules, prices marked as estimates — and every
- * sample is labelled as a sample.
+ * Rules that hold throughout: no invented numbers presented as real data,
+ * every demonstration card labelled "Exemplu", every price labelled
+ * orientativ. No exclamation marks, no superlatives, no social proof counts.
  */
 
-export type CountryCode = 'AT' | 'DE' | 'ES' | 'HU' | 'IT' | 'NL' | 'RO';
-export type Tone = 'ok' | 'warn' | 'danger';
+export type CountryCode = 'RO' | 'DE' | 'IT' | 'NL' | 'ES' | 'FR' | 'BE' | 'AT' | 'HU';
 
-export interface Place {
-  city: string;
-  cc: CountryCode;
-}
+export const homeCopy = {
+  hero: {
+    eyebrow: 'Transport auto · România și Europa',
+    strong: 'Transport auto',
+    soft: 'cu firme verificate.',
+    subtitle:
+      'Publici cererea gratuit și primești oferte doar de la transportatori cu documente valabile.',
+    primary: 'Publică o cerere',
+    secondary: 'Cum funcționează',
+    photoAlt: 'Platformă auto încărcată, pe un drum european',
+  },
 
-export interface SampleRequest {
-  kind: string;
-  scope: 'Intern' | 'Extern';
-  from: Place;
-  to: Place;
-  km: number;
-  vehicle: string;
-  condition: { label: string; tone: Extract<Tone, 'ok' | 'warn'> };
-}
+  panel: {
+    eyebrow: 'Ce vezi despre un transportator',
+    strong: 'Datele care contează,',
+    soft: 'înainte să dai telefon.',
+    lede:
+      'Fiecare firmă are documentele urmărite zilnic. Cardurile de mai jos arată forma informației, cu date demonstrative.',
+    documents: {
+      title: 'Documentele firmei',
+      subtitle: 'Autotrans Exemplu SRL · Timiș',
+      rows: [
+        { label: 'Licență comunitară', value: '21.10.2027', tone: 'success', state: 'valabil' },
+        { label: 'Asigurare CMR', value: '03.04.2027', tone: 'success', state: 'valabil' },
+        { label: 'ITP · TM 04 EXE', value: '11.06.2027', tone: 'success', state: 'valabil' },
+        { label: 'RCA · TM 04 EXE', value: '28.09.2026', tone: 'warning', state: 'expiră curând' },
+        { label: 'Copie conformă', value: '14.02.2026', tone: 'danger', state: 'expirat' },
+      ],
+    },
+    seats: {
+      title: 'Locuri pe platformă',
+      subtitle: 'München → Cluj-Napoca · platformă deschisă',
+      taken: 5,
+      total: 8,
+      caption: '3 locuri libere din 8',
+      free: 'liber',
+    },
+    corridor: {
+      title: 'Coridor și ocol acceptat',
+      from: 'München',
+      fromCc: 'DE' as CountryCode,
+      to: 'Cluj-Napoca',
+      toCc: 'RO' as CountryCode,
+      waypoints: 'Viena · Budapesta · Oradea',
+      detourLabel: 'Ocol acceptat',
+      detour: '50 km',
+      windowLabel: 'Plecare',
+      window: '22.09 – 24.09',
+    },
+  },
 
-export const SAMPLE_REQUESTS: readonly SampleRequest[] = [
-  {
-    kind: 'Autoturism',
-    scope: 'Extern',
-    from: { city: 'Stuttgart', cc: 'DE' },
-    to: { city: 'București', cc: 'RO' },
-    km: 1_640,
-    vehicle: 'Break diesel, 2019',
-    condition: { label: 'rulează', tone: 'ok' },
+  comparison: {
+    eyebrow: 'Cum se schimbă',
+    strong: 'Ce faci azi',
+    soft: 'și ce faci cu Coridor.',
+    oldTitle: 'Vechea metodă',
+    newTitle: 'Cu Coridor',
+    old: [
+      'Grupuri de Facebook',
+      'Zeci de telefoane',
+      'Nicio verificare',
+      'Acte expirate',
+      'Retur gol',
+    ],
+    fresh: [
+      'Publici o singură dată',
+      'Oferte de la firme verificate',
+      'Documente urmărite zilnic',
+      'Comandă în platformă',
+      'Retur plin',
+    ],
+    stepLabel: 'Pasul',
   },
-  {
-    kind: 'Autoutilitară',
-    scope: 'Extern',
-    from: { city: 'Győr', cc: 'HU' },
-    to: { city: 'Oradea', cc: 'RO' },
-    km: 390,
-    vehicle: 'Dubă 3,5 t — nu pornește',
-    condition: { label: 'necesită troliu', tone: 'warn' },
-  },
-  {
-    kind: 'Autoturism',
-    scope: 'Extern',
-    from: { city: 'Verona', cc: 'IT' },
-    to: { city: 'Cluj-Napoca', cc: 'RO' },
-    km: 1_380,
-    vehicle: 'SUV, 2017',
-    condition: { label: 'rulează', tone: 'ok' },
-  },
-  {
-    kind: 'Motocicletă',
-    scope: 'Extern',
-    from: { city: 'Linz', cc: 'AT' },
-    to: { city: 'Iași', cc: 'RO' },
-    km: 1_250,
-    vehicle: 'Naked 700 cm³, 2021',
-    condition: { label: 'rulează', tone: 'ok' },
-  },
-  {
-    kind: 'Utilaj agricol',
-    scope: 'Intern',
-    from: { city: 'Arad', cc: 'RO' },
-    to: { city: 'Botoșani', cc: 'RO' },
-    km: 640,
-    vehicle: 'Tractor 4 t, fără înmatriculare',
-    condition: { label: 'necesită rampă', tone: 'warn' },
-  },
-  {
-    kind: 'Autoturism',
-    scope: 'Extern',
-    from: { city: 'Rotterdam', cc: 'NL' },
-    to: { city: 'Constanța', cc: 'RO' },
-    km: 2_150,
-    vehicle: 'Sedan avariat față',
-    condition: { label: 'necesită troliu', tone: 'warn' },
-  },
-];
 
-/** The four facts the hero can state without a single live number. */
-export const HERO_FACTS: readonly { value: string; label: string }[] = [
-  { value: '0 lei', label: 'cererea ta, fără cont' },
-  { value: '30·14·7·1', label: 'zile — atenționări înainte de expirare' },
-  { value: 'zilnic', label: 'verificăm datele de expirare' },
-  { value: '8 locuri', label: 'pe o platformă auto' },
-];
+  carriers: {
+    eyebrow: 'Pentru transportatori',
+    strong: 'Ai platformă?',
+    soft: 'Nu te mai întoarce gol.',
+    lede:
+      'Publici traseele de tur și de retur, vezi cererile de pe traseul tău și completezi locurile libere înainte să pleci.',
+    plan: {
+      name: 'Plan transportator',
+      price: '149 lei',
+      period: 'pe lună',
+      features: [
+        'Publicare nelimitată pe tur și pe retur',
+        'Acces la cererile compatibile cu traseele tale',
+        'Alerte pe e-mail pentru cereri de pe traseele tale',
+        'Evidența documentelor firmei și ale vehiculelor',
+        'Notificare înainte să expire un document',
+      ],
+      cta: 'Înscrie-ți firma',
+      note: 'Perioada gratuită începe după validarea firmei. Fără card la înscriere.',
+    },
+  },
 
-export interface SampleDocument {
-  name: string;
-  detail: string;
-  status: string;
-  tone: Tone;
-}
+  forwarders: {
+    eyebrow: 'Pentru case de expediții',
+    strong: 'Publici cursele o dată.',
+    soft: 'Primești oferte doar de la firme cu acte valabile.',
+    lede:
+      'Cont de firmă pentru toată echipa, curse publice sau trimise doar transportatorilor tăi, și istoricul comenzilor într-un singur loc.',
+    points: [
+      'Un cont de firmă, mai mulți dispeceri',
+      'Vezi documentele fiecărui ofertant',
+      'Istoricul comenzilor rămâne în platformă',
+    ],
+    cta: 'Creează cont de firmă',
+  },
 
-/** A sample carrier record. Fictional: no real company, CUI or plate. */
-export const SAMPLE_CARRIER = {
-  name: 'Transport Exemplu SRL',
-  meta: 'CUI de exemplu · Timiș · 4 platforme',
-  plate: 'TM 01 CRD',
-  documents: [
-    { name: 'Licență comunitară', detail: 'emisă de ARR', status: 'valabil 21.10.2027', tone: 'ok' },
-    { name: 'Asigurare CMR', detail: 'limită 400.000 EUR', status: 'valabil 03.04.2027', tone: 'ok' },
-    { name: 'ITP — platformă 8 auto', detail: 'TM 01 CRD', status: 'valabil 11.06.2027', tone: 'ok' },
-    { name: 'RCA — platformă 8 auto', detail: 'TM 01 CRD', status: 'expiră în 12 zile', tone: 'warn' },
-    { name: 'Copie conformă ARR', detail: 'TM 01 CRD', status: 'valabil 21.10.2027', tone: 'ok' },
-  ] satisfies SampleDocument[],
+  verification: {
+    eyebrow: 'Verificare continuă',
+    strong: 'Nu verificăm firmele o singură dată.',
+    soft: 'Urmărim fiecare dată de expirare.',
+    body:
+      'Licența comunitară, asigurarea CMR, RCA-ul, ITP-ul și copiile conforme au fiecare o dată de expirare urmărită zilnic. Transportatorul primește notificări înainte să expire.',
+    rules: [
+      {
+        title: 'Dacă expiră un document al firmei',
+        body: 'Firma nu mai poate oferta până la revalidare.',
+        tone: 'danger' as const,
+      },
+      {
+        title: 'Dacă expiră RCA-ul sau ITP-ul unui vehicul',
+        body: 'Doar acel vehicul dispare de pe bursă. Restul flotei rămâne activ.',
+        tone: 'warning' as const,
+      },
+    ],
+  },
+
+  prices: {
+    eyebrow: 'Tarife',
+    strong: 'Un reper de preț,',
+    soft: 'înainte să ceri oferte.',
+    lede:
+      'Tarife orientative pentru un autoturism standard. Oferta finală depinde de vehicul, locație, disponibilitate și termen.',
+    tabs: [
+      { key: 'standard', label: 'Transport standard' },
+      { key: 'expres', label: 'Transport expres' },
+    ],
+    columns: {
+      route: 'Rută',
+      price: 'Preț orientativ',
+      range: 'Interval',
+      duration: 'Durată estimată',
+    },
+    onRequest: 'La cerere',
+    // TODO: valori orientative, de validat cu partenerul de transport
+    // înainte de lansare. Nu sunt calculate din transporturi încheiate.
+    rows: [
+      { country: 'Germania', cc: 'DE' as CountryCode, standard: '650 €', range: '590–780 €', days: '5–7 zile' },
+      { country: 'Italia', cc: 'IT' as CountryCode, standard: '700 €', range: '640–860 €', days: '5–8 zile' },
+      { country: 'Olanda', cc: 'NL' as CountryCode, standard: '700 €', range: '650–830 €', days: '6–8 zile' },
+      { country: 'Belgia', cc: 'BE' as CountryCode, standard: '690 €', range: '620–810 €', days: '6–8 zile' },
+      { country: 'Franța', cc: 'FR' as CountryCode, standard: '720 €', range: '660–880 €', days: '6–9 zile' },
+      { country: 'Spania', cc: 'ES' as CountryCode, standard: '750 €', range: '690–940 €', days: '7–10 zile' },
+      { country: 'Austria', cc: 'AT' as CountryCode, standard: '520 €', range: '470–610 €', days: '3–5 zile' },
+    ],
+    note:
+      'Prețurile de mai sus sunt orientative, stabilite pe baza pieței. Pe măsură ce se încheie transporturi în platformă, vom afișa intervalele reale pentru fiecare rută.',
+  },
+
+  finalCta: {
+    strong: 'Ai o mașină de mutat',
+    soft: 'sau un loc liber pe platformă?',
+    lede: 'Publică o cerere de transport sau anunță un traseu disponibil.',
+    primary: 'Publică o cerere',
+    secondary: 'Anunță un traseu',
+  },
 } as const;
-
-export interface CorridorPrice {
-  cc: CountryCode;
-  country: string;
-  /** Market "from" price per car, EUR, consolidated (pe sens). */
-  fromEur: number;
-}
-
-/**
- * Published market "from" tariffs for a standard car on a shared platform
- * (docs/07-competitor-analysis.md §2). Estimates, not our data: replaced
- * per corridor by the median of accepted prices once a corridor has at
- * least PRICE_LIVE_THRESHOLD closed transports on the platform.
- */
-export const CORRIDOR_PRICES: readonly CorridorPrice[] = [
-  { cc: 'DE', country: 'Germania', fromEur: 650 },
-  { cc: 'IT', country: 'Italia', fromEur: 700 },
-  { cc: 'NL', country: 'Olanda', fromEur: 700 },
-  { cc: 'ES', country: 'Spania', fromEur: 750 },
-];
-
-export const PRICE_LIVE_THRESHOLD = 5;
-
-export const PLATFORM = {
-  slots: 8,
-  taken: 5,
-  route: { from: { city: 'München', cc: 'DE' }, to: { city: 'Cluj-Napoca', cc: 'RO' } },
-  via: 'via Viena, Budapesta, Oradea',
-} as const satisfies {
-  slots: number;
-  taken: number;
-  route: { from: Place; to: Place };
-  via: string;
-};
-
-/** Order follows the market share in docs/07 §1. No counts: they are not ours. */
-export const VEHICLE_CATEGORIES: readonly string[] = [
-  'Autoturisme',
-  'Autoutilitare',
-  'Motociclete',
-  'Utilaje agricole',
-  'Microbuze',
-  'Utilaje de construcții',
-  'Rulote',
-  'Capete tractor',
-  'Camioane',
-  'Remorci',
-  'Utilaje de manipulare',
-  'Containere',
-];
-
-/** docs/05-pricing.md — `carrier` plan. */
-export const CARRIER_PLAN = {
-  priceRon: 149,
-  trialDays: 30,
-  features: [
-    { label: 'Anunțuri nelimitate cu mașini pe tur și pe retur', soon: false },
-    { label: 'Contacte nelimitate la cereri', soon: false },
-    { label: 'Atenționări înainte să expire ITP, RCA sau copia conformă', soon: false },
-    { label: 'Alerte pe WhatsApp pentru traseele tale', soon: true },
-    { label: '2 anunțuri promovate incluse lunar', soon: true },
-  ],
-} as const;
-
-const numberFormat = new Intl.NumberFormat('ro-RO');
-
-/** Romanian grouping: 1.640, not 1,640. */
-export function formatNumber(n: number): string {
-  return numberFormat.format(n);
-}

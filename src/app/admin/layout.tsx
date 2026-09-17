@@ -20,6 +20,12 @@ const NAV = [
  * `platform_staff` through RLS, which only returns the caller's own row —
  * the client never gets to say whether it is staff.
  */
+/**
+ * Never prerendered: staff membership is the session. Without this, a build with no Supabase
+ * configuration would prerender the redirect and ship it as a static file.
+ */
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const context = await getAccountContext();
   if (!context?.isStaff) notFound();
@@ -36,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 key={item.href}
                 href={item.href}
-                className="whitespace-nowrap rounded-[8px] px-3 py-2 text-sm text-muted hover:text-foreground"
+                className="whitespace-nowrap rounded-pill px-3 py-2 text-sm text-muted hover:text-foreground"
               >
                 {item.label}
               </Link>

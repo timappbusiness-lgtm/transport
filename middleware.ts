@@ -9,9 +9,8 @@ export const config = {
   matcher: [
     /*
      * Everything except static assets. The session has to be refreshed on
-     * navigations, not on every icon request. `/demo` is the static design
-     * reference and has no session to keep.
+     * navigations, not on every icon request.
      */
-    '/((?!_next/static|_next/image|favicon.ico|demo|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
   ],
 };

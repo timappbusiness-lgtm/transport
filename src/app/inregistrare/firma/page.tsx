@@ -20,7 +20,7 @@ export default function Page() {
       }
     >
       <CompanySignUpForm />
-      <p className="mt-5 rounded-[8px] border border-border bg-surface px-3.5 py-2.5 text-xs text-muted">
+      <p className="mt-5 rounded-card border border-border bg-surface px-3.5 py-2.5 text-xs text-muted">
         {c.nextStep}
       </p>
     </AuthCard>

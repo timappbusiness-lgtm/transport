@@ -1,14 +1,14 @@
 import { FileSearch } from 'lucide-react';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 
 export default function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Staff</Eyebrow>
+        <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">Documente de verificat</h1>
       </div>
-      <div className="flex flex-col items-center gap-2 rounded-[8px] border border-border bg-surface px-5 py-14 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-card border border-border bg-surface px-5 py-14 text-center">
         <span aria-hidden="true" className="text-muted">
           <FileSearch size={22} />
         </span>

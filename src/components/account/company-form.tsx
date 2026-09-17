@@ -13,7 +13,7 @@ function ReadOnly({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="text-sm font-medium">{label}</span>
-      <span className="rounded-[8px] border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-muted">
+      <span className="rounded-card border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-muted">
         {value}
       </span>
     </div>
@@ -55,7 +55,7 @@ export function CompanyForm({ company }: { company: Company }) {
                   name="companyType"
                   value={type}
                   defaultChecked={company.company_type === type}
-                  className="size-4 accent-accent"
+                  className="size-4 accent-[#1C262B]"
                 />
                 {COMPANY_TYPE_LABELS[type]}
               </label>

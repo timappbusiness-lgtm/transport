@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { CompanyCreateForm } from '@/components/account/company-create-form';
-import { Eyebrow } from '@/components/ui/primitives';
+import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { isCompanyType } from '@/lib/validation/auth';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -24,7 +24,7 @@ export default async function Page({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Eyebrow>Pasul 2 din 2</Eyebrow>
+        <EyebrowPill>Pasul 2 din 2</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">Datele firmei</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">
           După ce salvezi, poți încărca documentele și trimite firma la verificare.
