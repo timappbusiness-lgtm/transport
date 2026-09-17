@@ -59,6 +59,56 @@ export const homeCopy = {
     },
   },
 
+  /**
+   * The activity section. Every number it shows comes from the database —
+   * there is not one figure in this block, only the sentences around them.
+   */
+  activity: {
+    eyebrow: 'Activitate pe platformă',
+    strong: 'Cereri noi',
+    soft: 'de transport auto.',
+
+    stats: {
+      sparklineLabel: 'Cereri publicate în ultimele 30 de zile',
+      sparklineCaption: 'Ultimele 30 de zile',
+      km: (km: string) => `${km} km de transport solicitat`,
+      kmNote: 'Distanțe estimate, însumate din cererile publicate',
+      week: (requests: string) => `${requests} în ultimele 7 zile`,
+      weekNote: 'Cereri publicate de persoane și firme',
+    },
+
+    feed: {
+      title: 'Cele mai noi cereri',
+      running: 'Pornește',
+      notRunning: 'Nu pornește',
+      express: 'Expres',
+      newBadge: 'Cereri noi',
+      showNew: 'Arată-le',
+      all: 'Vezi toate cererile',
+      /** Read out before the route, which is otherwise two names and an arrow. */
+      routeLabel: (from: string, to: string) => `De la ${from} la ${to}`,
+    },
+
+    empty: {
+      body: 'Primele cereri apar aici imediat ce sunt publicate.',
+      primary: 'Publică o cerere',
+      secondary: 'Trasee disponibile',
+    },
+
+    cta: {
+      strong: 'Publici cererea',
+      soft: 'gratuit.',
+      stepsTitle: 'Cum funcționează',
+      steps: [
+        'Completezi traseul și detaliile vehiculului, în două minute.',
+        'Transportatorii verificați văd cererea și îți trimit oferte.',
+        'Compari ofertele și alegi. Datele tale de contact rămân ascunse până decizi tu.',
+      ],
+      button: 'Publică o cerere gratuit',
+      note: 'Fără abonament pentru clienți. Contul se creează la final.',
+    },
+  },
+
   comparison: {
     eyebrow: 'Cum se schimbă',
     strong: 'Ce faci azi',

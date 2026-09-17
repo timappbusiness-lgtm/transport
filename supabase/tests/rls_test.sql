@@ -1590,6 +1590,263 @@ select pg_temp.check('ALR  anon cannot save a search', 'guard',
      values ('f0000000-0000-0000-0000-000000000006', 'Anon', 'truck', '{}')$a$, 'blocked');
 
 -- =====================================================================
+-- CRQ - requests on the homepage
+--
+-- The feature rests on one projection being narrow enough, so these check
+-- the column list itself and not only who may read it: a column added to
+-- the view by accident is a leak no policy catches.
+--
+-- The aggregate checks compare against a baseline captured in p_setup
+-- rather than against a fixed number. smoke_test.sql runs first on the same
+-- database and leaves rows behind, so any check written against a constant
+-- count passes or fails depending on what ran before it.
+-- =====================================================================
+
+select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'category','estimated_km','from_city','from_country','id','is_running',
+       'make','model','published_at','service_type','to_city','to_country','year'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
+
+select pg_temp.check('CRQ  the free text a person wrote about their car is not in the view', 'fix',
+  null, 'anon', $a$select description from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true,
+  p_setup => $s$update public.cargo_listings
+                set description = 'Sunați la 0722 000 000, mașina e în curte la Ion'
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  who posted it is not in the view', 'fix',
+  null, 'anon', $a$select posted_by from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the company is not in the view', 'fix',
+  null, 'anon', $a$select company_id from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the photographs are not in the view', 'fix',
+  null, 'anon', $a$select photo_paths from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  the exact position is not in the view', 'fix',
+  null, 'anon', $a$select loading_lat from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  what the owner hoped to pay is not in the view', 'fix',
+  null, 'anon', $a$select price_amount from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  anon still cannot reach the listing itself', 'guard',
+  null, 'anon', $a$select * from public.cargo_listings$a$, 'blocked');
+
+select pg_temp.check('CRQ  anon still cannot reach a contact', 'guard',
+  null, 'anon', $a$select * from public.listing_contacts$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- What reaches the feed, and what does not
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon reads a live request', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_requests_public
+                    where id = 'f1000000-0000-0000-0000-000000000002')$a$, 'true');
+
+select pg_temp.check('CRQ  the route and the vehicle come through intact', 'fix',
+  null, 'anon',
+  $a$select from_city = 'Milano' and to_city = 'Timișoara'
+        and make = 'Volkswagen' and model = 'Golf' and year = 2018
+        and is_running
+     from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true');
+
+select pg_temp.check('CRQ  a draft never appears', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000004')$a$, 'true');
+
+select pg_temp.check('CRQ  a cancelled request drops out of the feed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  a request whose loading window has passed drops out', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+                set loading_from = current_date - 5, loading_to = current_date - 1
+                where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CRQ  palletized freight is not shown on a vehicle feed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      insert into public.cargo_freight_details (cargo_listing_id, cargo_type)
+      values ('f1000000-0000-0000-0000-000000000001', 'paleți');
+      update public.cargo_listings set listing_kind = 'marfa'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The aggregates
+--
+-- Each one captures homepage_activity() into a temp table before the
+-- change it is about, so the assertion is about the delta the change
+-- caused and not about whatever else happens to be in the database.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon may ask how busy the platform is', 'fix',
+  null, 'anon', $a$select count(*) = 1 from public.homepage_activity()$a$, 'true');
+
+select pg_temp.check('CRQ  a draft counts for nothing', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Ciornă', 'Sibiu', 'Brașov', current_date + 4, 'draft');
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a cancelled request stops counting', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total - 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings set status = 'cancelled'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a delivered request still counts: it happened', 'fix',
+  null, 'anon',
+  $a$select a.published_total = b.published_total
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings set status = 'delivered'
+      where id = 'f1000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  kilometres are counted where there are coordinates', 'fix',
+  null, 'anon',
+  -- Milano -> Timișoara is 935 km in a straight line, which is what the
+  -- total must grow by: not the road distance, and not a guess.
+  $a$select a.total_km between b.total_km + 930 and b.total_km + 940
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      update public.cargo_listings
+      set loading_lat = 45.4642, loading_lng = 9.1900,
+          unloading_lat = 45.7489, unloading_lng = 21.2087
+      where id = 'f1000000-0000-0000-0000-000000000002';
+    end $d$$s$);
+
+select pg_temp.check('CRQ  a request without coordinates adds no kilometres, rather than a guess', 'fix',
+  null, 'anon',
+  $a$select a.total_km = b.total_km and a.published_total = b.published_total + 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      -- 'delivered' rather than 'active': it was published once, which is
+      -- what the total counts, and it needs no details row to get there.
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status, published_at)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Fără coordonate', 'Sibiu', 'Brașov', current_date + 4, 'delivered', now());
+    end $d$$s$);
+
+select pg_temp.check('CRQ  the daily series is thirty days long and ends today', 'fix',
+  null, 'anon',
+  $a$select array_length(daily_counts, 1) = 30 and daily_from = current_date - 29
+     from public.homepage_activity()$a$, 'true');
+
+select pg_temp.check('CRQ  a request published today lands on the last day of the series', 'fix',
+  null, 'anon',
+  $a$select a.daily_counts[30] = b.daily_counts[30] + 1
+     from public.homepage_activity() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select * from public.homepage_activity();
+      grant select on zz_base to anon;
+      insert into public.cargo_listings (company_id, posted_by, board, listing_kind,
+             title, loading_city, unloading_city, loading_from, status, published_at)
+      values ('fc000000-0000-0000-0000-000000000002',
+              'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+              'Publicată azi', 'Sibiu', 'Brașov', current_date + 4, 'delivered', now());
+    end $d$$s$);
+
+select pg_temp.check('CRQ  the live count is the one the feed shows', 'fix',
+  null, 'anon',
+  $a$select active_total = (select count(*) from public.v_requests_public)
+     from public.homepage_activity()$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The thresholds
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('CRQ  anon reads the thresholds: they are not a secret', 'fix',
+  null, 'anon',
+  $a$select stats_min_requests = 50 and feed_min_requests = 6
+     from public.homepage_settings where id$a$, 'true');
+
+select pg_temp.check('CRQ  a user cannot move a threshold directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.homepage_settings set stats_min_requests = 0 where id$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  not even staff may move one directly', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.homepage_settings set stats_min_requests = 0 where id$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  a non-staff user cannot call the settings RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_homepage_settings(0, 1)$a$, 'blocked',
+  p_verify => $v$select stats_min_requests = 50 from public.homepage_settings where id$v$);
+
+select pg_temp.check('CRQ  anon cannot call the settings RPC', 'fix',
+  null, 'anon', $a$select public.set_homepage_settings(0, 1)$a$, 'blocked');
+
+select pg_temp.check('CRQ  staff move a threshold through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(10, 3)).stats_min_requests = 10$a$, 'true');
+
+select pg_temp.check('CRQ  a threshold change is audited with before and after', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_homepage_settings(10, 3)).feed_min_requests = 3$a$, 'true',
+  p_verify => $v$select exists (
+                 select 1 from public.audit_log
+                 where action = 'homepage_settings.updated'
+                   and (before ->> 'stats_min_requests')::integer = 50
+                   and (after ->> 'stats_min_requests')::integer = 10)$v$);
+
+select pg_temp.check('CRQ  the RPC refuses a feed threshold of zero', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_homepage_settings(10, 0)$a$, 'blocked',
+  p_verify => $v$select feed_min_requests = 6 from public.homepage_settings where id$v$);
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its

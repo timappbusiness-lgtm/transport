@@ -6,6 +6,7 @@ export const ROUTES = {
   home: '/',
   newRequest: '/cerere/noua',
   routes: '/trasee',
+  requests: '/cereri',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
@@ -40,6 +41,7 @@ export const ROUTES = {
   // Staff
   admin: '/admin',
   adminDocuments: '/admin/documente',
+  adminActivity: '/admin/activitate',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -58,6 +60,11 @@ export function departureRoute(id: string): string {
   return `${ROUTES.routes}/${id}`;
 }
 
+/** One transport request. */
+export function requestRoute(id: string): string {
+  return `${ROUTES.requests}/${id}`;
+}
+
 
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
@@ -65,6 +72,7 @@ export function departureRoute(id: string): string {
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
   ROUTES.newRequest,
+  ROUTES.requests,
   ROUTES.terms,
   ROUTES.privacy,
   ROUTES.contact,

@@ -10,6 +10,9 @@ import { homeCopy } from '@/content/home';
 /** Every string in the copy tree, flattened. */
 function strings(value: unknown, out: string[] = []): string[] {
   if (typeof value === 'string') out.push(value);
+  // Some copy takes the figure it frames, so the rules below have to see
+  // the finished sentence rather than skip it.
+  else if (typeof value === 'function') out.push((value as (...a: string[]) => string)('1', '2'));
   else if (Array.isArray(value)) for (const item of value) strings(item, out);
   else if (value && typeof value === 'object') {
     for (const item of Object.values(value)) strings(item, out);
@@ -88,7 +91,13 @@ describe('homepage copy rules', () => {
   it('writes Romanian with diacritics rather than their ASCII stand-ins', () => {
     // A page that says "firma" where it means "firmă" reads as machine
     // output. Spot-check the words most often stripped.
-    const offenders = ALL.filter((s) => /\b(cerere gratuit|firma verificate|romania)\b/i.test(s));
+    //
+    // "cerere gratuită" is the adjective and needs its ă; "publică o cerere
+    // gratuit" is the adverb and does not, so the pattern looks for the
+    // stripped adjective rather than for the two words next to each other.
+    const offenders = ALL.filter((s) =>
+      /\b(cerere gratuita|firma verificate|romania)\b/i.test(s),
+    );
     expect(offenders).toEqual([]);
   });
 

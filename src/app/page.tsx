@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Activity } from '@/components/home/activity';
 import { Carriers } from '@/components/home/carriers';
 import { Comparison } from '@/components/home/comparison';
 import { DataPanel } from '@/components/home/data-panel';
@@ -30,6 +31,7 @@ export default function Page() {
   return (
     <>
       <Hero />
+      <Activity />
       <DataPanel />
       <Comparison />
       <Carriers />
