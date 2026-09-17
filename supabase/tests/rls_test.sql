@@ -2246,6 +2246,315 @@ select pg_temp.check('REV  nor clear a rejection note they did not like', 'fix',
                  where id = 'fc000000-0000-0000-0000-000000000002'$v$);
 
 -- =====================================================================
+-- DIR - the public directory of verified companies
+--
+-- Three conditions decide whether a company is listed: it asked to be, it
+-- is verified, and it is not suspended. They live in the view, so no page
+-- can widen them by forgetting a filter — and these check all three from
+-- the role that would notice.
+-- =====================================================================
+
+select pg_temp.check('DIR  the directory carries only what a profile shows', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'city','company_type','compliant_vehicles','county','cui','last_checked_at',
+       'legal_name','logo_path','name','public_description','rating_avg','rating_count',
+       'serves_international','serves_national','slug','verified_since'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_public_companies'$a$, 'true');
+
+select pg_temp.check('DIR  the telephone number is not in the directory', 'fix',
+  null, 'anon', $a$select contact_phone from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  neither is the e-mail address', 'fix',
+  null, 'anon', $a$select contact_email from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  nor the street address', 'fix',
+  null, 'anon', $a$select address from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  nor what ANAF returned about the company', 'fix',
+  null, 'anon', $a$select anaf_payload from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  anon still cannot read the companies table', 'guard',
+  null, 'anon', $a$select * from public.companies$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Who is listed
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a company that opted in and is verified is listed', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that did not opt in is not listed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = false, verification_status = 'verified',
+                    is_suspended = false
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that is not verified is not listed', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verification_status = 'pending',
+                    is_suspended = false
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a suspended company disappears from the list', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_companies where cui = '90000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verification_status = 'verified',
+                    is_suspended = true
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  the count of vehicles with their papers in date is the one shown', 'fix',
+  null, 'anon',
+  $a$select a.compliant_vehicles = b.n
+     from public.v_public_companies a, zz_base b
+     where a.cui = '90000001'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set public_profile_enabled = true, verification_status = 'verified',
+          is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as
+        select count(*)::integer as n from public.vehicles v
+        where v.company_id = 'fc000000-0000-0000-0000-000000000001'
+          and v.is_active and v.is_compliant;
+      grant select on zz_base to anon;
+    end $d$$s$);
+
+-- ---------------------------------------------------------------------
+-- The slug
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  Romanian letters are transliterated, not dropped', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.slugify('Transport Brașov Țânțăreni SRL') = 'transport-brasov-tantareni-srl'$a$,
+  'true');
+
+select pg_temp.check('DIR  a new company gets a slug without asking', 'fix',
+  null, 'service_role',
+  $a$select slug = 'trans-nou-srl-cluj-napoca' from public.companies
+     where id = 'fc000000-0000-0000-0000-0000000000d1'$a$, 'true',
+  p_setup => $s$insert into public.companies (id, cui, legal_name, company_type, city, created_by)
+                values ('fc000000-0000-0000-0000-0000000000d1', '99000101', 'Trans Nou SRL',
+                        'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('DIR  two firms with the same name in the same city do not collide', 'fix',
+  null, 'service_role',
+  $a$select count(distinct slug) = 2 from public.companies
+     where id in ('fc000000-0000-0000-0000-0000000000d1', 'fc000000-0000-0000-0000-0000000000d2')$a$,
+  'true',
+  p_setup => $s$insert into public.companies (id, cui, legal_name, company_type, city, created_by)
+                values
+                  ('fc000000-0000-0000-0000-0000000000d1', '99000101', 'Trans Nou SRL', 'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002'),
+                  ('fc000000-0000-0000-0000-0000000000d2', '99000102', 'Trans Nou SRL', 'transport', 'Cluj-Napoca', 'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('DIR  a manager cannot move the slug: shared links would break', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set slug = 'altceva'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select slug <> 'altceva' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- ---------------------------------------------------------------------
+-- What a company may say about itself
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a manager opts the firm into the list', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set public_profile_enabled = true,
+       public_description = 'Transportăm autoturisme între România și Germania.'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed');
+
+select pg_temp.check('DIR  a stranger cannot write somebody else''s description', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.companies set public_description = 'Text străin'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('DIR  a description longer than 300 characters is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set public_description = repeat('a', 301)
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Moderation
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a company cannot hide a rival from the list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_company_public_profile('fc000000-0000-0000-0000-000000000001', false, 'motiv')$a$,
+  'blocked');
+
+select pg_temp.check('DIR  staff hide a profile, with a reason, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_company_public_profile(
+       'fc000000-0000-0000-0000-000000000001', false,
+       'Descriere care nu corespunde activității')).public_profile_enabled$a$, 'true',
+  p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'company.profile_hidden')$v$);
+
+select pg_temp.check('DIR  hiding a profile without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_company_public_profile('fc000000-0000-0000-0000-000000000001', false)$a$,
+  'blocked', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select public_profile_enabled from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('DIR  hiding the profile does not touch the verification', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_company_public_profile(
+       'fc000000-0000-0000-0000-000000000001', false, 'motiv')).verification_status = 'verified'$a$,
+  'true', p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- ---------------------------------------------------------------------
+-- The numbers
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon may ask how many verified carriers there are', 'fix',
+  null, 'anon', $a$select count(*) = 1 from public.directory_stats()$a$, 'true');
+
+select pg_temp.check('DIR  a suspended carrier is not counted', 'fix',
+  null, 'anon',
+  $a$select a.verified_companies = b.n - 1 from public.directory_stats() a, zz_base b$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      create temp table zz_base as select verified_companies as n from public.directory_stats();
+      grant select on zz_base to anon;
+      update public.companies set is_suspended = true
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+select pg_temp.check('DIR  the listed count is the directory itself', 'fix',
+  null, 'anon',
+  $a$select listed_companies = (select count(*) from public.v_public_companies)
+     from public.directory_stats()$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- Prices
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon reads the carrier price', 'guard',
+  null, 'anon',
+  $a$select price_ron_month = 149 from public.plans where code = 'carrier'$a$, 'true');
+
+select pg_temp.check('DIR  not even staff change a price without an audit row', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.plans set price_ron_month = 1 where code = 'carrier'$a$, 'blocked',
+  p_verify => $v$select price_ron_month = 149 from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('DIR  a carrier cannot change the price they pay', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_plan('carrier', 1, true, '{}')$a$, 'blocked',
+  p_verify => $v$select price_ron_month = 149 from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('DIR  staff change the price through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('carrier', 169, true,
+            array['Publicare nelimitată'])).price_ron_month = 169$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log where action = 'plan.updated')$v$);
+
+select pg_temp.check('DIR  a negative price is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', -1, true, '{}')$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Thresholds
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  anon reads the thresholds and the trial length', 'fix',
+  null, 'anon',
+  $a$select stats_min_companies = 20 and directory_min_companies = 12 and trial_days = 30
+     from public.homepage_settings where id$a$, 'true');
+
+select pg_temp.check('DIR  a non-staff user cannot move them', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_directory_settings(1, 1, 0)$a$, 'blocked',
+  p_verify => $v$select directory_min_companies = 12 from public.homepage_settings where id$v$);
+
+select pg_temp.check('DIR  staff move them through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_directory_settings(5, 3, 14)).trial_days = 14$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'homepage_settings.updated'
+                                  and reason = 'Praguri pentru lista de firme')$v$);
+
+select pg_temp.check('DIR  a threshold of zero is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_directory_settings(0, 12, 30)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The compliance shield
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('DIR  a profile shows document states, to the month', 'fix',
+  null, 'anon',
+  $a$select array_agg(column_name::text order by column_name) = array[
+       'kind','label_ro','slug','state','valid_month'
+     ]
+     from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_public_company_documents'$a$, 'true');
+
+select pg_temp.check('DIR  the exact expiry date is not public', 'fix',
+  null, 'anon',
+  $a$select valid_until from public.v_public_company_documents$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('DIR  the month is the first of the month, never the real day', 'fix',
+  null, 'anon',
+  $a$select bool_and(extract(day from valid_month) = 1)
+     from public.v_public_company_documents
+     where valid_month is not null$a$, 'true',
+  p_setup => $s$update public.companies
+                   set public_profile_enabled = true, verification_status = 'verified',
+                       is_suspended = false, verified_at = now()
+                   where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DIR  a company that is not listed shows no documents either', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_public_company_documents
+                        where slug = (select slug from zz_base))$a$,
+  'true',
+  p_setup => $s$do $d$
+    begin
+      create temp table zz_base as select slug from public.companies
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      grant select on zz_base to anon;
+      update public.companies set public_profile_enabled = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$);
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its
