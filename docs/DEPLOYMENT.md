@@ -45,8 +45,10 @@ branch  →  pull request  →  preview  →  merge into main
 
 **On a pull request** — `.github/workflows/pr.yml` runs typecheck, lint, the
 unit tests, `db:test` against a throwaway Postgres, the edge-function checks
-and the end-to-end suite, then deploys a preview and posts its URL as a
-comment on the pull request. Nothing here touches the production database.
+and the end-to-end suite. Vercel builds a preview of the branch on its own
+(Git integration); the last job waits for that build, checks it answers
+through Vercel's login and posts its URL as a comment on the pull request.
+Nothing here touches the production database.
 
 **On a push to `main`** — `.github/workflows/main.yml` runs the same checks
 and then, in order, stopping at the first failure:
@@ -56,7 +58,7 @@ and then, in order, stopping at the first failure:
 | 1. Checks | everything the pull request ran, again, on the merged result |
 | 2. Migrations | `supabase db push --dry-run`, then the real push; the migration list and both outputs go into the run summary |
 | 3. Edge functions | deploys only the functions whose sources changed — everything, if `_shared` changed |
-| 4. Production | `vercel build --prod` and `vercel deploy --prebuilt --prod`, then checks the deployment answers |
+| 4. Production | calls the Vercel deploy hook for `main`, waits until production reports this commit, then checks production answers |
 | 5. Advisors | security advisors into the run summary, separating new findings from the accepted ones |
 
 The whole file runs under `concurrency: main-release` with
@@ -75,13 +77,16 @@ a message naming it, rather than an authentication error from inside a CLI.
 | `SUPABASE_ACCESS_TOKEN` | https://supabase.com/dashboard/account/tokens |
 | `SUPABASE_PROJECT_REF` | `ytwzydilyiekhexnpziu` |
 | `SUPABASE_DB_PASSWORD` | Supabase → Project Settings → Database |
-| `VERCEL_TOKEN` | https://vercel.com/account/tokens |
-| `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |
-| `VERCEL_PROJECT_ID` | `projectId` in the same file |
+| `VERCEL_DEPLOY_HOOK_URL` | Vercel → `transport` → Settings → Git → Deploy Hooks, a hook on `main` (named `pipeline-main`) |
+| `VERCEL_AUTOMATION_BYPASS_SECRET` | Vercel → `transport` → Settings → Deployment Protection → Protection Bypass for Automation |
 
-Application environment variables are **not** duplicated into GitHub. Both
-workflows run `vercel pull`, so the Vercel project stays the one place they
-are set — and `vercel env pull .env.local` gives a laptop the same values.
+There is no Vercel account token in GitHub. The hook can only rebuild
+`main`, and the bypass secret only lets a request past the login on this
+project's previews; neither can change anything else on the account.
+
+Application environment variables are **not** duplicated into GitHub. Every
+build runs on Vercel, so the Vercel project stays the one place they are
+set — and `vercel env pull .env.local` gives a laptop the same values.
 
 ## Branch protection
 
@@ -97,25 +102,25 @@ live that never passed the checks and that nobody can find in git history.
 
 The Vercel project is linked to the repository through Vercel's Git
 integration (TIMAPP team, project `transport`, production branch `main`).
-Left alone, that means two deployers: Vercel on every push, and the
-pipeline. `vercel.json` turns Vercel's half off for every branch:
+Left alone, a push to `main` would deploy production at once — before step 2
+has applied the migrations that code expects. `vercel.json` turns that off
+for `main` only:
 
 ```json
-{ "git": { "deploymentEnabled": false } }
+{ "git": { "deploymentEnabled": { "main": false } } }
 ```
 
-`false`, not `{ "main": false }`: disabling only `main` would stop Vercel
-deploying production but leave it building a preview for every branch
-alongside the pipeline's preview — two URLs per pull request, one of which
-never ran the tests. The flag only governs **Git-triggered** deployments;
-`vercel deploy` with a token still works, which is exactly how the pipeline
-deploys.
+Every other branch still gets a Vercel preview on push; that preview is the
+one the pull request workflow checks. Production is built only when step 4
+calls the deploy hook — the flag governs Git-triggered deployments, not
+hooks.
 
-> **Order matters.** Merging `vercel.json` removes the Git integration as a
-> deployer, so the pipeline has to be able to deploy first. That needs
-> `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` in the repository
-> secrets and a green step 4 on a Main run. Merge it before that and nothing
-> deploys at all: Vercel is switched off and the pipeline cannot log in.
+How step 4 knows it is done: `next.config.ts` sends the build's commit in an
+`x-coridor-commit` response header, and `scripts/ci/release-production.sh`
+waits until production answers with this run's commit. A hook always builds
+the current head of `main`, so a run whose commit has already been
+superseded skips the hook — the newer commit's run is queued behind it and
+deploys after its own migrations.
 
 ## Supabase
 

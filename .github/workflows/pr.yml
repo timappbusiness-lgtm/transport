@@ -7,8 +7,12 @@ name: Pull request
 # Nothing here touches the production database. Migrations run against a
 # throwaway Postgres; only the main pipeline talks to the real project.
 #
-# Required repository secrets for the preview step:
-#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+# The preview itself is built by Vercel's Git integration, which builds
+# every branch except `main`. The preview job waits for that build, checks
+# it answers and posts its URL. Required repository secret:
+#   VERCEL_AUTOMATION_BYPASS_SECRET  Vercel → project transport → Settings →
+#                                    Deployment Protection → Protection
+#                                    Bypass for Automation
 
 on:
   pull_request:
@@ -108,52 +112,47 @@ jobs:
     runs-on: ubuntu-latest
     needs: [checks, database, functions, e2e]
     # A fork's pull request cannot read secrets. Skipping is right here:
-    # there is nothing to deploy to, and failing would say nothing useful.
+    # Vercel does not build forks without approval, and failing would say
+    # nothing useful.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: write
     environment:
       name: preview
-      url: ${{ steps.deploy.outputs.url }}
+      url: ${{ steps.wait.outputs.url }}
+    env:
+      # Vercel builds the branch head, not the merge commit in github.sha.
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
 
-      - name: Require the Vercel secrets
+      - name: Require the Vercel secret
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: bash scripts/ci/require-secrets.sh VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: bash scripts/ci/require-secrets.sh VERCEL_AUTOMATION_BYPASS_SECRET
 
-      - name: Install the Vercel CLI
-        run: pnpm add -g vercel@59
-
-      - name: Build and deploy a preview
-        id: deploy
+      - name: Wait for Vercel's build of this commit
+        id: wait
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
-          vercel build --token="$VERCEL_TOKEN"
-          # The CLI writes progress to stderr and the URL to stdout.
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" | tail -1)
+          url=$(bash scripts/ci/wait-for-preview.sh "$HEAD_SHA")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Preview: $url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check the preview answers
-        run: bash scripts/ci/smoke-deployment.sh "${{ steps.deploy.outputs.url }}"
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: bash scripts/ci/smoke-deployment.sh "${{ steps.wait.outputs.url }}"
 
       - name: Post the URL on the pull request
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         env:
-          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          PREVIEW_URL: ${{ steps.wait.outputs.url }}
         with:
           script: |
             const url = process.env.PREVIEW_URL;
@@ -164,12 +163,12 @@ jobs:
               '',
               '| | |',
               '|---|---|',
-              '| Commit | `' + context.sha.slice(0, 7) + '` |',
+              '| Commit | `' + process.env.HEAD_SHA.slice(0, 7) + '` |',
               '| Homepage | ' + url + ' |',
               '| Autentificare | ' + url + '/autentificare |',
               '',
-              '_Preview only. The production database is untouched by this run — ' +
-                'migrations are applied by the main pipeline after merge._',
+              '_Preview only, behind Vercel login. The production database is ' +
+                'untouched by this run — migrations are applied by the main pipeline after merge._',
             ].join('\n');
 
             // Update the previous comment rather than adding one per push,

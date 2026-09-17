@@ -15,6 +15,14 @@ url="${url%/}"
 paths=(/ /autentificare)
 failed=0
 
+# Previews sit behind Vercel Authentication. With the project's automation
+# bypass secret in the environment the checks go through it; production
+# answers without it.
+auth=()
+if [[ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]]; then
+  auth=(-H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+fi
+
 for path in "${paths[@]}"; do
   code="000"
   # A deployment can take a moment to become reachable behind the CDN.
@@ -22,7 +30,7 @@ for path in "${paths[@]}"; do
   # fallback here is `|| true` rather than a second echo — otherwise a
   # failure reports the memorable but meaningless code 000000.
   for attempt in 1 2 3 4 5; do
-    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "${url}${path}" || true)
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 ${auth[@]+"${auth[@]}"} "${url}${path}" || true)
     [[ -n "$code" ]] || code="000"
     [[ "$code" == "200" ]] && break
     sleep $(( attempt * 3 ))
