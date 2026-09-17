@@ -53,6 +53,20 @@ function departure(overrides: Partial<PublicDeparture> = {}): PublicDeparture {
   };
 }
 
+describe('the scope filter', () => {
+  it('reads intern and internațional, and nothing else', () => {
+    expect(parseFilters({ acoperire: 'intern' }).scope).toBe('intern');
+    expect(parseFilters({ acoperire: 'international' }).scope).toBe('international');
+    expect(parseFilters({ acoperire: 'pe-lună' }).scope).toBeNull();
+  });
+
+  it('survives a round trip through the query string', () => {
+    const filters = parseFilters({ acoperire: 'international' });
+    expect(filtersToQuery(filters)).toContain('acoperire=international');
+    expect(hasActiveFilters(filters)).toBe(true);
+  });
+});
+
 describe('filters from the URL', () => {
   it('defaults to everything when the query is empty', () => {
     expect(parseFilters({})).toEqual(EMPTY_FILTERS);

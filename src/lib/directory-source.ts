@@ -260,9 +260,22 @@ const loadDirectoryMeta = unstable_cache(fetchDirectoryMeta, [`${DIRECTORY_TAG}-
   tags: [DIRECTORY_TAG],
 });
 
+export interface CompanyRoute {
+  truckListingId: string;
+  fromCountry: string;
+  fromCity: string;
+  toCountry: string;
+  toCity: string;
+  availableFrom: string;
+  availableTo: string | null;
+  slotsFree: number;
+  isDomestic: boolean;
+}
+
 export interface CompanyProfile {
   company: PublicCompany;
   documents: PublicCompanyDocument[];
+  routes: CompanyRoute[];
 }
 
 /**
@@ -277,13 +290,20 @@ export async function loadCompanyProfile(slug: string): Promise<CompanyProfile |
   if (!isSupabaseConfigured()) return null;
 
   const supabase = createPublicClient();
-  const [company, documents] = await Promise.all([
+  const [company, documents, routes] = await Promise.all([
     supabase.from('v_public_companies').select(COMPANY_COLUMNS).eq('slug', slug).maybeSingle(),
     supabase.from('v_public_company_documents').select('kind,label_ro,state,valid_month').eq('slug', slug),
+    supabase
+      .from('v_public_company_routes')
+      .select('truck_listing_id,from_country,from_city,to_country,to_city,available_from,available_to,slots_free,is_domestic')
+      .eq('slug', slug)
+      .order('available_from', { ascending: true })
+      .limit(12),
   ]);
 
   report('profile', company.error);
   report('profile documents', documents.error);
+  report('profile routes', routes.error);
 
   const mapped = company.data ? toCompany(company.data) : null;
   if (!mapped) return null;
@@ -293,6 +313,23 @@ export async function loadCompanyProfile(slug: string): Promise<CompanyProfile |
     documents: (documents.data ?? [])
       .map(toDocument)
       .filter((d): d is PublicCompanyDocument => d !== null),
+    routes: (routes.data ?? []).flatMap((row) =>
+      row.truck_listing_id && row.from_city && row.to_city && row.available_from
+        ? [
+            {
+              truckListingId: row.truck_listing_id,
+              fromCountry: row.from_country ?? '',
+              fromCity: row.from_city,
+              toCountry: row.to_country ?? '',
+              toCity: row.to_city,
+              availableFrom: row.available_from,
+              availableTo: row.available_to,
+              slotsFree: Number(row.slots_free ?? 0),
+              isDomestic: row.is_domestic === true,
+            },
+          ]
+        : [],
+    ),
   };
 }
 

@@ -13,6 +13,15 @@ import { FILTERABLE_CATEGORIES, type CargoCategory, type Direction } from './dep
 
 export type Tab = 'toate' | 'tur' | 'retur';
 
+/**
+ * Whether the route stays inside one country.
+ *
+ * The definition lives in the database, as `is_domestic` on
+ * `v_departures_public`, so the board and a company profile cannot end up
+ * meaning different things by "intern".
+ */
+export type ScopeFilter = 'intern' | 'international';
+
 export interface DepartureFilters {
   tab: Tab;
   fromCountry: string | null;
@@ -24,6 +33,7 @@ export interface DepartureFilters {
   dateTo: string | null;
   minSeats: number | null;
   vehicleType: CargoCategory | null;
+  scope: ScopeFilter | null;
 }
 
 export const EMPTY_FILTERS: DepartureFilters = {
@@ -36,6 +46,7 @@ export const EMPTY_FILTERS: DepartureFilters = {
   dateTo: null,
   minSeats: null,
   vehicleType: null,
+  scope: null,
 };
 
 /** Query keys, Romanian so a shared link reads like the site. */
@@ -49,6 +60,7 @@ export const FILTER_KEYS = {
   dateTo: 'pana-la',
   minSeats: 'locuri',
   vehicleType: 'vehicul',
+  scope: 'acoperire',
 } as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -77,6 +89,10 @@ function isoDate(value: string | null): string | null {
 
 function isTab(value: string | null): value is Tab {
   return value === 'tur' || value === 'retur' || value === 'toate';
+}
+
+function isScope(value: string | null): value is ScopeFilter {
+  return value === 'intern' || value === 'international';
 }
 
 function isCategory(value: string | null): value is CargoCategory {
@@ -111,6 +127,7 @@ export function parseFilters(params: SearchParams): DepartureFilters {
     vehicleType: isCategory(one(params, FILTER_KEYS.vehicleType))
       ? (one(params, FILTER_KEYS.vehicleType) as CargoCategory)
       : null,
+    scope: isScope(one(params, FILTER_KEYS.scope)) ? one(params, FILTER_KEYS.scope) as ScopeFilter : null,
   };
 }
 
@@ -126,6 +143,7 @@ export function filtersToQuery(filters: DepartureFilters): string {
   if (filters.dateTo) query.set(FILTER_KEYS.dateTo, filters.dateTo);
   if (filters.minSeats !== null) query.set(FILTER_KEYS.minSeats, String(filters.minSeats));
   if (filters.vehicleType) query.set(FILTER_KEYS.vehicleType, filters.vehicleType);
+  if (filters.scope) query.set(FILTER_KEYS.scope, filters.scope);
   const text = query.toString();
   return text === '' ? '' : `?${text}`;
 }

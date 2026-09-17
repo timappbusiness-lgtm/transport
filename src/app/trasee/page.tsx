@@ -170,6 +170,9 @@ async function loadDepartures(
   if (filters.dateTo) query = query.lte('available_from', filters.dateTo);
   if (filters.minSeats !== null) query = query.gte('slots_free', filters.minSeats);
   if (filters.vehicleType) query = query.contains('accepted_vehicle_types', [filters.vehicleType]);
+  // is_domestic is computed in the view, so "intern" means the same thing
+  // here as it does on a company profile.
+  if (filters.scope) query = query.eq('is_domestic', filters.scope === 'intern');
 
   const { data, error } = await query;
   if (error) {
