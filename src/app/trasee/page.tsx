@@ -44,7 +44,7 @@ export default async function Page({
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline strong={c.title} soft={c.titleSoft} className="mt-5" />
+        <Headline as="h1" strong={c.title} soft={c.titleSoft} className="mt-5" />
         <Lede className="mt-4">{c.lede}</Lede>
         {context === null ? (
           <p className="mt-3 text-sm text-muted">{c.signedOutNote}</p>

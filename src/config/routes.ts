@@ -58,10 +58,6 @@ export function departureRoute(id: string): string {
   return `${ROUTES.routes}/${id}`;
 }
 
-/** One of the carrier's own departures. */
-export function accountDepartureRoute(id: string): string {
-  return `${ROUTES.accountDepartures}/${id}`;
-}
 
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
