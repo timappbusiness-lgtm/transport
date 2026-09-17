@@ -1,0 +1,264 @@
+name: Main
+
+# The release pipeline. This is the only place that writes to the SAAS
+# TRANSPORT database or to Vercel production — no session, no laptop, no
+# other workflow.
+#
+# It runs strictly in order and stops at the first failure:
+#
+#   1. checks      typecheck, lint, unit, db:test, edge functions, e2e
+#   2. migrations  supabase db push --dry-run, then the real push
+#   3. functions   deploy the edge functions whose sources changed
+#   4. production  Vercel production deploy
+#   5. advisors    security advisors, written into the run summary
+#
+# Steps 2 and 3 change a system that has no undo, so nothing is allowed to
+# cancel a run in flight: see the concurrency block below.
+#
+# Required repository secrets:
+#   SUPABASE_ACCESS_TOKEN   a personal access token (supabase.com/dashboard/account/tokens)
+#   SUPABASE_PROJECT_REF    sspgyuavkjmzgbyqvunk
+#   SUPABASE_DB_PASSWORD    the database password for that project
+#   VERCEL_TOKEN            vercel.com/account/tokens
+#   VERCEL_ORG_ID           `orgId` from .vercel/project.json after `vercel link`
+#   VERCEL_PROJECT_ID       `projectId` from the same file
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One release at a time. `cancel-in-progress: false` is deliberate: a run
+# that is halfway through `supabase db push` must be allowed to finish.
+# Cancelling it would leave the project's migration history disagreeing with
+# the repository, which is exactly the state this pipeline exists to prevent.
+concurrency:
+  group: main-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: 1. Checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+
+      - name: Migrations, business rules and RLS
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: bash scripts/db-test.sh
+
+      - name: Edge functions
+        run: |
+          pnpm check:functions
+          pnpm test:functions
+
+      - name: Install the browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - run: pnpm test:e2e
+
+  migrations:
+    name: 2. Database migrations
+    runs-on: ubuntu-latest
+    needs: checks
+    outputs:
+      applied: ${{ steps.push.outputs.applied }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require the Supabase secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: bash scripts/ci/require-secrets.sh SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link the project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: What the remote already has
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          {
+            echo '## Migrations'
+            echo
+            echo '### Local vs remote, before the push'
+            echo
+            echo '```'
+            supabase migration list --linked 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dry run
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run 2>&1 | tee dry-run.txt
+          {
+            echo
+            echo '### Dry run'
+            echo
+            echo '```'
+            cat dry-run.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Push
+        id: push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          supabase db push --linked 2>&1 | tee push.txt
+          echo "applied=$(grep -c 'Applying migration' push.txt || true)" >> "$GITHUB_OUTPUT"
+          {
+            echo
+            echo '### Push'
+            echo
+            echo '```'
+            cat push.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  functions:
+    name: 3. Edge functions
+    runs-on: ubuntu-latest
+    needs: migrations
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The previous commit is needed to see which functions changed.
+          fetch-depth: 2
+
+      - name: Require the Supabase secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: bash scripts/ci/require-secrets.sh SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Deploy the functions whose sources changed
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          BEFORE: ${{ github.event.before }}
+        run: bash scripts/ci/deploy-functions.sh
+
+  production:
+    name: 4. Vercel production
+    runs-on: ubuntu-latest
+    needs: functions
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Require the Vercel secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: bash scripts/ci/require-secrets.sh VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID
+
+      - name: Install the Vercel CLI
+        run: pnpm add -g vercel@59
+
+      - name: Build and deploy
+        id: deploy
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" | tail -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          {
+            echo '## Production'
+            echo
+            echo "Deployed to $url"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check production answers
+        run: bash scripts/ci/smoke-deployment.sh "${{ steps.deploy.outputs.url }}"
+
+  advisors:
+    name: 5. Security advisors
+    runs-on: ubuntu-latest
+    needs: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require the Supabase secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: bash scripts/ci/require-secrets.sh SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link the project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Report
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: bash scripts/ci/advisors-report.sh

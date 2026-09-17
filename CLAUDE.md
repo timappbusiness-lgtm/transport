@@ -3,6 +3,32 @@
 Coridor — a Romanian vehicle transport marketplace. Next.js app in `src/`,
 Supabase database in `supabase/`, n8n workflows in `n8n/`.
 
+## Session rules
+
+These come first because everything else assumes them. They hold the same
+way in VS Code on the Mac and in Claude Code, so the two behave identically.
+
+1. **Start every session by looking at the remote.** `git fetch`, pull
+   `main`, then list the open pull requests and the remote branches. If
+   another open pull request already touches the area you are about to work
+   on, **stop and say so** rather than building a second version of it.
+2. **Every change goes to a branch and a pull request.** Never leave work
+   only on a laptop or only inside a session. `main` takes no direct pushes.
+3. **End every session by pushing the branch and reporting the pull request
+   link.** A session that ends with unpushed commits has lost the work as
+   far as everyone else is concerned.
+4. **Never commit a secret.** Local configuration comes from
+   `vercel env pull .env.local`, and `.env.local` is gitignored.
+   `.env.example` lists every variable name and no values.
+5. **No session touches the remote database.** Migrations reach SAAS
+   TRANSPORT only through the `main` pipeline — never `supabase db push`
+   from a laptop, never a manual change in the dashboard. Write a migration,
+   open a pull request, and let the merge apply it.
+
+One more, learned the hard way: **one session per phase.** Two sessions
+working the same phase produced two complete implementations of phase 1 and
+a reconciliation that cost more than the feature.
+
 ## Sources of truth
 
 - `docs/01-product-spec.md` — what the product does. Changes are shown as a
