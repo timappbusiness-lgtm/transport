@@ -240,6 +240,56 @@ export function comparisonRows(plans: readonly Plan[]): PlanFeature[] {
   return [...seen.values()];
 }
 
+/**
+ * Which section of the comparison table a feature belongs in.
+ *
+ * A key the map does not know still appears, in a group of its own at the
+ * end, rather than vanishing from the table: a feature added in the admin
+ * screen should show up even before somebody files it.
+ */
+export type FeatureGroup = 'acces' | 'publicare' | 'alerte' | 'echipa' | 'suport' | 'altele';
+
+export const FEATURE_GROUP_ORDER: readonly FeatureGroup[] = [
+  'acces',
+  'publicare',
+  'alerte',
+  'echipa',
+  'suport',
+  'altele',
+];
+
+const FEATURE_GROUPS: Record<string, FeatureGroup> = {
+  board: 'acces',
+  contacts: 'acces',
+  docs: 'acces',
+  expiry: 'acces',
+  directory: 'acces',
+  routes: 'publicare',
+  post: 'publicare',
+  promoted: 'publicare',
+  alerts: 'alerte',
+  seats: 'echipa',
+  support: 'suport',
+};
+
+export function groupOf(key: string): FeatureGroup {
+  return FEATURE_GROUPS[key] ?? 'altele';
+}
+
+export interface ComparisonGroup {
+  group: FeatureGroup;
+  rows: PlanFeature[];
+}
+
+/** The table, in sections, with empty sections left out. */
+export function groupedComparison(plans: readonly Plan[]): ComparisonGroup[] {
+  const rows = comparisonRows(plans);
+  return FEATURE_GROUP_ORDER.map((group) => ({
+    group,
+    rows: rows.filter((row) => groupOf(row.key) === group),
+  })).filter((section) => section.rows.length > 0);
+}
+
 /** How a given plan stands on a given feature. Absent means not included. */
 export function featureStatus(plan: Plan, key: string): FeatureStatus {
   return plan.features.find((f) => f.key === key)?.status ?? 'not_included';

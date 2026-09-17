@@ -9,6 +9,8 @@ import {
   formatLei,
   freeMonths,
   freeMonthsLabel,
+  groupOf,
+  groupedComparison,
   highlightedPlan,
   limitLabel,
   parseAudience,
@@ -185,6 +187,24 @@ describe('what a card lists and what the table lists', () => {
       'seats',
       'support',
     ]);
+  });
+
+  it('files each row under a section, and keeps an unknown key visible', () => {
+    const odd = plan({
+      features: [
+        { key: 'board', label: 'Acces la cereri', status: 'included' },
+        { key: 'ceva-nou', label: 'Ceva nou', status: 'coming_soon' },
+      ],
+    });
+    const sections = groupedComparison([odd]);
+    expect(sections.map((s) => s.group)).toEqual(['acces', 'altele']);
+    expect(sections[1]?.rows.map((r) => r.key)).toEqual(['ceva-nou']);
+    expect(groupOf('alerts')).toBe('alerte');
+  });
+
+  it('leaves out a section nothing falls into', () => {
+    const sections = groupedComparison([plan()]);
+    expect(sections.map((s) => s.group)).not.toContain('suport');
   });
 
   it('treats a feature a plan never mentions as not included', () => {
