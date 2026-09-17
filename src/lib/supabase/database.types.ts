@@ -778,6 +778,13 @@ export type Database = {
             referencedColumns: ["truck_listing_id"]
           },
           {
+            foreignKeyName: "contact_reveals_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
             foreignKeyName: "contact_reveals_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -851,6 +858,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "conversations_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_departures_public"
             referencedColumns: ["truck_listing_id"]
           },
         ]
@@ -932,6 +946,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "departure_bookings_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_departures_public"
             referencedColumns: ["truck_listing_id"]
           },
         ]
@@ -1277,6 +1298,13 @@ export type Database = {
             referencedRelation: "v_departures"
             referencedColumns: ["truck_listing_id"]
           },
+          {
+            foreignKeyName: "listing_contacts_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
         ]
       }
       messages: {
@@ -1561,6 +1589,13 @@ export type Database = {
             columns: ["truck_listing_id"]
             isOneToOne: false
             referencedRelation: "v_departures"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
+            foreignKeyName: "offers_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_departures_public"
             referencedColumns: ["truck_listing_id"]
           },
         ]
@@ -2312,6 +2347,13 @@ export type Database = {
             referencedColumns: ["truck_listing_id"]
           },
           {
+            foreignKeyName: "transports_truck_listing_id_fkey"
+            columns: ["truck_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_departures_public"
+            referencedColumns: ["truck_listing_id"]
+          },
+          {
             foreignKeyName: "transports_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
@@ -2329,6 +2371,7 @@ export type Database = {
       }
       truck_listings: {
         Row: {
+          accepted_vehicle_types: Database["public"]["Enums"]["cargo_category"][]
           accepts_partial_loads: boolean
           available_from: string
           available_to: string | null
@@ -2369,6 +2412,7 @@ export type Database = {
           waypoints: Json
         }
         Insert: {
+          accepted_vehicle_types?: Database["public"]["Enums"]["cargo_category"][]
           accepts_partial_loads?: boolean
           available_from: string
           available_to?: string | null
@@ -2409,6 +2453,7 @@ export type Database = {
           waypoints?: Json
         }
         Update: {
+          accepted_vehicle_types?: Database["public"]["Enums"]["cargo_category"][]
           accepts_partial_loads?: boolean
           available_from?: string
           available_to?: string | null
@@ -2803,6 +2848,31 @@ export type Database = {
             referencedColumns: ["company_id"]
           },
         ]
+      }
+      v_departures_public: {
+        Row: {
+          accepted_vehicle_types:
+            Database["public"]["Enums"]["cargo_category"][] | null
+          available_from: string | null
+          available_to: string | null
+          currency: Database["public"]["Enums"]["currency_code"] | null
+          direction: Database["public"]["Enums"]["truck_direction"] | null
+          from_city: string | null
+          from_country: string | null
+          from_county: string | null
+          platform_slots_total: number | null
+          price_indicative: number | null
+          published_at: string | null
+          service_types: Database["public"]["Enums"]["service_type"][] | null
+          slots_free: number | null
+          slots_taken: number | null
+          to_city: string | null
+          to_country: string | null
+          to_county: string | null
+          truck_listing_id: string | null
+          waypoints: Json | null
+        }
+        Relationships: []
       }
       v_vehicle_missing_documents: {
         Row: {

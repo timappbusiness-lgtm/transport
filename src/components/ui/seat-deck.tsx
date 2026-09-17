@@ -1,18 +1,23 @@
 import { cn } from '@/lib/utils';
-import { homeCopy } from '@/content/home';
 
 /**
  * The seats on a car carrier. Filling the platform is the carrier's whole
  * economics, so this is the picture behind "plătești locul, nu camionul".
+ *
+ * Shared by the homepage panel and the departures board, so the same eight
+ * squares mean the same thing in a sample and in a real route.
  */
 export function SeatDeck({
   taken,
   total,
   compact = false,
+  freeLabel = 'liber',
 }: {
   taken: number;
   total: number;
   compact?: boolean;
+  /** Written inside an empty seat when there is room for it. */
+  freeLabel?: string;
 }) {
   return (
     <ul
@@ -46,7 +51,7 @@ export function SeatDeck({
               </svg>
             ) : compact ? null : (
               <span className="font-mono text-[0.5rem] tracking-[0.06em] text-foreground">
-                {homeCopy.panel.seats.free}
+                {freeLabel}
               </span>
             )}
           </li>
