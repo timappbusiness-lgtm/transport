@@ -9,6 +9,7 @@ export const accountCopy = {
     fleet: 'Flotă',
     departures: 'Trasee',
     invitations: 'Invitații',
+    subscription: 'Abonament',
     admin: 'Administrare',
     signOut: 'Ieșire',
   },
@@ -114,6 +115,39 @@ export const accountCopy = {
     lockedHint:
       'Datele de identificare nu mai pot fi modificate după verificare. Scrie-ne dacă s-a schimbat ceva.',
   },
+  /** The company's plan, what it is using of it, and what it is waiting on. */
+  subscription: {
+    title: 'Abonament',
+    lede: 'Planul firmei, ce ai folosit luna aceasta și ce urmează.',
+    none: 'Firma nu are încă un abonament activ. Cererile și traseele se consultă gratuit.',
+    plan: 'Plan',
+    status: 'Stare',
+    /** Takes a formatted date. */
+    trialUntil: (date: string) => `Perioadă gratuită până la ${date}`,
+    renewsOn: (date: string) => `Perioada curentă se încheie la ${date}`,
+    /** Takes "3 zile". */
+    endsIn: (left: string) => `Mai sunt ${left}`,
+    ended: 'Perioada s-a încheiat.',
+    usage: {
+      title: 'Cât ai folosit',
+      contacts: 'Contacte deblocate luna aceasta',
+      trucks: 'Trasee active',
+      members: 'Utilizatori în cont',
+      unlimited: 'nelimitat',
+      /** Takes the used count and the limit. */
+      of: (used: string, limit: string) => `${used} din ${limit}`,
+    },
+    pending: {
+      title: 'Cerere în lucru',
+      /** Takes the plan name and the period. */
+      body: (plan: string, period: string) =>
+        `Ai cerut planul ${plan}, facturat ${period}. Te contactăm pentru factură și activare.`,
+      contacted: 'Am luat legătura cu tine în legătură cu această cerere.',
+    },
+    change: 'Schimbă planul',
+    choose: 'Vezi planurile',
+  },
+
   /** Opting the firm into the public directory, and what that shows. */
   publicProfile: {
     title: 'Profil public',

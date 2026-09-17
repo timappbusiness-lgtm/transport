@@ -6,6 +6,8 @@ import {
   cardFeatures,
   comparisonRows,
   featureStatus,
+  featuresFromText,
+  featuresToText,
   formatLei,
   freeMonths,
   freeMonthsLabel,
@@ -230,6 +232,29 @@ describe('which plan the page recommends', () => {
     const forwarder = plan({ code: 'forwarder', audience: 'forwarder', highlight: true });
     expect(highlightedPlan([forwarder], 'carrier')).toBeNull();
     expect(plansFor([plan(), forwarder], 'forwarder').map((p) => p.code)).toEqual(['forwarder']);
+  });
+});
+
+describe('the features as the admin screen edits them', () => {
+  it('round-trips through one line each', () => {
+    const features = plan().features;
+    expect(featuresFromText(featuresToText(features))).toEqual(features);
+  });
+
+  it('treats a line with no status as included', () => {
+    expect(featuresFromText('board | Acces la cereri')).toEqual([
+      { key: 'board', label: 'Acces la cereri', status: 'included' },
+    ]);
+  });
+
+  it('reads the Romanian status words, with or without the diacritic', () => {
+    expect(featuresFromText('a | A | curand')[0]?.status).toBe('coming_soon');
+    expect(featuresFromText('a | A | curând')[0]?.status).toBe('coming_soon');
+    expect(featuresFromText('a | A | neinclus')[0]?.status).toBe('not_included');
+  });
+
+  it('drops a line that has no key or no label rather than writing a blank row', () => {
+    expect(featuresFromText('\n  \n| fără cheie |\ndoar-cheie |')).toEqual([]);
   });
 });
 

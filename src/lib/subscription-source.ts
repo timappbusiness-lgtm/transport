@@ -24,8 +24,75 @@ export interface CompanySubscription {
   /** True while the company is inside the free period. */
   isTrial: boolean;
   periodEnd: string;
+  /**
+   * Whole days until the period ends, negative once it has. Computed here
+   * rather than in the page: reading the clock during render is exactly the
+   * kind of unstable result React's purity rule is about.
+   */
+  daysLeft: number;
   /** The request the company is waiting on, if any. */
   pendingRequest: PendingRequest | null;
+}
+
+export interface SubscriptionUsage {
+  /** Contacts revealed since the first of the month. */
+  contactsThisMonth: number;
+  activeTruckListings: number;
+  members: number;
+}
+
+/**
+ * What the company has used of its plan this month.
+ *
+ * Counted rather than stored: `contact_reveals` is both the audit trail and
+ * the quota counter, so the number here is the same one the database checks
+ * before it refuses the next reveal.
+ */
+export async function loadSubscriptionUsage(
+  companyId: string | null,
+): Promise<SubscriptionUsage | null> {
+  if (!companyId || !isSupabaseConfigured()) return null;
+
+  const supabase = await createClient();
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+
+  const [contacts, trucks, members] = await Promise.all([
+    supabase
+      .from('contact_reveals')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .gte('created_at', monthStart.toISOString()),
+    supabase
+      .from('truck_listings')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('status', 'active'),
+    supabase
+      .from('company_members')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('company_id', companyId),
+  ]);
+
+  for (const [label, result] of [
+    ['contacts', contacts],
+    ['trucks', trucks],
+    ['members', members],
+  ] as const) {
+    if (result.error) {
+      console.error(`[abonament] ${label} count failed`, {
+        code: result.error.code,
+        message: result.error.message,
+      });
+    }
+  }
+
+  return {
+    contactsThisMonth: contacts.count ?? 0,
+    activeTruckListings: trucks.count ?? 0,
+    members: members.count ?? 0,
+  };
 }
 
 export async function loadCompanySubscription(
@@ -82,16 +149,20 @@ export async function loadCompanySubscription(
           status: 'none',
           isTrial: false,
           periodEnd: '',
+          daysLeft: 0,
           pendingRequest,
         }
       : null;
   }
+
+  const end = new Date(subscription.data.current_period_end);
 
   return {
     planCode: subscription.data.plan_code,
     status: subscription.data.status,
     isTrial: subscription.data.status === 'trialing',
     periodEnd: subscription.data.current_period_end,
+    daysLeft: Math.ceil((end.getTime() - Date.now()) / 86_400_000),
     pendingRequest,
   };
 }

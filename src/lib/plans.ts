@@ -241,6 +241,44 @@ export function comparisonRows(plans: readonly Plan[]): PlanFeature[] {
 }
 
 /**
+ * The features as the admin screen edits them: one line each.
+ *
+ * `cheie | text | stare`, because a jsonb textarea is a way to lose a
+ * plan's feature list to a missing bracket. The status word is Romanian
+ * for the same reason the rest of the screen is.
+ */
+const STATUS_WORDS: Record<string, FeatureStatus> = {
+  inclus: 'included',
+  neinclus: 'not_included',
+  curand: 'coming_soon',
+  'curând': 'coming_soon',
+};
+
+const STATUS_BACK: Record<FeatureStatus, string> = {
+  included: 'inclus',
+  not_included: 'neinclus',
+  coming_soon: 'curand',
+};
+
+export function featuresToText(features: readonly PlanFeature[]): string {
+  return features.map((f) => `${f.key} | ${f.label} | ${STATUS_BACK[f.status]}`).join('\n');
+}
+
+export function featuresFromText(text: string): PlanFeature[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .flatMap((line) => {
+      const [key, label, status] = line.split('|').map((part) => part.trim());
+      if (!key || !label) return [];
+      // A line with no status is an included one: that is the common case,
+      // and it keeps a short list short.
+      return [{ key, label, status: STATUS_WORDS[(status ?? '').toLowerCase()] ?? 'included' }];
+    });
+}
+
+/**
  * Which section of the comparison table a feature belongs in.
  *
  * A key the map does not know still appears, in a group of its own at the
