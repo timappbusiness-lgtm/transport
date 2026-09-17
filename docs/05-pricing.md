@@ -79,7 +79,7 @@ head: this page charges nobody. It is what a person with a car to move sees
 before they fill in a form — a rate per kilometre by vehicle class, and a
 calculator that turns a route into a range.
 
-Two tables, added in migration `20260917104913`:
+Two tables, added in migration `20260917170000`:
 
 | Table | Holds |
 |---|---|

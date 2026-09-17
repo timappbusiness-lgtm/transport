@@ -49,7 +49,7 @@ a layout fault: on the page itself the header sits above the section.
 **The last three were rendered through a throwaway route**, not from a live
 database: this checkout cannot reach a Supabase instance, and the rates are
 unpublished everywhere until the team publishes them. The figures in them are
-the placeholder rows seeded by migration `20260917104913`, and the components
+the placeholder rows seeded by migration `20260917170000`, and the components
 are the real ones — but the admin shot is missing the staff sidebar that the
 `/admin` layout wraps around it. Re-take them from a preview deployment once
 somebody publishes, and this note goes.
