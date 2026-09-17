@@ -3,12 +3,16 @@ import { CarrierHome } from '@/components/app/dashboard/carrier';
 import { PhoneVerification } from '@/components/account/phone-verification';
 import { TopBar } from '@/components/app/top-bar';
 import { buttonClasses } from '@/components/ui/button';
-import { Card } from '@/components/ui/primitives';
+import { Card, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { appCopy } from '@/content/app';
+import { requestsCopy } from '@/content/cereri';
 import { requireAccountContext, type AccountContext } from '@/lib/auth/account';
 import { loadCarrierDashboard, NO_CARRIER_DASHBOARD } from '@/lib/dashboard-source';
+import { formatWindow } from '@/lib/departures';
+import { isOnBoard, type MyRequest } from '@/lib/my-requests';
+import { loadMyRequests } from '@/lib/my-requests-source';
 import { publishActions } from '@/lib/navigation';
 import { navContextOf } from '@/components/app/nav-context';
 import { loadPricing } from '@/lib/plans-source';
@@ -19,10 +23,10 @@ const h = appCopy.home;
 /**
  * Home, which is a different page for each kind of account.
  *
- * A carrier gets the dashboard with data behind it. An individual gets the
- * one honest thing they can do today, because publishing a request is not
- * built yet. A driver gets the page explaining where their assignments will
- * appear, which is the whole of their application for now.
+ * A carrier gets the dashboard with data behind it. An individual and a
+ * forwarder get their own requests, which phase 2 finally gives them
+ * something to put in. A driver gets the page explaining where their
+ * assignments will appear, which is the whole of their application for now.
  */
 export default async function Page() {
   const context = await requireAccountContext(ROUTES.account);
@@ -44,7 +48,7 @@ async function Body({ context }: { context: AccountContext }) {
   if (!company) return <NoCompany context={context} />;
 
   const isCarrier = company.company_type === 'transport' || company.company_type === 'both';
-  if (!isCarrier) return <ForwarderHome />;
+  if (!isCarrier) return <ForwarderHome context={context} />;
 
   // Three reads in parallel: the dashboard itself, the plan the limits come
   // from, and the subscription that says which plan is in force.
@@ -91,12 +95,16 @@ function NoCompany({ context }: { context: AccountContext }) {
   return <IndividualHome context={context} />;
 }
 
-function IndividualHome({ context }: { context: AccountContext }) {
+async function IndividualHome({ context }: { context: AccountContext }) {
   const c = appCopy.individual;
   const verified = context.profile?.phone_verified === true;
+  const requests = await loadMyRequests(context);
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Not a formality: the publish guard refuses a private person's
+          request without a confirmed number, so this card is the difference
+          between a request on the board and one waiting as a draft. */}
       {!verified ? (
         <Card className="p-5">
           <h2 className="text-[1rem]">{c.verifyPhone.title}</h2>
@@ -107,30 +115,77 @@ function IndividualHome({ context }: { context: AccountContext }) {
         </Card>
       ) : null}
 
-      {/* Until /cerere/noua exists there is one true thing to say here, and
-          a fake "cererile mele" list would be the alternative. */}
+      <RequestsPanel requests={requests} />
+
       <Card className="p-5">
-        <h2 className="text-[1rem]">{c.noRequests.title}</h2>
-        <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.noRequests.body}</p>
-        <Link href={ROUTES.routes} className={`${buttonClasses('primary', 'md')} mt-4`}>
-          {c.noRequests.action}
+        <h2 className="text-[1rem]">{c.routes.title}</h2>
+        <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.routes.body}</p>
+        <Link href={ROUTES.routes} className={`${buttonClasses('secondary', 'md')} mt-4`}>
+          {c.routes.action}
         </Link>
       </Card>
     </div>
   );
 }
 
+/** A forwarder posts on the main board; the panel is the same one. */
+async function ForwarderHome({ context }: { context: AccountContext }) {
+  return <RequestsPanel requests={await loadMyRequests(context)} />;
+}
+
 /**
- * A forwarder's dashboard needs requests, and requests are not built. What
- * it can honestly offer is the board of routes.
+ * The last few requests, or the one thing to do when there are none.
+ *
+ * Three rather than all of them: this is a dashboard, and the full list is
+ * one click away in the menu.
  */
-function ForwarderHome() {
+function RequestsPanel({ requests }: { requests: MyRequest[] }) {
   const c = appCopy.individual;
+
+  if (requests.length === 0) {
+    return (
+      <Card className="p-5">
+        <h2 className="text-[1rem]">{c.noRequests.title}</h2>
+        <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.noRequests.body}</p>
+        <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} mt-4`}>
+          {c.noRequests.action}
+        </Link>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-5">
-      <h2 className="text-[1rem]">{c.noRequests.title}</h2>
-      <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.noRequests.body}</p>
-      <Link href={ROUTES.routes} className={`${buttonClasses('primary', 'md')} mt-4`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-[1rem]">{c.requests.title}</h2>
+        <Link
+          href={ROUTES.accountRequests}
+          className="text-sm text-muted underline-offset-4 hover:underline"
+        >
+          {c.requests.all}
+        </Link>
+      </div>
+
+      <ul className="mt-4 flex flex-col">
+        {requests.slice(0, 3).map((request) => (
+          <li
+            key={request.id}
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border py-3 last:border-b-0"
+          >
+            <span className="min-w-0 text-sm">
+              {request.fromCity} → {request.toCity}
+              <span className="block text-xs text-muted">
+                {formatWindow(request.loadingFrom, request.loadingTo)}
+              </span>
+            </span>
+            <StatusBadge tone={isOnBoard(request.status) ? 'success' : 'neutral'}>
+              {requestsCopy.status[request.status as keyof typeof requestsCopy.status]}
+            </StatusBadge>
+          </li>
+        ))}
+      </ul>
+
+      <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'sm')} mt-5`}>
         {c.noRequests.action}
       </Link>
     </Card>
