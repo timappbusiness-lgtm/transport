@@ -819,12 +819,14 @@ $fn$;
 update public.plans set audience = 'carrier', sort_order = 1,
   short_description = 'Pentru firmele care încep și vor să vadă cum arată cererile.',
   features = jsonb_build_array(
-    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',            'status', 'included'),
-    jsonb_build_object('key', 'docs',      'label', 'Evidența documentelor firmei',          'status', 'included'),
+    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',                'status', 'included'),
+    jsonb_build_object('key', 'docs',      'label', 'Evidența documentelor firmei și ale vehiculelor', 'status', 'included'),
     jsonb_build_object('key', 'expiry',    'label', 'Notificare înainte să expire un document', 'status', 'included'),
-    jsonb_build_object('key', 'alerts',    'label', 'Alerte pe e-mail pentru cereri noi',    'status', 'not_included'),
-    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',      'status', 'not_included'),
-    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                    'status', 'coming_soon')
+    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                      'status', 'not_included'),
+    jsonb_build_object('key', 'routes',    'label', 'Publicare nelimitată pe tur și pe retur',  'status', 'not_included'),
+    jsonb_build_object('key', 'alerts',    'label', 'Alerte pe e-mail pentru cereri de pe traseele tale', 'status', 'not_included'),
+    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',         'status', 'not_included'),
+    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                       'status', 'coming_soon')
   )
 where code = 'free';
 
@@ -832,13 +834,15 @@ update public.plans set audience = 'carrier', highlight = true, sort_order = 2,
   name = 'Transportator',
   short_description = 'Pentru firmele de transport care lucrează pe tur și pe retur.',
   features = jsonb_build_array(
-    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',             'status', 'included'),
-    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                   'status', 'included'),
-    jsonb_build_object('key', 'routes',    'label', 'Publicare nelimitată pe tur și pe retur', 'status', 'included'),
-    jsonb_build_object('key', 'alerts',    'label', 'Alerte pe e-mail pentru cereri de pe traseele tale', 'status', 'included'),
+    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',                'status', 'included'),
     jsonb_build_object('key', 'docs',      'label', 'Evidența documentelor firmei și ale vehiculelor', 'status', 'included'),
-    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',      'status', 'included'),
-    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                    'status', 'coming_soon')
+    jsonb_build_object('key', 'expiry',    'label', 'Notificare înainte să expire un document', 'status', 'included'),
+    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                      'status', 'included'),
+    jsonb_build_object('key', 'routes',    'label', 'Publicare nelimitată pe tur și pe retur',  'status', 'included'),
+    jsonb_build_object('key', 'alerts',    'label', 'Alerte pe e-mail pentru cereri de pe traseele tale', 'status', 'included'),
+    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',         'status', 'included'),
+    jsonb_build_object('key', 'seats',     'label', 'Dispeceri nelimitați în contul firmei',    'status', 'not_included'),
+    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                       'status', 'coming_soon')
   )
 where code = 'carrier';
 
@@ -846,13 +850,16 @@ update public.plans set audience = 'carrier', sort_order = 3,
   name = 'Flotă',
   short_description = 'Pentru flote mari și grupuri de firme, cu mai mulți dispeceri.',
   features = jsonb_build_array(
-    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',             'status', 'included'),
-    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                   'status', 'included'),
-    jsonb_build_object('key', 'routes',    'label', 'Publicare nelimitată pe tur și pe retur', 'status', 'included'),
+    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',                'status', 'included'),
+    jsonb_build_object('key', 'docs',      'label', 'Evidența documentelor firmei și ale vehiculelor', 'status', 'included'),
+    jsonb_build_object('key', 'expiry',    'label', 'Notificare înainte să expire un document', 'status', 'included'),
+    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                      'status', 'included'),
+    jsonb_build_object('key', 'routes',    'label', 'Publicare nelimitată pe tur și pe retur',  'status', 'included'),
     jsonb_build_object('key', 'alerts',    'label', 'Alerte pe e-mail pentru cereri de pe traseele tale', 'status', 'included'),
-    jsonb_build_object('key', 'seats',     'label', 'Dispeceri nelimitați în contul firmei', 'status', 'included'),
-    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',      'status', 'included'),
-    jsonb_build_object('key', 'support',   'label', 'Suport prioritar',                      'status', 'coming_soon')
+    jsonb_build_object('key', 'directory', 'label', 'Profil în lista publică de firme',         'status', 'included'),
+    jsonb_build_object('key', 'seats',     'label', 'Dispeceri nelimitați în contul firmei',    'status', 'included'),
+    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                       'status', 'coming_soon'),
+    jsonb_build_object('key', 'support',   'label', 'Suport prioritar',                         'status', 'coming_soon')
   )
 where code = 'business';
 
@@ -860,12 +867,12 @@ update public.plans set audience = 'forwarder', highlight = true, sort_order = 1
   name = 'Casă de expediții',
   short_description = 'Pentru casele de expediții care trimit curse către transportatori verificați.',
   features = jsonb_build_array(
-    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',             'status', 'included'),
-    jsonb_build_object('key', 'post',      'label', 'Publicare nelimitată de curse',         'status', 'included'),
-    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                   'status', 'included'),
-    jsonb_build_object('key', 'seats',     'label', 'Mai mulți dispeceri în același cont',   'status', 'included'),
-    jsonb_build_object('key', 'docs',      'label', 'Vezi documentele fiecărui ofertant',    'status', 'included'),
-    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                    'status', 'coming_soon')
+    jsonb_build_object('key', 'board',     'label', 'Acces la cereri și trasee',                'status', 'included'),
+    jsonb_build_object('key', 'post',      'label', 'Publicare nelimitată de curse',            'status', 'included'),
+    jsonb_build_object('key', 'contacts',  'label', 'Contacte nelimitate',                      'status', 'included'),
+    jsonb_build_object('key', 'seats',     'label', 'Mai mulți dispeceri în același cont',      'status', 'included'),
+    jsonb_build_object('key', 'offers',    'label', 'Vezi documentele fiecărui ofertant',       'status', 'included'),
+    jsonb_build_object('key', 'promoted',  'label', 'Anunțuri promovate',                       'status', 'coming_soon')
   )
 where code = 'forwarder';
 

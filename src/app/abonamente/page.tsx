@@ -47,6 +47,41 @@ export default async function Page({
 
   const [pricing, context] = await Promise.all([loadPricing(), getAccountContext()]);
   const subscription = await loadCompanySubscription(context?.activeCompany?.id ?? null);
+
+  return (
+    <PricingBody
+      plans={pricing.plans}
+      settings={pricing.settings}
+      audience={audience}
+      months={months}
+      actionFor={(plan) => actionFor(plan, context, subscription)}
+    />
+  );
+}
+
+/**
+ * The page, given its data rather than fetching it — which is what lets a
+ * populated state be rendered for a screenshot without a database, and what
+ * keeps the layout testable.
+ *
+ * `actionFor` is passed in rather than computed here because deciding what
+ * a button may do needs the session, and this component deliberately has no
+ * access to one.
+ */
+export function PricingBody({
+  plans,
+  settings,
+  audience,
+  months,
+  actionFor: decide,
+}: {
+  plans: readonly Plan[];
+  settings: PricingSettings;
+  audience: ReturnType<typeof parseAudience>;
+  months: ReturnType<typeof parseMonths>;
+  actionFor: (plan: Plan) => PlanAction;
+}) {
+  const pricing = { plans, settings };
   const shown = plansFor(pricing.plans, audience);
 
   return (
@@ -76,14 +111,22 @@ export default async function Page({
             'sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3',
           ].join(' ')}
         >
-          {order(shown).map((plan) => (
-            <li key={plan.code} className="min-w-0 snap-start">
+          {shown.map((plan) => (
+            <li
+              key={plan.code}
+              className={[
+                'min-w-0 snap-start',
+                // First in the scroller, so the phone opens on it; in price
+                // order on desktop, where all three are visible anyway.
+                plan.highlight ? 'order-first sm:order-none' : '',
+              ].join(' ')}
+            >
               <PlanCard
                 plan={plan}
                 months={months}
                 settings={pricing.settings}
                 recommendedLabel={c.card.recommended[audience]}
-                action={actionFor(plan, context, subscription)}
+                action={decide(plan)}
               />
             </li>
           ))}
@@ -92,17 +135,12 @@ export default async function Page({
         <p className="mt-8 text-sm text-muted">{c.card.noPeriod}</p>
       )}
 
-      <PlanComparison plans={order(shown)} />
+      <PlanComparison plans={shown} />
 
       <NeverPay />
       <BillingFaq settings={pricing.settings} />
     </Container>
   );
-}
-
-/** The recommended plan leads, so it is the card a phone opens on. */
-function order(plans: readonly Plan[]): Plan[] {
-  return [...plans].sort((a, b) => Number(b.highlight) - Number(a.highlight));
 }
 
 /**

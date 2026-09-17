@@ -302,6 +302,7 @@ const FEATURE_GROUPS: Record<string, FeatureGroup> = {
   docs: 'acces',
   expiry: 'acces',
   directory: 'acces',
+  offers: 'acces',
   routes: 'publicare',
   post: 'publicare',
   promoted: 'publicare',

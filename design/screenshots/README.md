@@ -20,6 +20,11 @@ Captured with Chromium at a device pixel ratio of 2, at 1440 (desktop) and
 | `firme-faq-1440.png`, `firme-faq-390.png` | The homepage FAQ, with the answers that read the document rules and the price. |
 | `firme-lista-goala-1440.png`, `firme-lista-goala-390.png` | `/firme` as it ships: no verified firm has opted in, so the list says it is filling up rather than showing samples. |
 | `intrebari-frecvente-1440.png`, `intrebari-frecvente-390.png` | `/intrebari-frecvente` with no database: only the questions that need no data are there, which is the point. |
+| `abonamente-lunar-1440.png`, `abonamente-lunar-390.png` | `/abonamente` at the monthly rate. |
+| `abonamente-12-luni-1440.png`, `abonamente-12-luni-390.png` | Twelve months: the monthly equivalent, the total under it, and „2 luni gratuite” — which appears only because 1.490 is exactly ten times 149. |
+| `abonamente-6-luni-1440.png` | Six months, where the totals do not divide cleanly, so the saving is stated in lei instead. |
+| `abonamente-expeditii-1440.png` | The forwarder tab. One plan today; the team adds more from /admin/planuri. |
+| `abonamente-goale-1440.png` | `/abonamente` as it ships: no database, so no price is stated at all. |
 
 **The ones showing populated data were rendered through a throwaway route**,
 not from a live database: this checkout cannot reach a Supabase instance, and

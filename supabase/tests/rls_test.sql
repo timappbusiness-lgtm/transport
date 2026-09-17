@@ -2762,6 +2762,37 @@ select pg_temp.check('ABO  a feature with a status we cannot draw is refused', '
   $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 149, true, true,
             '[{"key":"a","label":"Ceva","status":"maybe"}]')$a$, 'blocked');
 
+-- A dearer plan that appears to lack something the free one has reads as a
+-- mistake in the comparison table, and the first version of this seed had
+-- exactly that. The keys, not the statuses: a paid plan may legitimately
+-- mark something "în curând", but it must at least mention it.
+select pg_temp.check('ABO  every paid plan answers what the free one answers', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1
+       from public.plans free,
+            lateral jsonb_array_elements(free.features) f,
+            public.plans paid
+       where free.code = 'free'
+         and paid.code in ('carrier', 'business')
+         and not exists (
+           select 1 from jsonb_array_elements(paid.features) g
+           where g->>'key' = f->>'key'
+         ))$a$, 'true');
+
+-- Within one audience the same key must carry the same words, or the
+-- comparison table prints one plan's wording in a row covering all of them.
+-- Across audiences it may differ: "dispeceri nelimitați" and "mai mulți
+-- dispeceri" are different offers, and the two tables never share a row.
+select pg_temp.check('ABO  a feature key means one thing in a given table', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1
+       from public.plans p, lateral jsonb_array_elements(p.features) f
+       where p.audience is not null
+       group by p.audience, f->>'key'
+       having count(distinct f->>'label') > 1)$a$, 'true');
+
 -- ---------------------------------------------------------------------
 -- Asking for a plan
 -- ---------------------------------------------------------------------
