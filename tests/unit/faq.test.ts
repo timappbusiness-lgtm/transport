@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HOMEPAGE_FAQ_COUNT, buildFaq, homepageFaq, joinRo, type FaqInput } from '@/lib/faq';
+import type { Plan } from '@/lib/plans';
 import type { PublicRequirement } from '@/lib/trust';
 
 /**
@@ -43,10 +44,30 @@ const REQUIREMENTS: PublicRequirement[] = [
   }),
 ];
 
+const PLAN: Plan = {
+  code: 'carrier',
+  name: 'Transportator',
+  description: null,
+  audience: 'carrier',
+  monthlyPrice: 149,
+  highlight: true,
+  features: [
+    { key: 'routes', label: 'Publicare nelimitată', status: 'included' },
+    { key: 'promoted', label: 'Anunțuri promovate', status: 'coming_soon' },
+  ],
+  periods: [{ months: 1, total: 149 }],
+  limits: {
+    contactsPerMonth: null,
+    activeTruckListings: null,
+    activeCargoListings: 10,
+    savedSearches: 10,
+  },
+};
+
 function input(over: Partial<FaqInput> = {}): FaqInput {
   return {
     requirements: REQUIREMENTS,
-    plan: { name: 'Transportator', priceMonth: 149, features: ['Publicare nelimitată'] },
+    plan: PLAN,
     trialDays: 30,
     reviewTimeLabel: 'în cel mult o zi lucrătoare',
     ...over,
@@ -80,6 +101,12 @@ describe('the price', () => {
     const answer = find(buildFaq(input()), 'abonament')?.answer.join(' ') ?? '';
     expect(answer).toContain('costă 149 lei pe lună');
     expect(answer).toContain('Perioada gratuită de 30 de zile');
+  });
+
+  it('lists what the plan includes today, not what is coming', () => {
+    const answer = find(buildFaq(input()), 'abonament')?.answer.join(' ') ?? '';
+    expect(answer).toContain('publicare nelimitată');
+    expect(answer).not.toContain('anunțuri promovate');
   });
 
   it('uses the Romanian plural for a shorter trial', () => {

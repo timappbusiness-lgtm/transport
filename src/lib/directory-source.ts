@@ -33,21 +33,12 @@ const REVALIDATE_SECONDS = 300;
 const COMPANY_COLUMNS =
   'slug,name,legal_name,cui,city,county,company_type,logo_path,public_description,verified_since,rating_avg,rating_count,compliant_vehicles,serves_national,serves_international,last_checked_at' as const;
 
-export interface CarrierPlan {
-  name: string;
-  /** Lei per month, as the database holds it. */
-  priceMonth: number;
-  features: string[];
-}
-
 export interface HomepageDirectory {
   /** null when there is no database configured, or the query failed. */
   stats: DirectoryStats | null;
   thresholds: DirectoryThresholds;
   /** The slice the homepage grid shows today. */
   companies: PublicCompany[];
-  /** null hides the price card rather than showing a price we made up. */
-  plan: CarrierPlan | null;
 }
 
 /**
@@ -58,37 +49,28 @@ export interface HomepageDirectory {
 export const DEFAULT_DIRECTORY_THRESHOLDS: DirectoryThresholds = {
   statsMinCompanies: 20,
   directoryMinCompanies: 12,
-  trialDays: 30,
 };
 
 export const NO_DIRECTORY: HomepageDirectory = {
   stats: null,
   thresholds: DEFAULT_DIRECTORY_THRESHOLDS,
   companies: [],
-  plan: null,
 };
 
 async function fetchHomepageDirectory(): Promise<HomepageDirectory> {
   if (!isSupabaseConfigured()) return NO_DIRECTORY;
 
   const supabase = createPublicClient();
-  const [statsResult, settings, plan] = await Promise.all([
+  const [statsResult, settings] = await Promise.all([
     supabase.rpc('directory_stats'),
     supabase
       .from('homepage_settings')
-      .select('stats_min_companies,directory_min_companies,trial_days')
-      .maybeSingle(),
-    supabase
-      .from('plans')
-      .select('name,price_ron_month,display_features')
-      .eq('code', 'carrier')
-      .eq('is_public', true)
+      .select('stats_min_companies,directory_min_companies')
       .maybeSingle(),
   ]);
 
   report('stats', statsResult.error);
   report('settings', settings.error);
-  report('plan', plan.error);
 
   const row = Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data;
   const stats = row
@@ -105,17 +87,9 @@ async function fetchHomepageDirectory(): Promise<HomepageDirectory> {
       ? {
           statsMinCompanies: settings.data.stats_min_companies,
           directoryMinCompanies: settings.data.directory_min_companies,
-          trialDays: settings.data.trial_days,
         }
       : DEFAULT_DIRECTORY_THRESHOLDS,
     companies: await homeSlice(stats?.listedCompanies ?? 0),
-    plan: plan.data
-      ? {
-          name: plan.data.name,
-          priceMonth: Number(plan.data.price_ron_month),
-          features: plan.data.display_features ?? [],
-        }
-      : null,
   };
 }
 

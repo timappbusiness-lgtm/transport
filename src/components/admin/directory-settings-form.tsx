@@ -20,7 +20,7 @@ export function DirectorySettingsForm({ thresholds }: { thresholds: DirectoryThr
 
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id={`${id}-stats`}
           name="stats_min_companies"
@@ -36,14 +36,6 @@ export function DirectorySettingsForm({ thresholds }: { thresholds: DirectoryThr
           hint={c.directoryMinHint}
           defaultValue={String(thresholds.directoryMinCompanies)}
           error={state.fieldErrors?.directory_min_companies}
-        />
-        <Field
-          id={`${id}-trial`}
-          name="trial_days"
-          label={c.trialDays}
-          hint={c.trialDaysHint}
-          defaultValue={String(thresholds.trialDays)}
-          error={state.fieldErrors?.trial_days}
         />
       </div>
 

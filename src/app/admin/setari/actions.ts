@@ -40,7 +40,6 @@ export async function setDirectorySettingsAction(
 
   const statsMin = whole(formData, 'stats_min_companies');
   const directoryMin = whole(formData, 'directory_min_companies');
-  const trialDays = whole(formData, 'trial_days');
 
   const fieldErrors: Record<string, string> = {};
   if (statsMin === null || statsMin < 1 || statsMin > 100_000) {
@@ -49,15 +48,7 @@ export async function setDirectorySettingsAction(
   if (directoryMin === null || directoryMin < 1 || directoryMin > 100_000) {
     fieldErrors.directory_min_companies = c.invalidDirectory;
   }
-  if (trialDays === null || trialDays < 0 || trialDays > 365) {
-    fieldErrors.trial_days = c.invalidTrial;
-  }
-  if (
-    statsMin === null ||
-    directoryMin === null ||
-    trialDays === null ||
-    Object.keys(fieldErrors).length > 0
-  ) {
+  if (statsMin === null || directoryMin === null || Object.keys(fieldErrors).length > 0) {
     return { fieldErrors };
   }
 
@@ -65,7 +56,6 @@ export async function setDirectorySettingsAction(
   const { error } = await supabase.rpc('set_directory_settings', {
     p_stats_min_companies: statsMin,
     p_directory_min_companies: directoryMin,
-    p_trial_days: trialDays,
   });
 
   if (error) return { error: toAppError(error, 'admin.setDirectorySettings').message };

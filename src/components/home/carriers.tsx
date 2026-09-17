@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Clock } from 'lucide-react';
 import { CompanyCard } from '@/components/directory/company-card';
 import { Container } from '@/components/layout/container';
 import { buttonClasses } from '@/components/ui/button';
@@ -11,9 +11,17 @@ import {
   loadHomepageDirectory,
   type HomepageDirectory,
 } from '@/lib/directory-source';
+import {
+  cardFeatures,
+  formatLei,
+  highlightedPlan,
+  type Plan,
+  type PricingSettings,
+} from '@/lib/plans';
+import { loadPricing } from '@/lib/plans-source';
 import { showCompanyGrid } from '@/lib/directory';
 import { formatCompanies } from '@/lib/trust';
-import { formatNumber, pluralRo } from '@/lib/requests';
+import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
 const c = directoryCopy.signup;
@@ -32,7 +40,15 @@ const c = directoryCopy.signup;
  * empty one.
  */
 export async function Carriers() {
-  return <CarriersBody {...await loadHomepageDirectory()} />;
+  const [directory, pricing] = await Promise.all([loadHomepageDirectory(), loadPricing()]);
+
+  return (
+    <CarriersBody
+      {...directory}
+      plan={highlightedPlan(pricing.plans, 'carrier')}
+      settings={pricing.settings}
+    />
+  );
 }
 
 /**
@@ -40,7 +56,13 @@ export async function Carriers() {
  * a populated state be rendered for a screenshot without a database, and
  * what keeps the layout testable.
  */
-export function CarriersBody({ companies, stats, thresholds, plan }: HomepageDirectory) {
+export function CarriersBody({
+  companies,
+  stats,
+  thresholds,
+  plan,
+  settings,
+}: HomepageDirectory & { plan: Plan | null; settings: PricingSettings }) {
   const showGrid = showCompanyGrid(companies, stats, thresholds);
   const showCount =
     stats !== null && stats.verifiedCompanies >= thresholds.statsMinCompanies;
@@ -65,17 +87,26 @@ export function CarriersBody({ companies, stats, thresholds, plan }: HomepageDir
               </p>
               <p className="mt-3 flex items-baseline gap-2">
                 <span className="font-display text-[2.5rem] leading-none font-light tracking-[-0.03em]">
-                  {formatNumber(plan.priceMonth)} {c.currency}
+                  {formatLei(plan.monthlyPrice)}
                 </span>
                 <span className="text-[0.9375rem] text-muted">{c.period}</span>
               </p>
 
-              {plan.features.length > 0 ? (
+              {cardFeatures(plan).length > 0 ? (
                 <ul className="mt-6 grid gap-2.5">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex gap-2.5 text-[0.9375rem] text-muted">
-                      <Check size={16} className="mt-0.5 flex-none text-success" aria-hidden="true" />
-                      <span>{feature}</span>
+                  {cardFeatures(plan).map((feature) => (
+                    <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
+                      {feature.status === 'coming_soon' ? (
+                        <Clock size={16} className="mt-0.5 flex-none text-muted" aria-hidden="true" />
+                      ) : (
+                        <Check size={16} className="mt-0.5 flex-none text-success" aria-hidden="true" />
+                      )}
+                      <span>
+                        {feature.label}
+                        {feature.status === 'coming_soon' ? (
+                          <span className="text-muted"> · în curând</span>
+                        ) : null}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -94,9 +125,17 @@ export function CarriersBody({ companies, stats, thresholds, plan }: HomepageDir
                 {c.secondary}
               </Link>
               <p className="mt-3 text-center text-[0.8125rem] text-muted">
-                {thresholds.trialDays > 0
-                  ? c.trial(pluralRo(thresholds.trialDays, 'zi', 'zile'))
+                {settings.trialDays > 0
+                  ? c.trial(pluralRo(settings.trialDays, 'zi', 'zile'))
                   : c.noTrial}
+              </p>
+              <p className="mt-3 text-center text-[0.8125rem]">
+                <Link
+                  href={ROUTES.plans}
+                  className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+                >
+                  {c.allPlans}
+                </Link>
               </p>
             </Card>
           ) : null}

@@ -24,6 +24,7 @@ export const directoryCopy = {
     noTrial: 'Nu îți cerem card la înscriere.',
     cta: 'Înscrie firma',
     secondary: 'Sunt casă de expediții',
+    allPlans: 'Vezi toate planurile',
     /** Takes "24 de firme". */
     verifiedLine: (companies: string) => `${companies} cu documente verificate și în termen.`,
     gridNote: 'Firmele care au ales să apară în lista publică.',

@@ -10,6 +10,7 @@ export const ROUTES = {
   verification: '/verificare',
   companies: '/firme',
   faq: '/intrebari-frecvente',
+  plans: '/abonamente',
   accountDepartures: '/cont/trasee',
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
@@ -40,6 +41,7 @@ export const ROUTES = {
   accountDocuments: '/cont/firma/documente',
   accountFleet: '/cont/firma/flota',
   accountInvitations: '/cont/invitatii',
+  accountSubscription: '/cont/abonament',
 
   // Staff
   admin: '/admin',
@@ -48,6 +50,7 @@ export const ROUTES = {
   adminSettings: '/admin/setari',
   adminPlans: '/admin/planuri',
   adminCompanies: '/admin/firme',
+  adminSubscriptions: '/admin/abonamente',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

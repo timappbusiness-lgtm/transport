@@ -1,9 +1,9 @@
 import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from './departures';
-import { formatNumber, pluralRo } from './requests';
+import { pluralRo } from './requests';
 import { exemptVehicles, remindersLabel, requiredDocuments, type PublicRequirement } from './trust';
 import { STATIC_FAQ, type FaqEntry, type FaqGroup, type FaqGroupId } from '@/content/faq';
 import { ROUTES } from '@/config/routes';
-import type { CarrierPlan } from './directory-source';
+import { formatLei, type Plan } from './plans';
 
 /**
  * The answers that describe a rule are built from the rule.
@@ -20,7 +20,8 @@ import type { CarrierPlan } from './directory-source';
 
 export interface FaqInput {
   requirements: PublicRequirement[];
-  plan: CarrierPlan | null;
+  /** The recommended carrier plan, or null when there is none to read. */
+  plan: Plan | null;
   trialDays: number;
   reviewTimeLabel: string | null;
 }
@@ -170,20 +171,29 @@ function vehicleNames(requirements: PublicRequirement[]): string {
  * it. No plan means no answer: a subscription price is not something to
  * state from memory.
  */
-function priceEntry(plan: CarrierPlan | null, trialDays: number): FaqEntry | null {
+function priceEntry(plan: Plan | null, trialDays: number): FaqEntry | null {
   if (!plan) return null;
 
-  const answer = [`Planul ${plan.name} costă ${formatNumber(plan.priceMonth)} lei pe lună.`];
+  const answer = [`Planul ${plan.name} costă ${formatLei(plan.monthlyPrice)} pe lună.`];
   if (trialDays > 0) {
     answer.push(
       `Perioada gratuită de ${pluralRo(trialDays, 'zi', 'zile')} începe când firma este aprobată, nu când îți faci contul. Nu îți cerem card la înscriere.`,
     );
   }
-  if (plan.features.length > 0) {
-    answer.push(`Include: ${joinRo(plan.features.map((f) => f.toLowerCase()))}.`);
+  // Only what the plan actually includes today. A "în curând" belongs on
+  // the pricing page, where it is labelled as one, not in a sentence that
+  // reads as a list of what you get.
+  const included = plan.features.filter((f) => f.status === 'included');
+  if (included.length > 0) {
+    answer.push(`Include: ${joinRo(included.map((f) => f.label.toLowerCase()))}.`);
   }
 
-  return { id: 'abonament', question: 'Cât costă abonamentul?', answer };
+  return {
+    id: 'abonament',
+    question: 'Cât costă abonamentul?',
+    answer,
+    link: { href: ROUTES.plans, label: 'Vezi toate planurile' },
+  };
 }
 
 /** What lapsing costs, split by scope, with the reminder schedule from the rows. */

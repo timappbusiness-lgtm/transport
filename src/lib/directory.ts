@@ -60,8 +60,6 @@ export interface DirectoryThresholds {
   statsMinCompanies: number;
   /** Below this many listed companies, the homepage grid stays hidden. */
   directoryMinCompanies: number;
-  /** Days free after a company is verified. 0 hides the claim entirely. */
-  trialDays: number;
 }
 
 /** What the database's check constraint allows, mirrored for the form. */

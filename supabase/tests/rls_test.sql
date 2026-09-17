@@ -2475,43 +2475,54 @@ select pg_temp.check('DIR  not even staff change a price without an audit row', 
 
 select pg_temp.check('DIR  a carrier cannot change the price they pay', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
-  $a$select public.set_plan('carrier', 1, true, '{}')$a$, 'blocked',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 1, true, true, '[]')$a$,
+  'blocked',
   p_verify => $v$select price_ron_month = 149 from public.plans where code = 'carrier'$v$);
 
 select pg_temp.check('DIR  staff change the price through the RPC, audited', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select (public.set_plan('carrier', 169, true,
-            array['Publicare nelimitată'])).price_ron_month = 169$a$, 'true',
+  $a$select (public.set_plan('carrier', 'Transportator', null, 'carrier', 169, true, true,
+            '[{"key":"a","label":"Publicare nelimitată","status":"included"}]')).price_ron_month = 169$a$,
+  'true',
   p_verify => $v$select exists (select 1 from public.audit_log where action = 'plan.updated')$v$);
 
 select pg_temp.check('DIR  a negative price is refused', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select public.set_plan('carrier', -1, true, '{}')$a$, 'blocked');
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', -1, true, true, '[]')$a$,
+  'blocked');
 
 -- ---------------------------------------------------------------------
 -- Thresholds
 -- ---------------------------------------------------------------------
 
-select pg_temp.check('DIR  anon reads the thresholds and the trial length', 'fix',
+select pg_temp.check('DIR  anon reads the thresholds', 'fix',
   null, 'anon',
-  $a$select stats_min_companies = 20 and directory_min_companies = 12 and trial_days = 30
+  $a$select stats_min_companies = 20 and directory_min_companies = 12
      from public.homepage_settings where id$a$, 'true');
+
+-- The trial length has one home, and it is not this table: migration
+-- 20260917160000 moved it to pricing_settings, where the trial that starts
+-- at approval reads it.
+select pg_temp.check('DIR  the trial length is not kept here as well', 'fix',
+  null, 'anon',
+  $a$select trial_days from public.homepage_settings$a$, 'blocked',
+  p_missing_ok => true);
 
 select pg_temp.check('DIR  a non-staff user cannot move them', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.set_directory_settings(1, 1, 0)$a$, 'blocked',
+  $a$select public.set_directory_settings(1, 1)$a$, 'blocked',
   p_verify => $v$select directory_min_companies = 12 from public.homepage_settings where id$v$);
 
 select pg_temp.check('DIR  staff move them through the RPC, audited', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select (public.set_directory_settings(5, 3, 14)).trial_days = 14$a$, 'true',
+  $a$select (public.set_directory_settings(5, 3)).directory_min_companies = 3$a$, 'true',
   p_verify => $v$select exists (select 1 from public.audit_log
                                 where action = 'homepage_settings.updated'
                                   and reason = 'Praguri pentru lista de firme')$v$);
 
 select pg_temp.check('DIR  a threshold of zero is refused', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select public.set_directory_settings(0, 12, 30)$a$, 'blocked');
+  $a$select public.set_directory_settings(0, 12)$a$, 'blocked');
 
 -- ---------------------------------------------------------------------
 -- The compliance shield
@@ -2608,6 +2619,399 @@ select pg_temp.check('DIR  a route inside one country is marked as such', 'fix',
   null, 'anon',
   $a$select bool_and(is_domestic = (from_country = to_country))
      from public.v_departures_public$a$, 'true');
+
+-- =====================================================================
+-- ABO - abonamente: prices, periods, settings and the request queue
+--
+-- A price is what a company is asked to pay, so the rules around it are
+-- the ones worth pinning: anon reads only what is public, nobody but staff
+-- writes, a discount is never stored, and a paid plan never touches the
+-- verification. The request queue is a conversation, not a payment, and a
+-- manager sees only their own company's side of it.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- What anon may read
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  anon reads the public plans', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 3 from public.plans where is_public$a$, 'true');
+
+select pg_temp.check('ABO  a plan taken off sale is not readable by anon', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plans where code = 'carrier')$a$, 'true',
+  p_setup => $s$update public.plans set is_public = false where code = 'carrier'$s$);
+
+select pg_temp.check('ABO  anon reads the period totals', 'fix',
+  null, 'anon',
+  $a$select total_price_ron = 1490 from public.plan_billing_periods
+     where plan_code = 'carrier' and months = 12$a$, 'true');
+
+select pg_temp.check('ABO  a period taken off sale is not readable by anon', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plan_billing_periods
+                        where plan_code = 'carrier' and months = 12)$a$, 'true',
+  p_setup => $s$update public.plan_billing_periods set is_public = false
+                where plan_code = 'carrier' and months = 12$s$);
+
+-- A period belonging to a plan nobody can see is itself invisible, even
+-- when its own flag says public: otherwise taking a plan off sale would
+-- leave its prices on the page.
+select pg_temp.check('ABO  hiding the plan hides its periods too', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.plan_billing_periods where plan_code = 'carrier')$a$,
+  'true',
+  p_setup => $s$update public.plans set is_public = false where code = 'carrier'$s$);
+
+select pg_temp.check('ABO  anon reads the trial length and the VAT line', 'fix',
+  null, 'anon',
+  $a$select trial_days = 30 and vat_label is not null from public.pricing_settings where id$a$,
+  'true');
+
+select pg_temp.check('ABO  no discount percentage is stored anywhere', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public'
+         and table_name in ('plans', 'plan_billing_periods')
+         and (column_name like '%discount%' or column_name like '%percent%'))$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- Who may write a price
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  nobody writes a period through PostgREST', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.plan_billing_periods set total_price_ron = 1
+     where plan_code = 'carrier' and months = 12$a$, 'blocked',
+  p_verify => $v$select total_price_ron = 1490 from public.plan_billing_periods
+                 where plan_code = 'carrier' and months = 12$v$);
+
+select pg_temp.check('ABO  a carrier cannot change a period total', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_plan_period('carrier', 12, 1, true)$a$, 'blocked',
+  p_verify => $v$select total_price_ron = 1490 from public.plan_billing_periods
+                 where plan_code = 'carrier' and months = 12$v$);
+
+select pg_temp.check('ABO  staff change a period total through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan_period('carrier', 12, 1400, true)).total_price_ron = 1400$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'plan_period.updated')$v$);
+
+-- A "discount" that costs more than paying monthly is a typo in a form,
+-- and it would be printed on the page as a saving.
+select pg_temp.check('ABO  a period dearer than paying monthly is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan_period('carrier', 12, 99999, true)$a$, 'blocked');
+
+select pg_temp.check('ABO  a period other than 1, 6 or 12 months is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan_period('carrier', 3, 400, true)$a$, 'blocked');
+
+select pg_temp.check('ABO  a non-staff user cannot change the billing settings', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_pricing_settings(1, 'TVA inclus', false, 'x@test.ro')$a$, 'blocked',
+  p_verify => $v$select trial_days = 30 from public.pricing_settings where id$v$);
+
+select pg_temp.check('ABO  staff change them through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_pricing_settings(14, 'TVA inclus', false, 'facturi@test.ro')).trial_days = 14$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'pricing_settings.updated')$v$);
+
+-- An empty box means "say nothing about VAT", not an empty sentence under
+-- every price.
+select pg_temp.check('ABO  an empty VAT line becomes no line at all', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_pricing_settings(30, '   ', true, null)).vat_label is null$a$, 'true');
+
+-- ---------------------------------------------------------------------
+-- The recommendation
+-- ---------------------------------------------------------------------
+
+-- The RPC is the action, not the setup: p_setup runs before the role is
+-- set, so is_platform_admin() would see no caller at all.
+select pg_temp.check('ABO  one plan is recommended per audience, never two', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('business', 'Flotă', null, 'carrier', 449, true, true, '[]')).highlight$a$,
+  'true',
+  p_verify => $v$select count(*) = 1 from public.plans
+                 where highlight and audience = 'carrier'$v$);
+
+select pg_temp.check('ABO  recommending another plan stands the first one down', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_plan('business', 'Flotă', null, 'carrier', 449, true, true, '[]')).highlight$a$,
+  'true',
+  p_verify => $v$select not highlight from public.plans where code = 'carrier'$v$);
+
+select pg_temp.check('ABO  a plan with no audience cannot be the recommended one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not (public.set_plan('individual', 'Persoană fizică', null, null, 0, false, true, '[]')).highlight$a$,
+  'true');
+
+select pg_temp.check('ABO  a feature without a status is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 149, true, true,
+            '[{"key":"a","label":"Ceva"}]')$a$, 'blocked');
+
+select pg_temp.check('ABO  a feature with a status we cannot draw is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_plan('carrier', 'Transportator', null, 'carrier', 149, true, true,
+            '[{"key":"a","label":"Ceva","status":"maybe"}]')$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Asking for a plan
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  anon cannot read the request queue', 'guard',
+  null, 'anon', $a$select * from public.subscription_requests$a$, 'blocked');
+
+select pg_temp.check('ABO  nobody inserts a request through PostgREST', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.subscription_requests
+       (company_id, plan_code, months, requested_by)
+     values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+             'f0000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
+select pg_temp.check('ABO  a manager asks for a plan', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_subscription(
+       'fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+       'Vrem factură pe firmă')).status = 'new'$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'subscription_request.created')$v$);
+
+-- A dispatcher runs the day-to-day; committing the firm to a bill is the
+-- owner's or an admin's decision.
+select pg_temp.check('ABO  a dispatcher cannot commit the firm to a plan', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked');
+
+select pg_temp.check('ABO  nobody asks on behalf of another firm', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked');
+
+select pg_temp.check('ABO  a period that is not on sale cannot be requested', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 12)$a$,
+  'blocked',
+  p_setup => $s$update public.plan_billing_periods set is_public = false
+                where plan_code = 'carrier' and months = 12$s$);
+
+select pg_temp.check('ABO  a second open request is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.request_subscription('fc000000-0000-0000-0000-000000000001', 'carrier', 6)$a$,
+  'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  the team is told to invoice, and the firm gets it in writing', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_subscription(
+       'fc000000-0000-0000-0000-000000000001', 'carrier', 12)).id is not null$a$, 'true',
+  p_setup => $s$update public.pricing_settings set billing_contact_email = 'facturi@test.ro'$s$,
+  p_verify => $v$select count(*) = 2 from public.notification_outbox
+                 where template in ('subscription_request_staff',
+                                    'subscription_request_received')$v$);
+
+-- ---------------------------------------------------------------------
+-- Who sees a request
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  a manager sees their own firm''s request', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.subscription_requests$a$, 'true',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  another firm''s request is not visible', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.subscription_requests$a$, 'true',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+-- ---------------------------------------------------------------------
+-- Working the queue
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  a company cannot activate its own subscription', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select status = 'new' from public.subscription_requests
+                 order by created_at desc limit 1$v$);
+
+select pg_temp.check('ABO  staff activate it, and the plan is the one asked for', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified', is_suspended = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'carrier' and status = 'active'
+                   and current_period_end > now() + interval '300 days'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'
+                   and status in ('trialing', 'active', 'past_due')$v$);
+
+select pg_temp.check('ABO  activation is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'verified', is_suspended = false
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'subscription.activated')$v$);
+
+-- A plan is not a shortcut past the paperwork.
+select pg_temp.check('ABO  an unverified firm cannot be activated', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$do $d$
+    begin
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$);
+
+select pg_temp.check('ABO  paying never changes the verification', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))).status = 'activated'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      update public.companies
+      set verification_status = 'verified', is_suspended = false, verified_at = now()
+      where id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscription_requests
+        (company_id, plan_code, months, requested_by)
+      values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+              'f0000000-0000-0000-0000-000000000002');
+    end $d$$s$,
+  p_verify => $v$select verified_at is not null and verification_status = 'verified'
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  a rejection without a reason is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.reject_subscription_request(
+       (select id from public.subscription_requests limit 1), '   ')$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('ABO  a closed request cannot be activated afterwards', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.activate_subscription_request(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked',
+  p_setup => $s$insert into public.subscription_requests
+                  (company_id, plan_code, months, requested_by, status)
+                values ('fc000000-0000-0000-0000-000000000001', 'carrier', 12,
+                        'f0000000-0000-0000-0000-000000000002', 'rejected')$s$);
+
+-- ---------------------------------------------------------------------
+-- The trial starts at approval, not at sign-up
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('ABO  approving a firm starts its trial on the recommended plan', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.companies set verification_status = 'pending', company_type = 'transport'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'carrier' and status = 'trialing'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  the trial runs for the length in the settings', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.pricing_settings set trial_days = 45 where id;
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select current_period_end > now() + interval '44 days'
+                   and current_period_end < now() + interval '46 days'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ABO  a trial of zero days starts nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      update public.pricing_settings set trial_days = 0 where id;
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select not exists (select 1 from public.subscriptions
+                                    where company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+-- A firm that already pays must not be dropped back onto a trial by a
+-- later re-approval.
+select pg_temp.check('ABO  approval does not overwrite a subscription that exists', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_company('fc000000-0000-0000-0000-000000000001', true))
+            .verification_status = 'verified'$a$, 'true',
+  p_setup => $s$do $d$
+    begin
+      delete from public.subscriptions
+      where company_id = 'fc000000-0000-0000-0000-000000000001';
+      insert into public.subscriptions
+        (company_id, plan_code, status, current_period_end)
+      values ('fc000000-0000-0000-0000-000000000001', 'business', 'active',
+              now() + interval '200 days');
+      update public.companies set verification_status = 'pending'
+      where id = 'fc000000-0000-0000-0000-000000000001';
+    end $d$$s$,
+  p_verify => $v$select plan_code = 'business' and status = 'active'
+                 from public.subscriptions
+                 where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time

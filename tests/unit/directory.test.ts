@@ -58,7 +58,6 @@ function company(over: Partial<PublicCompany> = {}): PublicCompany {
 const thresholds: DirectoryThresholds = {
   statsMinCompanies: 20,
   directoryMinCompanies: 12,
-  trialDays: 30,
 };
 
 function stats(over: Partial<DirectoryStats> = {}): DirectoryStats {
