@@ -95,17 +95,27 @@ Don't. The pipeline is the only path to production, so that what is deployed
 is always what is on `main`. `vercel deploy` from a laptop would put code
 live that never passed the checks and that nobody can find in git history.
 
-**Today the Vercel project is also linked to the repository through
-Vercel's Git integration** (TIMAPP team, project `transport`, production
-branch `main`), so a push to `main` deploys production directly, and every
-branch gets a preview. That kept production up while `VERCEL_TOKEN` was not
-set. Once the pipeline's step 4 is green, turn the Git integration off for
-production, so the pipeline really is the only path:
+The Vercel project is linked to the repository through Vercel's Git
+integration (TIMAPP team, project `transport`, production branch `main`).
+Left alone, that means two deployers: Vercel on every push, and the
+pipeline. `vercel.json` turns Vercel's half off for every branch:
 
 ```json
-// vercel.json
-{ "git": { "deploymentEnabled": { "main": false } } }
+{ "git": { "deploymentEnabled": false } }
 ```
+
+`false`, not `{ "main": false }`: disabling only `main` would stop Vercel
+deploying production but leave it building a preview for every branch
+alongside the pipeline's preview — two URLs per pull request, one of which
+never ran the tests. The flag only governs **Git-triggered** deployments;
+`vercel deploy` with a token still works, which is exactly how the pipeline
+deploys.
+
+> **Order matters.** Merging `vercel.json` removes the Git integration as a
+> deployer, so the pipeline has to be able to deploy first. That needs
+> `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` in the repository
+> secrets and a green step 4 on a Main run. Merge it before that and nothing
+> deploys at all: Vercel is switched off and the pipeline cannot log in.
 
 ## Supabase
 
