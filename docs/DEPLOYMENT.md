@@ -1,48 +1,103 @@
-# Deployment — Vercel
+# Deployment
 
-## Current setup
+One source of truth, three systems that agree with it:
 
-- **Vercel project:** `eduardooo-s-projects/coridor`
-- **Production:** https://coridor-gray.vercel.app
-- **Deploys run on GitHub Actions** — `.github/workflows/deploy.yml`. A push
-  to `claude/saas-transport-exchange-w6f92q` deploys to production; a pull
-  request gets its own preview URL. Nothing deploys until typecheck, lint,
-  the unit tests and the database suites pass.
-- `NEXT_PUBLIC_SITE_URL` is set for Production. Preview builds fall back to
-  `VERCEL_URL` (see `src/config/brand.ts`).
+- **GitHub** is the only place code lives. `main` is the default branch and
+  takes no direct pushes.
+- **SAAS TRANSPORT** (`sspgyuavkjmzgbyqvunk`) is the only database. Nothing
+  but the `main` pipeline writes to it.
+- **Vercel** deploys production from `main` and nowhere else.
 
-### Three secrets make the pipeline work
+## Cum lucrăm
 
-Settings → Secrets and variables → Actions:
+Cele cinci reguli, pe scurt. Varianta completă este în `CLAUDE.md`.
+
+1. **La început de sesiune, uită-te la remote.** `git fetch`, ia `main`, apoi
+   vezi ce pull request-uri sunt deschise și ce branch-uri există. Dacă
+   altcineva lucrează deja în aceeași zonă, **oprește-te și spune**, nu
+   construi a doua variantă a aceluiași lucru.
+2. **Orice modificare merge pe un branch și într-un pull request.** Nu lăsa
+   munca doar pe laptop sau doar într-o sesiune. În `main` nu se împinge
+   direct.
+3. **La final de sesiune, dă push branch-ului și trimite linkul de pull
+   request.** O sesiune care se termină cu commit-uri nepublicate este, din
+   punctul de vedere al echipei, muncă pierdută.
+4. **Niciodată secrete în repository.** Configurarea locală vine din
+   `vercel env pull .env.local`. `.env.example` conține toate numele de
+   variabile și nicio valoare.
+5. **Nicio sesiune nu atinge baza de date.** Migrările ajung în SAAS
+   TRANSPORT doar prin pipeline-ul de pe `main` — niciun `supabase db push`
+   de pe laptop, nicio modificare manuală din dashboard. Scrii migrarea,
+   deschizi un pull request, iar merge-ul o aplică.
+
+## The flow
+
+```
+branch  →  pull request  →  preview  →  merge into main
+                                            │
+                                            ├─ 1. checks
+                                            ├─ 2. migrations  (db push)
+                                            ├─ 3. edge functions
+                                            ├─ 4. Vercel production
+                                            └─ 5. security advisors
+```
+
+**On a pull request** — `.github/workflows/pr.yml` runs typecheck, lint, the
+unit tests, `db:test` against a throwaway Postgres, the edge-function checks
+and the end-to-end suite, then deploys a preview and posts its URL as a
+comment on the pull request. Nothing here touches SAAS TRANSPORT.
+
+**On a push to `main`** — `.github/workflows/main.yml` runs the same checks
+and then, in order, stopping at the first failure:
+
+| Step | What it does |
+|---|---|
+| 1. Checks | everything the pull request ran, again, on the merged result |
+| 2. Migrations | `supabase db push --dry-run`, then the real push; the migration list and both outputs go into the run summary |
+| 3. Edge functions | deploys only the functions whose sources changed — everything, if `_shared` changed |
+| 4. Production | `vercel build --prod` and `vercel deploy --prebuilt --prod`, then checks the deployment answers |
+| 5. Advisors | security advisors into the run summary, separating new findings from the accepted ones |
+
+The whole file runs under `concurrency: main-release` with
+`cancel-in-progress: false`. That flag is deliberate: a run halfway through
+`supabase db push` must be allowed to finish, because cancelling it leaves
+the project's migration history disagreeing with the repository — the exact
+state this pipeline exists to prevent.
+
+## Secrets
+
+Settings → Secrets and variables → Actions. A missing one fails its job with
+a message naming it, rather than an authentication error from inside a CLI.
 
 | Secret | Where it comes from |
 |---|---|
+| `SUPABASE_ACCESS_TOKEN` | https://supabase.com/dashboard/account/tokens |
+| `SUPABASE_PROJECT_REF` | `sspgyuavkjmzgbyqvunk` |
+| `SUPABASE_DB_PASSWORD` | Supabase → Project Settings → Database |
 | `VERCEL_TOKEN` | https://vercel.com/account/tokens |
 | `VERCEL_ORG_ID` | `orgId` in `.vercel/project.json` after `vercel link` |
 | `VERCEL_PROJECT_ID` | `projectId` in the same file |
 
-Until all three are set the checks still run and the deploy step skips
-itself, writing what is missing into the run summary rather than failing
-with an opaque CLI error.
+Application environment variables are **not** duplicated into GitHub. Both
+workflows run `vercel pull`, so the Vercel project stays the one place they
+are set — and `vercel env pull .env.local` gives a laptop the same values.
 
-Application environment variables are **not** duplicated into GitHub. The
-workflow runs `vercel pull`, so the Vercel project stays the single place
-they are set.
+## Branch protection
 
-### Deploying by hand
+`main` requires a pull request, requires the checks to pass, and allows
+neither direct pushes nor force pushes. These are repository settings, not
+files: Settings → Branches → Add branch ruleset.
 
-Still possible, from a checkout with the CLI logged in:
+## Deploying by hand
 
-```bash
-vercel deploy            # preview
-vercel deploy --prod     # production
-```
+Don't. The pipeline is the only path to production, so that what is deployed
+is always what is on `main`. `vercel deploy` from a laptop would put code
+live that never passed the checks and that nobody can find in git history.
 
-The project was never linked to Vercel's own Git integration: Vercel
-refused the link because the logged-in GitHub account has no write access
-to `timappbusiness-lgtm/transport`. The Actions workflow does the same job
-without needing it, and runs the tests first, which the Git integration
-would not.
+The project was never linked to Vercel's own Git integration — Vercel
+refused the link because the logged-in GitHub account has no write access to
+`timappbusiness-lgtm/transport`. The workflow does the same job without
+needing it, and runs the tests first, which the Git integration would not.
 
 ## Supabase
 
@@ -100,17 +155,18 @@ helpers granted in migration `130300`, and `extension_in_public` for
 
 ## Turning the pipeline on (once)
 
-1. Link the project from a checkout, which writes `.vercel/project.json`:
+1. Link the Vercel project from a checkout, which writes
+   `.vercel/project.json`:
 
    ```bash
    vercel link            # pick eduardooo-s-projects / coridor
    cat .vercel/project.json
    ```
 
-2. Copy `orgId` and `projectId` into the repository secrets, together with a
-   token from https://vercel.com/account/tokens. The three names are in the
-   table above.
-3. Push, or run the workflow by hand from the Actions tab.
+2. Add all six repository secrets from the table above.
+3. Protect `main`: Settings → Branches → Add branch ruleset — require a pull
+   request, require the status checks, block direct and force pushes.
+4. Run **Main** once from the Actions tab to prove the whole chain.
 
 `.vercel/` is gitignored and must stay that way — it is machine state, not
 project configuration.
@@ -133,12 +189,21 @@ curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/
 curl -s -o /dev/null -w "%{http_code}\n" https://<deployment>/autentificare
 ```
 
-Both should be 200 — the workflow checks exactly these two after deploying.
+Both should be 200 — `scripts/ci/smoke-deployment.sh` checks exactly these
+two after every deploy, preview and production alike, because a build that
+succeeds and a site that answers are different things.
 
-If a run fails before the deploy step, it is the checks doing their job; read
-the failing job. If it fails inside the deploy step, the usual causes are a
-missing or expired `VERCEL_TOKEN`, or a missing `NEXT_PUBLIC_SITE_URL` making
-`new URL()` throw in `metadataBase`.
+Where a run fails tells you what broke:
+
+| Failing job | What it means |
+|---|---|
+| 1. Checks | the change is broken; nothing was deployed and the database was not touched |
+| 2. Migrations | a migration failed against the real project. **Production still runs the previous code**, because the deploy comes after. Fix forward with a new migration. |
+| 3. Edge functions | the schema is already migrated; the functions are not. Re-run the job. |
+| 4. Production | schema and functions are live, the site is not. Re-run the job. |
+| 5. Advisors | reporting only — never fails the release. |
+
+A missing or expired secret fails its job with a message naming it.
 
 ## Custom domain
 
