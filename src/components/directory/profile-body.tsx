@@ -172,7 +172,9 @@ function Capabilities({
         ? `${cc.coverageJudetean}: ${company.coverageCounties.map(countyName).join(', ')}`
         : null
       : company.coverageScope === 'international'
-        ? `${cc.coverageInternational} ${company.coverageCountries.map(countryName).join(', ')}`
+        ? // Romania first and unlabelled: it is always served, so a list that
+          // started with the foreign countries would read as if it were not.
+          ['România', ...company.coverageCountries.map(countryName)].join(', ')
         : cc.coverageNational;
 
   const categories = company.vehicleTypesAccepted

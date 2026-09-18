@@ -117,7 +117,6 @@ export const directoryCopy = {
       coverage: 'Acoperire',
       coverageJudetean: 'Județele',
       coverageNational: 'Toată România',
-      coverageInternational: 'România și',
       vehicleTypes: 'Categorii',
       services: 'Servicii',
       equipment: 'Dotări',
