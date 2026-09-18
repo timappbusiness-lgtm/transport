@@ -47,6 +47,9 @@ export interface PublicRequest {
   /** How many photographs the request carries, not the photographs. */
   photo_count: number;
   is_domestic: boolean;
+  /** ISO 3166-2:RO, resolved from the city on the server. null when unknown. */
+  from_county: string | null;
+  to_county: string | null;
 }
 
 export interface ActivityStats {

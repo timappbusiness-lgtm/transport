@@ -1,6 +1,12 @@
 import { createClient } from './supabase/server';
 import { isSupabaseConfigured } from './supabase/env';
-import { matchingRequests, type CarrierRoute } from './matching';
+import {
+  matchReasons,
+  matchingRequests,
+  type CarrierProfile,
+  type CarrierRoute,
+  type MatchReason,
+} from './matching';
 import type { PublicRequest } from './requests';
 import type { Company } from './auth/account';
 
@@ -41,8 +47,10 @@ export interface CarrierDashboard {
   seatsTaken: number;
   seatsTotal: number;
   contactsThisMonth: number;
-  /** Requests on the corridors this carrier actually runs. */
+  /** Requests this carrier's profile and routes say it can do. */
   matches: PublicRequest[];
+  /** Why each match was shown, keyed by request id. */
+  matchReasons: Record<string, MatchReason[]>;
   /**
    * When this snapshot was taken, ISO.
    *
@@ -66,6 +74,7 @@ export const NO_CARRIER_DASHBOARD: CarrierDashboard = {
   seatsTotal: 0,
   contactsThisMonth: 0,
   matches: [],
+  matchReasons: {},
   now: '1970-01-01T00:00:00.000Z',
 };
 
@@ -158,8 +167,21 @@ export async function loadCarrierDashboard(company: Company): Promise<CarrierDas
     seatsTaken: pendingBookings.reduce((sum, booking) => sum + booking.slots, 0),
     seatsTotal: routeRows.reduce((sum, row) => sum + (row.platform_slots_total ?? 0), 0),
     contactsThisMonth: contacts.count ?? 0,
-    matches: await loadMatches(routeRows),
+    ...(await loadMatches(routeRows, profileOf(company))),
     now,
+  };
+}
+
+/** The company row, as matching reads it. */
+function profileOf(company: Company): CarrierProfile {
+  return {
+    companyType: company.company_type,
+    coverageScope: company.coverage_scope,
+    coverageCounties: company.coverage_counties,
+    coverageCountries: company.coverage_countries,
+    vehicleTypesAccepted: company.vehicle_types_accepted,
+    equipment: company.equipment,
+    services: company.services,
   };
 }
 
@@ -173,8 +195,8 @@ export async function loadCarrierDashboard(company: Company): Promise<CarrierDas
  */
 async function loadMatches(
   routes: readonly { from_country: string; to_country: string; available_from: string; available_to: string | null }[],
-): Promise<PublicRequest[]> {
-  if (routes.length === 0) return [];
+  profile: CarrierProfile,
+): Promise<{ matches: PublicRequest[]; matchReasons: Record<string, MatchReason[]> }> {
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -185,7 +207,7 @@ async function loadMatches(
 
   if (error) {
     console.error('[acasă] matches query failed', { code: error.code, message: error.message });
-    return [];
+    return { matches: [], matchReasons: {} };
   }
 
   const carrierRoutes: CarrierRoute[] = routes.map((row) => ({
@@ -195,7 +217,19 @@ async function loadMatches(
     availableTo: row.available_to,
   }));
 
-  return matchingRequests((data ?? []) as PublicRequest[], carrierRoutes);
+  const matches = matchingRequests(
+    (data ?? []) as PublicRequest[],
+    carrierRoutes,
+    undefined,
+    profile,
+  );
+
+  const reasons: Record<string, MatchReason[]> = {};
+  for (const request of matches) {
+    reasons[request.id] = matchReasons(request, profile, carrierRoutes);
+  }
+
+  return { matches, matchReasons: reasons };
 }
 
 function startOfMonthUtc(): string {

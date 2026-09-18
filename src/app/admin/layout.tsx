@@ -13,6 +13,7 @@ const NAV = [
   { href: ROUTES.adminActivity, label: 'Activitate pe prima pagină' },
   { href: ROUTES.adminPrices, label: 'Prețuri orientative' },
   { href: ROUTES.adminSettings, label: 'Setări pentru lista de firme' },
+  { href: ROUTES.adminOptions, label: 'Dotări și servicii' },
   { href: ROUTES.adminCompanies, label: 'Firme în lista publică' },
   { href: ROUTES.adminPlans, label: 'Planuri' },
   { href: ROUTES.adminSubscriptions, label: 'Cereri de abonament' },

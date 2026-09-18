@@ -466,34 +466,46 @@ export type Database = {
       companies: {
         Row: {
           address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email: string | null
           contact_phone: string | null
           country: string
           county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
           created_at: string
           created_by: string | null
           cui: string
           display_name: string | null
+          equipment: string[]
           id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           is_suspended: boolean
           legal_name: string
           logo_path: string | null
+          profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          services: string[]
           slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
           verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
@@ -501,34 +513,46 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          alerts_email?: string | null
+          alerts_enabled?: boolean
           anaf_checked_at?: string | null
           anaf_is_inactive?: boolean | null
           anaf_payload?: Json | null
+          base_address_hidden?: boolean
           city?: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email?: string | null
           contact_phone?: string | null
           country?: string
           county?: string | null
+          coverage_counties?: string[]
+          coverage_countries?: string[]
+          coverage_scope?: Database["public"]["Enums"]["coverage_scope"]
           created_at?: string
           created_by?: string | null
           cui: string
           display_name?: string | null
+          equipment?: string[]
           id?: string
+          indicative_rate_note?: string | null
+          indicative_rate_ron_per_km?: number | null
           is_suspended?: boolean
           legal_name: string
           logo_path?: string | null
+          profile_updated_at?: string | null
           public_description?: string | null
           public_profile_enabled?: boolean
           rating_avg?: number | null
           rating_count?: number
           reg_com?: string | null
+          services?: string[]
           slug?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          vehicle_types_accepted?: Database["public"]["Enums"]["cargo_category"][]
           verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
           verified_at?: string | null
@@ -536,34 +560,46 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          alerts_email?: string | null
+          alerts_enabled?: boolean
           anaf_checked_at?: string | null
           anaf_is_inactive?: boolean | null
           anaf_payload?: Json | null
+          base_address_hidden?: boolean
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"]
           contact_email?: string | null
           contact_phone?: string | null
           country?: string
           county?: string | null
+          coverage_counties?: string[]
+          coverage_countries?: string[]
+          coverage_scope?: Database["public"]["Enums"]["coverage_scope"]
           created_at?: string
           created_by?: string | null
           cui?: string
           display_name?: string | null
+          equipment?: string[]
           id?: string
+          indicative_rate_note?: string | null
+          indicative_rate_ron_per_km?: number | null
           is_suspended?: boolean
           legal_name?: string
           logo_path?: string | null
+          profile_updated_at?: string | null
           public_description?: string | null
           public_profile_enabled?: boolean
           rating_avg?: number | null
           rating_count?: number
           reg_com?: string | null
+          services?: string[]
           slug?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
           trust_score?: number
           updated_at?: string
           vat_payer?: boolean | null
+          vehicle_types_accepted?: Database["public"]["Enums"]["cargo_category"][]
           verification_note?: string | null
           verification_status?: Database["public"]["Enums"]["company_verification_status"]
           verified_at?: string | null
@@ -1324,6 +1360,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      equipment_options: {
+        Row: {
+          code: string
+          created_at: string
+          description_ro: string | null
+          is_active: boolean
+          label_ro: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description_ro?: string | null
+          is_active?: boolean
+          label_ro: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description_ro?: string | null
+          is_active?: boolean
+          label_ro?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       homepage_settings: {
         Row: {
@@ -2412,6 +2478,36 @@ export type Database = {
           },
         ]
       }
+      service_options: {
+        Row: {
+          code: string
+          created_at: string
+          description_ro: string | null
+          is_active: boolean
+          label_ro: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description_ro?: string | null
+          is_active?: boolean
+          label_ro: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description_ro?: string | null
+          is_active?: boolean
+          label_ro?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscription_requests: {
         Row: {
           company_id: string
@@ -3365,7 +3461,13 @@ export type Database = {
           company_type: Database["public"]["Enums"]["company_type"] | null
           compliant_vehicles: number | null
           county: string | null
+          coverage_counties: string[] | null
+          coverage_countries: string[] | null
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"] | null
           cui: string | null
+          equipment: string[] | null
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           last_checked_at: string | null
           legal_name: string | null
           logo_path: string | null
@@ -3375,15 +3477,26 @@ export type Database = {
           rating_count: number | null
           serves_international: boolean | null
           serves_national: boolean | null
+          services: string[] | null
           slug: string | null
+          vehicle_types_accepted:
+            Database["public"]["Enums"]["cargo_category"][] | null
+          vehicles_total: number | null
           verified_since: string | null
+          website: string | null
         }
         Insert: {
-          city?: string | null
+          city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
           compliant_vehicles?: never
           county?: string | null
+          coverage_counties?: string[] | null
+          coverage_countries?: string[] | null
+          coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          equipment?: string[] | null
+          indicative_rate_note?: string | null
+          indicative_rate_ron_per_km?: number | null
           last_checked_at?: never
           legal_name?: string | null
           logo_path?: string | null
@@ -3393,15 +3506,26 @@ export type Database = {
           rating_count?: number | null
           serves_international?: never
           serves_national?: never
+          services?: string[] | null
           slug?: string | null
+          vehicle_types_accepted?:
+            Database["public"]["Enums"]["cargo_category"][] | null
+          vehicles_total?: never
           verified_since?: string | null
+          website?: string | null
         }
         Update: {
-          city?: string | null
+          city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
           compliant_vehicles?: never
           county?: string | null
+          coverage_counties?: string[] | null
+          coverage_countries?: string[] | null
+          coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          equipment?: string[] | null
+          indicative_rate_note?: string | null
+          indicative_rate_ron_per_km?: number | null
           last_checked_at?: never
           legal_name?: string | null
           logo_path?: string | null
@@ -3411,8 +3535,13 @@ export type Database = {
           rating_count?: number | null
           serves_international?: never
           serves_national?: never
+          services?: string[] | null
           slug?: string | null
+          vehicle_types_accepted?:
+            Database["public"]["Enums"]["cargo_category"][] | null
+          vehicles_total?: never
           verified_since?: string | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -3590,6 +3719,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: boolean
       }
+      company_matches_request: {
+        Args: { p_company_id: string; p_listing_id: string }
+        Returns: boolean
+      }
       company_review_readiness: {
         Args: { p_company_id: string }
         Returns: {
@@ -3681,34 +3814,46 @@ export type Database = {
         }
         Returns: {
           address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email: string | null
           contact_phone: string | null
           country: string
           county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
           created_at: string
           created_by: string | null
           cui: string
           display_name: string | null
+          equipment: string[]
           id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           is_suspended: boolean
           legal_name: string
           logo_path: string | null
+          profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          services: string[]
           slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
           verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
@@ -3875,6 +4020,10 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: boolean
       }
+      is_country_code_array: {
+        Args: { p_codes: string[] }
+        Returns: boolean
+      }
       is_platform_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3932,6 +4081,14 @@ export type Database = {
           invited_by_name: string
           role: Database["public"]["Enums"]["company_member_role"]
         }[]
+      }
+      normalise_phone: {
+        Args: { p_phone: string }
+        Returns: string
+      }
+      normalise_website: {
+        Args: { p_url: string }
+        Returns: string
       }
       owns_offer_listing: {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
@@ -4033,34 +4190,46 @@ export type Database = {
         Args: { p_approve: boolean; p_company_id: string; p_reason?: string }
         Returns: {
           address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email: string | null
           contact_phone: string | null
           country: string
           county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
           created_at: string
           created_by: string | null
           cui: string
           display_name: string | null
+          equipment: string[]
           id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           is_suspended: boolean
           legal_name: string
           logo_path: string | null
+          profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          services: string[]
           slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
           verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
@@ -4115,6 +4284,10 @@ export type Database = {
           status: string
         }
       }
+      ro_county_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       run_compliance_sweep: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4131,34 +4304,46 @@ export type Database = {
         Args: { p_company_id: string; p_enabled: boolean; p_reason?: string }
         Returns: {
           address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email: string | null
           contact_phone: string | null
           country: string
           county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
           created_at: string
           created_by: string | null
           cui: string
           display_name: string | null
+          equipment: string[]
           id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           is_suspended: boolean
           legal_name: string
           logo_path: string | null
+          profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          services: string[]
           slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
           verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
@@ -4180,6 +4365,24 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           verified_companies_min: number
+        }
+      }
+      set_equipment_option: {
+        Args: {
+          p_code: string
+          p_description_ro?: string
+          p_is_active?: boolean
+          p_label_ro: string
+          p_sort_order?: number
+        }
+        Returns: {
+          code: string
+          created_at: string
+          description_ro: string | null
+          is_active: boolean
+          label_ro: string
+          sort_order: number
+          updated_at: string
         }
       }
       set_homepage_settings: {
@@ -4339,6 +4542,24 @@ export type Database = {
           vat_label: string | null
         }
       }
+      set_service_option: {
+        Args: {
+          p_code: string
+          p_description_ro?: string
+          p_is_active?: boolean
+          p_label_ro: string
+          p_sort_order?: number
+        }
+        Returns: {
+          code: string
+          created_at: string
+          description_ro: string | null
+          is_active: boolean
+          label_ro: string
+          sort_order: number
+          updated_at: string
+        }
+      }
       show_limit: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -4355,39 +4576,55 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: {
           address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
           contact_email: string | null
           contact_phone: string | null
           country: string
           county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
           created_at: string
           created_by: string | null
           cui: string
           display_name: string | null
+          equipment: string[]
           id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
           is_suspended: boolean
           legal_name: string
           logo_path: string | null
+          profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
           rating_avg: number | null
           rating_count: number
           reg_com: string | null
+          services: string[]
           slug: string | null
           suspended_at: string | null
           suspension_reason: string | null
           trust_score: number
           updated_at: string
           vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
           verification_note: string | null
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
           website: string | null
         }
+      }
+      tidy_codes: {
+        Args: { p_codes: string[]; p_upper: boolean }
+        Returns: string[]
       }
       transfer_company_ownership: {
         Args: {
@@ -4455,6 +4692,7 @@ export type Database = {
       company_type: "expeditie" | "transport" | "both"
       company_verification_status:
         "draft" | "pending" | "verified" | "rejected" | "suspended"
+      coverage_scope: "judetean" | "national" | "international"
       currency_code: "RON" | "EUR"
       document_kind:
         | "licenta_comunitara"
@@ -4686,6 +4924,7 @@ export const Constants = {
         "rejected",
         "suspended",
       ],
+      coverage_scope: ["judetean", "national", "international"],
       currency_code: ["RON", "EUR"],
       document_kind: [
         "licenta_comunitara",

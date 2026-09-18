@@ -38,6 +38,19 @@ Captured with Chromium at a device pixel ratio of 2, at 1440 (desktop) and
 | `cereri-goale-1440.png`, `cereri-goale-390.png` | `/cereri` as it ships: nothing published yet, so the board says so and offers the one thing that fills it. |
 | `cereri-panou-1440.png`, `cereri-panou-390.png` | The board's cards with requests on it. |
 | `cont-cereri-1440.png`, `cont-cereri-390.png` | `/cont/cereri`: one request on the board, one draft and one expired, each with what it can do next. |
+| `firma-identitate-1440.png`, `firma-identitate-390.png` | `/cont/firma`, the identity tab: the ANAF fields frozen after verification, the contact details, and the switch that keeps the locality off the public profile. |
+| `firma-acoperire-1440.png`, `firma-acoperire-390.png` | The coverage tab with „România și alte țări" chosen — the county list is not rendered at all, because the scope decides which of the two lists means anything. |
+| `firma-dotari-1440.png`, `firma-dotari-390.png` | Services, equipment and the indicative rate. The fleet count at the bottom is read from `vehicles`, which is why it has no input. |
+| `firma-alerte-1440.png` | The alerts tab: e-mail only, and the four rules `company_matches_request` actually applies, written out. |
+| `firma-profil-public-1440.png`, `firma-profil-public-390.png` | What a client sees: the new „Ce transportă" block above the compliance shield. |
+| `admin-optiuni-1440.png` | `/admin/optiuni`, where the two vocabularies are grown. The code of an existing option is read-only — it is stored on every company that ticked it. |
+
+Two notes on the six profile rows above: the mobile ones are
+viewport-height rather than full page, because the save bar is
+`position: sticky` there and a full-page capture paints it wherever the
+sticky element happens to sit instead of at the bottom of the screen; and
+the header overlapping content on the scrolled mobile shots is the app's
+floating header doing what it does everywhere.
 
 **The ones showing populated data were rendered through a throwaway route**,
 not from a live database: this checkout cannot reach a Supabase instance, and

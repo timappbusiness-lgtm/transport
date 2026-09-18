@@ -10,6 +10,14 @@ import { MAX_PUBLIC_DESCRIPTION } from '@/lib/directory';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import { accountCopy } from '@/content/account';
+import { firmaCopy } from '@/content/firma';
+import {
+  MAX_RATE,
+  MIN_RATE,
+  normaliseContactPhone,
+  normaliseWebsite,
+  tidyCodes,
+} from '@/lib/company-profile';
 import {
   isCompanyType,
   normaliseCui,
@@ -197,51 +205,6 @@ export async function createCompanyAction(
 
   revalidatePath('/cont', 'layout');
   redirect(ROUTES.accountCompany);
-}
-
-export async function updateCompanyAction(
-  _previous: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const context = await requireContext();
-  if (!context.activeCompany) return { error: 'Nu ai o firmă activă.' };
-
-  const isDraft = context.activeCompany.verification_status === 'draft';
-
-  // Identity fields are only sent while the company is still a draft. The
-  // database refuses them afterwards either way (`guard_company_write`);
-  // omitting them here just means the user gets the form they can act on
-  // rather than an error they cannot.
-  const patch: Record<string, string | null> = {
-    county: text(formData, 'county').trim() || null,
-    city: text(formData, 'city').trim() || null,
-    contact_email: text(formData, 'contactEmail').trim() || null,
-    contact_phone: text(formData, 'contactPhone').trim() || null,
-  };
-
-  if (isDraft) {
-    const legalName = text(formData, 'legalName').trim();
-    const companyType = text(formData, 'companyType');
-    if (legalName === '') {
-      return { fieldErrors: { legalName: 'Introdu denumirea firmei.' } };
-    }
-    if (!isCompanyType(companyType)) {
-      return { fieldErrors: { companyType: 'Alege tipul de activitate.' } };
-    }
-    patch.legal_name = legalName;
-    patch.company_type = companyType;
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from('companies')
-    .update(patch)
-    .eq('id', context.activeCompany.id);
-
-  if (error) return { error: toAppError(error, 'updateCompany').message };
-
-  revalidatePath('/cont', 'layout');
-  return { notice: 'Datele firmei au fost salvate.' };
 }
 
 // ---------------------------------------------------------------------
@@ -635,4 +598,197 @@ export async function setCompanyLogoAction(path: string | null): Promise<ActionS
   revalidatePath(ROUTES.accountCompany);
   updateTag(DIRECTORY_TAG);
   return { notice: accountCopy.publicProfile.saved };
+}
+
+// ---------------------------------------------------------------------
+// The company profile: coverage, capabilities and alerts
+//
+// One action per tab, because saving is per tab: a manager who fixed the
+// telephone number should not have their half-finished county list sent
+// with it, and an error has to be attributable to the tab that can fix it.
+//
+// Nothing here decides anything. The values are cleaned by the same rules
+// `src/lib/company-profile.ts` states, sent, and whatever the trigger in
+// migration 20260918090000 refuses comes back as its own Romanian message.
+// ---------------------------------------------------------------------
+
+function checked(formData: FormData, name: string): boolean {
+  return formData.get(name) === 'on';
+}
+
+/** Every value of a repeated checkbox, cleaned the way `tidy_codes` does. */
+function codes(formData: FormData, name: string, upper: boolean): string[] {
+  return tidyCodes(
+    formData.getAll(name).filter((v): v is string => typeof v === 'string'),
+    upper,
+  );
+}
+
+async function saveCompany(
+  companyId: string,
+  patch: Record<string, unknown>,
+  context: string,
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const { error } = await supabase.from('companies').update(patch).eq('id', companyId);
+  if (error) return { error: toAppError(error, context).message };
+
+  revalidatePath(ROUTES.accountCompany);
+  updateTag(DIRECTORY_TAG);
+  return { notice: firmaCopy.saved };
+}
+
+export async function updateCompanyIdentityAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  const phone = text(formData, 'contactPhone').trim();
+  const email = text(formData, 'contactEmail').trim();
+  const website = text(formData, 'website').trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (phone !== '' && normaliseContactPhone(phone) === null) {
+    fieldErrors.contactPhone = 'Scrie numărul în forma +40722000111.';
+  }
+  if (website !== '' && normaliseWebsite(website) === null) {
+    fieldErrors.website = 'Scrie adresa în forma https://firma.ro.';
+  }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
+
+  const patch: Record<string, unknown> = {
+    contact_phone: phone === '' ? null : phone,
+    contact_email: email === '' ? null : email,
+    website: website === '' ? null : website,
+    county: text(formData, 'county').trim() || null,
+    city: text(formData, 'city').trim() || null,
+    address: text(formData, 'address').trim() || null,
+    base_address_hidden: checked(formData, 'baseAddressHidden'),
+  };
+
+  // Identity is editable only while the company is a draft — the same rule
+  // `guard_company_write` enforces. Leaving the fields out afterwards is
+  // not the protection; it is so a manager gets a form they can act on
+  // rather than an error about a box that should not have been there.
+  if (company.verification_status === 'draft') {
+    const legalName = text(formData, 'legalName').trim();
+    const companyType = text(formData, 'companyType');
+    if (legalName === '') {
+      return { fieldErrors: { legalName: 'Introdu denumirea firmei.' } };
+    }
+    if (!isCompanyType(companyType)) {
+      return { fieldErrors: { companyType: 'Alege tipul de activitate.' } };
+    }
+    patch.legal_name = legalName;
+    patch.company_type = companyType;
+  }
+
+  return saveCompany(company.id, patch, 'firma.identity');
+}
+
+export async function updateCoverageAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  const scope = text(formData, 'coverageScope');
+  if (scope !== 'judetean' && scope !== 'national' && scope !== 'international') {
+    return { fieldErrors: { coverageScope: 'Alege zona în care transporți.' } };
+  }
+
+  const counties = codes(formData, 'coverageCounties', true);
+  const countries = codes(formData, 'coverageCountries', true);
+
+  if (scope === 'judetean' && counties.length === 0) {
+    return { fieldErrors: { coverageCounties: 'Alege cel puțin un județ în care transporți.' } };
+  }
+  if (scope === 'international' && countries.length === 0) {
+    return { fieldErrors: { coverageCountries: 'Alege cel puțin o țară în afara României.' } };
+  }
+
+  // The scope decides which of the two lists means anything, and the
+  // trigger clears the other one anyway. Sending them empty keeps the two
+  // sides saying the same thing.
+  return saveCompany(
+    company.id,
+    {
+      coverage_scope: scope,
+      coverage_counties: scope === 'judetean' ? counties : [],
+      coverage_countries: scope === 'international' ? countries : [],
+    },
+    'firma.coverage',
+  );
+}
+
+export async function updateCapabilitiesAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  const rawRate = text(formData, 'indicativeRate').trim().replace(',', '.');
+  const note = text(formData, 'indicativeRateNote').trim();
+
+  let rate: number | null = null;
+  if (rawRate !== '') {
+    const value = Number(rawRate);
+    if (!Number.isFinite(value) || value < MIN_RATE || value > MAX_RATE) {
+      return {
+        fieldErrors: {
+          indicativeRate: `Tariful orientativ este între ${MIN_RATE} și ${MAX_RATE} lei pe kilometru.`,
+        },
+      };
+    }
+    rate = value;
+  } else if (note !== '') {
+    return { fieldErrors: { indicativeRate: 'Scrie tariful înainte de observația despre el.' } };
+  }
+
+  return saveCompany(
+    company.id,
+    {
+      vehicle_types_accepted: formData
+        .getAll('vehicleTypesAccepted')
+        .filter((v): v is string => typeof v === 'string'),
+      equipment: codes(formData, 'equipment', false),
+      services: codes(formData, 'services', false),
+      indicative_rate_ron_per_km: rate,
+      indicative_rate_note: note === '' ? null : note,
+    },
+    'firma.capabilities',
+  );
+}
+
+export async function updateAlertsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const context = await requireContext();
+  const company = context.activeCompany;
+  if (!company) return { error: 'Nu ai o firmă activă.' };
+
+  const enabled = checked(formData, 'alertsEnabled');
+  const email = text(formData, 'alertsEmail').trim();
+
+  // A switch with nowhere to send is a switch that does nothing, and the
+  // account screen is the only place that can say so before it is on.
+  if (enabled && email === '' && (company.contact_email ?? '') === '') {
+    return {
+      fieldErrors: { alertsEmail: 'Lasă o adresă de e-mail la care să primești alertele.' },
+    };
+  }
+
+  return saveCompany(
+    company.id,
+    { alerts_enabled: enabled, alerts_email: email === '' ? null : email },
+    'firma.alerts',
+  );
 }

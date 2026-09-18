@@ -6,6 +6,7 @@ import { ROUTES, requestRoute } from '@/config/routes';
 import { getAccountContext } from '@/lib/auth/account';
 import { signInUrlFor } from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
+import { countyCodeForCity } from '@/lib/counties';
 import {
   coordinatesFor,
   isoToday,
@@ -68,6 +69,14 @@ export async function publishRequestAction(
   const from = coordinatesFor(draft.fromCity, draft.fromCountry);
   const to = coordinatesFor(draft.toCity, draft.toCountry);
 
+  // Resolved here for the same reason as the coordinates: from the city
+  // list on the server, never from the form. The county is what a
+  // county-only carrier's coverage is matched against, so a browser that
+  // could choose it could put a request in front of a firm that does not
+  // serve it.
+  const fromCounty = countyCodeForCity(draft.fromCity, draft.fromCountry);
+  const toCounty = countyCodeForCity(draft.toCity, draft.toCountry);
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .rpc('create_cargo_request', {
@@ -99,6 +108,8 @@ export async function publishRequestAction(
       p_from_lng: from?.lng ?? null,
       p_to_lat: to?.lat ?? null,
       p_to_lng: to?.lng ?? null,
+      p_from_county: fromCounty,
+      p_to_county: toCounty,
     });
 
   // A function returning a table comes back as an array of one. `.single()`

@@ -36,6 +36,8 @@ const REQUEST: PublicRequest = {
   needs_winch: false,
   photo_count: 0,
   is_domestic: false,
+  from_county: null,
+  to_county: null,
 };
 
 function render(request: PublicRequest, className?: string): string {

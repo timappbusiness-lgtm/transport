@@ -1750,10 +1750,10 @@ select pg_temp.check('PRP  the corridor medians are still their own thing', 'gua
 select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'board','category','estimated_km','from_city','from_country','id',
-       'is_domestic','is_running','loading_from','loading_to','make','model',
+       'board','category','estimated_km','from_city','from_country','from_county',
+       'id','is_domestic','is_running','loading_from','loading_to','make','model',
        'needs_winch','photo_count','published_at','service_type','to_city',
-       'to_country','weight_kg','year'
+       'to_country','to_county','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -2404,9 +2404,12 @@ select pg_temp.check('REV  nor clear a rejection note they did not like', 'fix',
 select pg_temp.check('DIR  the directory carries only what a profile shows', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'city','company_type','compliant_vehicles','county','cui','last_checked_at',
-       'legal_name','logo_path','name','public_description','rating_avg','rating_count',
-       'serves_international','serves_national','slug','verified_since'
+       'city','company_type','compliant_vehicles','county','coverage_counties',
+       'coverage_countries','coverage_scope','cui','equipment','indicative_rate_note',
+       'indicative_rate_ron_per_km','last_checked_at','legal_name','logo_path','name',
+       'public_description','rating_avg','rating_count','serves_international',
+       'serves_national','services','slug','vehicle_types_accepted','vehicles_total',
+       'verified_since','website'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_public_companies'$a$, 'true');
@@ -3505,6 +3508,561 @@ select pg_temp.check('REQ  no function writes the retired statuses', 'fix',
        where n.nspname = 'public'
          and (p.prosrc like '%''assigned''%' or p.prosrc like '%''completed''%'))$a$,
   'true');
+
+-- =====================================================================
+-- FIRM - the company profile (coverage, capabilities, alerts)
+--
+-- Migration 20260918090000 gave `companies` the half that says what the
+-- firm carries, where, and with what. Three things are being checked
+-- here and they are different in kind:
+--
+--   * who may write it — a manager, and nobody else;
+--   * what shape it is stored in — the normalising trigger, which is
+--     the reason every reader downstream can compare codes with `=`;
+--   * what it causes — an e-mail to a carrier when a request it can do
+--     turns up, and not to one it cannot.
+--
+-- The third is the one worth the most: a matching rule that is only in
+-- TypeScript is a matching rule that stops being true the first time
+-- somebody writes a script.
+-- =====================================================================
+
+select pg_temp.check('FIRM a manager states where the firm carries', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies
+     set coverage_scope = 'judetean', coverage_counties = array['CJ', 'TM']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select coverage_counties = array['CJ', 'TM'] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM a dispatcher does not', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$update public.companies set coverage_scope = 'international',
+         coverage_countries = array['DE']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select coverage_scope = 'national' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM nor somebody from another firm', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set equipment = array['troliu']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select equipment = '{}'::text[] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM nor a visitor', 'fix',
+  null, 'anon',
+  $a$update public.companies set services = array['tractare']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select services = '{}'::text[] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- ---------------------------------------------------------------------
+-- The shape it is stored in
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('FIRM a telephone number is stored one way', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set contact_phone = '0722 000 111'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select contact_phone = '+40722000111' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM and 0040 is the same number', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set contact_phone = '0040-722-000-111'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select contact_phone = '+40722000111' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM something that is not a number is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set contact_phone = '0722'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select contact_phone = '+40711000002' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM a website gets the scheme nobody types', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set website = 'firma-a.ro'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select website = 'https://firma-a.ro' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM http is upgraded and the host lower-cased', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set website = 'http://Firma-A.RO/Despre-Noi'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select website = 'https://firma-a.ro/Despre-Noi' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- Whoever copied this link out of a newsletter would otherwise have every
+-- visit from this directory reported to their campaign, for years.
+select pg_temp.check('FIRM the campaign that linked it is not stored', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies
+     set website = 'https://firma-a.ro/servicii?utm_source=nl&gclid=7&pagina=2#top'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select website = 'https://firma-a.ro/servicii?pagina=2' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM a website that is not one is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set website = 'firma-a'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('FIRM codes arrive sorted and said once', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies
+     set coverage_scope = 'judetean', coverage_counties = array['tm', 'CJ', ' cj ', 'AB']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select coverage_counties = array['AB', 'CJ', 'TM'] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- ---------------------------------------------------------------------
+-- What the columns have to add up to
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('FIRM a county carrier with no county is a half-filled form', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set coverage_scope = 'judetean', coverage_counties = '{}'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select coverage_scope = 'national' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM so is an international one with no country', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set coverage_scope = 'international', coverage_countries = '{}'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- A firm that grew out of its county must not keep six counties that a
+-- later reader would take for the whole truth.
+select pg_temp.check('FIRM going national clears the counties behind it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set coverage_scope = 'national'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set coverage_scope = 'judetean', coverage_counties = array['CJ']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select coverage_counties = '{}'::text[] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM a county that is not one of the 42 is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set coverage_scope = 'judetean',
+         coverage_counties = array['CJ', 'ZZ']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('FIRM neither is a country code that is not one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set coverage_scope = 'international',
+         coverage_countries = array['DE', 'Germania']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('FIRM a piece of kit nobody has heard of is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set equipment = array['troliu', 'macara_spatiala']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select equipment = '{}'::text[] from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM and so is a service that is not offered', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set services = array['transport_spatial']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- Retiring an option must not lock the firms that already have it out of
+-- editing their telephone number.
+select pg_temp.check('FIRM retiring an option leaves the firms that have it alone', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set contact_email = 'nou@test.ro'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_setup => $s$update public.companies set equipment = array['troliu']
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                update public.equipment_options set is_active = false where code = 'troliu'$s$,
+  p_verify => $v$select equipment = array['troliu'] and contact_email = 'nou@test.ro'
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM but it cannot be ticked again afterwards', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set equipment = array['troliu']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$update public.equipment_options set is_active = false where code = 'troliu'$s$);
+
+select pg_temp.check('FIRM a note about a rate needs a rate beside it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set indicative_rate_note = 'Negociabil peste 500 km'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('FIRM a rate nobody could mean is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set indicative_rate_ron_per_km = 0
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+select pg_temp.check('FIRM a description longer than the box is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set public_description = repeat('a', 301)
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The clock on the profile
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('FIRM the profile clock is not the company''s to set', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set profile_updated_at = now() - interval '400 days'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select profile_updated_at is null from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM it moves when the profile does', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set services = array['tractare']
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select profile_updated_at is not null from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM and stays put when something else does', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set contact_email = 'altul@test.ro'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_verify => $v$select profile_updated_at is null from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- ---------------------------------------------------------------------
+-- The vocabulary
+-- ---------------------------------------------------------------------
+
+-- The same literal as `tests/unit/counties.test.ts`. Two copies of this
+-- list exist — `src/lib/counties.ts` builds the checkbox grid, this one is
+-- what the CHECK on coverage_counties accepts — and a county added to one
+-- and not the other fails on save, which is a bad way to find out.
+select pg_temp.check('FIRM the two county lists agree', 'fix',
+  null, 'anon',
+  $a$select (select array_agg(c order by c) from unnest(public.ro_county_codes()) as c) = array[
+       'AB','AG','AR','B','BC','BH','BN','BR','BT','BV','BZ','CJ',
+       'CL','CS','CT','CV','DB','DJ','GJ','GL','GR','HD','HR','IF',
+       'IL','IS','MH','MM','MS','NT','OT','PH','SB','SJ','SM','SV',
+       'TL','TM','TR','VL','VN','VS'
+     ]$a$, 'true');
+
+select pg_temp.check('FIRM anybody reads the options the form offers', 'fix',
+  null, 'anon',
+  $a$select count(*) > 5 from public.equipment_options where is_active$a$, 'true');
+
+select pg_temp.check('FIRM a retired option is not offered any more', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.service_options where code = 'tractare'$a$, 'true',
+  p_setup => $s$update public.service_options set is_active = false where code = 'tractare'$s$);
+
+select pg_temp.check('FIRM nobody writes an option from the browser', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.equipment_options (code, label_ro) values ('inventat', 'Inventat')$a$,
+  'blocked',
+  p_verify => $v$select not exists (select 1 from public.equipment_options where code = 'inventat')$v$);
+
+select pg_temp.check('FIRM nor changes one through the RPC without being staff', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_equipment_option('troliu', 'Troliu de mare capacitate')$a$, 'blocked',
+  p_verify => $v$select label_ro = 'Troliu' from public.equipment_options where code = 'troliu'$v$);
+
+select pg_temp.check('FIRM the platform adds one, and it is written down', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_service_option('transport_ambarcatiuni', 'Ambarcațiuni', null, 110)$a$,
+  'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.service_options where code = 'transport_ambarcatiuni')
+                 and exists (
+                   select 1 from public.audit_log
+                   where action = 'service_option.created')$v$);
+
+select pg_temp.check('FIRM a code that would not survive a URL is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_service_option('Transport Ambarcațiuni', 'Ambarcațiuni')$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- What the public profile says, and what it keeps back
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('FIRM the directory carries the coverage', 'fix',
+  null, 'anon',
+  $a$select coverage_scope = 'international' and coverage_countries = array['DE', 'IT']
+     from public.v_public_companies where cui = '90000001'$a$, 'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verified_at = now(),
+                    coverage_scope = 'international',
+                    coverage_countries = array['IT', 'DE']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- A firm run from a flat should be able to say where it works without
+-- publishing where it sleeps.
+select pg_temp.check('FIRM a hidden base address takes the city with it', 'fix',
+  null, 'anon',
+  $a$select city is null and county = 'Timiș'
+     from public.v_public_companies where cui = '90000001'$a$, 'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verified_at = now(),
+                    city = 'Timișoara', county = 'Timiș', base_address_hidden = true
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('FIRM and leaves it there when it is not hidden', 'fix',
+  null, 'anon',
+  $a$select city = 'Timișoara' from public.v_public_companies where cui = '90000001'$a$, 'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verified_at = now(),
+                    city = 'Timișoara', county = 'Timiș', base_address_hidden = false
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('FIRM the fleet count is counted, not claimed', 'fix',
+  null, 'anon',
+  $a$select vehicles_total = 2 from public.v_public_companies where cui = '90000001'$a$, 'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verified_at = now()
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('FIRM the alert address is nobody else''s business', 'fix',
+  null, 'anon', $a$select alerts_email from public.v_public_companies$a$, 'blocked',
+  p_missing_ok => true);
+
+-- ---------------------------------------------------------------------
+-- The e-mail a request causes
+--
+-- The trigger writes to the same outbox the nightly reminders use; n8n
+-- delivers it. A row here is the decision, which is the part that has to
+-- be right.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('FIRM a request it can do reaches the carrier', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a1'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national',
+                    equipment = array['troliu']
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a1', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Logan de dus', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a1', 'autoturism')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'request_match_alert'
+                     and recipient_company_id = 'fc000000-0000-0000-0000-000000000001'
+                     and to_email = 'a@test.ro')$v$);
+
+select pg_temp.check('FIRM a firm that did not ask for alerts is left alone', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a1'$a$, 'allowed',
+  p_setup => $s$insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a1', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Logan de dus', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a1', 'autoturism')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM a firm is not told about its own request', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a2'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a2',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'curse', 'vehicul',
+                        'Subcontractare', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a2', 'autoturism')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox
+                   where template = 'request_match_alert'
+                     and recipient_company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+-- The one hard capability rule in this marketplace.
+select pg_temp.check('FIRM a car that does not roll needs a firm with a winch', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a3'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national', equipment = '{}'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a3', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Nu pornește', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category, is_running)
+                values ('f1000000-0000-0000-0000-0000000000a3', 'autoturism', false)$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM and reaches the one that has it', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a3'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national',
+                    equipment = array['troliu']
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a3', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Nu pornește', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category, is_running)
+                values ('f1000000-0000-0000-0000-0000000000a3', 'autoturism', false)$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM a national carrier is not sent a route abroad', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a4'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a4', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Golf din München', 'DE', 'München', 'RO', 'Cluj-Napoca',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a4', 'autoturism')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM a county carrier is not sent the other end of the country', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a5'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'judetean',
+                    coverage_counties = array['CJ', 'TM']
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_county, loading_city,
+                  unloading_country, unloading_county, unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a5', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Dacia de la mare', 'RO', 'CT', 'Constanța',
+                        'RO', 'IS', 'Iași', current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a5', 'autoturism')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM a firm that does not carry lorries is not offered one', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a6'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national',
+                    vehicle_types_accepted = array['autoturism']::public.cargo_category[]
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a6', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Camion de mutat', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a6', 'camion')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+select pg_temp.check('FIRM a firm still in review is not e-mailed', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a7'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national',
+                    verification_status = 'pending'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a7', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Logan de dus', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a7', 'autoturism')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_outbox where template = 'request_match_alert')$v$);
+
+-- A request withdrawn and put back is the same request, and the carrier
+-- who already read about it should not read about it twice.
+select pg_temp.check('FIRM republishing does not send it again', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a8'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a8', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Logan de dus', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category)
+                values ('f1000000-0000-0000-0000-0000000000a8', 'autoturism');
+                update public.cargo_listings set status = 'active'
+                where id = 'f1000000-0000-0000-0000-0000000000a8';
+                update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-0000000000a8'$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'request_match_alert'
+                   and recipient_company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('FIRM a forwarder gets the route without owning the winch', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-0000000000a9'$a$, 'allowed',
+  p_setup => $s$update public.companies
+                set alerts_enabled = true, coverage_scope = 'national', equipment = '{}'
+                where id = 'fc000000-0000-0000-0000-000000000002';
+                insert into public.cargo_listings (id, company_id, posted_by, board,
+                  listing_kind, title, loading_country, loading_city, unloading_country,
+                  unloading_city, loading_from, status)
+                values ('f1000000-0000-0000-0000-0000000000a9', null,
+                        'f0000000-0000-0000-0000-000000000006', 'retur', 'vehicul',
+                        'Nu pornește', 'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+                        current_date + 4, 'draft');
+                insert into public.cargo_vehicle_details (cargo_listing_id, category, is_running)
+                values ('f1000000-0000-0000-0000-0000000000a9', 'autoturism', false)$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'request_match_alert'
+                     and recipient_company_id = 'fc000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('FIRM the matching helper is not callable by hand', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.company_matches_request('fc000000-0000-0000-0000-000000000001',
+                                           'f1000000-0000-0000-0000-000000000002')$a$, 'blocked');
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time

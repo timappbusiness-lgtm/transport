@@ -36,7 +36,23 @@ export interface PublicCompany {
   servesNational: boolean;
   servesInternational: boolean;
   lastCheckedAt: string | null;
+
+  /** Added with the company profile (migration 20260918090000). */
+  coverageScope: CoverageScope;
+  coverageCounties: string[];
+  coverageCountries: string[];
+  vehicleTypesAccepted: string[];
+  equipment: string[];
+  services: string[];
+  /** An indication, shown as one. The price of a job is in the offer. */
+  indicativeRate: number | null;
+  indicativeRateNote: string | null;
+  website: string | null;
+  /** Counted from the fleet, never claimed. */
+  vehiclesTotal: number;
 }
+
+export type CoverageScope = 'judetean' | 'national' | 'international';
 
 /** One row of `v_public_company_documents`. */
 export type DocumentState = 'valid' | 'expiring_soon' | 'expired';
@@ -339,6 +355,17 @@ export function toCompany(row: CompanyRow): PublicCompany | null {
     servesNational: row.serves_national === true,
     servesInternational: row.serves_international === true,
     lastCheckedAt: row.last_checked_at,
+    coverageScope: row.coverage_scope ?? 'national',
+    coverageCounties: row.coverage_counties ?? [],
+    coverageCountries: row.coverage_countries ?? [],
+    vehicleTypesAccepted: row.vehicle_types_accepted ?? [],
+    equipment: row.equipment ?? [],
+    services: row.services ?? [],
+    indicativeRate:
+      row.indicative_rate_ron_per_km === null ? null : Number(row.indicative_rate_ron_per_km),
+    indicativeRateNote: row.indicative_rate_note,
+    website: row.website,
+    vehiclesTotal: Number(row.vehicles_total ?? 0),
   };
 }
 
