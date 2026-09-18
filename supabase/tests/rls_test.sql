@@ -5802,90 +5802,133 @@ select pg_temp.check('DEL  a user cannot read another''s export row', 'fix',
 -- =====================================================================
 -- MAT - „N transportatori verificați circulă pe această rută"
 --
--- Migration 20260918190000. The number a person sees after publishing,
--- so the checks are about two things: that it is the owner's number and
--- nobody else's, and that „în perioada aleasă" is counted rather than
--- printed over a count of something else.
+-- Migrations 20260918190000 and 20260918200000. The number a person sees
+-- after publishing, so the checks are about two things: that it is the
+-- owner's number and nobody else's, and that it counts what the sentence
+-- claims — coverage, category and equipment, and nothing about a diary.
 --
 -- The rule itself is not re-tested here — the FIRM block above already
 -- covers every branch of it, and it is now the same function body, which
 -- is the point of the refactor.
+--
+-- Every check here first takes the rest of the database out of the count.
+-- `smoke_test.sql` runs into the same database before this file and
+-- leaves a verified carrier of its own behind, so an absolute number here
+-- would be a number about two suites rather than about these fixtures.
+-- The date-aware version of this count hid that by accident — the smoke
+-- company has no announced route — which is exactly the kind of passing
+-- test that is not evidence of anything.
 -- =====================================================================
+
+\set mat_isolate 'update public.companies set is_suspended = true where id not in (''fc000000-0000-0000-0000-000000000001'', ''fc000000-0000-0000-0000-000000000002'', ''fc000000-0000-0000-0000-000000000003'')'
 
 select pg_temp.check('MAT  the owner of a request gets a number', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
-  'true');
+  'true',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  somebody else''s request answers nothing', 'fix',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') >= 0$a$,
-  'blocked');
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  a visitor gets no count at all', 'fix',
   null, 'anon',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') >= 0$a$,
-  'blocked');
+  'blocked',
+  p_setup => :'mat_isolate');
 
-select pg_temp.check('MAT  a carrier that announced no route does not circulate', 'fix',
-  'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
-  'true',
-  p_setup => $s$update public.truck_listings set status = 'draft'
-                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
-
-select pg_temp.check('MAT  nor does one whose route is in another month', 'fix',
-  'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
-  'true',
-  p_setup => $s$update public.truck_listings
-                set available_from = current_date + 60, available_to = null
-                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
-
-select pg_temp.check('MAT  a route that spans the loading window does count', 'guard',
+-- Coverage is the whole claim now. A carrier that has never announced a
+-- route still works the route it says it works, and the sentence no
+-- longer promises anything about when.
+select pg_temp.check('MAT  a carrier with no announced route still counts', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
   'true',
-  p_setup => $s$update public.truck_listings
-                set available_from = current_date, available_to = current_date + 30
+  p_setup => :'mat_isolate' || '; ' || $s$update public.truck_listings set status = 'draft'
                 where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  nor do its dates matter any more', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.truck_listings
+                set available_from = current_date + 600, available_to = null
+                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- What does still decide it: coverage, category, and the winch.
+select pg_temp.check('MAT  a county-only carrier off the route is not counted', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000004') = 0$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_listings
+                set loading_country = 'RO', unloading_country = 'RO',
+                    loading_county = 'CJ', unloading_county = 'TM',
+                    posted_by = 'f0000000-0000-0000-0000-000000000006',
+                    company_id = null, board = 'retur'
+                where id = 'f1000000-0000-0000-0000-000000000004';
+                update public.companies
+                set coverage_scope = 'judetean', coverage_counties = array['BV']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  a car that does not roll needs a firm with a winch', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_vehicle_details set is_running = false
+                where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+                update public.companies set equipment = '{}'
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  and is counted once the firm has one', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_vehicle_details set is_running = false
+                where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+                update public.companies set equipment = array['troliu']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  a suspended carrier is not a verified one', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
   'true',
-  p_setup => $s$update public.companies set is_suspended = true
+  p_setup => :'mat_isolate' || '; ' || $s$update public.companies set is_suspended = true
                 where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  nor is one on its way out', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
   'true',
-  p_setup => $s$update public.companies set deletion_scheduled_at = now()
+  p_setup => :'mat_isolate' || '; ' || $s$update public.companies set deletion_scheduled_at = now()
                 where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  the preview needs a session', 'fix',
   null, 'anon',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
-  'blocked');
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  the preview answers the same number', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) = 1$a$,
-  'true');
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) = 1$a$,
+  'true',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  thirty routes an hour, and no more', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
   'blocked',
-  p_setup => $s$insert into public.carrier_count_probes (user_id)
+  p_setup => :'mat_isolate' || '; ' || $s$insert into public.carrier_count_probes (user_id)
                 select 'f0000000-0000-0000-0000-000000000006' from generate_series(1, 30)$s$);
 
 select pg_temp.check('MAT  an hour later it answers again', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
   'true',
-  p_setup => $s$insert into public.carrier_count_probes (user_id, created_at)
+  p_setup => :'mat_isolate' || '; ' || $s$insert into public.carrier_count_probes (user_id, created_at)
                 select 'f0000000-0000-0000-0000-000000000006', now() - interval '2 hours'
                 from generate_series(1, 30)$s$);
 
@@ -5897,13 +5940,15 @@ select pg_temp.check('MAT  the probe log is not a table a browser reads', 'fix',
 
 select pg_temp.check('MAT  the route count itself is not callable from a browser', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers_on_route('RO', null, 'RO', null, current_date + 3) >= 0$a$,
-  'blocked');
+  $a$select public.count_matching_carriers_on_route('RO', null, 'RO', null) >= 0$a$,
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  nor is the rule, which would name a firm', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.company_matches_route('fc000000-0000-0000-0000-000000000001',
-       'RO', null, 'RO', null)$a$, 'blocked');
+       'RO', null, 'RO', null)$a$, 'blocked',
+  p_setup => :'mat_isolate');
 
 -- A count is a count. Anything that returned a set could be read as a
 -- list of firms, which is the one thing this feature must never be.
@@ -5913,7 +5958,8 @@ select pg_temp.check('MAT  nothing here can return a name', 'fix',
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public'
        and p.proname in ('count_matching_carriers', 'preview_matching_carriers',
-                         'count_matching_carriers_on_route')$a$, 'true');
+                         'count_matching_carriers_on_route')$a$, 'true',
+  p_setup => :'mat_isolate');
 
 -- =====================================================================
 -- Report

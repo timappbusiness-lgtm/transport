@@ -37,8 +37,6 @@ export function CarrierPreview({ draft, signedIn }: { draft: RequestDraft; signe
         fromCountry: draft.fromCountry,
         toCity: draft.toCity,
         toCountry: draft.toCountry,
-        loadingFrom: draft.loadingFrom,
-        loadingTo: draft.loadingTo,
         category: draft.category,
         isRunning: draft.isRunning,
         wheelsTurn: draft.wheelsTurn,
