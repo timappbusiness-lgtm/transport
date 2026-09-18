@@ -7,6 +7,8 @@ import { publishRequestAction, type PublishRequestState } from '@/app/cerere/act
 import { FormError } from '@/components/auth/form';
 import { PushPermissionCard } from '@/components/push/permission-card';
 import { AutoChip, ImportDisclaimer, ImportPanel } from '@/components/requests/import-panel';
+import { CarrierCount } from '@/components/requests/carrier-count';
+import { CarrierPreview } from '@/components/requests/carrier-preview';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
@@ -531,6 +533,12 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           <legend className="mb-1 text-[1.0625rem]">{c.contact.title}</legend>
           <p className="max-w-[54ch] text-sm text-muted">{c.contact.lede}</p>
 
+          {/* Last step, on purpose: by here the route and the dates are
+              settled, so the number answers the question somebody is
+              actually asking before they commit — "is anybody going to
+              see this". */}
+          <CarrierPreview draft={draft} signedIn={signedIn} />
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.contact.name} htmlFor={`${id}-name`}>
               <input
@@ -700,6 +708,10 @@ function Result({ state }: { state: PublishRequestState }) {
       ) : (
         <p className="mt-2 max-w-[54ch] text-sm">{state.publishError}</p>
       )}
+
+      {published ? (
+        <CarrierCount count={state.matchingCarriers ?? null} className="mt-4 max-w-[54ch]" />
+      ) : null}
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href={ROUTES.accountRequests} className={buttonClasses('primary', 'md')}>
           {c.seeRequests}

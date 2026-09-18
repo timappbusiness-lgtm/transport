@@ -1,6 +1,6 @@
 import type { AccountContext } from './auth/account';
 import type { CargoCategory, ServiceType } from './departures';
-import { byBoardThenAge, type MyRequest } from './my-requests';
+import { byBoardThenAge, isOnBoard, type MyRequest } from './my-requests';
 import type { ListingStatus } from './requests';
 import { createClient } from './supabase/server';
 import { isSupabaseConfigured } from './supabase/env';
@@ -105,4 +105,42 @@ function toRequest(row: Row): MyRequest | null {
     publishedAt: row.published_at,
     createdAt: row.created_at,
   };
+}
+
+/**
+ * The carrier count for the requests that are on the board.
+ *
+ * Only for those: a draft nobody can see has nothing to be reassured
+ * about, and asking would be a scan of every verified carrier for a
+ * number that is not shown. Capped, because a client with eighty live
+ * requests is a client whose list would otherwise take eighty round
+ * trips.
+ *
+ * A failure is left out of the map rather than recorded as zero. The card
+ * shows nothing for a missing entry, which is the truthful rendering of
+ * „we could not tell".
+ */
+const COUNT_LIMIT = 20;
+
+export async function loadMatchingCounts(requests: MyRequest[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (!isSupabaseConfigured()) return counts;
+
+  const ids = requests.filter((request) => isOnBoard(request.status)).slice(0, COUNT_LIMIT);
+  if (ids.length === 0) return counts;
+
+  const supabase = await createClient();
+  const results = await Promise.all(
+    ids.map((request) =>
+      supabase
+        .rpc('count_matching_carriers', { p_listing_id: request.id })
+        .then((result) => ({ id: request.id, count: result.data, error: result.error })),
+    ),
+  );
+
+  for (const result of results) {
+    if (result.error || typeof result.count !== 'number') continue;
+    counts.set(result.id, result.count);
+  }
+  return counts;
 }

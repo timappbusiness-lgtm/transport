@@ -14,6 +14,7 @@ import {
   validateDraft,
   type RequestField,
 } from '@/lib/request-form';
+import { cacheKey, readCache, writeCache } from '@/lib/carrier-count';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import type { FieldErrors } from '@/lib/validation/auth';
@@ -42,6 +43,15 @@ export interface PublishRequestState {
    * shown as it is.
    */
   publishError?: string;
+  /**
+   * How many verified carriers cover this route in these dates.
+   *
+   * Null when the request did not go on the board, or when the count
+   * itself failed: a missing number is shown as nothing at all, never as
+   * a zero. „Nobody yet" and „we could not tell" are different sentences
+   * and only one of them is reassuring to say wrongly.
+   */
+  matchingCarriers?: number | null;
 }
 
 export async function publishRequestAction(
@@ -134,13 +144,41 @@ export async function publishRequestAction(
   revalidatePath(ROUTES.accountRequests);
   revalidatePath(ROUTES.home);
 
+  // Only for a request that actually went on the board. A draft that the
+  // database refused to publish has nothing to be reassured about yet.
+  const matchingCarriers =
+    created.request_status === 'active'
+      ? await countCarriersFor(supabase, created.request_id)
+      : null;
+
   return {
     requestId: created.request_id,
     status: created.request_status,
+    matchingCarriers,
     // Null when it went on the board. The generated types cannot say so:
     // Postgres does not declare a column of a returned table nullable.
     ...(created.publish_error ? { publishError: created.publish_error } : {}),
   };
+}
+
+/**
+ * The count for one request, or null.
+ *
+ * `count_matching_carriers` refuses a request that is not the caller's,
+ * which is the whole access rule; there is nothing to check here. A
+ * failure returns null rather than zero, because the screen has a
+ * sentence for „nobody yet" and it is not the one to show when the
+ * question could not be asked.
+ */
+async function countCarriersFor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  requestId: string,
+): Promise<number | null> {
+  const { data, error } = await supabase.rpc('count_matching_carriers', {
+    p_listing_id: requestId,
+  });
+  if (error || typeof data !== 'number') return null;
+  return data;
 }
 
 /** What `/cont/cereri` needs, kept next to the action that creates a request. */
@@ -278,4 +316,89 @@ export async function revealRequestContactAction(
       email: row.contact_email ?? null,
     },
   };
+}
+
+/**
+ * The same count, before the request exists.
+ *
+ * Step 4 of the form has nothing in the database yet, so this takes the
+ * route itself. Two things guard it, and both are deliberate:
+ *
+ *   * The county is resolved here, from the city list on the server,
+ *     exactly as `publishRequestAction` does. A county that arrived from
+ *     the browser would be a route somebody chose rather than one they
+ *     typed, and county is what a county-only carrier is matched on.
+ *   * `preview_matching_carriers` counts every call against an hourly
+ *     cap. A route askable in a loop is a carrier base mappable in a
+ *     loop, and the cap is in the database so the loop cannot go round
+ *     this action.
+ *
+ * The short memo in front of it is not a way round the cap: a cache hit
+ * is the same question, not a new one, and somebody stepping back and
+ * forth between two steps should not spend their hour on it.
+ */
+export async function previewCarriersAction(input: {
+  fromCity: string;
+  fromCountry: string;
+  toCity: string;
+  toCountry: string;
+  loadingFrom: string;
+  loadingTo: string;
+  category: string;
+  isRunning: boolean;
+  wheelsTurn: boolean;
+  steeringWorks: boolean;
+  serviceType: string;
+}): Promise<{ count: number | null; error?: string }> {
+  const context = await getAccountContext();
+  if (context === null) return { count: null };
+  if (!isSupabaseConfigured()) return { count: null };
+
+  const fromCounty = countyCodeForCity(input.fromCity, input.fromCountry);
+  const toCounty = countyCodeForCity(input.toCity, input.toCountry);
+  const loadingTo = input.loadingTo === '' ? null : input.loadingTo;
+
+  // Derived exactly as the generated column in `cargo_vehicle_details`
+  // derives it, so the preview and the published request cannot disagree.
+  const needsWinch = !input.isRunning || !input.wheelsTurn || !input.steeringWorks;
+
+  const key = cacheKey(context.user.id, [
+    context.activeCompany?.id ?? null,
+    input.fromCountry,
+    fromCounty,
+    input.toCountry,
+    toCounty,
+    input.loadingFrom,
+    loadingTo,
+    input.category,
+    needsWinch,
+    input.serviceType,
+  ]);
+
+  const cached = readCache(key);
+  if (cached !== null) return { count: cached };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('preview_matching_carriers', {
+    p_loading_country: input.fromCountry.toUpperCase(),
+    p_loading_county: fromCounty,
+    p_unloading_country: input.toCountry.toUpperCase(),
+    p_unloading_county: toCounty,
+    p_loading_from: input.loadingFrom,
+    p_loading_to: loadingTo,
+    p_category: input.category as never,
+    p_needs_winch: needsWinch,
+    p_service_type: input.serviceType as never,
+    // The firm the person is posting as, so their own firm is not counted
+    // as competition for their own request. The database confirms the
+    // membership before it believes it.
+    p_company_id: context.activeCompany?.id ?? null,
+  });
+
+  if (error || typeof data !== 'number') {
+    return { count: null, error: toAppError(error, 'requests.preview').message };
+  }
+
+  writeCache(key, data);
+  return { count: data };
 }
