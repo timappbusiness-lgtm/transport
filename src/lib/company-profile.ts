@@ -95,7 +95,7 @@ export type ProfileErrors = Partial<Record<ProfileField, string>>;
 export function validateProfile(draft: ProfileDraft): ProfileErrors {
   const errors: ProfileErrors = {};
 
-  if (draft.contactPhone.trim() !== '' && normalisePhone(draft.contactPhone) === null) {
+  if (draft.contactPhone.trim() !== '' && normaliseContactPhone(draft.contactPhone) === null) {
     errors.contactPhone = 'Scrie numărul în forma +40722000111.';
   }
   if (draft.contactEmail.trim() !== '' && !isEmail(draft.contactEmail)) {
@@ -168,8 +168,14 @@ export function validateTab(tab: ProfileTab, draft: ProfileDraft): ProfileErrors
  * The same three shapes `public.normalise_phone` accepts, because the same
  * three are how a Romanian writes a Romanian number: `0722…`, `0040722…`
  * and `+40722…`.
+ *
+ * Deliberately wider than `normalisePhone` in `lib/validation/auth`, which
+ * is for the sign-up OTP and so accepts a Romanian mobile and nothing
+ * else. A firm's switchboard is often a landline and sometimes foreign;
+ * refusing those would be refusing the telephone number the client
+ * actually rings.
  */
-export function normalisePhone(input: string): string | null {
+export function normaliseContactPhone(input: string): string | null {
   const digits = input.replace(/[^0-9+]/g, '');
   if (digits === '') return null;
 

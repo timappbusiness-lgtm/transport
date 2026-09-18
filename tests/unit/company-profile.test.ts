@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   completeness,
-  normalisePhone,
+  normaliseContactPhone,
   normaliseWebsite,
   tabsFor,
   tidyCodes,
@@ -45,25 +45,25 @@ function draft(over: Partial<ProfileDraft> = {}): ProfileDraft {
 
 describe('a telephone number, however it is written', () => {
   it('accepts the three shapes a Romanian number comes in', () => {
-    expect(normalisePhone('0722 000 111')).toBe('+40722000111');
-    expect(normalisePhone('0040-722-000-111')).toBe('+40722000111');
-    expect(normalisePhone('+40 722 000 111')).toBe('+40722000111');
+    expect(normaliseContactPhone('0722 000 111')).toBe('+40722000111');
+    expect(normaliseContactPhone('0040-722-000-111')).toBe('+40722000111');
+    expect(normaliseContactPhone('+40 722 000 111')).toBe('+40722000111');
   });
 
   it('keeps a foreign number as it was dialled', () => {
-    expect(normalisePhone('+49 171 1234567')).toBe('+491711234567');
+    expect(normaliseContactPhone('+49 171 1234567')).toBe('+491711234567');
   });
 
   it('refuses something too short to be one', () => {
-    expect(normalisePhone('0722')).toBeNull();
+    expect(normaliseContactPhone('0722')).toBeNull();
   });
 
   it('refuses a second plus, which means it was never a number', () => {
-    expect(normalisePhone('+40+722000111')).toBeNull();
+    expect(normaliseContactPhone('+40+722000111')).toBeNull();
   });
 
   it('says nothing about an empty box', () => {
-    expect(normalisePhone('')).toBeNull();
+    expect(normaliseContactPhone('')).toBeNull();
     expect(validateProfile(draft({ contactPhone: '' })).contactPhone).toBeUndefined();
   });
 });
