@@ -1189,7 +1189,22 @@ begin
 
     -- Last. Everything personal cascades from here: profile, listings,
     -- offers, messages, ratings, push subscriptions, preferences.
-    delete from auth.users where id = v_row.user_id;
+    --
+    -- `auth.users` belongs to `supabase_auth_admin`, and although the
+    -- owner of this function can delete from it on a Supabase project
+    -- today, that is a privilege grant rather than a guarantee. If it
+    -- ever stops being true, raising here would roll the whole erasure
+    -- back — after the job has already emptied the buckets — and the
+    -- account would sit half-erased until somebody read a log. So a
+    -- privilege error is caught, the rest of the erasure stands, and the
+    -- job deletes the login through the admin API instead. It calls
+    -- `deleteUser` on every run either way, so the usual path is simply
+    -- a 404 it ignores.
+    begin
+      delete from auth.users where id = v_row.user_id;
+    exception when insufficient_privilege then
+      raise warning 'Rândul din auth.users nu a putut fi șters din SQL; îl șterge jobul prin API.';
+    end;
   else
     if v_email is not null then
       insert into public.notification_outbox

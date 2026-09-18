@@ -151,9 +151,24 @@ Deno.serve(async (req: Request) => {
 
         // The database re-checks the blocking rules and can step back:
         // a fortnight is long enough for a new transport to start.
-        const status = (done as { status?: string } | null)?.status;
-        if (status === "blocked") blocked += 1;
-        else processed += 1;
+        const finished = done as { status?: string; user_id?: string | null } | null;
+        const status = finished?.status;
+        if (status === "blocked") {
+          blocked += 1;
+        } else {
+          // The login, through the admin API. The database deletes it
+          // itself where it may, so this is usually a 404 — but
+          // `auth.users` belongs to another role, and an erasure that
+          // leaves a working login because of a privilege grant is the
+          // one failure here nobody would see.
+          if (row.kind === "user" && finished?.user_id) {
+            const { error: authError } = await admin.auth.admin.deleteUser(finished.user_id);
+            if (authError && !isAlreadyGone(authError.message)) {
+              throw new Error(`auth.deleteUser: ${authError.message}`);
+            }
+          }
+          processed += 1;
+        }
       } catch (error) {
         failed += 1;
         const reason = error instanceof Error ? error.message : String(error);
