@@ -53,6 +53,30 @@ export const SERVICE_TYPE_NOTES: Record<ServiceType, string> = {
   tractare: 'Pentru vehicule care nu pot fi urcate pe platformă.',
 };
 
+/**
+ * Every category the enum has, as a runtime list.
+ *
+ * `CARGO_CATEGORY_LABELS` has the same keys, but a `Record` is not a value
+ * a query-string parser can check membership against without an
+ * `Object.keys` cast at every call site.
+ */
+export const CARGO_CATEGORIES: readonly CargoCategory[] = [
+  'autoturism',
+  'autoutilitara',
+  'motocicleta',
+  'utilaj_agricol',
+  'microbuz',
+  'utilaj_constructii',
+  'rulota',
+  'cap_tractor',
+  'camion',
+  'remorca',
+  'utilaj_manipulare',
+  'container',
+  'ambarcatiune',
+  'altele',
+];
+
 export const CARGO_CATEGORY_LABELS: Record<CargoCategory, string> = {
   autoturism: 'Autoturism',
   autoutilitara: 'Autoutilitară',

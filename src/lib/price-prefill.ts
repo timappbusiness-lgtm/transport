@@ -1,4 +1,5 @@
 import { cityFromValue, cityValue, type City } from './cities';
+import { CARGO_CATEGORIES, type CargoCategory } from './departures';
 import { VEHICLE_CLASS_ORDER, type VehicleClass } from './pricing';
 
 /**
@@ -17,6 +18,17 @@ export const PREFILL_KEYS = {
   vehicleClass: 'categorie',
   running: 'porneste',
   service: 'serviciu',
+  // Added with the landing pages. A corridor page knows the country and
+  // not the town — the car is somewhere in Germany, and which somewhere is
+  // the visitor's to type — so the country travels on its own. The names
+  // match the board's filters, which already use `tara-plecare`.
+  fromCountry: 'tara-plecare',
+  toCountry: 'tara-sosire',
+  // The cargo category, which is what the request form actually asks for.
+  // `categorie` above is the calculator's *price* class, a different and
+  // coarser thing: a hatchback and a saloon cost differently and are both
+  // `autoturism` on a request.
+  category: 'vehicul',
 } as const;
 
 export interface Prefill {
@@ -26,6 +38,10 @@ export interface Prefill {
   /** null when the link said nothing about it. */
   isRunning: boolean | null;
   express: boolean | null;
+  /** ISO 3166-1 alpha-2, when a link named a country but no town. */
+  fromCountry: string | null;
+  toCountry: string | null;
+  category: CargoCategory | null;
 }
 
 export const EMPTY_PREFILL: Prefill = {
@@ -34,6 +50,9 @@ export const EMPTY_PREFILL: Prefill = {
   vehicleClass: null,
   isRunning: null,
   express: null,
+  fromCountry: null,
+  toCountry: null,
+  category: null,
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -51,10 +70,16 @@ export function parsePrefill(params: SearchParams): Prefill {
   const vehicleClass = one(params, PREFILL_KEYS.vehicleClass);
   const running = one(params, PREFILL_KEYS.running);
   const service = one(params, PREFILL_KEYS.service);
+  const category = one(params, PREFILL_KEYS.category);
 
   return {
     from: cityFromValue(one(params, PREFILL_KEYS.from)),
     to: cityFromValue(one(params, PREFILL_KEYS.to)),
+    fromCountry: countryCode(one(params, PREFILL_KEYS.fromCountry)),
+    toCountry: countryCode(one(params, PREFILL_KEYS.toCountry)),
+    category: CARGO_CATEGORIES.includes(category as CargoCategory)
+      ? (category as CargoCategory)
+      : null,
     vehicleClass: VEHICLE_CLASS_ORDER.includes(vehicleClass as VehicleClass)
       ? (vehicleClass as VehicleClass)
       : null,
@@ -71,6 +96,15 @@ export function prefillQuery(prefill: Prefill): string {
   const params = new URLSearchParams();
   if (prefill.from) params.set(PREFILL_KEYS.from, cityValue(prefill.from));
   if (prefill.to) params.set(PREFILL_KEYS.to, cityValue(prefill.to));
+  // A named town already carries its country, so the bare country is only
+  // written when there is no town to carry it.
+  if (!prefill.from && prefill.fromCountry) {
+    params.set(PREFILL_KEYS.fromCountry, prefill.fromCountry);
+  }
+  if (!prefill.to && prefill.toCountry) {
+    params.set(PREFILL_KEYS.toCountry, prefill.toCountry);
+  }
+  if (prefill.category) params.set(PREFILL_KEYS.category, prefill.category);
   if (prefill.vehicleClass) params.set(PREFILL_KEYS.vehicleClass, prefill.vehicleClass);
   if (prefill.isRunning !== null) {
     params.set(PREFILL_KEYS.running, prefill.isRunning ? 'da' : 'nu');
@@ -87,8 +121,18 @@ export function hasPrefill(prefill: Prefill): boolean {
   return (
     prefill.from !== null ||
     prefill.to !== null ||
+    prefill.fromCountry !== null ||
+    prefill.toCountry !== null ||
+    prefill.category !== null ||
     prefill.vehicleClass !== null ||
     prefill.isRunning !== null ||
     prefill.express !== null
   );
+}
+
+/** Two upper-case letters, or null. This arrives from a query string. */
+function countryCode(value: string | null): string | null {
+  if (value === null) return null;
+  const code = value.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(code) ? code : null;
 }
