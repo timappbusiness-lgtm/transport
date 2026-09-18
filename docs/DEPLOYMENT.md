@@ -261,10 +261,12 @@ select cron.schedule('hourly-listing-cleanup', '5 * * * *',
                      'select public.expire_stale_listings();');
 select cron.schedule('outbox-dispatcher', '*/5 * * * *',
                      'select public.dispatch_outbox_http();');
+select cron.schedule('account-deletion', '10 3 * * *',
+                     'select public.dispatch_account_deletions_http();');
 ```
 
 Dacă `create extension` dă eroare de permisiuni, extensiile se activează din
-Dashboard → Database → Extensions, apoi se rulează doar cele patru
+Dashboard → Database → Extensions, apoi se rulează doar cele cinci
 `cron.schedule`.
 
 ### Verificare
@@ -273,8 +275,14 @@ Dashboard → Database → Extensions, apoi se rulează doar cele patru
 select jobname, schedule, active from cron.job order by jobname;
 ```
 
-Trebuie să apară patru rânduri. După asta, `/admin/notificari` trece fiecare
+Trebuie să apară cinci rânduri. După asta, `/admin/notificari` trece fiecare
 job pe „la zi" pe măsură ce rulează.
+
+Jobul `account-deletion` este cel care duce la capăt cererile de ștergere a
+contului. Cât timp nu rulează, cererile rămân programate și conturile rămân
+oprite în perioada de grație — vizibil pe `/admin/stergeri`, unde fiecare
+cerere își arată data. Nimic nu se șterge singur și nimic nu se pierde, dar
+termenul legal de o lună curge.
 
 ### Secretele dispecerului
 
@@ -287,6 +295,7 @@ Supabase → Project Settings → Vault → New secret:
 | Nume | Valoare |
 |---|---|
 | `outbox_dispatcher_url` | `https://<project-ref>.supabase.co/functions/v1/outbox-dispatcher` |
+| `account_deletion_url` | `https://<project-ref>.supabase.co/functions/v1/account-deletion` |
 | `cron_secret` | aceeași valoare ca secretul `CRON_SECRET` al funcțiilor |
 
 Și pe Edge Functions: `RESEND_API_KEY`, `MAIL_FROM`. Fără ele dispecerul

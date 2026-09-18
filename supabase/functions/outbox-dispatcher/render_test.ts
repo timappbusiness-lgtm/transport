@@ -118,6 +118,10 @@ Deno.test("every security and account message refuses the unsubscribe link", () 
     "reservation_confirmed",
     "subscription_activated",
     "subscription_request_received",
+    "account_deletion_scheduled",
+    "account_deletion_blocked",
+    "account_deletion_cancelled",
+    "account_deletion_completed",
   ];
   for (const name of mustNotOptOut) {
     assertEquals(TEMPLATES[name]?.unsubscribable, false, name);
@@ -170,6 +174,31 @@ Deno.test("every template starts by greeting the person", () => {
 // ---------------------------------------------------------------------
 // The honest gap
 // ---------------------------------------------------------------------
+
+Deno.test("the deletion e-mail carries the link that stops the clock", () => {
+  // The one message where the action is not a convenience: an account
+  // held for a fortnight has no working login to cancel from, so the
+  // token in this link is the whole rescue.
+  const mail = render("account_deletion_scheduled", TEMPLATES.account_deletion_scheduled!, {
+    what: "contului",
+    scheduled_for: "02.10.2026",
+    cancel_token: "6f1d0c7a-0000-0000-0000-00000000abcd",
+    site_url: SITE,
+  });
+
+  assertStringIncludes(
+    mail.html,
+    `${SITE}/stergere/anuleaza?t=6f1d0c7a-0000-0000-0000-00000000abcd`,
+  );
+  assertStringIncludes(mail.text, "Anulează ștergerea: https://coridor.ro/stergere/anuleaza");
+  assertStringIncludes(mail.subject, "02.10.2026");
+});
+
+Deno.test("the last e-mail says it is the last one", () => {
+  const mail = render("account_deletion_completed", TEMPLATES.account_deletion_completed!, {});
+  assertStringIncludes(mail.text, "ultimul mesaj");
+  assertEquals(TEMPLATES.account_deletion_completed!.action, undefined);
+});
 
 Deno.test("the templates with no producer are listed, not pretended about", () => {
   // Writing the copy early costs nothing; claiming these events already

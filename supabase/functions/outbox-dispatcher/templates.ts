@@ -196,6 +196,64 @@ export const TEMPLATES: Record<string, Template> = {
     action: { label: "Vezi abonamentul", href: "{{ site_url }}/cont/abonament" },
     unsubscribable: false,
   },
+
+  // --- Ștergerea contului -----------------------------------------------
+  //
+  // None of these can be switched off. An e-mail saying an account is a
+  // fortnight from deletion is the one message where an unsubscribe link
+  // would be actively harmful, and the cancel link inside it is the only
+  // thing that stops the clock.
+  account_deletion_scheduled: {
+    subject: "Ștergerea {{ what }} a fost programată pentru {{ scheduled_for }}",
+    lines: [
+      "Bună ziua,",
+      "Am primit cererea de ștergere a {{ what }} și am programat-o pentru {{ scheduled_for }}.",
+      "Până atunci contul este oprit: anunțurile au ieșit de pe panou și nu se poate publica nimic nou. Dacă v-ați răzgândit, butonul de mai jos oprește ștergerea și pune totul la loc.",
+      "După acea dată ștergem datele personale. Rămâne doar ce suntem obligați să păstrăm — transporturile încheiate, documentele contabile și jurnalul deciziilor — fără numele și datele dumneavoastră de contact.",
+    ],
+    action: {
+      label: "Anulează ștergerea",
+      href: "{{ site_url }}/stergere/anuleaza?t={{ cancel_token }}",
+    },
+    unsubscribable: false,
+  },
+
+  account_deletion_blocked: {
+    subject: "Ștergerea {{ what }} nu poate începe încă",
+    lines: [
+      "Bună ziua,",
+      "Am primit cererea de ștergere a {{ what }}, dar nu o putem porni acum.",
+      "{{ reason }}",
+      "După ce se rezolvă, cereți ștergerea din nou din pagina Date personale. Până atunci nu am schimbat nimic la cont.",
+    ],
+    action: {
+      label: "Vezi datele personale",
+      href: "{{ site_url }}/cont/setari/date-personale",
+    },
+    unsubscribable: false,
+  },
+
+  account_deletion_cancelled: {
+    subject: "Ștergerea {{ what }} a fost anulată",
+    lines: [
+      "Bună ziua,",
+      "Ștergerea {{ what }} a fost anulată. Contul funcționează ca înainte.",
+      "Anunțurile care erau pe panou s-au întors în starea lor anterioară. Cele ale căror date trecuseră între timp au rămas expirate — le puteți republica oricând.",
+    ],
+    action: { label: "Deschide contul", href: "{{ site_url }}/cont" },
+    unsubscribable: false,
+  },
+
+  account_deletion_completed: {
+    subject: "Datele dumneavoastră au fost șterse",
+    lines: [
+      "Bună ziua,",
+      "Am șters contul și datele personale legate de el. Nu mai există o autentificare pe această adresă.",
+      "Am păstrat doar ce suntem obligați să păstrăm: transporturile încheiate, documentele contabile și jurnalul deciziilor, fără numele și datele dumneavoastră de contact.",
+      "Acesta este ultimul mesaj pe care vi-l trimitem.",
+    ],
+    unsubscribable: false,
+  },
 };
 
 /**
