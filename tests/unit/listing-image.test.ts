@@ -14,9 +14,12 @@ async function photoWithExif(width = 2400, height = 1600): Promise<Buffer> {
   return sharp({
     create: { width, height, channels: 3, background: { r: 120, g: 140, b: 160 } },
   })
+    // GPS tags live in their own IFD, which sharp exposes as IFD3. They
+    // are the reason this file exists, so the fixture carries real ones
+    // rather than a camera name that would prove much less.
     .withExif({
       IFD0: { Make: 'TestPhone', Model: 'TP-1' },
-      GPS: { GPSLatitudeRef: 'N', GPSLongitudeRef: 'E' },
+      IFD3: { GPSLatitudeRef: 'N', GPSLongitudeRef: 'E', GPSLatitude: '44/1 25/1 0/1' },
     })
     .jpeg()
     .toBuffer();
@@ -27,6 +30,7 @@ describe('normaliseImage', () => {
     const before = await sharp(await photoWithExif()).metadata();
     expect(before.exif, 'the fixture has to carry EXIF or this test proves nothing')
       .toBeDefined();
+    expect(before.exif!.toString('latin1')).toContain('TestPhone');
 
     const after = await sharp(await normaliseImage(await photoWithExif())).metadata();
     expect(after.exif).toBeUndefined();

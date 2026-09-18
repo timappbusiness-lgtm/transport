@@ -2,8 +2,12 @@
 
 import { headers } from 'next/headers';
 import { getAccountContext } from '@/lib/auth/account';
-import { ACCEPTED_IMAGE_TYPES, normaliseImage } from '@/lib/listing-image';
-import { looksLikeListingUrl, type ExtractionResult } from '@/lib/listing-import';
+import { normaliseImage } from '@/lib/listing-image';
+import {
+  ACCEPTED_IMAGE_TYPES,
+  looksLikeListingUrl,
+  type ExtractionResult,
+} from '@/lib/listing-import';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 

@@ -1,3 +1,4 @@
+import 'server-only';
 import sharp from 'sharp';
 
 /**
@@ -13,6 +14,12 @@ import sharp from 'sharp';
  * to, so there is no separate call to make — and `.withMetadata()` would
  * undo the whole point of this file.
  *
+ * Server-only, and marked as such: sharp is a native module, and a
+ * client component that imports anything from here drags it into the
+ * browser bundle. `ACCEPTED_IMAGE_TYPES` lives in `listing-import.ts`
+ * for exactly that reason — it is a fact about a file input, not about
+ * sharp.
+ *
  * `rotate()` with no argument is not cosmetic. It applies the EXIF
  * orientation tag before that tag is dropped, so a photo taken sideways
  * stays the right way up instead of arriving rotated once the tag it
@@ -24,8 +31,6 @@ export const MAX_EDGE_PX = 1600;
 
 /** A guard against a decompression bomb: a small file, an enormous canvas. */
 export const MAX_INPUT_PIXELS = 50_000_000;
-
-export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 export async function normaliseImage(input: Buffer): Promise<Buffer> {
   return sharp(input, { failOn: 'error', limitInputPixels: MAX_INPUT_PIXELS })

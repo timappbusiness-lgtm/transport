@@ -41,6 +41,15 @@ export interface ExtractionResult {
   reason?: string;
 }
 
+/**
+ * What the file input accepts.
+ *
+ * Here rather than next to the resizing, because the resizing imports
+ * sharp and a client component that reaches for this would drag a
+ * native module into the browser bundle.
+ */
+export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
 const COUNTRY_CODES = new Set(COUNTRY_OPTIONS.map((c) => c.code));
 const CATEGORIES = new Set<string>(FILTERABLE_CATEGORIES);
 
