@@ -121,7 +121,14 @@ insert into public.truck_listings (id, company_id, vehicle_id, posted_by, direct
                                    from_city, to_city, available_from, status, waypoints)
 values ('cccccccc-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001',
         'bbbbbbbb-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111',
-        'retur','Hamburg','Cluj-Napoca', current_date, 'active', '["Budapesta","Arad"]');
+        -- The Bucharest date, not the server's. A reservation on this
+        -- departure expires at the end of its day in Europe/Bucharest,
+        -- and between 21:00 and 24:00 UTC `current_date` is the day
+        -- before that — so the departure had already passed, the booking
+        -- below was refused, and the suite could not pass for three hours
+        -- every night.
+        'retur','Hamburg','Cluj-Napoca',
+        (now() at time zone 'Europe/Bucharest')::date, 'active', '["Budapesta","Arad"]');
 insert into public.listing_contacts (truck_listing_id, contact_name, contact_phone)
 values ('cccccccc-0000-0000-0000-000000000001','Ion Pop','+40722000111');
 
