@@ -39,6 +39,13 @@ const PUBLIC_PAGES: { path: string; name: string }[] = [
   { path: '/inregistrare/firma', name: 'înregistrare firmă' },
   { path: '/autentificare', name: 'autentificare' },
   { path: '/resetare-parola', name: 'resetarea parolei' },
+  // The three that are a contract rather than a page. They are swept
+  // like the rest because the failure that matters on them is the same
+  // one: a page that throws, or pushes a phone sideways, is a page
+  // nobody finishes reading.
+  { path: '/termeni', name: 'termeni și condiții' },
+  { path: '/confidentialitate', name: 'politica de confidențialitate' },
+  { path: '/cookies', name: 'cookie-uri' },
 ];
 
 /**
