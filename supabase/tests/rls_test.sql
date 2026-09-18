@@ -3501,12 +3501,18 @@ select pg_temp.check('REQ  the jobs still write listings', 'guard',
 
 -- 20260917090000 added carrier_selected and delivered and left assigned and
 -- completed behind. Nothing may write the old two any more.
+--
+-- Narrowed to functions that touch a listing table: 20260918180000 gave
+-- account_deletion_requests a 'completed' status of its own, and a source
+-- scan that cannot tell one word from the other would have forced the
+-- wrong name onto the new column rather than catching a real regression.
 select pg_temp.check('REQ  no function writes the retired statuses', 'fix',
   null, 'anon',
   $a$select not exists (
        select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public'
-         and (p.prosrc like '%''assigned''%' or p.prosrc like '%''completed''%'))$a$,
+         and (p.prosrc like '%''assigned''%' or p.prosrc like '%''completed''%')
+         and (p.prosrc like '%cargo_listings%' or p.prosrc like '%truck_listings%'))$a$,
   'true');
 
 -- =====================================================================
@@ -5253,7 +5259,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 4 from public.job_health()$a$, 'true');
+  $a$select count(*) = 5 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -5359,6 +5365,428 @@ select pg_temp.check('OUT and the job log records the run', 'guard',
   p_setup => $s$delete from public.notification_outbox;
                 select public.log_job_run('outbox-dispatcher', 4, 1,
                   jsonb_build_object('sent', 4, 'failed', 1))$s$);
+
+-- =====================================================================
+-- DEL - erasure, the grace period and the export
+--
+-- Migration 20260918180000. Three groups, and they fail in different
+-- ways if they are wrong.
+--
+--   * The door. `account_deletion_requests` has no write privilege for
+--     anybody, so every row in it came through an RPC that checked who
+--     was asking. A grant slipping back in is the kind of thing nothing
+--     else would notice.
+--   * The rules. Sole ownership and unfinished transports are checked in
+--     the database, twice — once when the request is made and once when
+--     the job finishes it, because a fortnight is long enough for a new
+--     transport to start.
+--   * The hold. A deletion that leaves the account posting for a
+--     fortnight is not the deletion anybody asked for, and the nightly
+--     compliance sweep must not undo it.
+-- =====================================================================
+
+select pg_temp.check('DEL  nobody writes a deletion request by hand', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.account_deletion_requests (user_id, kind)
+     values ('f0000000-0000-0000-0000-000000000006', 'user')$a$, 'blocked');
+
+select pg_temp.check('DEL  nor edits one that exists', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.account_deletion_requests set status = 'cancelled'
+     where user_id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() + interval '14 days')$s$);
+
+select pg_temp.check('DEL  nor reads somebody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.account_deletion_requests$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() + interval '14 days')$s$);
+
+select pg_temp.check('DEL  a visitor cannot ask for a deletion at all', 'fix',
+  null, 'anon',
+  $a$select public.request_account_deletion('user') is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  a personal request is scheduled, not done', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).status = 'scheduled'$a$, 'true',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  the grace period is the setting, not a guess', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).scheduled_for::date
+            = (current_date + 21)$a$, 'true',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                update public.deletion_settings set grace_days = 21$s$);
+
+select pg_temp.check('DEL  the account is held: its requests come off the board', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).id is not null$a$, 'true',
+  p_verify => $v$select not exists (
+     select 1 from public.cargo_listings
+     where posted_by = 'f0000000-0000-0000-0000-000000000006' and status = 'active')$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  and it cannot publish another one meanwhile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002') is not null$a$,
+  'blocked',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                update public.profiles set deletion_scheduled_at = now()
+                where id = 'f0000000-0000-0000-0000-000000000006';
+                update public.cargo_listings set status = 'draft'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('DEL  the nightly sweep does not undo the hold', 'fix',
+  null, 'service_role',
+  $a$select count(*) >= 0 from public.run_compliance_sweep()$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000002' and status = 'suspended')$v$,
+  p_setup => $s$update public.profiles set deletion_scheduled_at = now()
+                where id = 'f0000000-0000-0000-0000-000000000006';
+                update public.cargo_listings
+                set previous_status = 'active', status = 'suspended'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('DEL  cancelling puts the account back on the board', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.cancel_account_deletion(
+              (select id from public.account_deletion_requests
+               where user_id = 'f0000000-0000-0000-0000-000000000006'))).status = 'cancelled'$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000002' and status = 'active')
+     and (select deletion_scheduled_at is null from public.profiles
+          where id = 'f0000000-0000-0000-0000-000000000006')$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled',
+                        now() + interval '14 days');
+                select public.hold_account_for_deletion(
+                  'f0000000-0000-0000-0000-000000000006', null, 'user')$s$);
+
+select pg_temp.check('DEL  the link in the e-mail works without a session', 'fix',
+  null, 'anon',
+  $a$select public.cancel_account_deletion_by_token('00000000-0000-0000-0000-00000000cccc')$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.account_deletion_requests
+     where user_id = 'f0000000-0000-0000-0000-000000000006' and status = 'cancelled')$v$,
+  p_setup => $s$insert into public.account_deletion_requests
+                  (user_id, kind, status, scheduled_for, cancel_token)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled',
+                        now() + interval '14 days', '00000000-0000-0000-0000-00000000cccc')$s$);
+
+select pg_temp.check('DEL  a token nobody issued cancels nothing', 'fix',
+  null, 'anon',
+  $a$select not public.cancel_account_deletion_by_token(
+       '00000000-0000-0000-0000-0000000000ff')$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() + interval '14 days')$s$);
+
+select pg_temp.check('DEL  and a token that worked once does not work twice', 'fix',
+  null, 'anon',
+  $a$select not public.cancel_account_deletion_by_token('00000000-0000-0000-0000-00000000aaaa')$a$,
+  'true',
+  p_setup => $s$insert into public.account_deletion_requests
+                  (user_id, kind, status, scheduled_for, cancel_token)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled',
+                        now() + interval '14 days', '00000000-0000-0000-0000-00000000aaaa');
+                select public.cancel_account_deletion_by_token(
+                  '00000000-0000-0000-0000-00000000aaaa')$s$);
+
+-- --- The rules -------------------------------------------------------
+select pg_temp.check('DEL  the sole owner of a firm with other people is blocked', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_account_deletion('user')).status = 'blocked'$a$, 'true');
+
+select pg_temp.check('DEL  and is told which firm and how many people', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_account_deletion('user')).reason_blocked
+            like '%RLS Carrier A SRL%membri%'$a$, 'true');
+
+select pg_temp.check('DEL  a blocked request holds nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_account_deletion('user')).id is not null$a$, 'true',
+  p_verify => $v$select (select deletion_scheduled_at is null from public.profiles
+     where id = 'f0000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('DEL  an unfinished transport blocks a personal deletion', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).reason_blocked
+            like '%transport nefinalizat%'$a$, 'true',
+  p_setup => $s$update public.transports set status = 'in_transit'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  a closed one does not', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).status = 'scheduled'$a$, 'true',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  a firm with an unfinished transport cannot be erased', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.request_account_deletion('company', 'fc000000-0000-0000-0000-000000000001')).status
+            = 'blocked'$a$, 'true');
+
+select pg_temp.check('DEL  only the owner may ask for a firm''s erasure', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.request_account_deletion('company', 'fc000000-0000-0000-0000-000000000001')
+            is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  the rules cannot be asked about somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.account_deletion_blockers(
+       'f0000000-0000-0000-0000-000000000002', 'user', null) is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  the screen may ask about the caller', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select array_length(public.my_deletion_blockers('user'), 1) = 1$a$, 'true');
+
+-- --- The job ---------------------------------------------------------
+select pg_temp.check('DEL  a browser cannot claim the deletion batch', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.claim_account_deletions(10) is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  nor finish one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.complete_account_deletion(
+       (select id from public.account_deletion_requests limit 1)) is not null$a$, 'blocked',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  the job leaves a request whose grace period is still running', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 0 from public.claim_account_deletions(10)$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() + interval '1 day')$s$);
+
+select pg_temp.check('DEL  and takes one whose period is up', 'guard',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.claim_account_deletions(10)$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  a transport that started during the grace period stops it', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-000000000006'))).status = 'blocked'$a$, 'true',
+  p_verify => $v$select exists (select 1 from auth.users
+     where id = 'f0000000-0000-0000-0000-000000000006')$v$,
+  p_setup => $s$update public.transports set status = 'in_transit'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  a finished erasure takes the login with it', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-000000000006'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select not exists (select 1 from auth.users
+     where id = 'f0000000-0000-0000-0000-000000000006')$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  the transport stays, without the person', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-000000000006'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.transports
+     where id = 'f3000000-0000-0000-0000-000000000003' and shipper_user_id is null)$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  and the record of the erasure names nobody', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-000000000006'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.account_deletion_requests
+     where status = 'completed' and user_id is null and completed_at is not null)$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  a one-person firm becomes a shell, not a gap', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.companies
+     where id = 'fc000000-0000-0000-0000-000000000003'
+       and legal_name = 'Firmă ștearsă' and contact_email is null and contact_phone is null
+       and anonymised_at is not null and cui like 'STERS-%')$v$,
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  the shell keeps no vehicles', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select not exists (select 1 from public.vehicles
+     where company_id = 'fc000000-0000-0000-0000-000000000003')$v$,
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  nor documents', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select not exists (select 1 from public.documents
+     where company_id = 'fc000000-0000-0000-0000-000000000003')$v$,
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  nor people', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select not exists (select 1 from public.company_members
+     where company_id = 'fc000000-0000-0000-0000-000000000003')$v$,
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day')$s$);
+
+-- --- Staff -----------------------------------------------------------
+select pg_temp.check('DEL  staff anonymisation needs a reason', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_anonymise_account('f0000000-0000-0000-0000-000000000006', '  ')
+            is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  and is not something a user can do to anybody', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.staff_anonymise_account('f0000000-0000-0000-0000-000000000006', 'pentru că da')
+            is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  staff anonymisation is immediate and audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_anonymise_account(
+       'f0000000-0000-0000-0000-000000000006', 'Cerere scrisă, dosar 42')).scheduled_for
+       <= now()$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'account.staff_anonymised' and reason = 'Cerere scrisă, dosar 42')$v$,
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  a browser still cannot remove an owner', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$delete from public.company_members
+     where company_id = 'fc000000-0000-0000-0000-000000000001' and role = 'owner'$a$, 'blocked');
+
+select pg_temp.check('DEL  but the erasure can, silence being the old bug', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_verify => $v$select not exists (select 1 from public.company_members
+     where company_id = 'fc000000-0000-0000-0000-000000000003' and role = 'owner')$v$,
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day')$s$);
+
+select pg_temp.check('DEL  a person cannot lift their own hold from the profile row', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set deletion_scheduled_at = null
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked',
+  p_setup => $s$update public.profiles set deletion_scheduled_at = now()
+                where id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('DEL  nor from the company row', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set deletion_scheduled_at = null
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_setup => $s$update public.companies set deletion_scheduled_at = now()
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DEL  the grace period is not a browser setting', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.deletion_settings set grace_days = 0$a$, 'blocked');
+
+select pg_temp.check('DEL  nor a setting a user can change through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_deletion_settings(0, null) is not null$a$, 'blocked');
+
+-- --- The export ------------------------------------------------------
+select pg_temp.check('DEL  the export answers about the caller and nobody else', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.my_data_export() -> 'profil' ->> 'email' = 'rls-pf@test.ro'$a$, 'true');
+
+select pg_temp.check('DEL  a visitor gets no export', 'fix',
+  null, 'anon',
+  $a$select public.my_data_export() is not null$a$, 'blocked');
+
+select pg_temp.check('DEL  one archive a day', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.request_data_export() is not null$a$, 'blocked',
+  p_setup => $s$insert into public.data_export_requests (user_id)
+                values ('f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('DEL  an archive cannot be pointed at somebody else''s folder', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.finish_data_export(
+       (select id from public.data_export_requests limit 1),
+       'f0000000-0000-0000-0000-000000000002/date.zip') is not null$a$, 'blocked',
+  p_setup => $s$insert into public.data_export_requests (user_id)
+                values ('f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('DEL  a link that was already used hands nothing over', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.claim_data_export(
+       (select id from public.data_export_requests limit 1),
+       '00000000-0000-0000-0000-00000000bbbb') is not null$a$, 'blocked',
+  p_setup => $s$insert into public.data_export_requests
+                  (user_id, status, file_path, expires_at, download_token, downloaded_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'downloaded',
+                        'f0000000-0000-0000-0000-000000000006/date.zip',
+                        now() + interval '24 hours', '00000000-0000-0000-0000-00000000bbbb', now())$s$);
+
+select pg_temp.check('DEL  and refuses an archive that is not the caller''s', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.claim_data_export(
+       (select id from public.data_export_requests limit 1),
+       '00000000-0000-0000-0000-00000000bbbb') is not null$a$, 'blocked',
+  p_setup => $s$insert into public.data_export_requests
+                  (user_id, status, file_path, expires_at, download_token)
+                values ('f0000000-0000-0000-0000-000000000006', 'ready',
+                        'f0000000-0000-0000-0000-000000000006/date.zip',
+                        now() + interval '24 hours', '00000000-0000-0000-0000-00000000bbbb')$s$);
+
+select pg_temp.check('DEL  an expired link hands nothing over', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.claim_data_export(
+       (select id from public.data_export_requests limit 1),
+       '00000000-0000-0000-0000-00000000bbbb') is not null$a$, 'blocked',
+  p_setup => $s$insert into public.data_export_requests
+                  (user_id, status, file_path, expires_at, download_token)
+                values ('f0000000-0000-0000-0000-000000000006', 'ready',
+                        'f0000000-0000-0000-0000-000000000006/date.zip',
+                        now() - interval '1 hour', '00000000-0000-0000-0000-00000000bbbb')$s$);
+
+select pg_temp.check('DEL  a user cannot read another''s export row', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.data_export_requests$a$, 'true',
+  p_setup => $s$insert into public.data_export_requests (user_id)
+                values ('f0000000-0000-0000-0000-000000000006')$s$);
 
 -- =====================================================================
 -- Report
