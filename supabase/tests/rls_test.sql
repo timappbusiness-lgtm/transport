@@ -5502,6 +5502,17 @@ select pg_temp.check('DEL  and a token that worked once does not work twice', 'f
                   '00000000-0000-0000-0000-00000000aaaa')$s$);
 
 -- --- The rules -------------------------------------------------------
+select pg_temp.check('DEL  asking twice answers with the request already running', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.request_account_deletion('user')).id
+            = (select id from public.account_deletion_requests
+               where user_id = 'f0000000-0000-0000-0000-000000000006')$a$, 'true',
+  p_setup => $s$update public.transports set status = 'closed'
+                where shipper_user_id = 'f0000000-0000-0000-0000-000000000006';
+                insert into public.account_deletion_requests (user_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-000000000006', 'user', 'scheduled',
+                        now() + interval '14 days')$s$);
+
 select pg_temp.check('DEL  the sole owner of a firm with other people is blocked', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$select (public.request_account_deletion('user')).status = 'blocked'$a$, 'true');

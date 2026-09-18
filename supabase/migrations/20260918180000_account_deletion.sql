@@ -657,6 +657,18 @@ begin
   v_grace := coalesce(v_grace, 14);
   v_blockers := public.account_deletion_blockers(v_uid, v_kind, p_company_id);
 
+  -- Already running. Asking twice is what somebody does when a screen did
+  -- not refresh, and answering with a unique-violation would turn that
+  -- into an error page on the one screen where a person is already
+  -- nervous. The existing request is the answer.
+  select * into v_row from public.account_deletion_requests
+  where status = 'scheduled'
+    and ((v_kind = 'user' and kind = 'user' and user_id = v_uid)
+         or (v_kind = 'company' and kind = 'company' and company_id = p_company_id));
+  if v_row.id is not null then
+    return v_row;
+  end if;
+
   -- One open request per person and per firm. A second ask replaces the
   -- first rather than raising: somebody who was blocked in the morning
   -- and fixed it by lunchtime is asking the same question again.
@@ -861,6 +873,12 @@ begin
   end if;
 
   v_blockers := public.account_deletion_blockers(p_user_id, 'user', null);
+
+  select * into v_row from public.account_deletion_requests
+  where kind = 'user' and user_id = p_user_id and status = 'scheduled';
+  if v_row.id is not null then
+    return v_row;
+  end if;
 
   delete from public.account_deletion_requests
   where kind = 'user' and user_id = p_user_id and status in ('requested', 'blocked');
