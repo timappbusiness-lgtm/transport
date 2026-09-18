@@ -229,3 +229,66 @@ A missing or expired secret fails its job with a message naming it.
 Settings → Domains. Point the apex and `www` at Vercel, then update
 `NEXT_PUBLIC_SITE_URL` to match and redeploy — it is read at build time, so a
 change needs a new build, not just a restart.
+
+## Joburi programate
+
+`pg_cron` **nu a fost activat niciodată** pe proiect. S-a aflat pe 18
+septembrie 2026, când migrația `20260918160000` a încercat să-l creeze și a
+eșuat. Consecința, pentru perioada dinainte: măturarea nocturnă de
+conformitate, memento-urile de expirare și curățarea anunțurilor **nu au
+rulat deloc**, deci suspendarea automată la expirarea asigurării nu a fost
+aplicată în practică, deși trece fiecare test.
+
+Migrația nu mai blochează deploy-ul pentru asta — o migrație care nu se
+poate aplica nu e un avertisment, e o pană, și ar fi ținut ostatice și
+schimbările care n-au nicio treabă cu cron. În schimb, `/admin/notificari`
+arată fiecare job ca **întârziat** cât timp nu e programat, și continuă
+s-o arate.
+
+### Pornirea, o singură dată
+
+În Supabase → SQL Editor, ca `postgres`:
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+
+select cron.schedule('nightly-compliance-sweep', '0 2 * * *',
+                     'select public.run_compliance_sweep();');
+select cron.schedule('nightly-expiry-reminders', '15 2 * * *',
+                     'select public.queue_expiry_reminders();');
+select cron.schedule('hourly-listing-cleanup', '5 * * * *',
+                     'select public.expire_stale_listings();');
+select cron.schedule('outbox-dispatcher', '*/5 * * * *',
+                     'select public.dispatch_outbox_http();');
+```
+
+Dacă `create extension` dă eroare de permisiuni, extensiile se activează din
+Dashboard → Database → Extensions, apoi se rulează doar cele patru
+`cron.schedule`.
+
+### Verificare
+
+```sql
+select jobname, schedule, active from cron.job order by jobname;
+```
+
+Trebuie să apară patru rânduri. După asta, `/admin/notificari` trece fiecare
+job pe „la zi" pe măsură ce rulează.
+
+### Secretele dispecerului
+
+`dispatch_outbox_http()` citește adresa funcției și secretul partajat din
+Vault, niciodată din migrație — o migrație e în git, iar un secret în git e
+unul pe care nimeni nu-l poate roti.
+
+Supabase → Project Settings → Vault → New secret:
+
+| Nume | Valoare |
+|---|---|
+| `outbox_dispatcher_url` | `https://<project-ref>.supabase.co/functions/v1/outbox-dispatcher` |
+| `cron_secret` | aceeași valoare ca secretul `CRON_SECRET` al funcțiilor |
+
+Și pe Edge Functions: `RESEND_API_KEY`, `MAIL_FROM`. Fără ele dispecerul
+răspunde 503 și numește variabila lipsă, în loc să raporteze succes în timp
+ce coada crește.

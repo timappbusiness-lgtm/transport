@@ -422,23 +422,33 @@ declare
   v_harness boolean := coalesce(
     current_setting('coridor.allow_missing_cron', true), 'off'
   ) = 'on';
-  v_has_cron boolean;
   v_cron_error text := null;
-  v_net_error text := null;
 begin
-  -- Try first, complain second.
+  -- Try to schedule. Never block the deploy on it.
   --
-  -- The first version of this block only complained, and the pipeline
-  -- answered the question it was written to ask: **pg_cron was never
-  -- enabled on this project.** Three nightly jobs had therefore never
-  -- run since the day they were written.
+  -- This block has now been written three ways, and the first two were
+  -- both wrong in instructive directions.
   --
-  -- On Supabase these are ordinary extensions a migration may create, so
-  -- refusing to deploy over something we can do ourselves is a worse
-  -- trade than doing it. The loud failure stays for the case where the
-  -- creation itself fails — a project where the extension is genuinely
-  -- unavailable still stops here, with the reason, rather than carrying
-  -- on quietly.
+  -- It started as a notice-and-carry-on, which is why nobody could tell a
+  -- project with a nightly compliance sweep from one without: the
+  -- migration succeeded either way and every test passed either way,
+  -- because no test asked. The pipeline eventually answered it —
+  -- **pg_cron was never enabled on this project**, so three nightly jobs
+  -- had never run since the day they were written.
+  --
+  -- Then it raised. That told us the truth, and immediately made a
+  -- dashboard toggle nobody had flipped into a hard block on every future
+  -- deploy, including deploys that have nothing to do with cron. A
+  -- migration that cannot apply is not a warning, it is an outage.
+  --
+  -- So: scheduling is environment configuration, not schema. The
+  -- migration installs everything it owns and schedules if it can. When
+  -- it cannot, `job_health()` reports every job as unscheduled and late,
+  -- `/admin/notificari` shows that in red at the top of the page, and it
+  -- keeps showing it — which is a louder signal than a CI log nobody
+  -- reads twice, and a permanent one.
+  --
+  -- The SQL to run by hand is in `docs/DEPLOYMENT.md`.
   if to_regproc('cron.schedule(text,text,text)') is null and not v_harness then
     begin
       execute 'create extension if not exists pg_cron';
@@ -451,26 +461,15 @@ begin
     begin
       execute 'create extension if not exists pg_net';
     exception when others then
-      v_net_error := sqlerrm;
+      null;
     end;
   end if;
 
-  v_has_cron := to_regproc('cron.schedule(text,text,text)') is not null;
-
-  if not v_has_cron then
-    if v_harness then
-      raise notice 'pg_cron absent; test harness, scheduling skipped.';
-      return;
-    end if;
-
-    raise exception using
-      errcode = 'feature_not_supported',
-      message = 'pg_cron nu este activat și nu a putut fi activat de aici.',
-      detail  = coalesce('Motivul: ' || v_cron_error || '. ', '')
-                || 'Fără el, măturarea de conformitate, memento-urile de expirare, '
-                || 'curățarea anunțurilor și livrarea notificărilor nu rulează deloc. '
-                || 'Cerința clientului privind expirarea asigurării nu este aplicată în practică.',
-      hint    = 'Supabase → Database → Extensions → activează pg_cron, apoi repornește pipeline-ul.';
+  if to_regproc('cron.schedule(text,text,text)') is null then
+    raise warning
+      'pg_cron nu este disponibil (%). Joburile NU sunt programate: măturarea de conformitate, memento-urile de expirare, curățarea anunțurilor și livrarea notificărilor nu vor rula. Vezi docs/DEPLOYMENT.md, secțiunea Joburi programate. /admin/notificari le arată ca întârziate până când sunt pornite.',
+      coalesce(v_cron_error, 'extensia nu poate fi creată de aici');
+    return;
   end if;
 
   perform cron.schedule('nightly-compliance-sweep', '0 2 * * *',
@@ -480,16 +479,11 @@ begin
   perform cron.schedule('hourly-listing-cleanup', '5 * * * *',
                         'select public.expire_stale_listings();');
 
-  -- The dispatcher is an HTTP call, not SQL, so it needs pg_net. Same
-  -- rule: we try, then we complain.
+  -- The dispatcher is an HTTP call, not SQL, so it needs pg_net.
   if to_regproc('net.http_post(text,jsonb,jsonb,jsonb,integer)') is null then
-    raise exception using
-      errcode = 'feature_not_supported',
-      message = 'pg_net nu este activat și nu a putut fi activat de aici.',
-      detail  = coalesce('Motivul: ' || v_net_error || '. ', '')
-                || 'Dispecerul de notificări este o funcție edge, iar pg_cron o poate '
-                || 'apela doar prin net.http_post. Fără el, coada nu se golește.',
-      hint    = 'Supabase → Database → Extensions → activează pg_net, apoi repornește pipeline-ul.';
+    raise warning
+      'pg_net nu este disponibil. Cele trei joburi SQL sunt programate, dar dispecerul de notificări nu — coada nu se va goli. Vezi docs/DEPLOYMENT.md.';
+    return;
   end if;
 
   perform cron.schedule('outbox-dispatcher', '*/5 * * * *',
