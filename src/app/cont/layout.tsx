@@ -10,7 +10,7 @@ import { ROUTES } from '@/config/routes';
 import { TermsGate } from '@/components/legal/terms-gate';
 import { CURRENT_TERMS_VERSION, needsTermsAcceptance } from '@/content/legal';
 import { requireAccountContext } from '@/lib/auth/account';
-import { isDriverAllowed } from '@/lib/auth/guards';
+import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import { pickBanner } from '@/lib/banners';
 import { EXPIRY_WINDOW_DAYS } from '@/lib/dashboard-source';
 import { activeHref, bottomNav, buildNav } from '@/lib/navigation';
@@ -44,7 +44,10 @@ export default async function AccountLayout({ children }: { children: React.Reac
   // account we cannot point at anything for. Rendered in place of the
   // shell rather than over it: no z-index, no scroll lock, and nothing
   // behind it to reach with a keyboard.
-  if (needsTermsAcceptance(context.profile?.terms_version_accepted)) {
+  if (
+    needsTermsAcceptance(context.profile?.terms_version_accepted) &&
+    !isOpenWithoutTerms(pathname)
+  ) {
     return <TermsGate version={CURRENT_TERMS_VERSION} />;
   }
 

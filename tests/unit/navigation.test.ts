@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ROUTES } from '@/config/routes';
 import { FEATURES, type FeatureMap } from '@/lib/features';
+import { isOpenWithoutTerms } from '@/lib/auth/guards';
 import {
   BOTTOM_NAV_MAX,
   activeHref,
@@ -254,5 +255,30 @@ describe('which item is the current one', () => {
   it('does not mark Acasă on every page under /cont', () => {
     const items = buildNav(context(), ALL);
     expect(activeHref(items, '/cont/firma/documente')).toBe(ROUTES.accountDocuments);
+  });
+});
+
+describe('what stays open to somebody who has not accepted the terms', () => {
+  it('lets them reach the page that exports and deletes', () => {
+    // „You may leave" is worth nothing if the page that lets you leave is
+    // behind the thing you are refusing.
+    expect(isOpenWithoutTerms(ROUTES.accountPersonalData)).toBe(true);
+    expect(isOpenWithoutTerms(`${ROUTES.accountPersonalData}/descarca/abc`)).toBe(true);
+  });
+
+  it('and nothing else in the account', () => {
+    for (const route of [
+      ROUTES.account,
+      ROUTES.accountRequests,
+      ROUTES.accountCompany,
+      ROUTES.accountNotificationSettings,
+      ROUTES.accountSettings,
+    ]) {
+      expect(isOpenWithoutTerms(route), route).toBe(false);
+    }
+  });
+
+  it('does not open a route that merely starts with the same letters', () => {
+    expect(isOpenWithoutTerms('/cont/setari/date-personale-altceva')).toBe(false);
   });
 });
