@@ -267,7 +267,16 @@ insert into public.truck_listings (id, company_id, vehicle_id, posted_by, direct
   ('fb000000-0000-0000-0000-000000000005', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Cluj-Napoca', 'Hamburg',   current_date + 5, 'active', null),
   ('fb000000-0000-0000-0000-000000000006', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Iași',      'Berlin',      current_date + 6, 'draft',  2),
   ('fb000000-0000-0000-0000-000000000007', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Arad',      'Madrid',      current_date + 6, 'draft',  null),
-  ('fb000000-0000-0000-0000-000000000008', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'retur', 'Linz',      'Sibiu',       current_date,     'active', 2);
+  -- Its departure day has to end between now and now + 24 hours, whatever
+  -- the hour the suite runs, because the P10 check below asserts that the
+  -- end of the day is what the expiry clamps to.
+  --
+  -- `current_date` is the server's date, and the rule is written in
+  -- Europe/Bucharest. Between 21:00 and 24:00 UTC those are different
+  -- days: the departure day had already ended, the insert was refused
+  -- with „Plecarea a trecut", and the suite could not pass for three
+  -- hours every night. Nobody had run it at that hour.
+  ('fb000000-0000-0000-0000-000000000008', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'retur', 'Linz',      'Sibiu',       (now() at time zone 'Europe/Bucharest')::date, 'active', 2);
 
 update public.truck_listings set status = 'expired' where id = 'fb000000-0000-0000-0000-000000000007';
 
