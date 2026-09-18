@@ -51,6 +51,9 @@ export const ROUTES = {
   accountTransports: '/cont/transporturi',
   accountNotifications: '/cont/notificari',
   accountSettings: '/cont/setari',
+  // The notifications *settings*. `accountNotifications` above is the
+  // notifications centre, which is a different screen and not built yet.
+  accountNotificationSettings: '/cont/setari/notificari',
 
   // Staff
   admin: '/admin',

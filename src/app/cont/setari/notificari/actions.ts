@@ -69,7 +69,7 @@ export async function saveSubscriptionAction(input: {
 
   if (error) return { error: toAppError(error, 'push.save').message };
 
-  revalidatePath(`${ROUTES.accountSettings}/notificari`);
+  revalidatePath(ROUTES.accountNotificationSettings);
   return { notice: 'Notificările sunt pornite pe acest dispozitiv.' };
 }
 
@@ -86,7 +86,7 @@ export async function removeSubscriptionAction(endpoint: string): Promise<Notifi
 
   if (error) return { error: toAppError(error, 'push.remove').message };
 
-  revalidatePath(`${ROUTES.accountSettings}/notificari`);
+  revalidatePath(ROUTES.accountNotificationSettings);
   return { notice: 'Notificările sunt oprite pe acest dispozitiv.' };
 }
 
@@ -113,7 +113,7 @@ export async function setPreferenceAction(
 
   if (error) return { error: toAppError(error, 'push.preference').message };
 
-  revalidatePath(`${ROUTES.accountSettings}/notificari`);
+  revalidatePath(ROUTES.accountNotificationSettings);
   return { notice: 'Salvat.' };
 }
 
@@ -150,7 +150,7 @@ export async function setQuietHoursAction(
 
   if (error) return { error: toAppError(error, 'push.quietHours').message };
 
-  revalidatePath(`${ROUTES.accountSettings}/notificari`);
+  revalidatePath(ROUTES.accountNotificationSettings);
   return { notice: 'Setările au fost salvate.' };
 }
 

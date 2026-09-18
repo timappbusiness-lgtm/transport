@@ -69,6 +69,12 @@ function driverNav(features: FeatureMap): NavItem[] {
     });
   }
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
+  items.push({
+    href: ROUTES.accountNotificationSettings,
+    label: 'Notificări',
+    group: 'cont',
+    priority: 9,
+  });
   return items;
 }
 
@@ -96,6 +102,12 @@ function individualNav(features: FeatureMap): NavItem[] {
   // nothing else to look at yet it is the one useful destination.
   items.push({ href: ROUTES.routes, label: 'Trasee disponibile', group: 'principal', priority: 60 });
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
+  items.push({
+    href: ROUTES.accountNotificationSettings,
+    label: 'Notificări',
+    group: 'cont',
+    priority: 9,
+  });
   return items;
 }
 
@@ -220,6 +232,12 @@ export function buildNav(
   }
 
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
+  items.push({
+    href: ROUTES.accountNotificationSettings,
+    label: 'Notificări',
+    group: 'cont',
+    priority: 9,
+  });
   return dedupe(items);
 }
 
