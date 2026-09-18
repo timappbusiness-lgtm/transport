@@ -4,6 +4,18 @@ Audit făcut pe `main` la commit `189b621`, 18 septembrie 2026.
 Metoda și limitele verificării sunt în anexa de la final — citește-o înainte
 să te bazezi pe vreun rând din tabele.
 
+> **Ce s-a schimbat de la audit.** Documentul rămâne așa cum a fost scris, la
+> data lui — un audit rescris pe măsură ce se repară nu mai e un audit. Ce a
+> fost livrat între timp, cu constatarea pe care o închide:
+>
+> | Livrat | Constatarea din document |
+> |---|---|
+> | Dispecerul de notificări și joburile programate (`20260918160000`) | §3, „niciun e-mail nu pleacă" |
+> | Ștergerea contului și a firmei, exportul datelor (`20260918180000`) | §5 GDPR, „nu există flux de ștergere a contului" |
+>
+> Restul constatărilor stau în picioare, inclusiv retenția pentru
+> `contact_reveals` și paginile juridice.
+
 ---
 
 ## Pentru client — o pagină
