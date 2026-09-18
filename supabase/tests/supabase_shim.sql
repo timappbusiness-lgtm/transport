@@ -92,3 +92,16 @@ grant all on storage.objects, storage.buckets to anon, authenticated, service_ro
 -- service_role stands in for it so tests can exercise triggers on auth.users
 -- without running as superuser.
 grant select, update on auth.users to service_role;
+
+-- The throwaway database can never have pg_cron: it needs
+-- shared_preload_libraries, which is a server setting, not an extension a
+-- migration can create. Migration 20260918160000 raises when pg_cron is
+-- missing, precisely so a real project cannot pass silently without it —
+-- this setting is the one exemption, and it lives here because this file
+-- is the only one that never runs against a real project.
+do $harness$
+begin
+  execute format('alter database %I set coridor.allow_missing_cron = ''on''',
+                 current_database());
+end;
+$harness$;

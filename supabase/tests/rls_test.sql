@@ -1077,7 +1077,7 @@ select pg_temp.check('#15  a member can still upload a new file', 'guard',
   $a$insert into storage.objects (bucket_id, name) values ('documents', 'fc000000-0000-0000-0000-000000000001/nou.pdf')$a$, 'allowed');
 
 -- =====================================================================
--- #17 audit_log, #18 n8n_run_log
+-- #17 audit_log, #18 job_run_log (was n8n_run_log)
 -- =====================================================================
 
 select pg_temp.check('#17  staff cannot edit the audit log', 'fix',
@@ -1117,13 +1117,13 @@ select pg_temp.check('#17  an automatic reactivation is audited', 'fix',
   p_verify => $v$select exists (select 1 from public.audit_log where action = 'company.reactivated'
                                 and entity_id = 'fc000000-0000-0000-0000-000000000002')$v$);
 
-select pg_temp.check('#18  n8n_run_log exists and a user cannot write to it', 'fix',
+select pg_temp.check('#18  job_run_log exists and a user cannot write to it', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$insert into public.n8n_run_log (workflow) values ('forged')$a$, 'blocked');
+  $a$insert into public.job_run_log (workflow) values ('forged')$a$, 'blocked');
 
-select pg_temp.check('#18  n8n (service_role) writes its run log', 'fix',
+select pg_temp.check('#18  a job (service_role) writes its run log', 'fix',
   null, 'service_role',
-  $a$insert into public.n8n_run_log (workflow, processed) values ('outbox-dispatcher', 3)$a$, 'allowed');
+  $a$insert into public.job_run_log (workflow, processed) values ('outbox-dispatcher', 3)$a$, 'allowed');
 
 -- =====================================================================
 -- Phase 1 - membership by invitation
@@ -5028,6 +5028,337 @@ select pg_temp.check('IMP neither counter function is reachable from a browser',
        and routine_name in ('claim_import_slot', 'finish_import',
                             'queue_import_budget_alert', 'import_month_spend')
        and grantee in ('authenticated', 'anon', 'PUBLIC')$a$, 'true');
+
+-- =====================================================================
+-- Delivering the outbox
+--
+-- The queue has been filling since migration 0007 and nothing drained it.
+-- These checks are about the two ways a drain goes wrong: it sends the
+-- same thing twice, or it gives up without anybody noticing.
+-- =====================================================================
+
+select pg_temp.check('OUT only email and in-app are claimed', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 2 and bool_and(channel in ('email', 'inapp'))
+     from public.claim_outbox_batch(50)$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('email', 'company_verified', 'f0000000-0000-0000-0000-000000000006'),
+                       ('inapp', 'company_verified', 'f0000000-0000-0000-0000-000000000006'),
+                       ('push',  'request_match_alert', 'f0000000-0000-0000-0000-000000000006'),
+                       ('sms',   'company_verified', 'f0000000-0000-0000-0000-000000000006')$s$);
+
+-- Push has its own claim function and its own sender. Two functions
+-- claiming the same row is the one bug this shape exists to prevent.
+select pg_temp.check('OUT a push row is left for its own dispatcher', 'fix',
+  null, 'service_role',
+  $a$select status = 'queued' from public.notification_outbox where channel = 'push'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('push', 'request_match_alert', 'f0000000-0000-0000-0000-000000000006');
+                select public.claim_outbox_batch(50)$s$);
+
+-- Nothing queues sms or whatsapp today and no provider has been chosen.
+-- Claiming one would drain it into nowhere.
+select pg_temp.check('OUT an sms row is not quietly drained', 'fix',
+  null, 'service_role',
+  $a$select status = 'queued' from public.notification_outbox where channel = 'sms'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('sms', 'company_verified', 'f0000000-0000-0000-0000-000000000006');
+                select public.claim_outbox_batch(50)$s$);
+
+select pg_temp.check('OUT a claimed row is marked sending', 'fix',
+  null, 'service_role',
+  $a$select status = 'sending' and attempts = 1
+     from public.notification_outbox where channel = 'email'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('email', 'company_verified', 'f0000000-0000-0000-0000-000000000006');
+                select public.claim_outbox_batch(50)$s$);
+
+select pg_temp.check('OUT a row whose time has not come is left alone', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 0 from public.claim_outbox_batch(50)$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, send_after)
+                values ('email', 'company_verified',
+                        'f0000000-0000-0000-0000-000000000006', now() + interval '1 hour')$s$);
+
+select pg_temp.check('OUT the batch size is respected', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 3 from public.claim_outbox_batch(3)$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                select 'email', 'company_verified', 'f0000000-0000-0000-0000-000000000006'
+                from generate_series(1, 10)$s$);
+
+-- ---------------------------------------------------------------------
+-- The backoff, and the point at which we stop
+-- ---------------------------------------------------------------------
+select pg_temp.check('OUT the backoff is 10, 20, 30, 40 and then stays 40', 'fix',
+  null, 'service_role',
+  $a$select public.outbox_backoff_minutes(1) = 10
+        and public.outbox_backoff_minutes(2) = 20
+        and public.outbox_backoff_minutes(3) = 30
+        and public.outbox_backoff_minutes(4) = 40
+        and public.outbox_backoff_minutes(9) = 40$a$, 'true');
+
+select pg_temp.check('OUT a failure goes back to the queue with its wait', 'fix',
+  null, 'service_role',
+  $a$select status = 'queued'
+        and send_after > now() + interval '9 minutes'
+        and send_after < now() + interval '11 minutes'
+        and last_error = 'provider a răspuns 500'
+     from public.notification_outbox where channel = 'email'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('email', 'company_verified', 'f0000000-0000-0000-0000-000000000006');
+                select public.finish_outbox(
+                  (select id from public.claim_outbox_batch(1)), 'failed', 'provider a răspuns 500')$s$);
+
+select pg_temp.check('OUT after five attempts it stays failed', 'fix',
+  null, 'service_role',
+  $a$select status = 'failed' and attempts = 5 and last_error is not null
+     from public.notification_outbox where channel = 'email'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, attempts)
+                values ('email', 'company_verified',
+                        'f0000000-0000-0000-0000-000000000006', 4);
+                select public.finish_outbox(
+                  (select id from public.claim_outbox_batch(1)), 'failed', 'al cincilea eșec')$s$);
+
+select pg_temp.check('OUT a sent row records when, and clears the error', 'fix',
+  null, 'service_role',
+  $a$select status = 'sent' and sent_at is not null and last_error is null
+     from public.notification_outbox where channel = 'email'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, last_error)
+                values ('email', 'company_verified',
+                        'f0000000-0000-0000-0000-000000000006', 'eșec anterior');
+                select public.finish_outbox(
+                  (select id from public.claim_outbox_batch(1)), 'sent')$s$);
+
+select pg_temp.check('OUT a status nobody defined is refused', 'fix',
+  null, 'service_role',
+  $a$select public.finish_outbox(
+       (select id from public.notification_outbox limit 1), 'poate')$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, recipient_user_id)
+                values ('email', 'company_verified', 'f0000000-0000-0000-0000-000000000006')$s$);
+
+-- ---------------------------------------------------------------------
+-- The same thing, twice
+-- ---------------------------------------------------------------------
+select pg_temp.check('OUT the dedupe key refuses a second identical row', 'fix',
+  null, 'service_role',
+  $a$insert into public.notification_outbox
+       (channel, template, recipient_user_id, dedupe_key)
+     values ('email', 'document_expiry_reminder',
+             'f0000000-0000-0000-0000-000000000006', 'doc:1:30')$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, dedupe_key)
+                values ('email', 'document_expiry_reminder',
+                        'f0000000-0000-0000-0000-000000000006', 'doc:1:30')$s$);
+
+select pg_temp.check('OUT and still refuses it after the first one was sent', 'fix',
+  null, 'service_role',
+  $a$insert into public.notification_outbox
+       (channel, template, recipient_user_id, dedupe_key)
+     values ('email', 'document_expiry_reminder',
+             'f0000000-0000-0000-0000-000000000006', 'doc:1:30')$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, dedupe_key)
+                values ('email', 'document_expiry_reminder',
+                        'f0000000-0000-0000-0000-000000000006', 'doc:1:30');
+                select public.finish_outbox(
+                  (select id from public.claim_outbox_batch(1)), 'sent')$s$);
+
+-- ---------------------------------------------------------------------
+-- Two runs at once
+--
+-- The real thing this protects: a run that takes longer than five minutes
+-- overlaps the next one. Without `for update skip locked` both claim the
+-- same rows and every recipient gets two e-mails.
+-- ---------------------------------------------------------------------
+do $$
+declare
+  v_a bigint;
+  v_b bigint;
+  v_pass boolean;
+  v_detail text;
+begin
+  perform dblink_connect('out_c1', 'dbname=' || current_database());
+  perform dblink_connect('out_c2', 'dbname=' || current_database());
+
+  perform dblink_exec('out_c1', 'begin');
+  perform dblink_exec('out_c2', 'begin');
+
+  -- This block is not inside pg_temp.check, so it owns its cleanup at both
+  -- ends: the fixture's own outbox rows would otherwise be counted here.
+  perform dblink_exec('out_c1', 'delete from public.notification_outbox');
+  perform dblink_exec('out_c1',
+    $q$insert into public.notification_outbox (channel, template)
+       select 'email', 'company_verified' from generate_series(1, 6)$q$);
+  perform dblink_exec('out_c1', 'commit');
+  perform dblink_exec('out_c1', 'begin');
+
+  -- Both connections claim while the other's transaction is open.
+  select t.n into v_a from dblink('out_c1',
+    'select count(*) from public.claim_outbox_batch(10)') as t(n bigint);
+  select t.n into v_b from dblink('out_c2',
+    'select count(*) from public.claim_outbox_batch(10)') as t(n bigint);
+
+  perform dblink_exec('out_c1', 'commit');
+  perform dblink_exec('out_c2', 'commit');
+
+  v_pass := (v_a + v_b) = 6 and v_a > 0;
+  v_detail := format('first run took %s, second took %s, six rows in total', v_a, v_b);
+
+  perform dblink_exec('out_c1', 'delete from public.notification_outbox');
+  perform dblink_disconnect('out_c1');
+  perform dblink_disconnect('out_c2');
+
+  insert into rls_results (label, kind, pass, detail)
+  values ('OUT two overlapping runs never claim the same row', 'fix', v_pass, v_detail);
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Who may touch any of this
+-- ---------------------------------------------------------------------
+select pg_temp.check('OUT nobody claims a batch from a browser', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.claim_outbox_batch(50)$a$, 'blocked');
+
+select pg_temp.check('OUT nor marks one sent', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.finish_outbox(
+       (select id from public.notification_outbox limit 1), 'sent')$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template)
+                values ('email', 'company_verified')$s$);
+
+select pg_temp.check('OUT nor writes a run into the log', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.log_job_run('outbox-dispatcher', 99, 0)$a$, 'blocked');
+
+select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.job_health()$a$, 'blocked');
+
+select pg_temp.check('OUT staff can', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 4 from public.job_health()$a$, 'true');
+
+select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select bool_and(is_late) and bool_and(last_status = 'niciodată')
+     from public.job_health()$a$, 'true');
+
+select pg_temp.check('OUT a run within the window clears the alarm', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select not is_late from public.job_health()
+     where job = 'nightly-compliance-sweep'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.job_run_log (workflow, ran_at)
+                values ('nightly-compliance-sweep', now() - interval '2 hours')$s$);
+
+select pg_temp.check('OUT thirty-six hours without a sweep is late', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select is_late from public.job_health()
+     where job = 'nightly-compliance-sweep'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.job_run_log (workflow, ran_at)
+                values ('nightly-compliance-sweep', now() - interval '37 hours')$s$);
+
+select pg_temp.check('OUT a failed run reads as failed', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select last_status = 'failed' from public.job_health()
+     where job = 'outbox-dispatcher'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.job_run_log (workflow, processed, failed)
+                values ('outbox-dispatcher', 10, 2)$s$);
+
+-- ---------------------------------------------------------------------
+-- Retrying by hand
+-- ---------------------------------------------------------------------
+select pg_temp.check('OUT a user cannot retry a notification', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.retry_outbox_row((select id from public.notification_outbox limit 1))$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, status)
+                values ('email', 'company_verified', 'failed')$s$);
+
+select pg_temp.check('OUT staff can, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.retry_outbox_row((select id from public.notification_outbox limit 1))$a$, 'allowed',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox
+                  (channel, template, status, attempts, last_error)
+                values ('email', 'company_verified', 'failed', 5, 'a picat')$s$,
+  p_verify => $v$select status = 'queued' and attempts = 0 and last_error is null
+                 from public.notification_outbox limit 1$v$);
+
+select pg_temp.check('OUT a row that is still going is not retried', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.retry_outbox_row((select id from public.notification_outbox limit 1))$a$, 'blocked',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_outbox (channel, template, status)
+                values ('email', 'company_verified', 'queued')$s$);
+
+-- ---------------------------------------------------------------------
+-- End to end: an expiring document becomes exactly one e-mail per
+-- milestone, and running everything twice changes nothing
+--
+-- This is the check that would have caught the original bug, if the
+-- original bug had been "sends twice" rather than "never sends".
+-- ---------------------------------------------------------------------
+select pg_temp.check('OUT an expiring document queues one reminder per milestone', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.notification_outbox
+     where template = 'document_expiry_reminder'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.documents
+                set valid_until = current_date + 30, status = 'approved'
+                where id = (select id from public.documents
+                            where status = 'approved' limit 1);
+                select public.queue_expiry_reminders()$s$);
+
+select pg_temp.check('OUT running the reminder job twice queues nothing new', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.notification_outbox
+     where template = 'document_expiry_reminder'$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.documents
+                set valid_until = current_date + 30, status = 'approved'
+                where id = (select id from public.documents
+                            where status = 'approved' limit 1);
+                select public.queue_expiry_reminders();
+                select public.queue_expiry_reminders()$s$);
+
+select pg_temp.check('OUT the reminder is delivered once and then gone from the queue', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 0 from public.claim_outbox_batch(50)$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.documents
+                set valid_until = current_date + 30, status = 'approved'
+                where id = (select id from public.documents
+                            where status = 'approved' limit 1);
+                select public.queue_expiry_reminders();
+                select public.finish_outbox(id, 'sent') from public.claim_outbox_batch(50)$s$);
+
+select pg_temp.check('OUT and the job log records the run', 'guard',
+  null, 'service_role',
+  $a$select processed = 4 and failed = 1 from public.job_run_log
+     where workflow = 'outbox-dispatcher' order by ran_at desc limit 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select public.log_job_run('outbox-dispatcher', 4, 1,
+                  jsonb_build_object('sent', 4, 'failed', 1))$s$);
 
 -- =====================================================================
 -- Report
