@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ROUTES } from '@/config/routes';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -22,6 +23,12 @@ export async function GET(
 ): Promise<Response> {
   const { id } = await params;
   const token = request.nextUrl.searchParams.get('t') ?? '';
+
+  // Without configuration there is no session and no storage, so this is
+  // the same answer as an unknown visitor rather than a 500.
+  if (!isSupabaseConfigured()) {
+    return NextResponse.redirect(new URL(ROUTES.signIn, request.nextUrl.origin));
+  }
 
   const supabase = await createClient();
   const {
