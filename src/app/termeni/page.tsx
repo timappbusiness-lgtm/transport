@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
-import { PlaceholderPage } from '@/components/layout/placeholder-page';
+import { LegalPage } from '@/components/legal/legal-page';
+import { LEGAL_DOCUMENTS } from '@/content/legal';
 
-export const metadata: Metadata = { title: 'Termeni și condiții' };
+const doc = LEGAL_DOCUMENTS.termeni;
+
+export const metadata: Metadata = {
+  title: doc.title,
+  description: 'Termenii în care poți folosi platforma: ce facem, ce nu facem și ce își asumă fiecare.',
+};
 
 export default function Page() {
-  return (
-    <PlaceholderPage title="Termeni și condiții">
-      Termenii de utilizare sunt în redactare.
-    </PlaceholderPage>
-  );
+  return <LegalPage document={doc} />;
 }

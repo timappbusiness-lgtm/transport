@@ -16,6 +16,7 @@ const LINKS = [
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },
   { href: ROUTES.privacy, label: 'Confidențialitate' },
+  { href: ROUTES.cookies, label: 'Cookie-uri' },
 ] as const;
 
 /**

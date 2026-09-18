@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import { CURRENT_TERMS_VERSION } from '@/content/legal';
 import { safeNextPath } from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -99,8 +100,14 @@ async function signUp(
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/cont')}`,
       // A trigger copies these into `profiles`; the column is not writable
-      // from the client.
-      data: { full_name: fullName, account_type: accountType },
+      // from the client. The version is the one this server rendered on
+      // the checkbox, never a value from the form: a browser that could
+      // choose it could accept a document nobody has published.
+      data: {
+        full_name: fullName,
+        account_type: accountType,
+        terms_version: CURRENT_TERMS_VERSION,
+      },
     },
   });
 

@@ -5259,7 +5259,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 7 from public.job_health()$a$, 'true');
+  $a$select count(*) = 8 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -5962,6 +5962,168 @@ select pg_temp.check('MAT  nothing here can return a name', 'fix',
   p_setup => :'mat_isolate');
 
 -- =====================================================================
+-- LAW - accepting the terms, and letting go of the reveal log
+--
+-- Migrations 20260918220000 and 20260918230000.
+--
+-- Consent that the person consenting can write is not evidence of
+-- anything, so the first half of this block is about the fact that they
+-- cannot: not the version, not the date, not a row in the history. The
+-- second half is the retention period from
+-- `docs/06-gdpr-and-antifraud.md`, which was a sentence in a document for
+-- as long as it took somebody to ask why we still held a record of who
+-- looked at their telephone number two years ago.
+-- =====================================================================
+
+select pg_temp.check('LAW  nobody writes their own acceptance', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.terms_acceptances (user_id, document, version)
+     values ('f0000000-0000-0000-0000-000000000006', 'termeni', '9.9')$a$, 'blocked');
+
+select pg_temp.check('LAW  nor the version on their profile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set terms_version_accepted = '9.9'
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked');
+
+select pg_temp.check('LAW  nor the date they agreed', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set terms_accepted_at = now() - interval '2 years'
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked');
+
+select pg_temp.check('LAW  accepting records the version on the profile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('1.0')).version = '1.0'$a$, 'true',
+  p_verify => $v$select terms_version_accepted = '1.0' and terms_accepted_at is not null
+     from public.profiles where id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('LAW  and in the history, which the profile cannot hold', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('2.0')).version = '2.0'$a$, 'true',
+  p_verify => $v$select count(*) = 2 from public.terms_acceptances
+     where user_id = 'f0000000-0000-0000-0000-000000000006'$v$,
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+select pg_temp.check('LAW  accepting the same version twice keeps the first time', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('1.0')).accepted_at < now() - interval '300 days'$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version, accepted_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0',
+                        now() - interval '1 year')$s$);
+
+select pg_temp.check('LAW  a version that is not a version is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('am citit')).version is not null$a$, 'blocked');
+
+select pg_temp.check('LAW  a visitor accepts nothing', 'fix',
+  null, 'anon',
+  $a$select (public.accept_terms('1.0')).version is not null$a$, 'blocked');
+
+select pg_temp.check('LAW  one person cannot read another''s consent', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.terms_acceptances$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+select pg_temp.check('LAW  staff can, which is what a complaint needs', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.terms_acceptances$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+-- Sign-up is where almost every acceptance is recorded, and it happens
+-- inside a trigger on a table no application role can write.
+select pg_temp.check('LAW  sign-up carries the version it showed', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.terms_acceptances
+     where user_id = 'f0000000-0000-0000-0000-0000000000e1' and version = '1.0'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e1', 'lawsignup@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"1.0"}')$s$);
+
+select pg_temp.check('LAW  and the profile with it', 'fix',
+  null, 'service_role',
+  $a$select terms_version_accepted = '1.0' and terms_accepted_at is not null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e2'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e2', 'lawsignup2@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"1.0"}')$s$);
+
+select pg_temp.check('LAW  a sign-up with no version is not refused, only unrecorded', 'guard',
+  null, 'service_role',
+  $a$select terms_version_accepted is null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e3'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e3', 'lawsignup3@test.ro',
+      '{"full_name":"Nou","account_type":"individual"}')$s$);
+
+select pg_temp.check('LAW  and a version the browser invented is not stored', 'fix',
+  null, 'service_role',
+  $a$select terms_version_accepted is null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e4'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e4', 'lawsignup4@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"am citit tot"}')$s$);
+
+-- --- Retention -------------------------------------------------------
+select pg_temp.check('LAW  a reveal older than the period is deleted', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 1$a$, 'true',
+  p_verify => $v$select count(*) = 0 from public.contact_reveals$v$,
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '25 months')$s$);
+
+select pg_temp.check('LAW  one inside the period stays', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 0$a$, 'true',
+  p_verify => $v$select count(*) = 1 from public.contact_reveals$v$,
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '23 months')$s$);
+
+select pg_temp.check('LAW  the period is the setting, not a constant', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 1$a$, 'true',
+  p_setup => $s$delete from public.contact_reveals;
+                update public.deletion_settings set contact_reveal_months = 12;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '13 months')$s$);
+
+select pg_temp.check('LAW  the clock can be handed to it, which is how this is tested', 'guard',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals(now() + interval '25 months') = 1$a$, 'true',
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now())$s$);
+
+select pg_temp.check('LAW  a run that deletes nothing still says it ran', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 0$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.job_run_log
+     where workflow = 'nightly-retention')$v$,
+  p_setup => $s$delete from public.contact_reveals; delete from public.job_run_log$s$);
+
+select pg_temp.check('LAW  nobody purges the log from a browser', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.purge_contact_reveals() >= 0$a$, 'blocked');
+
+select pg_temp.check('LAW  nor shortens the period to make it disappear', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.deletion_settings set contact_reveal_months = 1$a$, 'blocked');
+
+select pg_temp.check('LAW  staff change it through the audited call', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_deletion_settings(21, 'ajutor@exemplu.ro', 36)).contact_reveal_months = 36$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'settings.deletion_changed')$v$);
+
+-- =====================================================================
 -- JOB - the scheduled jobs are actually scheduled
 --
 -- This is the check that did not exist in September, and its absence is
@@ -5985,7 +6147,7 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'outbox-dispatcher'
+     'nightly-retention, outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6030,7 +6192,7 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'outbox-dispatcher'
+     'nightly-retention, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',

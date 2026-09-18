@@ -1,6 +1,9 @@
+import Link from 'next/link';
 import { ReportButton } from '@/components/trust/report-button';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { SUPPORT_EMAIL } from '@/config/brand';
+import { ROUTES } from '@/config/routes';
+import { legalCopy } from '@/content/legal-copy';
 import { verificationCopy } from '@/content/siguranta';
 import {
   appliesTo,
@@ -45,6 +48,7 @@ export function VerificationBody({
       {documents.length > 0 ? <Documents documents={documents} /> : null}
       <Scope />
       <Report signedIn={signedIn} />
+      <LegalLinks />
       <Faq reviewTimeLabel={reviewTimeLabel} />
     </div>
   );
@@ -252,6 +256,36 @@ function Report({ signedIn }: { signedIn: boolean }) {
  * promise about review times — a page that answers "how long does it take"
  * with a guess is worse than one that does not raise the question.
  */
+/**
+ * The documents, linked from the page that makes the claim.
+ *
+ * „Verificat" is a word with a precise meaning and a much larger implied
+ * one, and the place that word is explained is exactly where somebody
+ * should be able to read the sentence that limits it.
+ */
+function LegalLinks() {
+  const l = legalCopy.verification;
+  return (
+    <section aria-labelledby="documente" className="mt-14 border-t border-border pt-10">
+      <h2 id="documente" className="text-[1.125rem]">
+        {l.title}
+      </h2>
+      <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-muted">{l.body}</p>
+      <nav aria-label="Documente legale" className="mt-4 flex flex-wrap gap-5 text-sm">
+        <Link href={ROUTES.terms} className="underline underline-offset-4">
+          {l.terms}
+        </Link>
+        <Link href={ROUTES.privacy} className="underline underline-offset-4">
+          {l.privacy}
+        </Link>
+        <Link href={ROUTES.cookies} className="underline underline-offset-4">
+          {l.cookies}
+        </Link>
+      </nav>
+    </section>
+  );
+}
+
 function Faq({ reviewTimeLabel }: { reviewTimeLabel: string | null }) {
   return (
     <section aria-labelledby="intrebari" className="mt-14 border-t border-border pt-10">

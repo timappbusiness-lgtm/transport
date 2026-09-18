@@ -110,6 +110,7 @@ begin
       ('hourly-push-cleanup', 3.0),
       ('nightly-compliance-sweep', 36.0),
       ('nightly-expiry-reminders', 36.0),
+      ('nightly-retention', 36.0),
       ('outbox-dispatcher', 1.0)
   ),
   from_cron as (
@@ -160,7 +161,7 @@ exception
       ('account-deletion', 36.0), ('hourly-booking-expiry-alerts', 3.0),
       ('hourly-listing-cleanup', 3.0), ('hourly-push-cleanup', 3.0),
       ('nightly-compliance-sweep', 36.0), ('nightly-expiry-reminders', 36.0),
-      ('outbox-dispatcher', 1.0)
+      ('nightly-retention', 36.0), ('outbox-dispatcher', 1.0)
     ) as e(job, late_after_hours)
     left join (
       select l.workflow as job, max(l.ran_at) as last_run,

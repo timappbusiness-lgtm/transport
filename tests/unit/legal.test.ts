@@ -1,0 +1,217 @@
+import { describe, expect, it } from 'vitest';
+import {
+  CURRENT_TERMS_VERSION,
+  LEGAL_DOCUMENTS,
+  needsTermsAcceptance,
+  type LegalDocument,
+} from '@/content/legal';
+import { OPERATOR, REQUIRED_FIELDS, missingLegalFields, operatorLine } from '@/config/company';
+
+const DOCUMENTS = Object.values(LEGAL_DOCUMENTS) as LegalDocument[];
+
+describe('every legal document', () => {
+  it('carries a version the database will accept', () => {
+    // `terms_acceptances.version` has the same check. A document whose
+    // version the column refuses is a document nobody can accept.
+    for (const doc of DOCUMENTS) {
+      expect(doc.version, doc.slug).toMatch(/^[0-9]+\.[0-9]+$/);
+    }
+  });
+
+  it('carries a real date', () => {
+    for (const doc of DOCUMENTS) {
+      expect(doc.effectiveFrom, doc.slug).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(Number.isNaN(Date.parse(doc.effectiveFrom)), doc.slug).toBe(false);
+    }
+  });
+
+  it('is filed under the slug its page uses', () => {
+    for (const [key, doc] of Object.entries(LEGAL_DOCUMENTS)) {
+      expect(doc.slug).toBe(key);
+    }
+  });
+
+  it('is Romanian, with its diacritics and without the Turkish cedilla', () => {
+    for (const doc of DOCUMENTS) {
+      const all = [doc.lede, ...doc.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? [])])]
+        .join(' ');
+      expect(/[ăâîșț]/i.test(all), doc.slug).toBe(true);
+      // ş and ţ render close enough that nobody notices and break search,
+      // sorting and screen readers.
+      expect(/[şţŞŢ]/.test(all), doc.slug).toBe(false);
+    }
+  });
+
+  it('has no English left in it', () => {
+    for (const doc of DOCUMENTS) {
+      const all = [doc.lede, ...doc.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? [])])]
+        .join(' ');
+      expect(
+        /\b(Terms|Privacy|Cookie Policy|Please|Company|hereby|shall)\b/.test(all),
+        doc.slug,
+      ).toBe(false);
+    }
+  });
+
+  it('says something in every section', () => {
+    for (const doc of DOCUMENTS) {
+      expect(doc.sections.length, doc.slug).toBeGreaterThan(2);
+      for (const section of doc.sections) {
+        expect(section.title.length, `${doc.slug}/${section.title}`).toBeGreaterThan(3);
+        expect(section.body.length, `${doc.slug}/${section.title}`).toBeGreaterThan(0);
+        for (const paragraph of section.body) {
+          expect(paragraph.trim().length, `${doc.slug}/${section.title}`).toBeGreaterThan(20);
+        }
+      }
+    }
+  });
+
+  it('never carries a placeholder somebody forgot to replace', () => {
+    for (const doc of DOCUMENTS) {
+      const all = JSON.stringify(doc);
+      expect(/lorem ipsum|TODO|FIXME|XXX/i.test(all), doc.slug).toBe(false);
+    }
+  });
+});
+
+describe('the terms', () => {
+  const terms = LEGAL_DOCUMENTS.termeni;
+  const text = terms.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? [])]).join(' ');
+
+  it('says we are not a party to the transport', () => {
+    // The single most important sentence on the page: everything about
+    // our liability follows from it.
+    expect(text).toContain('Nu suntem parte în contractul de transport');
+  });
+
+  it('says what verification does not guarantee', () => {
+    expect(text).toContain('nu garantăm că transportul va decurge bine');
+  });
+
+  it('says we never hold anybody money', () => {
+    expect(text).toContain('Nu încasăm și nu ținem banii nimănui');
+  });
+
+  it('covers every subject the brief listed', () => {
+    const titles = terms.sections.map((s) => s.title).join(' | ');
+    for (const subject of [
+      'Cine suntem',
+      'Ce este platforma',
+      'Cine își poate face cont',
+      'Ce își asumă transportatorii',
+      'Ce își asumă clienții',
+      'firmă verificată',
+      'Abonamente',
+      'Ce nu se face aici',
+      'Suspendare',
+      'răspundem',
+      'Reclamații',
+      'Legea aplicabilă',
+    ]) {
+      expect(titles, subject).toContain(subject);
+    }
+  });
+
+  it('is the version the account area gates on', () => {
+    expect(CURRENT_TERMS_VERSION).toBe(terms.version);
+  });
+});
+
+describe('the privacy notice', () => {
+  const privacy = LEGAL_DOCUMENTS.confidentialitate;
+  const text = privacy.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? [])]).join(' ');
+
+  it('states the retention the database actually enforces', () => {
+    // 24 months is the default in `deletion_settings.contact_reveal_months`
+    // and the interval `purge_contact_reveals` deletes by.
+    expect(text).toContain('24 de luni');
+  });
+
+  it('names every processor', () => {
+    for (const processor of ['Supabase', 'Vercel', 'Anthropic']) {
+      expect(text, processor).toContain(processor);
+    }
+  });
+
+  it('says where the data lives', () => {
+    expect(text).toContain('Uniunea Europeană');
+  });
+
+  it('admits what survives deletion', () => {
+    // The one thing a privacy notice is tempted to leave out.
+    expect(text).toContain('identificatorul tău intern');
+    expect(text).toContain('Jurnalul deciziilor platformei rămâne');
+  });
+
+  it('points at the page where deletion actually happens', () => {
+    const links = privacy.sections.flatMap((s) => (s.link ? [s.link.href] : []));
+    expect(links).toContain('/cont/setari/date-personale');
+  });
+});
+
+describe('the cookie notice', () => {
+  const cookies = LEGAL_DOCUMENTS.cookies;
+  const text = cookies.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? [])]).join(' ');
+
+  it('names exactly the two cookies the application sets', () => {
+    // If a third ever appears, this fails and somebody has to decide
+    // whether it is necessary — which is the moment a banner becomes
+    // mandatory rather than a decision made months later.
+    expect(text).toContain('sb-');
+    expect(text).toContain('coridor_company');
+  });
+
+  it('says there is no advertising and no analytics', () => {
+    expect(text).toContain('Niciun cookie de publicitate');
+    expect(text).toContain('Google Analytics');
+  });
+
+  it('explains why there is no banner', () => {
+    expect(text).toContain('nu am avea ce să îți cerem');
+  });
+
+  it('mentions what sits in browser storage instead', () => {
+    expect(text).toContain('Ciorna cererii');
+  });
+});
+
+describe('needsTermsAcceptance', () => {
+  it('asks somebody who has never accepted', () => {
+    expect(needsTermsAcceptance(null)).toBe(true);
+    expect(needsTermsAcceptance(undefined)).toBe(true);
+    expect(needsTermsAcceptance('')).toBe(true);
+  });
+
+  it('asks again when the version moves', () => {
+    expect(needsTermsAcceptance('0.9')).toBe(true);
+  });
+
+  it('leaves alone somebody who is current', () => {
+    expect(needsTermsAcceptance(CURRENT_TERMS_VERSION)).toBe(false);
+  });
+});
+
+describe('the operator details', () => {
+  it('start blank rather than invented', () => {
+    // A placeholder that looks like a CUI is worse than a blank: somebody
+    // reads it, believes it, and we have published a false company
+    // identification on a page that is a contract.
+    for (const field of REQUIRED_FIELDS) {
+      expect(OPERATOR[field], field).toBe('');
+    }
+  });
+
+  it('are all reported as missing while they are', () => {
+    expect(missingLegalFields()).toEqual([...REQUIRED_FIELDS]);
+  });
+
+  it('still read as a sentence with nothing filled in', () => {
+    // A page that becomes ungrammatical when a value is missing cannot be
+    // reviewed before the values arrive.
+    const line = operatorLine();
+    expect(line).toContain('[de completat]');
+    expect(line).toContain('CUI');
+    expect(line).not.toContain('undefined');
+    expect(line).not.toContain('null');
+  });
+});

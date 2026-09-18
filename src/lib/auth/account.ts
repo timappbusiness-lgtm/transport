@@ -35,6 +35,8 @@ export interface Profile {
   phone: string | null;
   phone_verified: boolean;
   account_type: AccountType;
+  /** Which version of the terms this account last accepted, if any. */
+  terms_version_accepted: string | null;
 }
 
 export interface Company {
@@ -127,7 +129,7 @@ export const getAccountContext = cache(async (): Promise<AccountContext | null> 
   const [profileResult, membershipResult, staffResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, full_name, email, phone, phone_verified, account_type')
+      .select('id, full_name, email, phone, phone_verified, account_type, terms_version_accepted')
       .eq('id', user.id)
       .maybeSingle(),
     supabase
