@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
@@ -55,6 +55,26 @@ export const metadata: Metadata = {
   // may still say `noindex` for its own reasons; the flag only ever grants
   // permission, never takes it from a page that refused.
   ...indexingMetadata(true),
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: BRAND_NAME,
+    statusBarStyle: 'default',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icons/apple-touch-icon.png',
+  },
+};
+
+/**
+ * The colour the browser paints around the app once it is installed.
+ *
+ * Taken from the same tokens the page uses, so a standalone window does
+ * not get a chrome bar in a colour that appears nowhere else on screen.
+ */
+export const viewport: Viewport = {
+  themeColor: '#1c262b',
 };
 
 /**
