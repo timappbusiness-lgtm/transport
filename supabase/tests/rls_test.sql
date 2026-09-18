@@ -4065,6 +4065,208 @@ select pg_temp.check('FIRM the matching helper is not callable by hand', 'fix',
                                            'f1000000-0000-0000-0000-000000000002')$a$, 'blocked');
 
 -- =====================================================================
+-- SEO - the landing pages
+--
+-- One rule carries the whole feature: an unpublished page does not exist
+-- as far as anon is concerned. Not "visible but marked draft" — the row
+-- itself is unreadable, so it cannot reach the sitemap, an internal link
+-- or a render, and every one of those places gets the rule for free
+-- rather than repeating an `is_published` check that somebody eventually
+-- forgets.
+--
+-- The rest is about who may publish. Publishing is the moment a page
+-- becomes visible to search engines, which is the one action here that
+-- cannot be quietly undone, so it goes through an RPC that writes to
+-- `audit_log` and nowhere else.
+-- =====================================================================
+
+select pg_temp.check('SEO  a visitor reads a published page', 'fix',
+  null, 'anon',
+  $a$select count(*) = 1 from public.seo_pages where slug = 'germania-romania'$a$, 'true',
+  p_setup => $s$update public.seo_pages set is_published = true
+                where slug = 'germania-romania'$s$);
+
+select pg_temp.check('SEO  and cannot see an unpublished one at all', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.seo_pages where slug = 'germania-romania'$a$, 'true');
+
+select pg_temp.check('SEO  the whole starting set ships unpublished', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.seo_pages$a$, 'true');
+
+select pg_temp.check('SEO  a signed-in visitor sees no more than anon', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 0 from public.seo_pages$a$, 'true');
+
+select pg_temp.check('SEO  staff read the drafts, which is the point of drafts', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 161 from public.seo_pages$a$, 'true');
+
+-- 9 corridors, 105 city pairs, 42 counties, 5 vehicle types.
+select pg_temp.check('SEO  the starting set is the set that was promised', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select
+       count(*) filter (where type = 'corridor_international') = 9
+       and count(*) filter (where type = 'route_internal') = 105
+       and count(*) filter (where type = 'county') = 42
+       and count(*) filter (where type = 'vehicle_type') = 5
+     from public.seo_pages$a$, 'true');
+
+select pg_temp.check('SEO  the slugs are the ones the brief named', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 4 from public.seo_pages
+     where slug in ('germania-romania', 'bucuresti-cluj-napoca', 'cluj', 'motocicleta')$a$,
+  'true');
+
+-- ---------------------------------------------------------------------
+-- Writing
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('SEO  nobody writes a page straight from the browser', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.seo_pages set title = 'Titlu inventat de cineva'
+     where slug = 'germania-romania'$a$, 'blocked',
+  p_verify => $v$select title <> 'Titlu inventat de cineva' from public.seo_pages
+                 where slug = 'germania-romania'$v$);
+
+select pg_temp.check('SEO  nor publishes one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.seo_pages set is_published = true where slug = 'germania-romania'$a$,
+  'blocked',
+  p_verify => $v$select not is_published from public.seo_pages
+                 where slug = 'germania-romania'$v$);
+
+select pg_temp.check('SEO  nor inserts one of their own', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.seo_pages (type, slug, title, h1, intro, vehicle_type)
+     values ('vehicle_type', 'pagina-mea', 'Un titlu suficient de lung aici',
+             'Un titlu', 'O introducere suficient de lungă ca să treacă de constrângere.',
+             'autoturism')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.seo_pages where slug = 'pagina-mea')$v$);
+
+select pg_temp.check('SEO  the RPC refuses somebody who is not staff', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_seo_page('germania-romania', 'Titlu nou și suficient de lung',
+                                'Titlu nou', null,
+                                'O introducere nouă, suficient de lungă ca să treacă.', null)$a$,
+  'blocked');
+
+select pg_temp.check('SEO  and refuses them the publish button too', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_seo_page_published('germania-romania', true)$a$, 'blocked',
+  p_verify => $v$select not is_published from public.seo_pages
+                 where slug = 'germania-romania'$v$);
+
+select pg_temp.check('SEO  staff edit the words, and it is written down', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page('germania-romania',
+       'Transport auto Germania România — titlu nou',
+       'Transport auto Germania — România', 'cu firme verificate.',
+       'O introducere nouă, scrisă de cineva care a citit pagina înainte să o publice.',
+       null)$a$, 'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.seo_pages
+                   where slug = 'germania-romania' and h1_soft = 'cu firme verificate.')
+                 and exists (
+                   select 1 from public.audit_log where action = 'seo_page.updated')$v$);
+
+select pg_temp.check('SEO  staff publish one, and that is written down too', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page_published('germania-romania', true)$a$, 'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.seo_pages
+                   where slug = 'germania-romania' and is_published and published_at is not null)
+                 and exists (
+                   select 1 from public.audit_log where action = 'seo_page.published')$v$);
+
+-- Unpublishing has to leave no trace of having been published, or the
+-- sitemap keeps a lastmod for a page that is no longer there.
+select pg_temp.check('SEO  unpublishing clears the publication date', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page_published('germania-romania', false)$a$, 'allowed',
+  p_setup => $s$update public.seo_pages set is_published = true, published_at = now()
+                where slug = 'germania-romania'$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.seo_pages
+                   where slug = 'germania-romania' and not is_published
+                     and published_at is null)$v$);
+
+-- Publishing forty-two county pages one at a time is how a person ends up
+-- publishing forty-one.
+select pg_temp.check('SEO  staff publish a whole type at once', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_pages_published_by_type('county', true) = 42$a$, 'true',
+  p_verify => $v$select count(*) = 42 from public.seo_pages
+                 where type = 'county' and is_published$v$);
+
+select pg_temp.check('SEO  and the bulk publish does not touch another type', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_pages_published_by_type('county', true) > 0$a$, 'true',
+  p_verify => $v$select count(*) = 0 from public.seo_pages
+                 where type <> 'county' and is_published$v$);
+
+select pg_temp.check('SEO  a bulk publish nobody else may run', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_seo_pages_published_by_type('county', true)$a$, 'blocked',
+  p_verify => $v$select count(*) = 0 from public.seo_pages where is_published$v$);
+
+-- ---------------------------------------------------------------------
+-- What the words have to be
+-- ---------------------------------------------------------------------
+
+-- An entry with no answer renders an empty accordion row and, worse, an
+-- FAQPage entry with an empty acceptedAnswer — a structured-data error on
+-- a page whose whole purpose is structured data.
+select pg_temp.check('SEO  a question with no answer is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page('germania-romania', 'Un titlu suficient de lung aici',
+       'Un titlu', null, 'O introducere suficient de lungă ca să treacă de constrângere.',
+       '[{"q": "O întrebare fără răspuns?", "a": ""}]'::jsonb)$a$, 'blocked');
+
+select pg_temp.check('SEO  and so is a list of questions that is not a list', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page('germania-romania', 'Un titlu suficient de lung aici',
+       'Un titlu', null, 'O introducere suficient de lungă ca să treacă de constrângere.',
+       '{"q": "Nu sunt o listă"}'::jsonb)$a$, 'blocked');
+
+select pg_temp.check('SEO  a title too short for a search result is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_seo_page('germania-romania', 'Scurt', 'Un titlu', null,
+       'O introducere suficient de lungă ca să treacă de constrângere.', null)$a$, 'blocked');
+
+select pg_temp.check('SEO  a slug with spaces in it never gets written', 'fix',
+  null, 'service_role',
+  $a$insert into public.seo_pages (type, slug, title, h1, intro, vehicle_type)
+     values ('vehicle_type', 'nu e slug', 'Un titlu suficient de lung aici', 'Un titlu',
+             'O introducere suficient de lungă ca să treacă de constrângere.',
+             'autoturism')$a$, 'blocked');
+
+-- A page of a type that needs two ends and has one renders an empty block
+-- nobody notices until it is indexed.
+select pg_temp.check('SEO  a corridor with no destination is refused', 'fix',
+  null, 'service_role',
+  $a$insert into public.seo_pages (type, slug, title, h1, intro, origin)
+     values ('corridor_international', 'undeva-romania', 'Un titlu suficient de lung aici',
+             'Un titlu', 'O introducere suficient de lungă ca să treacă de constrângere.',
+             'DE')$a$, 'blocked');
+
+select pg_temp.check('SEO  a county page with no county is refused', 'fix',
+  null, 'service_role',
+  $a$insert into public.seo_pages (type, slug, title, h1, intro)
+     values ('county', 'un-judet', 'Un titlu suficient de lung aici', 'Un titlu',
+             'O introducere suficient de lungă ca să treacă de constrângere.')$a$, 'blocked');
+
+select pg_temp.check('SEO  two pages cannot share a slug', 'fix',
+  null, 'service_role',
+  $a$insert into public.seo_pages (type, slug, title, h1, intro, vehicle_type)
+     values ('vehicle_type', 'motocicleta', 'Un titlu suficient de lung aici', 'Un titlu',
+             'O introducere suficient de lungă ca să treacă de constrângere.',
+             'autoturism')$a$, 'blocked');
+
+select pg_temp.check('SEO  the jobs still read every page', 'guard',
+  null, 'service_role', $a$select count(*) = 161 from public.seo_pages$a$, 'true');
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its
