@@ -75,6 +75,15 @@ function driverNav(features: FeatureMap): NavItem[] {
     group: 'cont',
     priority: 9,
   });
+  // Not behind a feature flag: taking your data and asking for it to be
+  // removed are not features, and a menu that hides them is a menu that
+  // makes somebody write to support to leave.
+  items.push({
+    href: ROUTES.accountPersonalData,
+    label: 'Date personale',
+    group: 'cont',
+    priority: 8,
+  });
   return items;
 }
 
@@ -107,6 +116,15 @@ function individualNav(features: FeatureMap): NavItem[] {
     label: 'Notificări',
     group: 'cont',
     priority: 9,
+  });
+  // Not behind a feature flag: taking your data and asking for it to be
+  // removed are not features, and a menu that hides them is a menu that
+  // makes somebody write to support to leave.
+  items.push({
+    href: ROUTES.accountPersonalData,
+    label: 'Date personale',
+    group: 'cont',
+    priority: 8,
   });
   return items;
 }
@@ -237,6 +255,15 @@ export function buildNav(
     label: 'Notificări',
     group: 'cont',
     priority: 9,
+  });
+  // Not behind a feature flag: taking your data and asking for it to be
+  // removed are not features, and a menu that hides them is a menu that
+  // makes somebody write to support to leave.
+  items.push({
+    href: ROUTES.accountPersonalData,
+    label: 'Date personale',
+    group: 'cont',
+    priority: 8,
   });
   return dedupe(items);
 }

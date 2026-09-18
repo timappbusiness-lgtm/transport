@@ -158,6 +158,7 @@ describe('what a role may see', () => {
       ROUTES.accountTransports,
       ROUTES.accountProfile,
       ROUTES.accountNotificationSettings,
+      ROUTES.accountPersonalData,
     ]);
   });
 
@@ -168,6 +169,8 @@ describe('what a role may see', () => {
       // A driver gets notifications like anybody else: their own documents
       // expire, and the account they work under can be suspended.
       ROUTES.accountNotificationSettings,
+      // And leaves like anybody else. This one is never behind a flag.
+      ROUTES.accountPersonalData,
     ]);
   });
 });

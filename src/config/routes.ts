@@ -54,6 +54,11 @@ export const ROUTES = {
   // The notifications *settings*. `accountNotifications` above is the
   // notifications centre, which is a different screen and not built yet.
   accountNotificationSettings: '/cont/setari/notificari',
+  // Data export and account deletion. Not feature-gated: the right to
+  // take your data and the right to have it removed are not features.
+  accountPersonalData: '/cont/setari/date-personale',
+  /** The link in the deletion e-mail. Public: the account it rescues is held. */
+  cancelDeletion: '/stergere/anuleaza',
 
   // Staff
   admin: '/admin',
@@ -68,6 +73,7 @@ export const ROUTES = {
   adminPages: '/admin/pagini',
   adminImport: '/admin/import',
   adminNotifications: '/admin/notificari',
+  adminDeletions: '/admin/stergeri',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

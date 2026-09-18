@@ -12,6 +12,106 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancel_token?: string
+          cancelled_at?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by?: string | null
+          processing_started_at?: string | null
+          reason_blocked?: string | null
+          requested_at?: string
+          scheduled_for?: string | null
+          staff_reason?: string | null
+          status?: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancel_token?: string
+          cancelled_at?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by?: string | null
+          processing_started_at?: string | null
+          reason_blocked?: string | null
+          requested_at?: string
+          scheduled_for?: string | null
+          staff_reason?: string | null
+          status?: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_deletion_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_deletion_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "account_deletion_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "account_deletion_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_deletion_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_suspensions: {
         Row: {
           company_id: string
@@ -463,6 +563,32 @@ export type Database = {
           },
         ]
       }
+      carrier_count_probes: {
+        Row: {
+          created_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrier_count_probes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -471,6 +597,7 @@ export type Database = {
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          anonymised_at: string | null
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -484,6 +611,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cui: string
+          deletion_scheduled_at: string | null
           display_name: string | null
           equipment: string[]
           id: string
@@ -518,6 +646,7 @@ export type Database = {
           anaf_checked_at?: string | null
           anaf_is_inactive?: boolean | null
           anaf_payload?: Json | null
+          anonymised_at?: string | null
           base_address_hidden?: boolean
           city?: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -531,6 +660,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cui: string
+          deletion_scheduled_at?: string | null
           display_name?: string | null
           equipment?: string[]
           id?: string
@@ -565,6 +695,7 @@ export type Database = {
           anaf_checked_at?: string | null
           anaf_is_inactive?: boolean | null
           anaf_payload?: Json | null
+          anonymised_at?: string | null
           base_address_hidden?: boolean
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"]
@@ -578,6 +709,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cui?: string
+          deletion_scheduled_at?: string | null
           display_name?: string | null
           equipment?: string[]
           id?: string
@@ -964,6 +1096,83 @@ export type Database = {
             referencedColumns: ["truck_listing_id"]
           },
         ]
+      }
+      data_export_requests: {
+        Row: {
+          created_at: string
+          download_token: string
+          downloaded_at: string | null
+          error: string | null
+          expires_at: string | null
+          file_path: string | null
+          id: string
+          size_bytes: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          download_token?: string
+          downloaded_at?: string | null
+          error?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          id?: string
+          size_bytes?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          download_token?: string
+          downloaded_at?: string | null
+          error?: string | null
+          expires_at?: string | null
+          file_path?: string | null
+          id?: string
+          size_bytes?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_export_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deletion_settings: {
+        Row: {
+          export_per_day: number
+          export_valid_hours: number
+          grace_days: number
+          id: boolean
+          support_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          export_per_day?: number
+          export_valid_hours?: number
+          grace_days?: number
+          id?: boolean
+          support_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          export_per_day?: number
+          export_valid_hours?: number
+          grace_days?: number
+          id?: boolean
+          support_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       departure_bookings: {
         Row: {
@@ -1435,6 +1644,66 @@ export type Database = {
           },
         ]
       }
+      import_settings: {
+        Row: {
+          alert_at_pct: number
+          daily_limit_per_ip: number
+          daily_limit_per_user: number
+          id: boolean
+          is_enabled: boolean
+          min_field_confidence: number
+          monthly_budget_usd: number
+          updated_at: string
+        }
+        Insert: {
+          alert_at_pct?: number
+          daily_limit_per_ip?: number
+          daily_limit_per_user?: number
+          id?: boolean
+          is_enabled?: boolean
+          min_field_confidence?: number
+          monthly_budget_usd?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_at_pct?: number
+          daily_limit_per_ip?: number
+          daily_limit_per_user?: number
+          id?: boolean
+          is_enabled?: boolean
+          min_field_confidence?: number
+          monthly_budget_usd?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_run_log: {
+        Row: {
+          details: Json | null
+          failed: number
+          id: string
+          processed: number
+          ran_at: string
+          workflow: string
+        }
+        Insert: {
+          details?: Json | null
+          failed?: number
+          id?: string
+          processed?: number
+          ran_at?: string
+          workflow: string
+        }
+        Update: {
+          details?: Json | null
+          failed?: number
+          id?: string
+          processed?: number
+          ran_at?: string
+          workflow?: string
+        }
+        Relationships: []
+      }
       listing_contacts: {
         Row: {
           cargo_listing_id: string | null
@@ -1511,6 +1780,62 @@ export type Database = {
           },
         ]
       }
+      listing_extractions: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          duration_ms: number | null
+          failure_reason: string | null
+          fields_kept: number | null
+          id: string
+          input_tokens: number | null
+          ip_hash: string | null
+          output_tokens: number | null
+          source_host: string | null
+          source_type: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          failure_reason?: string | null
+          fields_kept?: number | null
+          id?: string
+          input_tokens?: number | null
+          ip_hash?: string | null
+          output_tokens?: number | null
+          source_host?: string | null
+          source_type: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number | null
+          failure_reason?: string | null
+          fields_kept?: number | null
+          id?: string
+          input_tokens?: number | null
+          ip_hash?: string | null
+          output_tokens?: number | null
+          source_host?: string | null
+          source_type?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_extractions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_path: string | null
@@ -1555,33 +1880,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      n8n_run_log: {
-        Row: {
-          details: Json | null
-          failed: number
-          id: string
-          processed: number
-          ran_at: string
-          workflow: string
-        }
-        Insert: {
-          details?: Json | null
-          failed?: number
-          id?: string
-          processed?: number
-          ran_at?: string
-          workflow: string
-        }
-        Update: {
-          details?: Json | null
-          failed?: number
-          id?: string
-          processed?: number
-          ran_at?: string
-          workflow?: string
-        }
-        Relationships: []
       }
       notification_outbox: {
         Row: {
@@ -1675,6 +1973,137 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          email: boolean | null
+          inapp: boolean | null
+          push: boolean | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email?: boolean | null
+          inapp?: boolean | null
+          push?: boolean | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email?: boolean | null
+          inapp?: boolean | null
+          push?: boolean | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_type_fkey"
+            columns: ["type"]
+            isOneToOne: false
+            referencedRelation: "notification_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string
+          max_push_per_hour: number
+          quiet_from: string
+          quiet_hours_enabled: boolean
+          quiet_to: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          max_push_per_hour?: number
+          quiet_from?: string
+          quiet_hours_enabled?: boolean
+          quiet_to?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          max_push_per_hour?: number
+          quiet_from?: string
+          quiet_hours_enabled?: boolean
+          quiet_to?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_types: {
+        Row: {
+          audience: string
+          bypasses_quiet_hours: boolean
+          code: string
+          created_at: string
+          deep_link: string
+          default_email: boolean
+          default_inapp: boolean
+          default_push: boolean
+          description_ro: string | null
+          is_available: boolean
+          is_mandatory: boolean
+          label_ro: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          audience: string
+          bypasses_quiet_hours?: boolean
+          code: string
+          created_at?: string
+          deep_link: string
+          default_email?: boolean
+          default_inapp?: boolean
+          default_push?: boolean
+          description_ro?: string | null
+          is_available?: boolean
+          is_mandatory?: boolean
+          label_ro: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          bypasses_quiet_hours?: boolean
+          code?: string
+          created_at?: string
+          deep_link?: string
+          default_email?: boolean
+          default_inapp?: boolean
+          default_push?: boolean
+          description_ro?: string | null
+          is_available?: boolean
+          is_mandatory?: boolean
+          label_ro?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       offers: {
         Row: {
@@ -2138,6 +2567,7 @@ export type Database = {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
           created_at: string
+          deletion_scheduled_at: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -2151,6 +2581,7 @@ export type Database = {
         Insert: {
           account_type?: Database["public"]["Enums"]["account_type"]
           created_at?: string
+          deletion_scheduled_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -2164,6 +2595,7 @@ export type Database = {
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
           created_at?: string
+          deletion_scheduled_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -2175,6 +2607,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          disabled_at: string | null
+          endpoint: string
+          id: string
+          last_error: string | null
+          last_seen_at: string
+          p256dh: string
+          platform: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          disabled_at?: string | null
+          endpoint: string
+          id?: string
+          last_error?: string | null
+          last_seen_at?: string
+          p256dh: string
+          platform?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          disabled_at?: string | null
+          endpoint?: string
+          id?: string
+          last_error?: string | null
+          last_seen_at?: string
+          p256dh?: string
+          platform?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ratings: {
         Row: {
@@ -3743,6 +4228,25 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      account_deletion_blockers: {
+        Args: {
+          p_company_id?: string
+          p_kind: Database["public"]["Enums"]["account_deletion_kind"]
+          p_user_id: string
+        }
+        Returns: string[]
+      }
+      account_deletion_files: {
+        Args: { p_id: string }
+        Returns: {
+          bucket: string
+          path: string
+        }[]
+      }
+      account_is_held_for_deletion: {
+        Args: { p_company_id: string; p_user_id: string }
+        Returns: boolean
+      }
       activate_subscription_request: {
         Args: { p_id: string }
         Returns: {
@@ -3760,12 +4264,41 @@ export type Database = {
           updated_at: string
         }
       }
+      anonymise_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       can_edit_cargo_listing: {
         Args: { p_listing_id: string }
         Returns: boolean
       }
       can_see_cargo_listing: {
         Args: { p_listing_id: string }
+        Returns: boolean
+      }
+      cancel_account_deletion: {
+        Args: { p_id: string }
+        Returns: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }
+      }
+      cancel_account_deletion_by_token: {
+        Args: { p_token: string }
         Returns: boolean
       }
       cancel_cargo_request: {
@@ -3782,12 +4315,94 @@ export type Database = {
         }
         Returns: string
       }
+      claim_account_deletions: {
+        Args: { p_limit?: number; p_now?: string }
+        Returns: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }[]
+      }
+      claim_data_export: {
+        Args: { p_id: string; p_token: string }
+        Returns: string
+      }
+      claim_import_slot: {
+        Args: {
+          p_ip_hash: string
+          p_now?: string
+          p_source_type: string
+          p_user_id: string
+        }
+        Returns: {
+          allowed: boolean
+          extraction_id: string
+          reason: string
+          remaining: number
+        }[]
+      }
+      claim_outbox_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          channel: string
+          id: string
+          payload: Json
+          recipient_company_id: string
+          recipient_user_id: string
+          template: string
+          to_email: string
+        }[]
+      }
+      claim_push_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          payload: Json
+          recipient_user_id: string
+          template: string
+        }[]
+      }
+      companies_erased_with_user: {
+        Args: { p_user_id: string }
+        Returns: {
+          company_id: string
+        }[]
+      }
       company_can_act: {
         Args: { p_company_id: string }
         Returns: boolean
       }
       company_matches_request: {
         Args: { p_company_id: string; p_listing_id: string }
+        Returns: boolean
+      }
+      company_matches_route: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["cargo_category"]
+          p_company_id: string
+          p_loading_country: string
+          p_loading_county: string
+          p_needs_winch?: boolean
+          p_posted_by_company_id?: string
+          p_service_type?: Database["public"]["Enums"]["service_type"]
+          p_unloading_country: string
+          p_unloading_county: string
+        }
         Returns: boolean
       }
       company_review_readiness: {
@@ -3803,6 +4418,27 @@ export type Database = {
       company_slug: {
         Args: { p_city: string; p_company_id: string; p_legal_name: string }
         Returns: string
+      }
+      complete_account_deletion: {
+        Args: { p_id: string }
+        Returns: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }
       }
       confirm_departure_booking: {
         Args: { p_agreed_price?: number; p_booking_id: string }
@@ -3828,6 +4464,25 @@ export type Database = {
           p_user: string
         }
         Returns: string
+      }
+      count_matching_carriers: {
+        Args: { p_listing_id: string }
+        Returns: number
+      }
+      count_matching_carriers_on_route: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["cargo_category"]
+          p_loading_country: string
+          p_loading_county: string
+          p_loading_from: string
+          p_loading_to?: string
+          p_needs_winch?: boolean
+          p_posted_by_company_id?: string
+          p_service_type?: Database["public"]["Enums"]["service_type"]
+          p_unloading_country: string
+          p_unloading_county: string
+        }
+        Returns: number
       }
       create_cargo_request: {
         Args: {
@@ -3886,6 +4541,7 @@ export type Database = {
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          anonymised_at: string | null
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -3899,6 +4555,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cui: string
+          deletion_scheduled_at: string | null
           display_name: string | null
           equipment: string[]
           id: string
@@ -4017,6 +4674,14 @@ export type Database = {
           verified_companies: number
         }[]
       }
+      dispatch_account_deletions_http: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      dispatch_outbox_http: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       distance_km: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
@@ -4024,6 +4689,70 @@ export type Database = {
       expire_stale_listings: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      expire_stale_push: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      expired_data_exports: {
+        Args: { p_now?: string }
+        Returns: {
+          file_path: string
+          id: string
+        }[]
+      }
+      finish_data_export: {
+        Args: {
+          p_error?: string
+          p_file_path: string
+          p_id: string
+          p_size_bytes?: number
+        }
+        Returns: {
+          created_at: string
+          download_token: string
+          downloaded_at: string | null
+          error: string | null
+          expires_at: string | null
+          file_path: string | null
+          id: string
+          size_bytes: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+      }
+      finish_import: {
+        Args: {
+          p_cost_usd?: number
+          p_duration_ms?: number
+          p_extraction_id: string
+          p_failure_reason?: string
+          p_fields_kept?: number
+          p_input_tokens?: number
+          p_now?: string
+          p_output_tokens?: number
+          p_source_host?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      finish_outbox: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_now?: string
+          p_status: string
+        }
+        Returns: string
+      }
+      finish_push: {
+        Args: { p_error?: string; p_id: string; p_status: string }
+        Returns: undefined
+      }
+      forget_data_export: {
+        Args: { p_id: string }
+        Returns: undefined
       }
       gtrgm_compress: {
         Args: { "": unknown }
@@ -4045,6 +4774,14 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      hold_account_for_deletion: {
+        Args: {
+          p_company_id: string
+          p_kind: Database["public"]["Enums"]["account_deletion_kind"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       homepage_activity: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4054,6 +4791,32 @@ export type Database = {
           published_last_7d: number
           published_total: number
           total_km: number
+        }[]
+      }
+      import_budget_status: {
+        Args: { p_now?: string }
+        Returns: {
+          budget_usd: number
+          extractions: number
+          spent_usd: number
+          used_pct: number
+        }[]
+      }
+      import_month_spend: {
+        Args: { p_now?: string }
+        Returns: {
+          budget_usd: number
+          extractions: number
+          spent_usd: number
+        }[]
+      }
+      import_quota: {
+        Args: { p_now?: string }
+        Returns: {
+          is_enabled: boolean
+          limit_per_day: number
+          remaining: number
+          used: number
         }[]
       }
       invite_company_member: {
@@ -4099,6 +4862,17 @@ export type Database = {
         Args: { p_transport_id: string }
         Returns: boolean
       }
+      job_health: {
+        Args: { p_now?: string }
+        Returns: {
+          hours_since: number
+          is_late: boolean
+          job: string
+          last_run: string
+          last_status: string
+          scheduled: boolean
+        }[]
+      }
       list_company_members: {
         Args: { p_company_id: string }
         Returns: {
@@ -4108,6 +4882,15 @@ export type Database = {
           role: Database["public"]["Enums"]["company_member_role"]
           user_id: string
         }[]
+      }
+      log_job_run: {
+        Args: {
+          p_details?: Json
+          p_failed?: number
+          p_processed?: number
+          p_workflow: string
+        }
+        Returns: string
       }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
@@ -4138,6 +4921,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      my_data_export: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      my_deletion_blockers: {
+        Args: { p_company_id?: string; p_kind: string }
+        Returns: string[]
+      }
       my_invitations: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4157,6 +4948,23 @@ export type Database = {
         Args: { p_url: string }
         Returns: string
       }
+      notification_channel_enabled: {
+        Args: { p_channel: string; p_type: string; p_user_id: string }
+        Returns: boolean
+      }
+      outbox_backoff_minutes: {
+        Args: { p_attempts: number }
+        Returns: number
+      }
+      outbox_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          channel: string
+          count: number
+          oldest: string
+          status: string
+        }[]
+      }
       owns_offer_listing: {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
         Returns: boolean
@@ -4164,6 +4972,20 @@ export type Database = {
       plan_features_valid: {
         Args: { p_features: Json }
         Returns: boolean
+      }
+      preview_matching_carriers: {
+        Args: {
+          p_category?: Database["public"]["Enums"]["cargo_category"]
+          p_loading_country: string
+          p_loading_county: string
+          p_loading_from: string
+          p_loading_to?: string
+          p_needs_winch?: boolean
+          p_service_type?: Database["public"]["Enums"]["service_type"]
+          p_unloading_country: string
+          p_unloading_county: string
+        }
+        Returns: number
       }
       prices_are_published: {
         Args: Record<PropertyKey, never>
@@ -4177,8 +4999,61 @@ export type Database = {
         Args: { p_older_than: unknown }
         Returns: number
       }
+      push_send_after: {
+        Args: { p_now?: string; p_type: string; p_user_id: string }
+        Returns: string
+      }
+      push_sent_last_hour: {
+        Args: { p_now?: string; p_user_id: string }
+        Returns: number
+      }
+      push_subscription_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          active: number
+          total: number
+          users: number
+        }[]
+      }
+      queue_booking_expiry_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       queue_expiry_reminders: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      queue_import_budget_alert: {
+        Args: {
+          p_budget: number
+          p_kind: string
+          p_now?: string
+          p_spent: number
+        }
+        Returns: number
+      }
+      queue_push: {
+        Args: {
+          p_body: string
+          p_dedupe_key?: string
+          p_now?: string
+          p_payload?: Json
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      queue_push_for_company: {
+        Args: {
+          p_body: string
+          p_company_id: string
+          p_dedupe_key?: string
+          p_now?: string
+          p_payload?: Json
+          p_title: string
+          p_type: string
+        }
         Returns: number
       }
       reject_offer: {
@@ -4219,9 +5094,54 @@ export type Database = {
           updated_at: string
         }
       }
+      release_account_from_deletion: {
+        Args: {
+          p_company_id: string
+          p_kind: Database["public"]["Enums"]["account_deletion_kind"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       reopen_cargo_request: {
         Args: { p_id: string; p_loading_from: string; p_loading_to?: string }
         Returns: Database["public"]["Enums"]["listing_status"]
+      }
+      request_account_deletion: {
+        Args: { p_company_id?: string; p_kind: string }
+        Returns: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }
+      }
+      request_data_export: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          download_token: string
+          downloaded_at: string | null
+          error: string | null
+          expires_at: string | null
+          file_path: string | null
+          id: string
+          size_bytes: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
       }
       request_subscription: {
         Args: {
@@ -4245,6 +5165,31 @@ export type Database = {
           updated_at: string
         }
       }
+      retry_outbox_row: {
+        Args: { p_id: string }
+        Returns: {
+          attempts: number
+          channel: string
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          last_error: string | null
+          payload: Json
+          recipient_company_id: string | null
+          recipient_user_id: string | null
+          send_after: string
+          sent_at: string | null
+          status: string
+          template: string
+          to_email: string | null
+          to_phone: string | null
+          updated_at: string
+        }
+      }
+      retry_push: {
+        Args: { p_after_seconds: number; p_error?: string; p_id: string }
+        Returns: undefined
+      }
       reveal_contact: {
         Args: { p_cargo_listing_id?: string; p_truck_listing_id?: string }
         Returns: {
@@ -4262,6 +5207,7 @@ export type Database = {
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          anonymised_at: string | null
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -4275,6 +5221,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cui: string
+          deletion_scheduled_at: string | null
           display_name: string | null
           equipment: string[]
           id: string
@@ -4367,6 +5314,10 @@ export type Database = {
         Args: { p_text: string }
         Returns: string
       }
+      send_test_push: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       set_company_public_profile: {
         Args: { p_company_id: string; p_enabled: boolean; p_reason?: string }
         Returns: {
@@ -4376,6 +5327,7 @@ export type Database = {
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          anonymised_at: string | null
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -4389,6 +5341,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cui: string
+          deletion_scheduled_at: string | null
           display_name: string | null
           equipment: string[]
           id: string
@@ -4415,6 +5368,17 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["company_verification_status"]
           verified_at: string | null
           website: string | null
+        }
+      }
+      set_deletion_settings: {
+        Args: { p_grace_days: number; p_support_email: string }
+        Returns: {
+          export_per_day: number
+          export_valid_hours: number
+          grace_days: number
+          id: boolean
+          support_email: string | null
+          updated_at: string
         }
       }
       set_directory_settings: {
@@ -4469,6 +5433,26 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           verified_companies_min: number
+        }
+      }
+      set_import_settings: {
+        Args: {
+          p_alert_at_pct: number
+          p_daily_limit_per_ip: number
+          p_daily_limit_per_user: number
+          p_is_enabled: boolean
+          p_min_field_confidence: number
+          p_monthly_budget_usd: number
+        }
+        Returns: {
+          alert_at_pct: number
+          daily_limit_per_ip: number
+          daily_limit_per_user: number
+          id: boolean
+          is_enabled: boolean
+          min_field_confidence: number
+          monthly_budget_usd: number
+          updated_at: string
         }
       }
       set_limit: {
@@ -4695,6 +5679,27 @@ export type Database = {
         Args: { p_text: string }
         Returns: string
       }
+      staff_anonymise_account: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: {
+          cancel_token: string
+          cancelled_at: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["account_deletion_kind"]
+          processed_by: string | null
+          processing_started_at: string | null
+          reason_blocked: string | null
+          requested_at: string
+          scheduled_for: string | null
+          staff_reason: string | null
+          status: Database["public"]["Enums"]["account_deletion_status"]
+          updated_at: string
+          user_id: string | null
+        }
+      }
       submit_company_for_review: {
         Args: { p_company_id: string }
         Returns: {
@@ -4704,6 +5709,7 @@ export type Database = {
           anaf_checked_at: string | null
           anaf_is_inactive: boolean | null
           anaf_payload: Json | null
+          anonymised_at: string | null
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
@@ -4717,6 +5723,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cui: string
+          deletion_scheduled_at: string | null
           display_name: string | null
           equipment: string[]
           id: string
@@ -4795,6 +5802,9 @@ export type Database = {
       }
     }
     Enums: {
+      account_deletion_kind: "user" | "company"
+      account_deletion_status:
+        "requested" | "blocked" | "scheduled" | "completed" | "cancelled"
       account_type: "company" | "individual"
       cargo_category:
         | "autoturism"
@@ -5023,6 +6033,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_deletion_kind: ["user", "company"],
+      account_deletion_status: [
+        "requested",
+        "blocked",
+        "scheduled",
+        "completed",
+        "cancelled",
+      ],
       account_type: ["company", "individual"],
       cargo_category: [
         "autoturism",
