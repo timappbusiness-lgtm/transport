@@ -692,3 +692,149 @@ grant execute on function public.queue_push(uuid, text, text, text, jsonb, text,
 grant execute on function public.queue_push_for_company(uuid, text, text, text, jsonb, text, timestamptz) to service_role;
 grant execute on function public.push_send_after(uuid, text, timestamptz) to service_role;
 grant execute on function public.push_sent_last_hour(uuid, timestamptz) to service_role;
+
+-- ---------------------------------------------------------------------
+-- What the dispatcher calls
+--
+-- Claiming is a separate statement from sending on purpose: two runs that
+-- overlap must not pick up the same rows, and `for update skip locked` is
+-- the only way to say that which does not depend on the two runs being
+-- polite to each other.
+-- ---------------------------------------------------------------------
+create or replace function public.claim_push_batch(p_limit integer default 50)
+returns table (
+  id uuid,
+  template text,
+  recipient_user_id uuid,
+  payload jsonb,
+  attempts integer
+)
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  return query
+  update public.notification_outbox o
+  set status = 'sending', attempts = o.attempts + 1
+  where o.id in (
+    select x.id from public.notification_outbox x
+    where x.channel = 'push'
+      and x.status = 'queued'
+      and x.send_after <= now()
+    order by x.send_after
+    limit greatest(1, least(p_limit, 200))
+    for update skip locked
+  )
+  returning o.id, o.template, o.recipient_user_id, o.payload, o.attempts;
+end;
+$fn$;
+
+comment on function public.claim_push_batch(integer) is
+  'Claims a batch and marks it sending, with `for update skip locked` so two overlapping runs cannot take the same rows.';
+
+create or replace function public.finish_push(
+  p_id uuid,
+  p_status text,
+  p_error text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  if p_status not in ('sent', 'failed', 'skipped') then
+    raise exception 'Stare necunoscută: %', p_status using errcode = '22023';
+  end if;
+
+  update public.notification_outbox
+  set status = p_status,
+      sent_at = case when p_status = 'sent' then now() else sent_at end,
+      last_error = left(p_error, 200)
+  where id = p_id;
+end;
+$fn$;
+
+/**
+ * Back into the queue, later.
+ *
+ * `send_after` moves rather than the row being retried immediately: a
+ * push service that returned 503 is still returning 503 a millisecond
+ * later, and the only thing a tight loop achieves is being rate-limited
+ * as well as broken.
+ */
+create or replace function public.retry_push(
+  p_id uuid,
+  p_after_seconds integer,
+  p_error text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  update public.notification_outbox
+  set status = 'queued',
+      send_after = now() + make_interval(secs => greatest(1, p_after_seconds)),
+      last_error = left(p_error, 200)
+  where id = p_id;
+end;
+$fn$;
+
+grant execute on function public.claim_push_batch(integer) to service_role;
+grant execute on function public.finish_push(uuid, text, text) to service_role;
+grant execute on function public.retry_push(uuid, integer, text) to service_role;
+
+-- ---------------------------------------------------------------------
+-- The schedule
+--
+-- Added to the jobs that already exist rather than given a mechanism of
+-- its own. Every two minutes: a notification that arrives two minutes
+-- late is still a notification, and a minute-by-minute job that finds
+-- nothing 95% of the time is a minute-by-minute job somebody eventually
+-- turns off.
+--
+-- The dispatcher is an HTTP function, so pg_cron cannot call it directly
+-- the way it calls the sweep. n8n's `outbox-dispatcher` already polls on a
+-- schedule and is where this belongs; this block only registers the
+-- database-side cleanup of rows nothing will ever deliver.
+-- ---------------------------------------------------------------------
+create or replace function public.expire_stale_push()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_count integer;
+begin
+  -- A push nobody collected within a day is a push about something that
+  -- has already happened. Delivering it late is worse than not at all.
+  update public.notification_outbox
+  set status = 'skipped', last_error = 'expired before delivery'
+  where channel = 'push'
+    and status in ('queued', 'sending')
+    and created_at < now() - interval '1 day';
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$fn$;
+
+grant execute on function public.expire_stale_push() to service_role;
+
+do $cron$
+begin
+  if to_regprocedure('cron.schedule(text,text,text)') is null then
+    raise notice 'pg_cron is not enabled - enable it, then run the cron.schedule call in this file.';
+    return;
+  end if;
+
+  perform cron.schedule('hourly-push-cleanup', '25 * * * *',
+                        'select public.expire_stale_push();');
+exception when duplicate_object or unique_violation then
+  raise notice 'Cron job already scheduled, leaving it as it is.';
+end;
+$cron$;
