@@ -9,6 +9,7 @@ import {
   type RequestActionState,
 } from '@/app/cerere/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
+import { CarrierCount } from '@/components/requests/carrier-count';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
@@ -40,7 +41,20 @@ function tone(status: ListingStatus): 'success' | 'warning' | 'danger' | 'neutra
  * `reopen_cargo_request` — which is where they are enforced. A button that
  * is not shown is a courtesy; the RPC is the rule.
  */
-export function MyRequestCard({ request, today }: { request: MyRequest; today: string }) {
+export function MyRequestCard({
+  request,
+  today,
+  carrierCount = null,
+}: {
+  request: MyRequest;
+  today: string;
+  /**
+   * How many verified carriers circulate on this route in these dates.
+   * Null for a request that is not on the board, and for one whose count
+   * could not be read — neither is a zero.
+   */
+  carrierCount?: number | null;
+}) {
   const [state, action, pending] = useActionState(
     async (previous: RequestActionState, formData: FormData) => {
       const intent = String(formData.get('intent') ?? '');
@@ -83,6 +97,8 @@ export function MyRequestCard({ request, today }: { request: MyRequest; today: s
       </div>
 
       {note ? <p className="mt-3 text-[0.8125rem] text-muted">{note}</p> : null}
+
+      <CarrierCount count={carrierCount} explain={false} className="mt-3" />
 
       <form action={action} className="mt-4 flex flex-col gap-3">
         <input type="hidden" name="request_id" value={request.id} />

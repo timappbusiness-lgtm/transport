@@ -8,7 +8,7 @@ import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { requireAccountContext } from '@/lib/auth/account';
 import type { MyRequest } from '@/lib/my-requests';
-import { loadMyRequests } from '@/lib/my-requests-source';
+import { loadMatchingCounts, loadMyRequests } from '@/lib/my-requests-source';
 import { isoToday } from '@/lib/request-form';
 
 export const metadata: Metadata = { title: requestsCopy.mine.title };
@@ -18,13 +18,22 @@ export const metadata: Metadata = { title: requestsCopy.mine.title };
  * calls `new Date()` while rendering is impure, and the date this page
  * needs is today's, taken once.
  */
-async function load(): Promise<{ requests: MyRequest[]; today: string }> {
+async function load(): Promise<{
+  requests: MyRequest[];
+  today: string;
+  counts: Map<string, number>;
+}> {
   const context = await requireAccountContext(ROUTES.accountRequests);
-  return { requests: await loadMyRequests(context), today: isoToday(new Date()) };
+  const requests = await loadMyRequests(context);
+  return {
+    requests,
+    today: isoToday(new Date()),
+    counts: await loadMatchingCounts(requests),
+  };
 }
 
 export default async function Page() {
-  const { requests, today } = await load();
+  const { requests, today, counts } = await load();
   const c = requestsCopy.mine;
 
   return (
@@ -45,7 +54,12 @@ export default async function Page() {
       ) : (
         <ul className="flex flex-col gap-4">
           {requests.map((request) => (
-            <MyRequestCard key={request.id} request={request} today={today} />
+            <MyRequestCard
+              key={request.id}
+              request={request}
+              today={today}
+              carrierCount={counts.get(request.id) ?? null}
+            />
           ))}
         </ul>
       )}

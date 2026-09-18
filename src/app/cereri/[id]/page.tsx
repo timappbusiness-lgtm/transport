@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CarrierCount } from '@/components/requests/carrier-count';
 import { RevealRequestContact } from '@/components/requests/reveal-request-contact';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
@@ -63,6 +64,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const context = await getAccountContext();
   const detail = context ? await loadDetail(id) : null;
+  // Owner only, and enforced by `count_matching_carriers` rather than by
+  // this line: a carrier reading somebody else's request has no business
+  // knowing how much competition it has, and a rule only the page keeps
+  // is not a rule.
+  const carrierCount = context ? await countCarriers(supabase, id) : null;
   const c = requestsCopy.detail;
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
@@ -99,6 +105,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,19rem)]">
         <section className="flex flex-col gap-4">
+          <CarrierCount count={carrierCount} />
           <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
             <h2 className="text-[1.0625rem]">{c.route}</h2>
             <dl className="mt-4 flex flex-col">
@@ -200,4 +207,20 @@ async function loadDetail(id: string): Promise<RequestDetail | null> {
     wheels_turn: vehicle.wheels_turn,
     steering_works: vehicle.steering_works,
   };
+}
+
+/**
+ * The count, for whoever is allowed one.
+ *
+ * `count_matching_carriers` raises for anybody but the request's own
+ * side, so „owner only" is a database answer and this returns null for
+ * everybody else — which renders as nothing rather than as a zero.
+ */
+async function countCarriers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+): Promise<number | null> {
+  const { data, error } = await supabase.rpc('count_matching_carriers', { p_listing_id: id });
+  if (error || typeof data !== 'number') return null;
+  return data;
 }
