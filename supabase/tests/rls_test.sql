@@ -1750,10 +1750,10 @@ select pg_temp.check('PRP  the corridor medians are still their own thing', 'gua
 select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'board','category','estimated_km','from_city','from_country','id',
-       'is_domestic','is_running','loading_from','loading_to','make','model',
+       'board','category','estimated_km','from_city','from_country','from_county',
+       'id','is_domestic','is_running','loading_from','loading_to','make','model',
        'needs_winch','photo_count','published_at','service_type','to_city',
-       'to_country','weight_kg','year'
+       'to_country','to_county','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -3732,6 +3732,19 @@ select pg_temp.check('FIRM and stays put when something else does', 'fix',
 -- ---------------------------------------------------------------------
 -- The vocabulary
 -- ---------------------------------------------------------------------
+
+-- The same literal as `tests/unit/counties.test.ts`. Two copies of this
+-- list exist — `src/lib/counties.ts` builds the checkbox grid, this one is
+-- what the CHECK on coverage_counties accepts — and a county added to one
+-- and not the other fails on save, which is a bad way to find out.
+select pg_temp.check('FIRM the two county lists agree', 'fix',
+  null, 'anon',
+  $a$select (select array_agg(c order by c) from unnest(public.ro_county_codes()) as c) = array[
+       'AB','AG','AR','B','BC','BH','BN','BR','BT','BV','BZ','CJ',
+       'CL','CS','CT','CV','DB','DJ','GJ','GL','GR','HD','HR','IF',
+       'IL','IS','MH','MM','MS','NT','OT','PH','SB','SJ','SM','SV',
+       'TL','TM','TR','VL','VN','VS'
+     ]$a$, 'true');
 
 select pg_temp.check('FIRM anybody reads the options the form offers', 'fix',
   null, 'anon',

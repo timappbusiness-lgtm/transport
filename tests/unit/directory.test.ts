@@ -51,6 +51,16 @@ function company(over: Partial<PublicCompany> = {}): PublicCompany {
     servesNational: true,
     servesInternational: false,
     lastCheckedAt: null,
+    coverageScope: 'national',
+    coverageCounties: [],
+    coverageCountries: [],
+    vehicleTypesAccepted: [],
+    equipment: [],
+    services: [],
+    indicativeRate: null,
+    indicativeRateNote: null,
+    website: null,
+    vehiclesTotal: 4,
     ...over,
   };
 }

@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { User } from '@supabase/supabase-js';
+import type { CargoCategory } from '@/lib/departures';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { PATHNAME_HEADER } from './pathname-header';
@@ -18,6 +19,7 @@ import { safeNextPath, signInUrlFor } from './next-path';
 
 export type AccountType = 'company' | 'individual';
 export type CompanyType = 'transport' | 'expeditie' | 'both';
+export type CoverageScope = 'judetean' | 'national' | 'international';
 export type MemberRole = 'owner' | 'admin' | 'dispatcher' | 'driver';
 export type VerificationStatus =
   | 'draft'
@@ -57,6 +59,28 @@ export interface Company {
   slug: string | null;
   public_description: string | null;
   logo_path: string | null;
+  address: string | null;
+  website: string | null;
+  /** How far the firm carries. Each level implies the ones before it. */
+  coverage_scope: CoverageScope;
+  /** Counties, when the scope is `judetean`. Empty above that scope. */
+  coverage_counties: string[];
+  /** Countries besides Romania, when the scope is `international`. */
+  coverage_countries: string[];
+  /** Empty means "has not said", which matching reads as "all". */
+  vehicle_types_accepted: CargoCategory[];
+  /** Codes from `equipment_options`. */
+  equipment: string[];
+  /** Codes from `service_options`. */
+  services: string[];
+  indicative_rate_ron_per_km: number | null;
+  indicative_rate_note: string | null;
+  /** When true the public profile shows the county and not the city. */
+  base_address_hidden: boolean;
+  alerts_enabled: boolean;
+  alerts_email: string | null;
+  /** Maintained by trigger; a company account cannot write it. */
+  profile_updated_at: string | null;
 }
 
 export interface Membership {
@@ -78,7 +102,7 @@ export interface AccountContext {
 export const ACTIVE_COMPANY_COOKIE = 'coridor_company';
 
 const COMPANY_COLUMNS =
-  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path';
+  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, address, website, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path, coverage_scope, coverage_counties, coverage_countries, vehicle_types_accepted, equipment, services, indicative_rate_ron_per_km, indicative_rate_note, base_address_hidden, alerts_enabled, alerts_email, profile_updated_at';
 
 /**
  * Reads the signed-in user, their profile and their companies.

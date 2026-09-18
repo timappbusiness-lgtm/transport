@@ -956,3 +956,59 @@ grant execute on function public.normalise_phone(text) to authenticated;
 grant execute on function public.normalise_website(text) to authenticated;
 grant execute on function public.set_equipment_option(text, text, text, integer, boolean) to authenticated;
 grant execute on function public.set_service_option(text, text, text, integer, boolean) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- The board learns which county a request is in
+--
+-- `cargo_listings` has carried `loading_county` since migration
+-- 20260916120300 and nothing has ever filled it in: the form asks for a
+-- city and `create_cargo_request` takes the county as an argument nobody
+-- passed. A county carrier therefore matched nothing at all, because
+-- `company_matches_request` declines rather than guesses on a null.
+--
+-- The server now resolves both counties from the same city list it
+-- already resolves the coordinates from, and the public view carries
+-- them so the dashboard's chips can apply the rule without a second
+-- lookup. A county is coarser than the city already on the card, so
+-- nothing new about a request becomes visible.
+-- ---------------------------------------------------------------------
+create or replace view public.v_requests_public as
+select
+  c.id,
+
+  d.category,
+  d.make,
+  d.model,
+  d.year,
+  d.is_running,
+  c.service_type,
+
+  c.loading_city as from_city,
+  c.loading_country as from_country,
+  c.unloading_city as to_city,
+  c.unloading_country as to_country,
+
+  round(
+    public.distance_km(c.loading_lat, c.loading_lng, c.unloading_lat, c.unloading_lng)
+  )::integer as estimated_km,
+
+  c.published_at,
+
+  -- Appended by migration 20260917180000.
+  c.board,
+  c.loading_from,
+  c.loading_to,
+  c.weight_kg,
+  d.needs_winch,
+  coalesce(array_length(c.photo_paths, 1), 0) as photo_count,
+  c.loading_country = c.unloading_country as is_domestic,
+
+  -- Appended by migration 20260918090000.
+  c.loading_county as from_county,
+  c.unloading_county as to_county
+from public.cargo_listings c
+join public.cargo_vehicle_details d on d.cargo_listing_id = c.id
+where c.status = 'active'
+  and c.listing_kind = 'vehicul'
+  and c.published_at is not null
+  and coalesce(c.loading_to, c.loading_from) >= current_date;
