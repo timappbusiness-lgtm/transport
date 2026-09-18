@@ -51,6 +51,12 @@ export async function publishRequestAction(
   const draft = parseDraft(String(formData.get('draft') ?? ''));
   if (draft === null) return { error: 'Formularul s-a pierdut pe drum. Ia-o de la capăt.' };
 
+  // A photo the person chose to attach, already in our own bucket under
+  // their own folder. Re-checked here rather than trusted: the field is
+  // in the form, so it is a path a browser could put anything into, and
+  // the storage policy already refuses a folder that is not theirs.
+  const photoPath = String(formData.get('photo_path') ?? '').trim();
+
   const errors = validateDraft(draft, isoToday(new Date()));
   if (Object.keys(errors).length > 0) return { fieldErrors: errors };
 
@@ -76,6 +82,10 @@ export async function publishRequestAction(
   // serve it.
   const fromCounty = countyCodeForCity(draft.fromCity, draft.fromCountry);
   const toCounty = countyCodeForCity(draft.toCity, draft.toCountry);
+
+  const photoPaths = photoPath !== '' && photoPath.startsWith(`${context.user.id}/`)
+    ? [photoPath]
+    : [];
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -103,6 +113,7 @@ export async function publishRequestAction(
       p_contact_phone: draft.contactPhone.trim(),
       p_contact_email: draft.contactEmail.trim(),
       p_company_id: companyId,
+      p_photo_paths: photoPaths,
       p_publish: true,
       p_from_lat: from?.lat ?? null,
       p_from_lng: from?.lng ?? null,

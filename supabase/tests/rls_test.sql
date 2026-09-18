@@ -4758,6 +4758,278 @@ begin
 end $$;
 
 -- =====================================================================
+-- Listing import: the quota is the whole protection
+--
+-- A model call costs money and the caller is the party being limited, so
+-- every check here is one of three things: the counter cannot be reached,
+-- the counter cannot be avoided, and nothing about a third-party page is
+-- kept.
+--
+-- Each check runs in its own rolled-back transaction, so the setup of one
+-- is never the state of the next. Where a check needs an attempt on
+-- record, it claims one itself.
+-- =====================================================================
+
+select pg_temp.check('IMP the limits are readable by anyone, logged out included', 'fix',
+  null, 'anon',
+  $a$select count(*) = 1 from public.import_settings$a$, 'true');
+
+select pg_temp.check('IMP a user cannot raise their own daily limit', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.import_settings set daily_limit_per_user = 5000 where id$a$, 'blocked',
+  p_verify => $v$select daily_limit_per_user = 10 from public.import_settings where id$v$);
+
+select pg_temp.check('IMP nor through the settings RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_import_settings(true, 5000, 500, 9999, 80, 0.1)$a$, 'blocked');
+
+select pg_temp.check('IMP staff can, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_import_settings(true, 12, 3, 50, 80, 0.70)$a$, 'allowed',
+  p_verify => $v$select (select daily_limit_per_user from public.import_settings where id) = 12
+                 and exists (select 1 from public.audit_log
+                             where action = 'import_settings.update')$v$);
+
+-- ---------------------------------------------------------------------
+-- The counter is out of reach of the party being counted
+-- ---------------------------------------------------------------------
+select pg_temp.check('IMP nobody writes an extraction row by hand', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.listing_extractions (user_id, source_type, status)
+     values (auth.uid(), 'link', 'ok')$a$, 'blocked');
+
+select pg_temp.check('IMP nor deletes one to get the allowance back', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$delete from public.listing_extractions$a$, 'blocked',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$,
+  p_verify => $v$select count(*) = 1 from public.listing_extractions$v$);
+
+select pg_temp.check('IMP a person cannot claim a slot themselves', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.claim_import_slot(auth.uid(), null, 'link')$a$, 'blocked');
+
+select pg_temp.check('IMP nor can an anonymous visitor', 'fix',
+  null, 'anon',
+  $a$select public.claim_import_slot(null, 'ip-hash-a', 'link')$a$, 'blocked');
+
+select pg_temp.check('IMP nobody closes their own row to hide the cost', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.finish_import(
+       (select id from public.listing_extractions limit 1), 'ok', 10, 1, 1, 0)$a$, 'blocked',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$,
+  p_verify => $v$select status = 'running' from public.listing_extractions limit 1$v$);
+
+-- ---------------------------------------------------------------------
+-- Who sees what
+-- ---------------------------------------------------------------------
+select pg_temp.check('IMP a person sees their own attempts', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.listing_extractions$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$);
+
+select pg_temp.check('IMP and not somebody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.listing_extractions$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$);
+
+select pg_temp.check('IMP staff see every attempt', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.listing_extractions$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$);
+
+select pg_temp.check('IMP the platform''s spend is not every account''s business', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.import_budget_status()$a$, 'blocked');
+
+select pg_temp.check('IMP staff can read it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select spent_usd is not null from public.import_budget_status()$a$, 'true');
+
+select pg_temp.check('IMP and nobody reads the raw month total', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.import_month_spend()$a$, 'blocked');
+
+select pg_temp.check('IMP the quota shown is the caller''s own', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select used = 1 and remaining = 9 from public.import_quota()$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$);
+
+select pg_temp.check('IMP somebody else''s attempts do not count against yours', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select used = 0 from public.import_quota()$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000006', null, 'link')$s$);
+
+-- ---------------------------------------------------------------------
+-- The refusals, each by its own name
+--
+-- The interface turns the name into a Romanian sentence, and "încearcă
+-- din nou" on a refusal that cannot change is a lie the person acts on.
+-- ---------------------------------------------------------------------
+select pg_temp.check('IMP past the daily limit, the answer is daily_limit', 'fix',
+  null, 'service_role',
+  $a$select reason = 'daily_limit' and not allowed
+     from public.claim_import_slot('f0000000-0000-0000-0000-000000000007', null, 'link')$a$, 'true',
+  p_setup => $s$update public.import_settings set daily_limit_per_user = 1 where id;
+                select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000007', null, 'link')$s$);
+
+select pg_temp.check('IMP and the refused attempt writes no row', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.listing_extractions
+     where user_id = 'f0000000-0000-0000-0000-000000000007'$a$, 'true',
+  p_setup => $s$update public.import_settings set daily_limit_per_user = 1 where id;
+                select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000007', null, 'link');
+                select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000007', null, 'link')$s$);
+
+select pg_temp.check('IMP an anonymous caller runs out sooner', 'fix',
+  null, 'service_role',
+  $a$select reason = 'daily_limit'
+     from public.claim_import_slot(null, 'ip-hash-x', 'link')$a$, 'true',
+  p_setup => $s$update public.import_settings set daily_limit_per_ip = 1 where id;
+                select public.claim_import_slot(null, 'ip-hash-x', 'link')$s$);
+
+select pg_temp.check('IMP one address does not spend another''s allowance', 'fix',
+  null, 'service_role',
+  $a$select allowed from public.claim_import_slot(null, 'ip-hash-y', 'link')$a$, 'true',
+  p_setup => $s$update public.import_settings set daily_limit_per_ip = 1 where id;
+                select public.claim_import_slot(null, 'ip-hash-x', 'link')$s$);
+
+select pg_temp.check('IMP a signed-in attempt stores no address at all', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 0 from public.listing_extractions
+     where user_id is not null and ip_hash is not null$a$, 'true',
+  p_setup => $s$select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-000000000002', 'ip-hash-z', 'link')$s$);
+
+select pg_temp.check('IMP a claim with nobody to count is refused', 'fix',
+  null, 'service_role',
+  $a$select reason = 'bad_request' from public.claim_import_slot(null, null, 'link')$a$, 'true');
+
+select pg_temp.check('IMP and so is a source nobody offers', 'fix',
+  null, 'service_role',
+  $a$select reason = 'bad_request' from public.claim_import_slot(
+       'f0000000-0000-0000-0000-000000000002', null, 'scrape')$a$, 'true');
+
+select pg_temp.check('IMP turning the feature off refuses every claim', 'fix',
+  null, 'service_role',
+  $a$select reason = 'disabled' from public.claim_import_slot(
+       'f0000000-0000-0000-0000-000000000002', null, 'link')$a$, 'true',
+  p_setup => $s$update public.import_settings set is_enabled = false where id$s$);
+
+-- ---------------------------------------------------------------------
+-- The budget
+-- ---------------------------------------------------------------------
+select pg_temp.check('IMP a spent budget refuses the next claim', 'fix',
+  null, 'service_role',
+  $a$select reason = 'budget' from public.claim_import_slot(
+       'f0000000-0000-0000-0000-00000000000a', null, 'photo')$a$, 'true',
+  p_setup => $s$update public.import_settings set monthly_budget_usd = 0.10 where id;
+                select public.finish_import(
+                  (select extraction_id from public.claim_import_slot(
+                     'f0000000-0000-0000-0000-00000000000a', null, 'photo')),
+                  'ok', 900, 1500, 200, 0.20)$s$);
+
+-- This one fails on a schema where the alert reads a column that no longer
+-- exists: nothing calls it until a threshold is actually crossed, so the
+-- function compiles happily and only a crossing finds the mistake.
+-- Two kinds, two channels, every admin: asserted as that rule rather than
+-- as a number, so adding a colleague does not fail the check.
+select pg_temp.check('IMP crossing the budget tells every admin, on both channels', 'fix',
+  null, 'service_role',
+  $a$select (select count(*) from public.notification_outbox
+             where template like 'import_budget_%')
+          = 4 * (select count(*) from public.platform_staff where role = 'admin')$a$, 'true',
+  p_setup => $s$update public.import_settings set monthly_budget_usd = 0.10 where id;
+                select public.finish_import(
+                  (select extraction_id from public.claim_import_slot(
+                     'f0000000-0000-0000-0000-00000000000a', null, 'photo')),
+                  'ok', 900, 1500, 200, 0.20)$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'import_budget_spent'
+                     and recipient_user_id = 'f0000000-0000-0000-0000-000000000001'
+                     and channel = 'email')
+                 and exists (
+                   select 1 from public.notification_outbox
+                   where template = 'import_budget_warning'
+                     and recipient_user_id = 'f0000000-0000-0000-0000-000000000001'
+                     and channel = 'inapp')$v$);
+
+-- The second extraction of the month crosses nothing, so it announces
+-- nothing. A dedupe key per month and kind is what holds it if a second
+-- crossing ever happens.
+select pg_temp.check('IMP and tells them once, not once per extraction', 'fix',
+  null, 'service_role',
+  $a$select public.finish_import(
+       (select id from public.listing_extractions where status = 'running' limit 1),
+       'ok', 900, 1500, 200, 0.20)$a$, 'allowed',
+  p_setup => $s$update public.import_settings set monthly_budget_usd = 999 where id;
+                select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-00000000000a', null, 'photo');
+                select public.claim_import_slot(
+                  'f0000000-0000-0000-0000-00000000000a', null, 'photo');
+                update public.import_settings set monthly_budget_usd = 0.10 where id;
+                select public.finish_import(
+                  (select id from public.listing_extractions where status = 'running' limit 1),
+                  'ok', 900, 1500, 200, 0.20)$s$,
+  p_verify => $v$select (select count(*) from public.notification_outbox
+                         where template like 'import_budget_%')
+                      = 4 * (select count(*) from public.platform_staff where role = 'admin')$v$);
+
+select pg_temp.check('IMP a failed extraction is still counted and still logged', 'fix',
+  null, 'service_role',
+  $a$select status = 'failed' and failure_reason = 'robots_disallow'
+       and source_host = 'example.com' and cost_usd = 0
+     from public.listing_extractions
+     where user_id = 'f0000000-0000-0000-0000-000000000004'$a$, 'true',
+  p_setup => $s$select public.finish_import(
+                  (select extraction_id from public.claim_import_slot(
+                     'f0000000-0000-0000-0000-000000000004', null, 'link')),
+                  'failed', 120, null, null, 0, 'robots_disallow', 'example.com')$s$);
+
+select pg_temp.check('IMP a failure the caller did not name is still named', 'fix',
+  null, 'service_role',
+  $a$select failure_reason = 'unknown' from public.listing_extractions
+     where user_id = 'f0000000-0000-0000-0000-000000000005'$a$, 'true',
+  p_setup => $s$select public.finish_import(
+                  (select extraction_id from public.claim_import_slot(
+                     'f0000000-0000-0000-0000-000000000005', null, 'photo')),
+                  'failed', 90)$s$);
+
+select pg_temp.check('IMP a status nobody defined is refused outright', 'fix',
+  null, 'service_role',
+  $a$select public.finish_import(
+       (select extraction_id from public.claim_import_slot(
+          'f0000000-0000-0000-0000-000000000005', null, 'photo')), 'maybe')$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- What is never stored
+-- ---------------------------------------------------------------------
+select pg_temp.check('IMP the log has no column a page could be written into', 'guard',
+  null, 'service_role',
+  $a$select count(*) = 0 from information_schema.columns
+     where table_schema = 'public' and table_name = 'listing_extractions'
+       and column_name in ('source_url', 'url', 'page_html', 'page_text',
+                           'raw_response', 'extracted', 'title', 'description')$a$, 'true');
+
+select pg_temp.check('IMP neither counter function is reachable from a browser', 'guard',
+  null, 'service_role',
+  $a$select count(*) = 0 from information_schema.routine_privileges
+     where routine_schema = 'public'
+       and routine_name in ('claim_import_slot', 'finish_import',
+                            'queue_import_budget_alert', 'import_month_spend')
+       and grantee in ('authenticated', 'anon', 'PUBLIC')$a$, 'true');
+
+-- =====================================================================
 -- Report
 -- =====================================================================
 drop function public.zz_rls_default_privilege_probe();

@@ -2,14 +2,18 @@
 
 import { useActionState, useEffect, useId, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import { attachListingPhotoAction } from '@/app/cerere/import-actions';
 import { publishRequestAction, type PublishRequestState } from '@/app/cerere/actions';
 import { FormError } from '@/components/auth/form';
 import { PushPermissionCard } from '@/components/push/permission-card';
+import { AutoChip, ImportDisclaimer, ImportPanel } from '@/components/requests/import-panel';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { CITY_GROUPS } from '@/lib/cities';
 import { createDraftStore } from '@/lib/draft-store';
+import { importCopy } from '@/content/import-anunt';
+import { applyExtraction, type ImportedField } from '@/lib/listing-import';
 import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from '@/lib/departures';
 import {
   MAX_DAMAGE_NOTES,
@@ -46,18 +50,22 @@ function Labelled({
   htmlFor,
   hint,
   error,
+  auto = false,
   children,
 }: {
   label: string;
   htmlFor: string;
   hint?: string | undefined;
   error?: string | undefined;
+  /** Filled from a listing rather than typed, so the label says so. */
+  auto?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-sm font-medium">
         {label}
+        {auto ? <AutoChip /> : null}
       </label>
       {children}
       {hint ? <p className="text-xs text-muted">{hint}</p> : null}
@@ -111,6 +119,14 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   const draft = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
   const [step, setStep] = useState<RequestStep>('ruta');
   const [errors, setErrors] = useState<FieldErrors<RequestField>>({});
+  // Which fields a listing filled, so each one can say so. Cleared per
+  // field the moment somebody edits it: a chip on a value they typed
+  // themselves is a lie about where it came from.
+  const [auto, setAuto] = useState<Set<ImportedField>>(new Set());
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [attachPhoto, setAttachPhoto] = useState(false);
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
   const id = useId();
   const c = requestsCopy.form;
 
@@ -122,6 +138,60 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
   function set<K extends RequestField>(field: K, value: RequestDraft[K]): void {
     store.set({ ...draft, [field]: value });
+    setAuto((current) => {
+      if (!current.has(field as ImportedField)) return current;
+      const next = new Set(current);
+      next.delete(field as ImportedField);
+      return next;
+    });
+  }
+
+  /**
+   * What the import panel hands back.
+   *
+   * Everything goes through `applyExtraction`, which drops anything the
+   * form itself would have refused — so a wrong year never reaches a box
+   * somebody has to notice and delete. The count it returns is what the
+   * panel turns into "nothing to fill here".
+   */
+  function onExtracted(fields: Record<string, string>): number {
+    const applied = applyExtraction(draft, fields, today);
+    store.set(applied.draft);
+    setAuto(new Set(applied.filled));
+    return applied.filled.length;
+  }
+
+  /**
+   * The photo the listing offered, remembered but not taken.
+   *
+   * Nothing is downloaded here. The box below starts unticked and the
+   * fetch happens when somebody ticks it, because a photo copied into our
+   * bucket without being asked is a copy we had no reason to make.
+   */
+  function onImageFound(url: string | null): void {
+    setPhotoUrl(url);
+    setAttachPhoto(false);
+    setPhotoPath(null);
+    setPhotoNote(null);
+  }
+
+  function onAttachChange(checked: boolean): void {
+    setAttachPhoto(checked);
+    if (!checked || photoUrl === null || photoPath !== null) {
+      if (!checked) setPhotoNote(null);
+      return;
+    }
+    void attachListingPhotoAction(photoUrl).then((result) => {
+      if (result.ok && result.path !== undefined) {
+        setPhotoPath(result.path);
+        setPhotoNote(importCopy.attach.attached);
+        return;
+      }
+      // The request is worth more than the photo, so a failure here
+      // unticks the box and says so rather than blocking publication.
+      setAttachPhoto(false);
+      setPhotoNote(importCopy.attach.failed);
+    });
   }
 
   function goTo(next: RequestStep): void {
@@ -159,6 +229,9 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   return (
     <form action={action} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="draft" value={serialiseDraft(draft)} />
+      {photoPath !== null && attachPhoto ? (
+        <input type="hidden" name="photo_path" value={photoPath} />
+      ) : null}
 
       <Steps current={step} onSelect={goTo} />
 
@@ -273,10 +346,35 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-2 text-[1.0625rem]">{c.vehicle.title}</legend>
 
+          <ImportPanel
+            onExtracted={onExtracted}
+            onImageFound={onImageFound}
+            signedIn={signedIn}
+          />
+
+          {auto.size > 0 ? <ImportDisclaimer /> : null}
+
+          {photoUrl !== null && signedIn ? (
+            <div className="flex flex-col gap-1.5 rounded-card border border-border bg-ground-alt p-4">
+              <Check
+                label={importCopy.attach.label}
+                checked={attachPhoto}
+                onChange={onAttachChange}
+              />
+              <p className="pl-7 text-xs text-muted">{importCopy.attach.hint}</p>
+              {photoNote !== null ? (
+                <p role="status" className="pl-7 text-xs text-muted">
+                  {photoNote}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <Labelled
             label={c.vehicle.category}
             htmlFor={`${id}-category`}
             error={fieldError('category')}
+            auto={auto.has('category')}
           >
             <select
               id={`${id}-category`}
@@ -295,7 +393,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           </Labelled>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Labelled label={c.vehicle.make} htmlFor={`${id}-make`} error={fieldError('make')}>
+            <Labelled label={c.vehicle.make} htmlFor={`${id}-make`} error={fieldError('make')} auto={auto.has('make')}>
               <input
                 id={`${id}-make`}
                 value={draft.make}
@@ -304,7 +402,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                 className={CONTROL}
               />
             </Labelled>
-            <Labelled label={c.vehicle.model} htmlFor={`${id}-model`} error={fieldError('model')}>
+            <Labelled label={c.vehicle.model} htmlFor={`${id}-model`} error={fieldError('model')} auto={auto.has('model')}>
               <input
                 id={`${id}-model`}
                 value={draft.model}
@@ -316,7 +414,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Labelled label={c.vehicle.year} htmlFor={`${id}-year`} error={fieldError('year')}>
+            <Labelled label={c.vehicle.year} htmlFor={`${id}-year`} error={fieldError('year')} auto={auto.has('year')}>
               <input
                 id={`${id}-year`}
                 inputMode="numeric"
@@ -331,6 +429,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               htmlFor={`${id}-weight`}
               hint={c.vehicle.weightHint}
               error={fieldError('weightKg')}
+              auto={auto.has('weightKg')}
             >
               <input
                 id={`${id}-weight`}
