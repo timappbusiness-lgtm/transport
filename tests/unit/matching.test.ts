@@ -24,6 +24,13 @@ function request(over: Partial<PublicRequest> = {}): PublicRequest {
     to_country: 'RO',
     estimated_km: 1100,
     published_at: '2026-09-17T09:00:00Z',
+    board: 'retur',
+    loading_from: '2026-09-25',
+    loading_to: null,
+    weight_kg: 1400,
+    needs_winch: false,
+    photo_count: 0,
+    is_domestic: false,
     ...over,
   };
 }

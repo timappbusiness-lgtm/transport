@@ -1,0 +1,225 @@
+/**
+ * Romanian copy for publishing a request, the public board and the
+ * client's own list.
+ *
+ * Two rules this file keeps. Nothing here promises anything the platform
+ * does not do — there is no offer screen yet, so no sentence says an offer
+ * will arrive; what carriers can do today is see the request and telephone.
+ * And no number is written here: the plan's limits come from `plans`, and
+ * the distances from the database.
+ */
+export const requestsCopy = {
+  form: {
+    eyebrow: 'Cerere de transport',
+    title: 'Spune-ne ce ai de transportat',
+    lede: 'Patru pași, sub două minute. Publicarea este gratuită, iar datele tale de contact le vede doar un transportator verificat.',
+    steps: {
+      ruta: 'Ruta',
+      vehicul: 'Vehiculul',
+      stare: 'Starea',
+      contact: 'Contact',
+    },
+    stepOf: (current: number, total: number) => `Pasul ${current} din ${total}`,
+    next: 'Continuă',
+    back: 'Înapoi',
+    submit: 'Publică cererea',
+    submitting: 'Se publică…',
+    saveDraft: 'Salvează ca ciornă',
+
+    route: {
+      title: 'De unde, până unde și când',
+      fromCity: 'Oraș de plecare',
+      fromCountry: 'Țara de plecare',
+      toCity: 'Oraș de destinație',
+      toCountry: 'Țara de destinație',
+      cityHint: 'Scrie orice localitate. Cele din listă vin cu distanța calculată.',
+      loadingFrom: 'Poate fi încărcat de la',
+      loadingTo: 'Până la (opțional)',
+      windowHint:
+        'Un interval găsește mai repede un transportator decât o singură zi: platformele își fac ruta cu o săptămână înainte.',
+    },
+
+    vehicle: {
+      title: 'Ce transportăm',
+      category: 'Categoria',
+      make: 'Marca',
+      makePlaceholder: 'Volkswagen',
+      model: 'Modelul',
+      modelPlaceholder: 'Golf',
+      year: 'Anul fabricației',
+      weight: 'Greutatea, kg (opțional)',
+      weightHint: 'Dacă o știi. Transportatorul o folosește pentru sarcina pe punte.',
+    },
+
+    condition: {
+      title: 'În ce stare este',
+      lede: 'Este întrebarea care schimbă cel mai mult prețul. Un vehicul care urcă singur pe platformă și unul care are nevoie de troliu și de un al doilea om sunt două lucrări diferite.',
+      isRunning: 'Pornește și se deplasează',
+      wheelsTurn: 'Roțile se învârt',
+      steeringWorks: 'Direcția funcționează',
+      hasKeys: 'Are cheile',
+      isDamaged: 'Are avarii',
+      damageNotes: 'Ce este avariat',
+      damageHint: 'Pe scurt: „aripa dreapta față lovită, ușa nu se deschide”.',
+      winch: 'Transportatorul vine pregătit cu troliu.',
+      service: 'Cum vrei să fie transportat',
+      serviceStandard: 'Standard',
+      serviceStandardNote: 'Pleacă atunci când platforma se umple pe ruta ta. Cea mai ieftină variantă.',
+      serviceExpress: 'Expres',
+      serviceExpressNote: 'Cursă dedicată, la data pe care o alegi tu. Costă mai mult.',
+    },
+
+    contact: {
+      title: 'Cum te găsește transportatorul',
+      lede: 'Numărul tău nu apare pe anunț. Îl vede doar un transportator verificat, după ce îl deschide din abonamentul lui, și fiecare deschidere se înregistrează.',
+      name: 'Numele tău',
+      phone: 'Telefon',
+      phoneHint: 'Aici te sună transportatorul.',
+      email: 'E-mail (opțional)',
+      description: 'Altceva de spus (opțional)',
+      descriptionHint:
+        'Detalii utile: unde anume este mașina, dacă cineva o predă în locul tău, dacă ai flexibilitate la dată. Nu scrie aici numărul de telefon — este deja mai sus.',
+    },
+
+    account: {
+      title: 'Mai e un pas: contul',
+      body: 'Ca să publicăm cererea avem nevoie de un cont gratuit. Îl faci în câteva secunde, iar ce ai completat până acum te așteaptă aici.',
+      signUp: 'Fă-ți cont gratuit',
+      signIn: 'Am deja cont',
+    },
+
+    saved: {
+      title: 'Cererea este salvată ca ciornă',
+      published: 'Cererea ta este publicată',
+      publishedBody:
+        'Apare acum pe panoul de cereri, unde o văd transportatorii verificați. O găsești oricând în contul tău.',
+      seeRequests: 'Vezi cererile mele',
+      seeBoard: 'Vezi panoul de cereri',
+    },
+
+    errors: {
+      generic: 'Nu am putut salva cererea. Mai încearcă o dată.',
+      offline: 'Nu avem legătură cu baza de date. Cererea nu a fost salvată.',
+    },
+  },
+
+  board: {
+    eyebrow: 'Panoul de cereri',
+    title: 'Cereri',
+    titleSoft: 'de transport.',
+    lede: 'Vehicule care așteaptă un transportator. Ruta, perioada și starea sunt publice; datele de contact se deschid din abonament.',
+    tabs: {
+      toate: 'Toate',
+      curse: 'De la firme',
+      retur: 'De la persoane fizice',
+    },
+    count: (n: number) => (n === 1 ? 'O cerere' : `${n} cereri`),
+    sortNote: 'Ordonate după data cea mai apropiată de încărcare.',
+    signedOutNote: 'Vezi ruta, perioada și starea vehiculului. Contactul cere un cont de transportator.',
+    publish: 'Publică o cerere',
+  },
+
+  filters: {
+    title: 'Filtre',
+    fromCountry: 'Țara de plecare',
+    fromCity: 'Oraș de plecare',
+    toCountry: 'Țara de destinație',
+    toCity: 'Oraș de destinație',
+    dateFrom: 'Încărcare de la',
+    dateTo: 'Încărcare până la',
+    category: 'Categoria',
+    condition: 'Starea vehiculului',
+    conditionRunning: 'Pornește',
+    conditionNotRunning: 'Nu pornește',
+    scope: 'Acoperire',
+    scopeDomestic: 'Intern',
+    scopeInternational: 'Internațional',
+    any: 'Oricare',
+    apply: 'Caută',
+    clear: 'Șterge filtrele',
+  },
+
+  card: {
+    winch: 'Are nevoie de troliu',
+    running: 'Pornește și se deplasează',
+    fromCompany: 'Firmă',
+    fromIndividual: 'Persoană fizică',
+    photos: (n: number) => (n === 1 ? 'O fotografie' : `${n} fotografii`),
+    open: 'Vezi cererea',
+    weight: (kg: number) => `${new Intl.NumberFormat('ro-RO').format(kg)} kg`,
+  },
+
+  empty: {
+    title: 'Nicio cerere pentru această căutare.',
+    body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați.',
+    clear: 'Vezi toate cererile',
+  },
+
+  detail: {
+    back: 'Înapoi la cereri',
+    route: 'Ruta',
+    window: 'Perioada de încărcare',
+    vehicle: 'Vehiculul',
+    condition: 'Starea',
+    service: 'Serviciul',
+    notes: 'De la client',
+    published: 'Publicată',
+    contact: 'Deschide datele de contact',
+    contactHidden: 'Intră în cont ca transportator ca să deschizi datele de contact.',
+    seePlans: 'Vezi planurile și limitele',
+    missing: 'Cererea nu mai este pe panou.',
+    missingBody: 'Fie a fost retrasă, fie perioada de încărcare a trecut.',
+    anonBody:
+      'Ruta, perioada și starea vehiculului sunt publice. Restul detaliilor și contactul se văd din contul unui transportator verificat.',
+  },
+
+  mine: {
+    eyebrow: 'Cererile mele',
+    title: 'Cererile mele',
+    lede: 'Tot ce ai publicat, cu starea fiecărei cereri.',
+    empty: 'Nu ai nicio cerere încă.',
+    emptyBody: 'Publică prima cerere și transportatorii verificați o văd imediat pe panou.',
+    publish: 'Publică o cerere',
+    publishDraft: 'Publică',
+    cancel: 'Retrage',
+    cancelConfirm: 'Retragi cererea de pe panou? Rămâne în listă și o poți republica oricând.',
+    reopen: 'Republică',
+    reopenTitle: 'Alege datele noi',
+    reopenFrom: 'Poate fi încărcat de la',
+    reopenTo: 'Până la (opțional)',
+    reopenSubmit: 'Republică cererea',
+    view: 'Vezi anunțul',
+    confirm: 'Da, continuă',
+    back: 'Renunță',
+    quotaTitle: 'Ai atins limita planului',
+    quotaBody: 'Retrage o cerere activă sau treci la un plan superior ca să publici alta.',
+  },
+
+  /**
+   * The statuses a client sees. `offers_received`, `in_progress` and
+   * `disputed` are in the enum and nothing can reach them yet — no screen
+   * accepts an offer or opens a complaint — but a label costs nothing and a
+   * blank badge on somebody's dashboard costs trust.
+   */
+  status: {
+    draft: 'Ciornă',
+    active: 'Pe panou',
+    offers_received: 'Are oferte',
+    carrier_selected: 'Transportator ales',
+    in_progress: 'În curs',
+    delivered: 'Livrată',
+    cancelled: 'Retrasă',
+    expired: 'Expirată',
+    suspended: 'Suspendată',
+    disputed: 'În dispută',
+    assigned: 'Transportator ales',
+    completed: 'Livrată',
+  },
+
+  statusNote: {
+    draft: 'Nu este vizibilă pentru transportatori.',
+    expired: 'Perioada de încărcare a trecut. Alege date noi ca să revină pe panou.',
+    cancelled: 'Ai retras-o. O poți republica cu date noi.',
+    suspended: 'A fost scoasă de pe panou până se rezolvă documentele firmei.',
+  },
+} as const;

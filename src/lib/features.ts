@@ -41,8 +41,8 @@ export interface FeatureMap {
 }
 
 export const FEATURES: FeatureMap = {
-  requests: false,
-  requestBoard: false,
+  requests: true,
+  requestBoard: true,
   departures: true,
   offers: false,
   messages: false,

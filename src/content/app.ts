@@ -110,11 +110,27 @@ export const appCopy = {
       body: 'Transportatorii răspund mai repede unei cereri de la un număr confirmat.',
       action: 'Confirmă acum',
     },
-    /** Until the request flow exists, this is the honest state of the account. */
+    /**
+     * The phone number is not a formality here: `guard_cargo_listing_publish`
+     * refuses to put a private person's request on the board without a
+     * confirmed one, so this card is the difference between a request that is
+     * published and one that waits as a draft.
+     */
     noRequests: {
-      title: 'Încă nu poți publica o cerere din cont',
+      title: 'Nu ai nicio cerere încă',
       body:
-        'Formularul de cerere este în lucru. Până atunci poți vedea traseele publicate de transportatori și lua legătura direct.',
+        'Spune-ne ce ai de transportat și de unde până unde. Publicarea este gratuită, iar cererea ajunge pe panoul pe care îl urmăresc transportatorii verificați.',
+      action: 'Publică o cerere',
+    },
+    /** What the dashboard shows above the last few requests. */
+    requests: {
+      title: 'Cererile mele',
+      all: 'Vezi toate cererile',
+    },
+    routes: {
+      title: 'Trasee disponibile',
+      body:
+        'Platforme care circulă oricum pe ruta ta. Dacă găsești una potrivită, poți lua legătura direct.',
       action: 'Vezi traseele disponibile',
     },
   },

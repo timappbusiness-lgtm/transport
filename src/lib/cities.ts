@@ -152,3 +152,14 @@ export function cityFromValue(value: string | null | undefined): City | null {
   if (!name || !country) return null;
   return BY_KEY.get(normalise(`${name}${country}`)) ?? null;
 }
+
+/**
+ * The city with this name in this country, or null when it is not one we
+ * know. The form lets people type a town that is not on the list — most
+ * cars are collected from somewhere smaller than a county seat — so this
+ * answers "do we have coordinates for it", not "is it real".
+ */
+export function findCity(name: string, country: string): City | null {
+  if (name.trim() === '' || country.trim() === '') return null;
+  return BY_KEY.get(normalise(`${name}${country}`)) ?? null;
+}

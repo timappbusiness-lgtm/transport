@@ -622,7 +622,7 @@ select pg_temp.check('P4   accept_offer accepts, rejects the rest, assigns the l
   $a$select public.accept_offer('f2000000-0000-0000-0000-000000000001')$a$, 'allowed',
   p_verify => $v$select (select status from public.offers where id = 'f2000000-0000-0000-0000-000000000001') = 'accepted'
                     and (select status from public.offers where id = 'f2000000-0000-0000-0000-000000000002') = 'rejected'
-                    and (select status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000001') = 'assigned'
+                    and (select status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000001') = 'carrier_selected'
                     and exists (select 1 from public.transports
                                 where offer_id = 'f2000000-0000-0000-0000-000000000001'
                                   and carrier_company_id = 'fc000000-0000-0000-0000-000000000001'
@@ -657,7 +657,7 @@ select pg_temp.check('P4   accepting a seat offer books its seats, keeps the lis
                     and (select status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000002') = 'active'
                     and (select status from public.offers where id = 'f2000000-0000-0000-0000-000000000004') = 'rejected'
                     and (select status from public.offers where id = 'f2000000-0000-0000-0000-000000000005') = 'pending'
-                    and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'assigned'
+                    and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'carrier_selected'
                     and exists (select 1 from public.transports
                                 where offer_id = 'f2000000-0000-0000-0000-000000000003'
                                   and cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'
@@ -672,7 +672,7 @@ select pg_temp.check('P4   the offer that takes the last seat assigns the seat l
         ('f2000000-0000-0000-0000-000000000003', 'fb000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', 1300, 'EUR', 2, 'f1000000-0000-0000-0000-000000000002'),
         ('f2000000-0000-0000-0000-000000000005', 'fb000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', 650, 'EUR', 1, 'f1000000-0000-0000-0000-000000000003');
     end $d$$s$,
-  p_verify => $v$select (select status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000002') = 'assigned'
+  p_verify => $v$select (select status from public.truck_listings where id = 'fb000000-0000-0000-0000-000000000002') = 'carrier_selected'
                     and (select sum(slots) from public.departure_bookings
                          where truck_listing_id = 'fb000000-0000-0000-0000-000000000002' and status = 'confirmed') = 3
                     and not exists (select 1 from public.offers
@@ -958,7 +958,7 @@ select pg_temp.check('ORD  confirming a reservation creates the order and serves
                                   and t.agreed_price = 640 and t.status = 'agreed'
                                   and exists (select 1 from public.audit_log a
                                               where a.action = 'order.created' and a.entity_id = t.id))
-                    and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'assigned'$v$);
+                    and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'carrier_selected'$v$);
 
 select pg_temp.check('ORD  a reservation cannot be confirmed without an agreed price', 'fix',
   'f0000000-0000-0000-0000-000000000003', 'authenticated',
@@ -1750,8 +1750,10 @@ select pg_temp.check('PRP  the corridor medians are still their own thing', 'gua
 select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'category','estimated_km','from_city','from_country','id','is_running',
-       'make','model','published_at','service_type','to_city','to_country','year'
+       'board','category','estimated_km','from_city','from_country','id',
+       'is_domestic','is_running','loading_from','loading_to','make','model',
+       'needs_winch','photo_count','published_at','service_type','to_city',
+       'to_country','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -3188,6 +3190,321 @@ select pg_temp.check('ABO  approval does not overwrite a subscription that exist
   p_verify => $v$select plan_code = 'business' and status = 'active'
                  from public.subscriptions
                  where company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- =====================================================================
+-- REQ - publishing a transport request (phase 2)
+--
+-- `cargo_listings` has had policies since phase 0 and no screen until now.
+-- These checks are about the four RPCs that write it, and about the
+-- privilege that was taken away from the browser at the same time.
+-- =====================================================================
+
+select pg_temp.check('REQ  an individual publishes a request', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true)$a$,
+  'allowed',
+  -- The individual plan allows two active requests and this person already
+  -- has both, so one is withdrawn first. The quota itself is checked below.
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'active' and board = 'retur' and company_id is null
+                    and title = 'Audi A4 2016 · Klagenfurt → Cluj-Napoca'
+                 from public.cargo_listings where loading_city = 'Klagenfurt'$v$);
+
+-- Two active requests is what the individual plan allows, and the fixture
+-- uses both. The third must not be lost, and the person must be told which
+-- limit they met - not "something went wrong".
+select pg_temp.check('REQ  a third request waits as a draft on the free plan', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true)$a$,
+  'allowed',
+  p_verify => $v$select status = 'draft' from public.cargo_listings
+                 where loading_city = 'Klagenfurt'$v$);
+
+select pg_temp.check('REQ  and it names the limit it met', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select publish_error like '%anunțuri active%' from public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true)$a$,
+  'true');
+
+select pg_temp.check('REQ  a request can be kept as a draft on purpose', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select request_status = 'draft' and publish_error is null
+     from public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true,
+       p_publish => false)$a$, 'true');
+
+select pg_temp.check('REQ  the vehicle and the contact are written with it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true)$a$,
+  'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.cargo_vehicle_details d
+                   join public.cargo_listings l on l.id = d.cargo_listing_id
+                   where l.loading_city = 'Klagenfurt' and d.make = 'Audi' and d.year = 2016)
+                 and exists (
+                   select 1 from public.listing_contacts c
+                   join public.cargo_listings l on l.id = c.cargo_listing_id
+                   where l.loading_city = 'Klagenfurt' and c.contact_phone = '+40711000006')$v$);
+
+-- The condition flags drive the price, so a winch must be derived and not
+-- believed: the form never sends it.
+select pg_temp.check('REQ  a car that does not start is marked for a winch', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => false)$a$,
+  'allowed',
+  p_verify => $v$select d.needs_winch
+                 from public.cargo_vehicle_details d
+                 join public.cargo_listings l on l.id = d.cargo_listing_id
+                 where l.loading_city = 'Klagenfurt'$v$);
+
+-- Coordinates come from the server's city list, so the straight-line
+-- distance on a card is computed from something the browser did not choose.
+select pg_temp.check('REQ  coordinates put a distance on the card', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Klagenfurt', p_to_city => 'Cluj-Napoca',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Audi', p_model => 'A4', p_year => 2016, p_is_running => true,
+       p_from_lat => 46.6247, p_from_lng => 14.3055,
+       p_to_lat => 46.7712, p_to_lng => 23.6236)$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select v.estimated_km between 680 and 720
+                 from public.v_requests_public v
+                 join public.cargo_listings l on l.id = v.id
+                 where l.loading_city = 'Klagenfurt'$v$);
+
+select pg_temp.check('REQ  the board carries what a carrier filters on', 'guard',
+  null, 'anon',
+  $a$select board = 'retur' and loading_from is not null and needs_winch = false
+            and photo_count = 0 and weight_kg = 1200
+     from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true');
+
+-- The whole point of returning the draft rather than raising: an hour of
+-- typing must not be lost to a step that has nothing to do with the form.
+select pg_temp.check('REQ  an unconfirmed phone number leaves a draft, not a hole', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Graz', p_to_city => 'Arad',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Skoda', p_model => 'Octavia', p_year => 2015, p_is_running => true,
+       p_contact_phone => '+40711000077')$a$,
+  'allowed',
+  p_verify => $v$select status = 'draft' from public.cargo_listings
+                 where loading_city = 'Graz'$v$);
+
+select pg_temp.check('REQ  and the draft says what is left to do', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select publish_error like '%telefon%' from public.create_cargo_request(
+       p_from_city => 'Graz', p_to_city => 'Arad',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Skoda', p_model => 'Octavia', p_year => 2015, p_is_running => true,
+       p_contact_phone => '+40711000077')$a$, 'true');
+
+select pg_temp.check('REQ  a draft is not on the public board', 'fix',
+  null, 'anon',
+  $a$select * from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.cargo_listings set status = 'draft'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('REQ  a firm still in review keeps its draft too', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select request_status = 'draft' from public.create_cargo_request(
+       p_from_city => 'Sibiu', p_to_city => 'Iași',
+       p_loading_from => current_date + 4, p_category => 'autoturism',
+       p_make => 'Dacia', p_model => 'Logan', p_year => 2019, p_is_running => true,
+       p_company_id => 'fc000000-0000-0000-0000-000000000003')$a$, 'true');
+
+select pg_temp.check('REQ  a firm answers on its own number', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Rotterdam', p_to_city => 'Constanța',
+       p_loading_from => current_date + 6, p_category => 'autoturism',
+       p_make => 'Volvo', p_model => 'V60', p_year => 2020, p_is_running => true,
+       p_company_id => 'fc000000-0000-0000-0000-000000000002')$a$,
+  'allowed',
+  p_verify => $v$select c.contact_phone = '+40711000004' and l.board = 'curse'
+                 from public.listing_contacts c
+                 join public.cargo_listings l on l.id = c.cargo_listing_id
+                 where l.loading_city = 'Rotterdam'$v$);
+
+select pg_temp.check('REQ  nobody posts for a firm they do not belong to', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Leipzig', p_to_city => 'Brașov',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Opel', p_model => 'Astra', p_year => 2017, p_is_running => true,
+       p_company_id => 'fc000000-0000-0000-0000-000000000001')$a$,
+  'blocked',
+  p_verify => $v$select not exists (select 1 from public.cargo_listings
+                                    where loading_city = 'Leipzig')$v$);
+
+select pg_temp.check('REQ  a loading date that has passed is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Leipzig', p_to_city => 'Brașov',
+       p_loading_from => current_date - 1, p_category => 'autoturism',
+       p_make => 'Opel', p_model => 'Astra', p_year => 2017, p_is_running => true)$a$,
+  'blocked',
+  p_verify => $v$select not exists (select 1 from public.cargo_listings
+                                    where loading_city = 'Leipzig')$v$);
+
+select pg_temp.check('REQ  the owner publishes their own draft', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000003')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings
+                set status = 'draft', published_at = null, expires_at = null
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'active' and published_at is not null
+                    and expires_at is not null
+                 from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REQ  somebody else''s draft is not theirs to publish', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000003')$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings
+                set status = 'draft', published_at = null
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'draft' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REQ  publishing is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000003')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings
+                set status = 'draft', published_at = null
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.audit_log
+                   where action = 'request.published'
+                     and entity_id = 'f1000000-0000-0000-0000-000000000003'
+                     and actor_user_id = 'f0000000-0000-0000-0000-000000000006')$v$);
+
+select pg_temp.check('REQ  withdrawing takes it off the board', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.cancel_cargo_request('f1000000-0000-0000-0000-000000000002',
+                                        'Am vândut mașina')$a$,
+  'allowed',
+  p_verify => $v$select l.status = 'cancelled'
+                    and not exists (select 1 from public.v_requests_public v
+                                    where v.id = l.id)
+                 from public.cargo_listings l
+                 where l.id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REQ  the reason a request was withdrawn is kept', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.cancel_cargo_request('f1000000-0000-0000-0000-000000000002',
+                                        'Am vândut mașina')$a$,
+  'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.audit_log
+                   where action = 'request.cancelled'
+                     and entity_id = 'f1000000-0000-0000-0000-000000000002'
+                     and reason = 'Am vândut mașina')$v$);
+
+select pg_temp.check('REQ  another person cannot withdraw it', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.cancel_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked',
+  p_verify => $v$select status = 'active' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REQ  reopening on a date that has passed is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.reopen_cargo_request('f1000000-0000-0000-0000-000000000003',
+                                        current_date - 1)$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings set status = 'expired'
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'expired' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REQ  reopening puts it back with the new dates', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.reopen_cargo_request('f1000000-0000-0000-0000-000000000003',
+                                        current_date + 10, current_date + 12)$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings set status = 'expired'
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'active' and loading_from = current_date + 10
+                    and loading_to = current_date + 12
+                 from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REQ  a visitor cannot create a request', 'fix',
+  null, 'anon',
+  $a$select public.create_cargo_request(
+       p_from_city => 'Leipzig', p_to_city => 'Brașov',
+       p_loading_from => current_date + 5, p_category => 'autoturism',
+       p_make => 'Opel', p_model => 'Astra', p_year => 2017, p_is_running => true)$a$,
+  'blocked',
+  p_verify => $v$select not exists (select 1 from public.cargo_listings
+                                    where loading_city = 'Leipzig')$v$);
+
+-- The policies allowed this; the privilege behind them did not survive
+-- phase 2. A status that moves without an audit row is the whole reason.
+select pg_temp.check('REQ  nobody sets a status straight from the browser', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.cargo_listings set status = 'active'
+     where id = 'f1000000-0000-0000-0000-000000000003'$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings
+                set status = 'draft', published_at = null
+                where id = 'f1000000-0000-0000-0000-000000000003'$s$,
+  p_verify => $v$select status = 'draft' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('REQ  nobody promotes their own request', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.cargo_listings set is_promoted = true
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$,
+  'blocked',
+  p_verify => $v$select not is_promoted from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('REQ  the owner still reads their own request', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select id from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'allowed');
+
+select pg_temp.check('REQ  the jobs still write listings', 'guard',
+  null, 'service_role',
+  $a$update public.cargo_listings set views_count = views_count + 1
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'allowed');
+
+-- 20260917090000 added carrier_selected and delivered and left assigned and
+-- completed behind. Nothing may write the old two any more.
+select pg_temp.check('REQ  no function writes the retired statuses', 'fix',
+  null, 'anon',
+  $a$select not exists (
+       select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public'
+         and (p.prosrc like '%''assigned''%' or p.prosrc like '%''completed''%'))$a$,
+  'true');
 
 -- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
