@@ -1,5 +1,17 @@
 # n8n workflows
 
+> **Nu mai folosim n8n.** Workflow-urile descrise mai jos nu au fost
+> construite niciodată și nimeni nu întreține o instanță. Din migrația
+> `20260918160000`, livrarea notificărilor este funcția edge
+> `outbox-dispatcher`, chemată de `pg_cron` prin `pg_net` la fiecare cinci
+> minute — același mecanism pe care se sprijină deja celelalte trei joburi.
+> `n8n_run_log` s-a redenumit `job_run_log` și și-a păstrat rândurile.
+>
+> Fișierul rămâne pentru că descrie corect *deciziile*: Postgres deține
+> regulile, dispecerul deține livrarea și reîncercările, iar o pană la
+> furnizor nu strică starea aplicației. Doar unealta s-a schimbat.
+
+
 Four workflows. Postgres owns the decisions (who to notify, when to suspend);
 n8n owns delivery and retries. Keeping that split means a Twilio outage never
 corrupts application state — it just leaves rows in `notification_outbox`.
