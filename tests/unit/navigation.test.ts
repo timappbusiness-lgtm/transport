@@ -153,11 +153,22 @@ describe('what a role may see', () => {
 
   it('a driver sees their own work and nothing else', () => {
     const items = hrefs(context({ role: 'driver' }), ALL);
-    expect(items).toEqual([ROUTES.account, ROUTES.accountTransports, ROUTES.accountProfile]);
+    expect(items).toEqual([
+      ROUTES.account,
+      ROUTES.accountTransports,
+      ROUTES.accountProfile,
+      ROUTES.accountNotificationSettings,
+    ]);
   });
 
   it('a driver keeps a home even before orders are built', () => {
-    expect(hrefs(context({ role: 'driver' }))).toEqual([ROUTES.account, ROUTES.accountProfile]);
+    expect(hrefs(context({ role: 'driver' }))).toEqual([
+      ROUTES.account,
+      ROUTES.accountProfile,
+      // A driver gets notifications like anybody else: their own documents
+      // expire, and the account they work under can be suspended.
+      ROUTES.accountNotificationSettings,
+    ]);
   });
 });
 

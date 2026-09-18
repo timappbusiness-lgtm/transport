@@ -4,6 +4,7 @@ import { useActionState, useEffect, useId, useState, useSyncExternalStore } from
 import Link from 'next/link';
 import { publishRequestAction, type PublishRequestState } from '@/app/cerere/actions';
 import { FormError } from '@/components/auth/form';
+import { PushPermissionCard } from '@/components/push/permission-card';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
@@ -608,6 +609,11 @@ function Result({ state }: { state: PublishRequestState }) {
           {c.seeBoard}
         </Link>
       </div>
+
+      {/* The moment notifications become obviously useful: the request is
+          on the board and the next thing that happens to it happens
+          without the person looking. Nowhere else in this form asks. */}
+      <PushPermissionCard audience="client" trigger={published} />
     </section>
   );
 }

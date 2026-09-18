@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CalendarClock, FileWarning, Truck } from 'lucide-react';
+import { PushPermissionCard } from '@/components/push/permission-card';
 import { RequestCard } from '@/components/requests/request-card';
 import { Checklist, type ChecklistStep } from '@/components/account/checklist';
 import { buttonClasses } from '@/components/ui/button';
@@ -113,6 +114,11 @@ export function CarrierHome({
           <p className="mt-3 text-sm text-muted">{h.nothingToDo}</p>
         )}
       </section>
+
+      {/* A carrier looking at requests matched to their firm is a carrier
+          who would rather hear about the next one than come back to check.
+          The card asks here and nowhere else on this page. */}
+      <PushPermissionCard audience="carrier" trigger={data.matches.length > 0} />
 
       {data.matches.length > 0 ? (
         <section aria-labelledby="potriviri">
