@@ -267,10 +267,12 @@ select cron.schedule('outbox-dispatcher', '*/5 * * * *',
                      'select public.dispatch_outbox_http();');
 select cron.schedule('account-deletion', '10 3 * * *',
                      'select public.dispatch_account_deletions_http();');
+select cron.schedule('nightly-retention', '40 2 * * *',
+                     'select public.purge_contact_reveals();');
 ```
 
 Dacă `create extension` dă eroare de permisiuni, extensiile se activează din
-Dashboard → Database → Extensions, apoi se rulează doar cele șapte
+Dashboard → Database → Extensions, apoi se rulează doar cele opt
 `cron.schedule`.
 
 Migrația `20260918210000` face asta singură la fiecare deploy, acum că
@@ -283,10 +285,10 @@ aici pentru cazul în care cineva vrea să repornească un job fără un deploy.
 select jobname, schedule, active from cron.job order by jobname;
 ```
 
-Trebuie să apară șapte rânduri. După asta, `/admin/notificari` trece fiecare
+Trebuie să apară opt rânduri. După asta, `/admin/notificari` trece fiecare
 job pe „la zi" pe măsură ce rulează.
 
-**De ce șapte și nu cinci.** `to_regproc()` primește un nume de funcție, nu o
+**De ce opt și nu cinci.** `to_regproc()` primește un nume de funcție, nu o
 semnătură; cu o semnătură întoarce NULL indiferent dacă funcția există. Două
 migrații au folosit-o ca gardă și au scris „pg_cron nu este disponibil" la
 fiecare deploy, indiferent de starea proiectului — un mesaj citit ca dovadă
