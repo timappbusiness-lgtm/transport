@@ -99,5 +99,26 @@ export const personalDataCopy = {
     cancel: 'Anulează ștergerea',
     jobWarning:
       'Jobul de ștergere nu a rulat de peste 36 de ore. Cererile programate nu se duc la capăt până nu rulează.',
+
+    settings: {
+      title: 'Ștergere și retenție',
+      lede:
+        'Trei numere care se aplică tuturor. Se scriu printr-un apel auditat, deci fiecare schimbare rămâne în jurnal cu cine și când.',
+      graceDays: 'Zile de grație',
+      graceDaysHint:
+        'Cât timp poate fi anulată o ștergere. Contul este oprit în tot acest interval.',
+      supportEmail: 'E-mail de suport',
+      supportEmailHint:
+        'Apare în pagina Date personale. Lăsat gol, pagina nu afișează nicio adresă în loc să afișeze una care nu există.',
+      contactRevealMonths: 'Luni de păstrare a jurnalului de contacte',
+      contactRevealMonthsHint:
+        'Politica noastră spune 24 de luni. Jobul nocturn șterge ce este mai vechi.',
+      save: 'Salvează',
+      saved: 'Setările au fost salvate.',
+      noAccess: 'Doar echipa platformei poate schimba aceste setări.',
+      invalidGrace: 'Perioada de grație este între 0 și 90 de zile.',
+      invalidMonths: 'Perioada de retenție este între 1 și 120 de luni.',
+      invalidEmail: 'Adresa de e-mail nu pare validă.',
+    },
   },
 } as const;
