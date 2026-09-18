@@ -4636,6 +4636,61 @@ select pg_temp.check('PUSH nobody queues a push by hand from the browser', 'fix'
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.queue_push(auth.uid(), 'request_match', 'Titlu', 'Corp')$a$, 'blocked');
 
+-- ---------------------------------------------------------------------
+-- The two booking events
+--
+-- Both have a screen and neither had a producer, so the preference rows
+-- would have been switches over nothing. A reservation is the one
+-- notification in this set with a deadline attached: a carrier who does
+-- not see it loses the booking, and the person who made it waits for an
+-- answer that is not coming.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH a new reservation reaches the carrier', 'fix',
+  null, 'service_role',
+  $a$insert into public.departure_bookings (truck_listing_id, cargo_listing_id, slots, status)
+     values ('fb000000-0000-0000-0000-000000000004',
+             'f1000000-0000-0000-0000-000000000003', 1, 'reserved')$a$, 'allowed',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/b1', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push' and template = 'booking_to_confirm')$v$);
+
+select pg_temp.check('PUSH and does not wait for the morning', 'fix',
+  null, 'service_role',
+  $a$insert into public.departure_bookings (truck_listing_id, cargo_listing_id, slots, status)
+     values ('fb000000-0000-0000-0000-000000000004',
+             'f1000000-0000-0000-0000-000000000003', 1, 'reserved')$a$, 'allowed',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/b2', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'booking_to_confirm' and send_after <= now() + interval '1 minute')$v$);
+
+-- A reservation sitting in the window for three hours is mentioned once
+-- an hour, not once per run of a job that runs every hour anyway.
+select pg_temp.check('PUSH a lapsing reservation is mentioned once an hour', 'fix',
+  null, 'service_role',
+  $a$select public.queue_booking_expiry_alerts() = 0$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/b3', 'k', 'a');
+                update public.departure_bookings
+                set status = 'reserved', expires_at = now() + interval '2 hours'
+                where id = 'f6000000-0000-0000-0000-000000000001';
+                select public.queue_booking_expiry_alerts()$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'booking_expiring'$v$);
+
+select pg_temp.check('PUSH a reservation with no deadline is left alone', 'fix',
+  null, 'service_role',
+  $a$select public.queue_booking_expiry_alerts() = 0$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/b4', 'k', 'a');
+                update public.departure_bookings
+                set status = 'reserved', expires_at = null
+                where id = 'f6000000-0000-0000-0000-000000000001'$s$);
+
 select pg_temp.check('PUSH the jobs still queue and drain', 'guard',
   null, 'service_role',
   $a$select public.push_sent_last_hour('f0000000-0000-0000-0000-000000000006') = 0$a$, 'true');

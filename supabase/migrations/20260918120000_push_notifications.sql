@@ -838,3 +838,110 @@ exception when duplicate_object or unique_violation then
   raise notice 'Cron job already scheduled, leaving it as it is.';
 end;
 $cron$;
+
+-- ---------------------------------------------------------------------
+-- The two booking events
+--
+-- Both have a screen — `/cont/trasee` shows a carrier what is waiting on
+-- them — and neither had a producer. Nothing wrote them to the outbox on
+-- any channel, so the preference rows above would have been switches over
+-- nothing.
+--
+-- A reservation is the one notification in this set with a deadline
+-- attached: a carrier who does not see it loses the booking when it
+-- expires, and the person who made it waits for an answer that is not
+-- coming. Which is why both bypass quiet hours.
+-- ---------------------------------------------------------------------
+create or replace function public.notify_new_booking()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_truck public.truck_listings;
+  v_cargo public.cargo_listings;
+begin
+  select * into v_truck from public.truck_listings where id = new.truck_listing_id;
+  if v_truck.company_id is null then
+    return null;
+  end if;
+  select * into v_cargo from public.cargo_listings where id = new.cargo_listing_id;
+
+  perform public.queue_push_for_company(
+    v_truck.company_id,
+    'booking_to_confirm',
+    'Rezervare de confirmat',
+    coalesce(v_cargo.loading_city, '') || ' — ' || coalesce(v_cargo.unloading_city, ''),
+    jsonb_build_object('booking_id', new.id),
+    'booking_new:' || new.id
+  );
+  return null;
+end;
+$fn$;
+
+create trigger departure_bookings_notify_new
+  after insert on public.departure_bookings
+  for each row
+  when (new.status = 'reserved')
+  execute function public.notify_new_booking();
+
+/**
+ * Reservations about to lapse.
+ *
+ * A job rather than a trigger: "expires in two hours" is a moment in
+ * time, and nothing happens to the row when it arrives. Scheduled beside
+ * the other jobs rather than on a mechanism of its own.
+ *
+ * The dedupe key carries the hour, so a reservation that sits in the
+ * window for three hours is mentioned once rather than three times.
+ */
+create or replace function public.queue_booking_expiry_alerts()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_row record;
+  v_count integer := 0;
+begin
+  for v_row in
+    select b.id, b.expires_at, t.company_id, c.loading_city, c.unloading_city
+    from public.departure_bookings b
+    join public.truck_listings t on t.id = b.truck_listing_id
+    join public.cargo_listings c on c.id = b.cargo_listing_id
+    where b.status = 'reserved'
+      and b.expires_at is not null
+      and b.expires_at between now() and now() + interval '3 hours'
+  loop
+    v_count := v_count + public.queue_push_for_company(
+      v_row.company_id,
+      'booking_expiring',
+      'Rezervare care expiră',
+      coalesce(v_row.loading_city, '') || ' — ' || coalesce(v_row.unloading_city, ''),
+      jsonb_build_object('booking_id', v_row.id),
+      'booking_expiring:' || v_row.id || ':' ||
+        to_char(v_row.expires_at at time zone 'Europe/Bucharest', 'YYYY-MM-DD-HH24')
+    );
+  end loop;
+
+  return v_count;
+end;
+$fn$;
+
+grant execute on function public.queue_booking_expiry_alerts() to service_role;
+
+do $cron$
+begin
+  if to_regprocedure('cron.schedule(text,text,text)') is null then
+    raise notice 'pg_cron is not enabled - enable it, then run the cron.schedule call in this file.';
+    return;
+  end if;
+
+  perform cron.schedule('hourly-booking-expiry-alerts', '10 * * * *',
+                        'select public.queue_booking_expiry_alerts();');
+exception when duplicate_object or unique_violation then
+  raise notice 'Cron job already scheduled, leaving it as it is.';
+end;
+$cron$;
