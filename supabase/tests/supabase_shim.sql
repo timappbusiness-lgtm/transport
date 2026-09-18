@@ -42,6 +42,7 @@ create schema if not exists auth;
 create schema if not exists storage;
 create schema if not exists extensions;
 create schema if not exists cron;
+create schema if not exists net;
 
 create table auth.users (
   id uuid primary key default gen_random_uuid(),
@@ -86,19 +87,50 @@ end $$;
 create or replace function cron.unschedule(p_jobid bigint) returns boolean
 language sql as $$ delete from cron.job where jobid = p_jobid; select true $$;
 
+-- What pg_cron records about a run. `job_health()` reads it, and without
+-- it the health screen falls back to its own log and never exercises the
+-- branch a real project takes.
+create table cron.job_run_details (
+  jobid bigint, runid bigserial primary key, jobname text,
+  status text, return_message text,
+  start_time timestamptz, end_time timestamptz
+);
+
+-- pg_net stub. The two HTTP jobs — the outbox dispatcher and the account
+-- deletion sweep — are scheduled only when `net.http_post` resolves, so
+-- without this the scheduling block returns early and a test asking "are
+-- all five jobs scheduled" would be asking about three.
+create or replace function net.http_post(
+  url text,
+  body jsonb default '{}'::jsonb,
+  params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb,
+  timeout_milliseconds integer default 5000
+) returns bigint
+language sql as $$ select 1::bigint $$;
+
 grant usage on schema auth, storage to anon, authenticated, service_role;
+-- `cron` is readable by service_role here and by nobody on a real
+-- project. The JOB checks in rls_test.sql assert *what the migrations
+-- scheduled*, not who may read the schedule, and the check that anon
+-- cannot read it is right next to them.
+grant usage on schema cron to service_role;
+grant select on cron.job, cron.job_run_details to service_role;
 grant all on storage.objects, storage.buckets to anon, authenticated, service_role;
 -- In Supabase, GoTrue writes auth.users as supabase_auth_admin. Locally,
 -- service_role stands in for it so tests can exercise triggers on auth.users
 -- without running as superuser.
 grant select, update on auth.users to service_role;
 
--- The throwaway database can never have pg_cron: it needs
+-- The throwaway database can never have the real pg_cron: it needs
 -- shared_preload_libraries, which is a server setting, not an extension a
--- migration can create. Migration 20260918160000 raises when pg_cron is
--- missing, precisely so a real project cannot pass silently without it —
--- this setting is the one exemption, and it lives here because this file
--- is the only one that never runs against a real project.
+-- migration can create. The stubs above are enough for the scheduling
+-- blocks to run exactly as they do on a project that has it, which is the
+-- point — the JOB checks in rls_test.sql then assert that all five jobs
+-- really are scheduled, rather than assuming it.
+--
+-- The setting stays because the migrations still read it before trying
+-- `create extension`, and that attempt would fail here.
 do $harness$
 begin
   execute format('alter database %I set coridor.allow_missing_cron = ''on''',

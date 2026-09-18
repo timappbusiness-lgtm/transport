@@ -5259,7 +5259,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 5 from public.job_health()$a$, 'true');
+  $a$select count(*) = 7 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -5960,6 +5960,86 @@ select pg_temp.check('MAT  nothing here can return a name', 'fix',
        and p.proname in ('count_matching_carriers', 'preview_matching_carriers',
                          'count_matching_carriers_on_route')$a$, 'true',
   p_setup => :'mat_isolate');
+
+-- =====================================================================
+-- JOB - the scheduled jobs are actually scheduled
+--
+-- This is the check that did not exist in September, and its absence is
+-- why nobody could tell a project with a nightly compliance sweep from
+-- one without: every migration succeeded either way, because no test
+-- asked. pg_cron was never enabled, so for weeks the insurance-expiry
+-- suspension the client asked for was enforced by nothing at all.
+--
+-- The throwaway database cannot have the real pg_cron — it needs
+-- shared_preload_libraries — so `supabase_shim.sql` stubs `cron.schedule`
+-- and `net.http_post` and lets the scheduling blocks run exactly as they
+-- do on a project that has them. What is asserted below is therefore the
+-- real code path, not a description of it.
+--
+-- A job removed from a migration, or a scheduling block that returns
+-- early because somebody moved a guard, fails here.
+-- =====================================================================
+
+select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
+  null, 'service_role',
+  $a$select string_agg(jobname, ', ' order by jobname) =
+     'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
+     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
+     'outbox-dispatcher'
+     from cron.job$a$, 'true');
+
+select pg_temp.check('JOB  and every one of them is active', 'fix',
+  null, 'service_role',
+  $a$select bool_and(coalesce(active, false)) from cron.job$a$, 'true');
+
+select pg_temp.check('JOB  the compliance sweep runs the compliance sweep', 'fix',
+  null, 'service_role',
+  $a$select command like '%run_compliance_sweep%'
+     from cron.job where jobname = 'nightly-compliance-sweep'$a$, 'true');
+
+select pg_temp.check('JOB  the reminders job queues reminders', 'fix',
+  null, 'service_role',
+  $a$select command like '%queue_expiry_reminders%'
+     from cron.job where jobname = 'nightly-expiry-reminders'$a$, 'true');
+
+select pg_temp.check('JOB  the cleanup job expires stale listings', 'fix',
+  null, 'service_role',
+  $a$select command like '%expire_stale_listings%'
+     from cron.job where jobname = 'hourly-listing-cleanup'$a$, 'true');
+
+select pg_temp.check('JOB  the dispatcher calls the outbox function', 'fix',
+  null, 'service_role',
+  $a$select command like '%dispatch_outbox_http%'
+     from cron.job where jobname = 'outbox-dispatcher'$a$, 'true');
+
+select pg_temp.check('JOB  the deletion job calls the deletion function', 'fix',
+  null, 'service_role',
+  $a$select command like '%dispatch_account_deletions_http%'
+     from cron.job where jobname = 'account-deletion'$a$, 'true');
+
+-- Every job `job_health()` expects has to be one that exists, and every
+-- job that exists has to be one it watches. A job scheduled but not
+-- watched is a job that can stop without anybody noticing, which is the
+-- whole failure this block exists to prevent.
+-- Compared against the same literal as the check above rather than
+-- against `cron.job` directly: staff read the schedule through
+-- `job_health()` and have no business reading the `cron` schema, so the
+-- two lists meet on the page instead of in a join.
+select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select string_agg(job, ', ' order by job) =
+     'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
+     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
+     'outbox-dispatcher'
+     from public.job_health()$a$, 'true');
+
+select pg_temp.check('JOB  and reports them as scheduled', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select bool_and(scheduled) from public.job_health()$a$, 'true');
+
+select pg_temp.check('JOB  a visitor cannot read the schedule', 'fix',
+  null, 'anon',
+  $a$select count(*) from cron.job$a$, 'blocked');
 
 -- =====================================================================
 -- Report

@@ -259,6 +259,10 @@ select cron.schedule('nightly-expiry-reminders', '15 2 * * *',
                      'select public.queue_expiry_reminders();');
 select cron.schedule('hourly-listing-cleanup', '5 * * * *',
                      'select public.expire_stale_listings();');
+select cron.schedule('hourly-push-cleanup', '25 * * * *',
+                     'select public.expire_stale_push();');
+select cron.schedule('hourly-booking-expiry-alerts', '10 * * * *',
+                     'select public.queue_booking_expiry_alerts();');
 select cron.schedule('outbox-dispatcher', '*/5 * * * *',
                      'select public.dispatch_outbox_http();');
 select cron.schedule('account-deletion', '10 3 * * *',
@@ -266,8 +270,12 @@ select cron.schedule('account-deletion', '10 3 * * *',
 ```
 
 Dacă `create extension` dă eroare de permisiuni, extensiile se activează din
-Dashboard → Database → Extensions, apoi se rulează doar cele cinci
+Dashboard → Database → Extensions, apoi se rulează doar cele șapte
 `cron.schedule`.
+
+Migrația `20260918210000` face asta singură la fiecare deploy, acum că
+folosește `to_regprocedure` în loc de `to_regproc`. SQL-ul de mai sus rămâne
+aici pentru cazul în care cineva vrea să repornească un job fără un deploy.
 
 ### Verificare
 
@@ -275,8 +283,17 @@ Dashboard → Database → Extensions, apoi se rulează doar cele cinci
 select jobname, schedule, active from cron.job order by jobname;
 ```
 
-Trebuie să apară cinci rânduri. După asta, `/admin/notificari` trece fiecare
+Trebuie să apară șapte rânduri. După asta, `/admin/notificari` trece fiecare
 job pe „la zi" pe măsură ce rulează.
+
+**De ce șapte și nu cinci.** `to_regproc()` primește un nume de funcție, nu o
+semnătură; cu o semnătură întoarce NULL indiferent dacă funcția există. Două
+migrații au folosit-o ca gardă și au scris „pg_cron nu este disponibil" la
+fiecare deploy, indiferent de starea proiectului — un mesaj citit ca dovadă
+despre proiect, când era doar o dovadă despre `to_regproc`. Migrația
+`20260918210000` folosește `to_regprocedure`, programează toate joburile
+într-un singur loc, iar blocul JOB din `supabase/tests/rls_test.sql` verifică
+faptul în sine: dacă o migrație nu mai programează un job, suita pică.
 
 Jobul `account-deletion` este cel care duce la capăt cererile de ștergere a
 contului. Cât timp nu rulează, cererile rămân programate și conturile rămân
