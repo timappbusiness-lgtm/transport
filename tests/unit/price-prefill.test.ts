@@ -94,6 +94,7 @@ describe('reading a prefilled link', () => {
 describe('writing one', () => {
   it('round-trips everything it wrote', () => {
     const prefill = {
+      ...EMPTY_PREFILL,
       from: MUNICH ?? null,
       to: CLUJ ?? null,
       vehicleClass: 'suv' as const,

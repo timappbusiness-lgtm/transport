@@ -109,12 +109,22 @@ export function draftFromPrefill(prefill: Prefill): RequestDraft {
   if (prefill.from) {
     draft.fromCity = prefill.from.name;
     draft.fromCountry = prefill.from.country;
+  } else if (prefill.fromCountry) {
+    // A landing page for a corridor knows the country and not the town —
+    // the car is somewhere in Germany, and which somewhere is the
+    // visitor's to type. Filling the country leaves them one box.
+    draft.fromCountry = prefill.fromCountry;
   }
   if (prefill.to) {
     draft.toCity = prefill.to.name;
     draft.toCountry = prefill.to.country;
+  } else if (prefill.toCountry) {
+    draft.toCountry = prefill.toCountry;
   }
-  if (prefill.vehicleClass) draft.category = CATEGORY_FROM_CLASS[prefill.vehicleClass];
+  // The category is what the form asks for; the price class is coarser, so
+  // an explicit category wins over one derived from a class.
+  if (prefill.category) draft.category = prefill.category;
+  else if (prefill.vehicleClass) draft.category = CATEGORY_FROM_CLASS[prefill.vehicleClass];
   if (prefill.isRunning !== null) {
     draft.isRunning = prefill.isRunning;
     // A car that does not start does not steer itself onto the platform

@@ -6,7 +6,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { pricesCopy } from '@/content/preturi';
 import { CITY_GROUPS, cityFromValue, cityLabel, cityValue, type City } from '@/lib/cities';
-import { prefillQuery, type Prefill } from '@/lib/price-prefill';
+import { EMPTY_PREFILL, prefillQuery, type Prefill } from '@/lib/price-prefill';
 import {
   VEHICLE_CLASS_LABELS,
   VEHICLE_CLASS_ORDER,
@@ -64,7 +64,14 @@ export function Calculator({
   const sameCity =
     from !== null && to !== null && from.name === to.name && from.country === to.country;
 
-  const query = prefillQuery({ from, to, vehicleClass, isRunning, express });
+  const query = prefillQuery({
+    ...EMPTY_PREFILL,
+    from,
+    to,
+    vehicleClass,
+    isRunning,
+    express,
+  });
 
   return (
     <div className="rounded-card border border-border bg-surface p-5 sm:p-6">

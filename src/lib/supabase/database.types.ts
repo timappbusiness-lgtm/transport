@@ -2478,6 +2478,71 @@ export type Database = {
           },
         ]
       }
+      seo_pages: {
+        Row: {
+          created_at: string
+          destination: string | null
+          faq: Json
+          h1: string
+          h1_soft: string | null
+          id: string
+          intro: string
+          is_published: boolean
+          origin: string | null
+          published_at: string | null
+          slug: string
+          title: string
+          type: Database["public"]["Enums"]["seo_page_type"]
+          updated_at: string
+          updated_by: string | null
+          vehicle_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          faq?: Json
+          h1: string
+          h1_soft?: string | null
+          id?: string
+          intro: string
+          is_published?: boolean
+          origin?: string | null
+          published_at?: string | null
+          slug: string
+          title: string
+          type: Database["public"]["Enums"]["seo_page_type"]
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          faq?: Json
+          h1?: string
+          h1_soft?: string | null
+          id?: string
+          intro?: string
+          is_published?: boolean
+          origin?: string | null
+          published_at?: string | null
+          slug?: string
+          title?: string
+          type?: Database["public"]["Enums"]["seo_page_type"]
+          updated_at?: string
+          updated_by?: string | null
+          vehicle_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_pages_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_options: {
         Row: {
           code: string
@@ -3578,6 +3643,7 @@ export type Database = {
           estimated_km: number | null
           from_city: string | null
           from_country: string | null
+          from_county: string | null
           id: string | null
           is_domestic: boolean | null
           is_running: boolean | null
@@ -3591,6 +3657,7 @@ export type Database = {
           service_type: Database["public"]["Enums"]["service_type"] | null
           to_city: string | null
           to_country: string | null
+          to_county: string | null
           weight_kg: number | null
           year: number | null
         }
@@ -4542,6 +4609,62 @@ export type Database = {
           vat_label: string | null
         }
       }
+      set_seo_page: {
+        Args: {
+          p_faq?: Json
+          p_h1: string
+          p_h1_soft: string
+          p_intro: string
+          p_slug: string
+          p_title: string
+        }
+        Returns: {
+          created_at: string
+          destination: string | null
+          faq: Json
+          h1: string
+          h1_soft: string | null
+          id: string
+          intro: string
+          is_published: boolean
+          origin: string | null
+          published_at: string | null
+          slug: string
+          title: string
+          type: Database["public"]["Enums"]["seo_page_type"]
+          updated_at: string
+          updated_by: string | null
+          vehicle_type: string | null
+        }
+      }
+      set_seo_page_published: {
+        Args: { p_published: boolean; p_slug: string }
+        Returns: {
+          created_at: string
+          destination: string | null
+          faq: Json
+          h1: string
+          h1_soft: string | null
+          id: string
+          intro: string
+          is_published: boolean
+          origin: string | null
+          published_at: string | null
+          slug: string
+          title: string
+          type: Database["public"]["Enums"]["seo_page_type"]
+          updated_at: string
+          updated_by: string | null
+          vehicle_type: string | null
+        }
+      }
+      set_seo_pages_published_by_type: {
+        Args: {
+          p_published: boolean
+          p_type: Database["public"]["Enums"]["seo_page_type"]
+        }
+        Returns: number
+      }
       set_service_option: {
         Args: {
           p_code: string
@@ -4741,6 +4864,8 @@ export type Database = {
         "pending" | "accepted" | "rejected" | "withdrawn" | "expired"
       plan_audience: "carrier" | "forwarder"
       price_type: "fixed" | "negotiable" | "auction"
+      seo_page_type:
+        "corridor_international" | "route_internal" | "county" | "vehicle_type"
       service_type: "pe_sens" | "expres" | "tractare"
       staff_role: "admin"
       subscription_request_status:
@@ -4975,6 +5100,12 @@ export const Constants = {
       offer_status: ["pending", "accepted", "rejected", "withdrawn", "expired"],
       plan_audience: ["carrier", "forwarder"],
       price_type: ["fixed", "negotiable", "auction"],
+      seo_page_type: [
+        "corridor_international",
+        "route_internal",
+        "county",
+        "vehicle_type",
+      ],
       service_type: ["pe_sens", "expres", "tractare"],
       staff_role: ["admin"],
       subscription_request_status: [

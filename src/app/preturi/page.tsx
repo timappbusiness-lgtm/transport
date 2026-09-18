@@ -7,6 +7,7 @@ import { EyebrowPill, Headline, Lede, StatusBadge } from '@/components/ui/primit
 import { ROUTES } from '@/config/routes';
 import { pricesCopy } from '@/content/preturi';
 import { parsePrefill } from '@/lib/price-prefill';
+import { SeoLinkCloud } from '@/components/seo/link-cloud';
 import { isPublished, loadPrices } from '@/lib/prices-source';
 
 export const metadata: Metadata = {
@@ -59,6 +60,12 @@ export default async function Page({
       ) : (
         <Unpublished />
       )}
+
+      <SeoLinkCloud
+        types={['corridor_international', 'route_internal']}
+        title="Prețuri pe rutele cele mai cerute"
+        className="mt-12"
+      />
 
       <PriceFaq />
     </div>

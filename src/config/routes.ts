@@ -62,6 +62,7 @@ export const ROUTES = {
   adminCompanies: '/admin/firme',
   adminSubscriptions: '/admin/abonamente',
   adminOptions: '/admin/optiuni',
+  adminPages: '/admin/pagini',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

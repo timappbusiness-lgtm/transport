@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { BRAND_NAME } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
+import { loadPublishedPages } from '@/lib/seo-pages-source';
+import { SEO_ROOT } from '@/lib/seo-pages';
 import { Container } from './container';
 
 const LINKS = [
@@ -16,7 +18,16 @@ const LINKS = [
   { href: ROUTES.privacy, label: 'Confidențialitate' },
 ] as const;
 
-export function SiteFooter() {
+/**
+ * The landing-page hub is linked only once at least one page is published.
+ *
+ * Until then the hub says "nothing published yet", and a link in the
+ * footer of every page on the site pointing at that is worse than no link.
+ * The read is cached, so this costs nothing per render.
+ */
+export async function SiteFooter() {
+  const hasLandingPages = (await loadPublishedPages()).length > 0;
+
   return (
     <footer className="py-10 text-[0.8125rem] text-muted">
       <Container className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
@@ -29,6 +40,11 @@ export function SiteFooter() {
               {l.label}
             </Link>
           ))}
+          {hasLandingPages ? (
+            <Link href={SEO_ROOT} className="hover:text-foreground">
+              Transport auto pe rute
+            </Link>
+          ) : null}
         </nav>
       </Container>
     </footer>
