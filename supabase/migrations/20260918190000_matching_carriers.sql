@@ -301,7 +301,11 @@ create or replace function public.preview_matching_carriers(
   p_loading_to date default null,
   p_category public.cargo_category default null,
   p_needs_winch boolean default false,
-  p_service_type public.service_type default 'pe_sens'
+  p_service_type public.service_type default 'pe_sens',
+  -- Which firm the caller is posting as. Checked against membership, not
+  -- trusted: it only ever removes a firm from the count, but a value
+  -- somebody chose is still a value somebody chose.
+  p_company_id uuid default null
 )
 returns integer
 language plpgsql
@@ -333,11 +337,17 @@ begin
 
   insert into public.carrier_count_probes (user_id) values (auth.uid());
 
-  -- A dispatcher previewing for their own firm should not be counted a
-  -- match for their own request once it exists, so the exclusion is the
-  -- same here as it will be then.
-  select cm.company_id into v_company
-  from public.company_members cm where cm.user_id = auth.uid() limit 1;
+  -- A dispatcher previewing for their own firm should not see it counted,
+  -- because it will not be counted once the request exists. Which firm
+  -- that is comes from the caller — the active company lives in a cookie
+  -- the database has never seen — and is then confirmed against
+  -- membership, so the worst a wrong value can do is nothing.
+  if p_company_id is not null and exists (
+    select 1 from public.company_members cm
+    where cm.company_id = p_company_id and cm.user_id = auth.uid()
+  ) then
+    v_company := p_company_id;
+  end if;
 
   return public.count_matching_carriers_on_route(
     p_loading_country, p_loading_county, p_unloading_country, p_unloading_county,
@@ -346,7 +356,7 @@ begin
 end;
 $fn$;
 
-comment on function public.preview_matching_carriers(text, text, text, text, date, date, public.cargo_category, boolean, public.service_type) is
+comment on function public.preview_matching_carriers(text, text, text, text, date, date, public.cargo_category, boolean, public.service_type, uuid) is
   'The same count, before the request exists. Rate limited to 30 an hour per person: it takes a free-form route, and a route askable in a loop is a carrier base mappable in a loop.';
 
 -- ---------------------------------------------------------------------
@@ -354,7 +364,8 @@ comment on function public.preview_matching_carriers(text, text, text, text, dat
 -- ---------------------------------------------------------------------
 grant execute on function public.count_matching_carriers(uuid) to authenticated;
 grant execute on function public.preview_matching_carriers(
-  text, text, text, text, date, date, public.cargo_category, boolean, public.service_type
+  text, text, text, text, date, date, public.cargo_category, boolean,
+  public.service_type, uuid
 ) to authenticated;
 
 -- The route-level count and the matching rule stay internal: they take a

@@ -4976,6 +4976,7 @@ export type Database = {
       preview_matching_carriers: {
         Args: {
           p_category?: Database["public"]["Enums"]["cargo_category"]
+          p_company_id?: string
           p_loading_country: string
           p_loading_county: string
           p_loading_from: string

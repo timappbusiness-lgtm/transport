@@ -363,6 +363,7 @@ export async function previewCarriersAction(input: {
   const needsWinch = !input.isRunning || !input.wheelsTurn || !input.steeringWorks;
 
   const key = cacheKey(context.user.id, [
+    context.activeCompany?.id ?? null,
     input.fromCountry,
     fromCounty,
     input.toCountry,
@@ -388,6 +389,10 @@ export async function previewCarriersAction(input: {
     p_category: input.category as never,
     p_needs_winch: needsWinch,
     p_service_type: input.serviceType as never,
+    // The firm the person is posting as, so their own firm is not counted
+    // as competition for their own request. The database confirms the
+    // membership before it believes it.
+    p_company_id: context.activeCompany?.id ?? null,
   });
 
   if (error || typeof data !== 'number') {
