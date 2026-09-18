@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
+import { indexingMetadata } from '@/lib/seo-indexing';
 import './globals.css';
 
 /*
@@ -48,7 +49,12 @@ export const metadata: Metadata = {
     'Bursă de transport auto pentru România și Europa. Cereri de transport și transportatori cu documente verificate.',
   // The homepage sets its own title, description and Open Graph values from
   // the copy in the homepage brief. These are the app-wide defaults.
-  robots: { index: false, follow: false }, // TODO: flip to index on launch
+  // One flag, read in one place — `NEXT_PUBLIC_SEO_INDEXABLE=1` on the
+  // production environment turns indexing on for the whole site, and
+  // `robots.txt` reads the same flag so the two can never disagree. A page
+  // may still say `noindex` for its own reasons; the flag only ever grants
+  // permission, never takes it from a page that refused.
+  ...indexingMetadata(true),
 };
 
 /**
