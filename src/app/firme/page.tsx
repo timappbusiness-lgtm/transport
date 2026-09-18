@@ -14,6 +14,7 @@ import {
   parseFilters,
   type DirectoryFilters,
 } from '@/lib/directory';
+import { SeoLinkCloud } from '@/components/seo/link-cloud';
 import { companyLogoUrl, loadDirectoryPage } from '@/lib/directory-source';
 import { formatCompanies } from '@/lib/trust';
 import { cn } from '@/lib/utils';
@@ -78,6 +79,13 @@ export default async function Page({
           )}
         </section>
       </div>
+
+      <SeoLinkCloud
+        types={['county']}
+        title="Transportatori pe județe"
+        limit={42}
+        className="mt-12"
+      />
     </div>
   );
 }
