@@ -61,6 +61,7 @@ export const ROUTES = {
   adminPlans: '/admin/planuri',
   adminCompanies: '/admin/firme',
   adminSubscriptions: '/admin/abonamente',
+  adminOptions: '/admin/optiuni',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

@@ -86,10 +86,22 @@ export const appCopy = {
       action: 'Vezi flota',
     },
     matches: {
-      title: 'Cereri pe traseele tale',
-      lede: 'Potrivire după traseu: aceleași țări, în perioada în care ai drum.',
-      empty: 'Nicio cerere nouă pe traseele tale.',
+      title: 'Cereri potrivite',
+      lede:
+        'Potrivite cu acoperirea, categoriile și dotările din profilul firmei, și cu traseele publicate.',
+      empty: 'Nicio cerere nouă pentru profilul firmei.',
       action: 'Vezi toate cererile',
+      /** Why a card is here. Codes come from `matchReasons`. */
+      reasons: {
+        ruta: 'Pe un traseu publicat',
+        judet: 'În județele tale',
+        tara: 'În țările tale',
+        categorie: 'Categorie acceptată',
+        troliu: 'Ai troliu',
+        tractare: 'Faci tractări',
+      } as Record<string, string>,
+      /** Shown when the profile is empty enough that matching says little. */
+      completeProfile: 'Completează profilul firmei ca să primești potriviri mai bune.',
     },
     activity: {
       routes: 'Trasee active',

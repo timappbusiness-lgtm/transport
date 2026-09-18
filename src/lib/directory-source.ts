@@ -250,6 +250,16 @@ export interface CompanyProfile {
   company: PublicCompany;
   documents: PublicCompanyDocument[];
   routes: CompanyRoute[];
+  /**
+   * The firm's equipment and services, as labels rather than codes.
+   *
+   * Resolved here because the labels live in `equipment_options` and
+   * `service_options`, which an admin rewords without touching a single
+   * company row — so a profile shows the current wording rather than
+   * whatever was current when the box was ticked.
+   */
+  equipment: { code: string; label: string }[];
+  services: { code: string; label: string }[];
 }
 
 /**
@@ -264,7 +274,7 @@ export async function loadCompanyProfile(slug: string): Promise<CompanyProfile |
   if (!isSupabaseConfigured()) return null;
 
   const supabase = createPublicClient();
-  const [company, documents, routes] = await Promise.all([
+  const [company, documents, routes, equipmentOptions, serviceOptions] = await Promise.all([
     supabase.from('v_public_companies').select(COMPANY_COLUMNS).eq('slug', slug).maybeSingle(),
     supabase.from('v_public_company_documents').select('kind,label_ro,state,valid_month').eq('slug', slug),
     supabase
@@ -273,11 +283,14 @@ export async function loadCompanyProfile(slug: string): Promise<CompanyProfile |
       .eq('slug', slug)
       .order('available_from', { ascending: true })
       .limit(12),
+    supabase.from('equipment_options').select('code,label_ro,sort_order').order('sort_order'),
+    supabase.from('service_options').select('code,label_ro,sort_order').order('sort_order'),
   ]);
 
   report('profile', company.error);
   report('profile documents', documents.error);
   report('profile routes', routes.error);
+  report('profile options', equipmentOptions.error ?? serviceOptions.error);
 
   const mapped = company.data ? toCompany(company.data) : null;
   if (!mapped) return null;
@@ -304,7 +317,25 @@ export async function loadCompanyProfile(slug: string): Promise<CompanyProfile |
           ]
         : [],
     ),
+    equipment: labelled(mapped.equipment, equipmentOptions.data ?? []),
+    services: labelled(mapped.services, serviceOptions.data ?? []),
   };
+}
+
+/**
+ * The codes a firm holds, in the order the options table sets, with their
+ * current labels. A code with no row — retired and deleted, which the RPCs
+ * do not do — is shown as itself rather than dropped without a word.
+ */
+function labelled(
+  held: readonly string[],
+  rows: readonly { code: string; label_ro: string }[],
+): { code: string; label: string }[] {
+  const byCode = new Map(rows.map((row) => [row.code, row.label_ro]));
+  const order = new Map(rows.map((row, index) => [row.code, index]));
+  return [...held]
+    .sort((a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999))
+    .map((code) => ({ code, label: byCode.get(code) ?? code }));
 }
 
 /**

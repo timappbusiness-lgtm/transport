@@ -111,6 +111,25 @@ export const directoryCopy = {
     },
     about: 'Despre firmă',
     scope: 'Acoperire',
+    /** What the firm said it carries, added with the company profile. */
+    capabilities: {
+      title: 'Ce transportă',
+      coverage: 'Acoperire',
+      coverageJudetean: 'Județele',
+      coverageNational: 'Toată România',
+      coverageInternational: 'România și',
+      vehicleTypes: 'Categorii',
+      services: 'Servicii',
+      equipment: 'Dotări',
+      fleet: 'Vehicule în flotă',
+      rate: 'Tarif orientativ',
+      /** Takes "2,50". */
+      rateValue: (value: string) => `${value} lei/km`,
+      rateNote:
+        'Orientativ, declarat de firmă. Prețul unei curse este cel din ofertă.',
+      website: 'Site',
+      empty: 'Firma nu a completat încă această secțiune.',
+    },
     routes: {
       title: 'Trasee publicate',
       lede: 'Traseele active ale firmei, așa cum apar pe bursă.',

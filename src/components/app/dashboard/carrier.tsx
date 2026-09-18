@@ -124,6 +124,7 @@ export function CarrierHome({
             {data.matches.map((request) => (
               <li key={request.id} className="min-w-0">
                 <RequestCard request={request} now={now} />
+                <MatchReasons reasons={data.matchReasons[request.id] ?? []} />
               </li>
             ))}
           </ul>
@@ -299,3 +300,28 @@ function steps(company: Company, data: CarrierDashboard): ChecklistStep[] {
 
 /** Unused today; kept so a vehicle row can link straight to its page. */
 export const vehicleHref = vehicleRoute;
+
+/**
+ * Why this card is on this dashboard.
+ *
+ * Only reasons that can be backed up: `matchReasons` returns a code for
+ * each test the request actually passed, and a chip is never invented to
+ * fill the row. A card with no chips is a card matched on coverage alone,
+ * which is true and does not need saying twice.
+ */
+function MatchReasons({ reasons }: { reasons: readonly string[] }) {
+  if (reasons.length === 0) return null;
+
+  return (
+    <ul className="mt-2 flex flex-wrap gap-1.5">
+      {reasons.map((reason) => (
+        <li
+          key={reason}
+          className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-[0.6875rem] text-muted"
+        >
+          {c.matches.reasons[reason] ?? reason}
+        </li>
+      ))}
+    </ul>
+  );
+}

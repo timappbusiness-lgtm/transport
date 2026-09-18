@@ -19,6 +19,9 @@ import {
   type PublicCompany,
 } from '@/lib/directory';
 import { companyLogoUrl, type CompanyProfile, type CompanyRoute } from '@/lib/directory-source';
+import { countryName } from '@/content/firma';
+import { countyName } from '@/lib/counties';
+import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
 import { formatDateRo } from '@/lib/format';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
@@ -37,7 +40,7 @@ export function CompanyProfileBody({
   profile: CompanyProfile;
   signedIn: boolean;
 }) {
-  const { company, documents, routes } = profile;
+  const { company, documents, routes, equipment, services } = profile;
   const scope = scopeLabel(company);
   const rating = ratingLabel(company);
 
@@ -82,6 +85,8 @@ export function CompanyProfileBody({
           </p>
         </section>
       ) : null}
+
+      <Capabilities company={company} equipment={equipment} services={services} />
 
       <Shield company={company} documents={documents} scope={scope} />
 
@@ -136,6 +141,105 @@ export function CompanyProfileBody({
         <ReportButton signedIn={signedIn} supportEmail={SUPPORT_EMAIL} />
       </section>
     </div>
+  );
+}
+
+/**
+ * What the firm said it carries, where, and with what.
+ *
+ * Every line is the firm's own answer from `/cont/firma`, and the section
+ * is simply absent when it has not answered — an empty "Dotări —" tells a
+ * client nothing and makes a complete profile look like the exception.
+ *
+ * The fleet count is the one number here the firm did not type: it is
+ * counted from the vehicles it registered, because a claimed count is
+ * wrong within a month and nobody notices.
+ */
+function Capabilities({
+  company,
+  equipment,
+  services,
+}: {
+  company: PublicCompany;
+  equipment: readonly { code: string; label: string }[];
+  services: readonly { code: string; label: string }[];
+}) {
+  const cc = c.capabilities;
+
+  const coverage =
+    company.coverageScope === 'judetean'
+      ? company.coverageCounties.length > 0
+        ? `${cc.coverageJudetean}: ${company.coverageCounties.map(countyName).join(', ')}`
+        : null
+      : company.coverageScope === 'international'
+        ? `${cc.coverageInternational} ${company.coverageCountries.map(countryName).join(', ')}`
+        : cc.coverageNational;
+
+  const categories = company.vehicleTypesAccepted
+    .map((code) => CARGO_CATEGORY_LABELS[code as keyof typeof CARGO_CATEGORY_LABELS] ?? code)
+    .filter(Boolean);
+
+  const rows: { label: string; value: string }[] = [];
+  if (coverage) rows.push({ label: cc.coverage, value: coverage });
+  if (categories.length > 0) rows.push({ label: cc.vehicleTypes, value: categories.join(', ') });
+  if (services.length > 0) {
+    rows.push({ label: cc.services, value: services.map((s) => s.label).join(', ') });
+  }
+  if (equipment.length > 0) {
+    rows.push({ label: cc.equipment, value: equipment.map((e) => e.label).join(', ') });
+  }
+  if (company.vehiclesTotal > 0) {
+    rows.push({ label: cc.fleet, value: String(company.vehiclesTotal) });
+  }
+  if (company.indicativeRate !== null) {
+    rows.push({
+      label: cc.rate,
+      value: [
+        cc.rateValue(company.indicativeRate.toFixed(2).replace('.', ',')),
+        company.indicativeRateNote,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    });
+  }
+
+  if (rows.length === 0 && company.website === null) return null;
+
+  return (
+    <section aria-labelledby="capabilitati" className="mt-10">
+      <h2 id="capabilitati" className="text-[1.125rem]">
+        {cc.title}
+      </h2>
+
+      <Card className="mt-5 px-5 py-2 sm:px-6">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border py-3 last:border-b-0"
+          >
+            <span className="w-[9rem] flex-none text-[0.8125rem] text-muted">{row.label}</span>
+            <span className="min-w-0 flex-1 text-[0.9375rem]">{row.value}</span>
+          </div>
+        ))}
+        {company.website ? (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border py-3 last:border-b-0">
+            <span className="w-[9rem] flex-none text-[0.8125rem] text-muted">{cc.website}</span>
+            <a
+              href={company.website}
+              rel="nofollow noopener noreferrer external"
+              target="_blank"
+              className="min-w-0 flex-1 break-all text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            >
+              {company.website.replace(/^https:\/\//, '')}
+            </a>
+          </div>
+        ) : null}
+      </Card>
+
+      {company.indicativeRate !== null ? (
+        <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">{cc.rateNote}</p>
+      ) : null}
+    </section>
   );
 }
 
