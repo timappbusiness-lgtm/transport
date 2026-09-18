@@ -627,5 +627,68 @@ comment on function public.queue_push_for_company(uuid, text, text, text, jsonb,
   'Fans a firm''s notification out to its members. Drivers are left out: none of the available types is theirs to act on.';
 
 -- Triggers and jobs, so nobody calls these by hand.
-grant execute on function public.notification_channel_enabled(uuid, text, text) to authenticated;
+-- The settings screen reads it for the toggles; the jobs read it before
+-- queueing anything.
+grant execute on function public.notification_channel_enabled(uuid, text, text) to authenticated, service_role;
 grant execute on function public.push_subscription_stats() to authenticated;
+
+/**
+ * "Trimite o notificare de test", from the settings screen.
+ *
+ * It goes through `queue_push` like everything else rather than writing
+ * an outbox row directly — a test that takes a different path is a test
+ * that passes while the real thing is broken. It ignores quiet hours and
+ * the cap, because somebody who just pressed the button is awake and
+ * expecting it, and it says so on screen.
+ */
+create or replace function public.send_test_push()
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_user uuid := auth.uid();
+  v_id uuid;
+begin
+  if v_user is null then
+    raise exception 'Autentificare necesară' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1 from public.push_subscriptions
+    where user_id = v_user and disabled_at is null
+  ) then
+    raise exception 'Nu ai activat notificările pe niciun dispozitiv'
+      using errcode = '22023';
+  end if;
+
+  insert into public.notification_outbox
+    (channel, template, recipient_user_id, payload, dedupe_key)
+  values (
+    'push', 'push_test', v_user,
+    jsonb_build_object(
+      'title', 'Notificare de test',
+      'body', 'Dacă vezi asta, notificările funcționează pe acest dispozitiv.',
+      'deep_link', '/cont/setari/notificari',
+      'tag', 'push_test'
+    ),
+    'push_test:' || v_user || ':' || to_char(now(), 'YYYY-MM-DD-HH24-MI')
+  )
+  on conflict (dedupe_key) where dedupe_key is not null do nothing
+  returning id into v_id;
+
+  return v_id;
+end;
+$fn$;
+
+comment on function public.send_test_push() is
+  'A test push for the person who asked for it. Ignores quiet hours and the cap — they just pressed the button — and the screen says so.';
+
+grant execute on function public.send_test_push() to authenticated;
+-- The producers below run inside triggers, which need no grant. The jobs
+-- that drain and retry the queue run as service_role.
+grant execute on function public.queue_push(uuid, text, text, text, jsonb, text, timestamptz) to service_role;
+grant execute on function public.queue_push_for_company(uuid, text, text, text, jsonb, text, timestamptz) to service_role;
+grant execute on function public.push_send_after(uuid, text, timestamptz) to service_role;
+grant execute on function public.push_sent_last_hour(uuid, timestamptz) to service_role;

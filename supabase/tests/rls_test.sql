@@ -4267,6 +4267,380 @@ select pg_temp.check('SEO  the jobs still read every page', 'guard',
   null, 'service_role', $a$select count(*) = 161 from public.seo_pages$a$, 'true');
 
 -- =====================================================================
+-- PUSH - subscriptions, preferences and when not to send
+--
+-- Two things are being protected here and they are different in kind.
+--
+-- The first is the keys. A `push_subscriptions` row carries the pair that
+-- lets anyone send a notification to that browser, so the policy is the
+-- owner and nobody else — no admin bypass, which is unusual in this
+-- schema and deliberate. The checks below prove it for the platform team
+-- as well as for a stranger.
+--
+-- The second is the person's attention. A channel that ignores quiet
+-- hours or sends thirty in an hour is a channel that gets switched off at
+-- the operating system, and there is no policy that gets it back. So the
+-- rate limit, the digest and the quiet-hour hold are checked as carefully
+-- as the access rules.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- The keys
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH a person subscribes this browser', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+     values (auth.uid(), 'https://push.example/aaa', 'k1', 'a1')$a$, 'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.push_subscriptions
+                   where endpoint = 'https://push.example/aaa')$v$);
+
+select pg_temp.check('PUSH but not one for somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+     values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/bbb', 'k1', 'a1')$a$,
+  'blocked',
+  p_verify => $v$select not exists (
+                   select 1 from public.push_subscriptions
+                   where endpoint = 'https://push.example/bbb')$v$);
+
+select pg_temp.check('PUSH nobody reads another person''s subscription', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.push_subscriptions$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'https://push.example/ccc', 'secret-key', 'secret-auth')$s$);
+
+-- The unusual one. Everywhere else in this schema the platform team can
+-- read what it needs; here it cannot, because what the row carries is the
+-- ability to send to somebody's telephone.
+select pg_temp.check('PUSH not even the platform team reads the keys', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 0 from public.push_subscriptions$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'https://push.example/ddd', 'secret-key', 'secret-auth')$s$);
+
+select pg_temp.check('PUSH but the team can count them', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.push_subscription_stats()).active = 2$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/e1', 'k', 'a'),
+                       ('f0000000-0000-0000-0000-000000000002', 'https://push.example/e2', 'k', 'a')$s$);
+
+select pg_temp.check('PUSH a disabled subscription is not counted as active', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select active = 0 and total = 1 from public.push_subscription_stats()$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, disabled_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/gone',
+                        'k', 'a', now())$s$);
+
+select pg_temp.check('PUSH a person removes their own device', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$delete from public.push_subscriptions where endpoint = 'https://push.example/own'$a$,
+  'allowed',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/own', 'k', 'a')$s$,
+  p_verify => $v$select not exists (
+                   select 1 from public.push_subscriptions
+                   where endpoint = 'https://push.example/own')$v$);
+
+select pg_temp.check('PUSH and cannot remove somebody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$delete from public.push_subscriptions where endpoint = 'https://push.example/theirs'$a$,
+  'blocked',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/theirs', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.push_subscriptions
+                   where endpoint = 'https://push.example/theirs')$v$);
+
+select pg_temp.check('PUSH a visitor cannot touch them at all', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.push_subscriptions$a$, 'blocked',
+  p_missing_ok => true);
+
+-- ---------------------------------------------------------------------
+-- The preferences
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH a person sets their own preference', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, push)
+     values (auth.uid(), 'request_match', false)$a$, 'allowed',
+  p_verify => $v$select exists (
+                   select 1 from public.notification_preferences
+                   where user_id = 'f0000000-0000-0000-0000-000000000006'
+                     and type = 'request_match' and push = false)$v$);
+
+select pg_temp.check('PUSH and not somebody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, push)
+     values ('f0000000-0000-0000-0000-000000000002', 'request_match', false)$a$, 'blocked',
+  p_verify => $v$select not exists (
+                   select 1 from public.notification_preferences
+                   where user_id = 'f0000000-0000-0000-0000-000000000002')$v$);
+
+-- The two messages that explain why an account stopped working.
+select pg_temp.check('PUSH a suspension cannot be silenced in the app', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, inapp)
+     values (auth.uid(), 'company_suspended', false)$a$, 'blocked');
+
+select pg_temp.check('PUSH nor on e-mail', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, email)
+     values (auth.uid(), 'company_suspended', false)$a$, 'blocked');
+
+-- Push is different: somebody who turned push off everywhere did so on
+-- purpose, and overriding that is how an app gets its notifications
+-- revoked at the operating system.
+select pg_temp.check('PUSH but push can be turned off even for that', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, push)
+     values (auth.uid(), 'company_suspended', false)$a$, 'allowed',
+  p_verify => $v$select not public.notification_channel_enabled(
+                   'f0000000-0000-0000-0000-000000000006', 'company_suspended', 'push')$v$);
+
+select pg_temp.check('PUSH a mandatory type reads as on however the row looks', 'fix',
+  null, 'service_role',
+  $a$select public.notification_channel_enabled(
+       'f0000000-0000-0000-0000-000000000006', 'company_suspended', 'inapp')$a$, 'true');
+
+select pg_temp.check('PUSH a preference for a type that does not exist is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.notification_preferences (user_id, type, push)
+     values (auth.uid(), 'tip_inventat', true)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Which channel is on
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH the type default applies when nothing was set', 'fix',
+  null, 'service_role',
+  $a$select public.notification_channel_enabled(
+       'f0000000-0000-0000-0000-000000000006', 'request_match', 'push')$a$, 'true');
+
+select pg_temp.check('PUSH an override wins over the default', 'fix',
+  null, 'service_role',
+  $a$select not public.notification_channel_enabled(
+       'f0000000-0000-0000-0000-000000000006', 'request_match', 'push')$a$, 'true',
+  p_setup => $s$insert into public.notification_preferences (user_id, type, push)
+                values ('f0000000-0000-0000-0000-000000000006', 'request_match', false)$s$);
+
+-- A type with no screen behind it is off on every channel whatever
+-- anybody set, because a push that opens a 404 spends the one tap a
+-- person gives you.
+select pg_temp.check('PUSH a type with no screen is off on every channel', 'fix',
+  null, 'service_role',
+  $a$select not public.notification_channel_enabled(
+           'f0000000-0000-0000-0000-000000000006', 'offer_received', 'push')
+       and not public.notification_channel_enabled(
+           'f0000000-0000-0000-0000-000000000006', 'offer_received', 'email')$a$, 'true',
+  p_setup => $s$insert into public.notification_preferences (user_id, type, push, email)
+                values ('f0000000-0000-0000-0000-000000000006', 'offer_received', true, true)$s$);
+
+-- ---------------------------------------------------------------------
+-- When a push actually leaves
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH nothing is queued for a person with no device', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+                              'Titlu', 'Corp') is null$a$, 'true');
+
+select pg_temp.check('PUSH nothing is queued for a channel that is off', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+                              'Titlu', 'Corp') is null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q1', 'k', 'a');
+                insert into public.notification_preferences (user_id, type, push)
+                values ('f0000000-0000-0000-0000-000000000006', 'request_match', false)$s$);
+
+select pg_temp.check('PUSH nothing is queued for a type with no screen', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'offer_received',
+                              'Titlu', 'Corp') is null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q2', 'k', 'a')$s$);
+
+select pg_temp.check('PUSH a wanted notification is queued, with its deep link', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'München — Cluj-Napoca',
+         jsonb_build_object('id', 'f1000000-0000-0000-0000-000000000002')) is not null$a$,
+  'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q3', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push' and template = 'request_match'
+                     and payload ->> 'deep_link' = '/cereri/f1000000-0000-0000-0000-000000000002'
+                     and payload ->> 'tag' = 'request_match')$v$);
+
+-- The same event twice is one notification. A person who sees the same
+-- request buzz twice stops trusting the channel.
+select pg_temp.check('PUSH the same event does not queue twice', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'Corp', '{}'::jsonb, 'req:abc') is null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q4', 'k', 'a');
+                select public.queue_push('f0000000-0000-0000-0000-000000000006',
+                  'request_match', 'Cerere nouă', 'Corp', '{}'::jsonb, 'req:abc')$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where dedupe_key = 'req:abc'$v$);
+
+-- Quiet hours: 20:30 UTC in January is 22:30 in Bucharest.
+select pg_temp.check('PUSH a night-time notification waits for the morning', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'Corp', '{}'::jsonb, null,
+         '2026-01-15 20:30:00+00'::timestamptz) is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q5', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push'
+                     and (send_after at time zone 'Europe/Bucharest')::time = '07:00')$v$);
+
+-- The one a UTC comparison gets wrong: 19:30 UTC in July is also 22:30
+-- local, because Romania is UTC+3 in summer.
+select pg_temp.check('PUSH and so does one in summer, when the offset differs', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'Corp', '{}'::jsonb, null,
+         '2026-07-15 19:30:00+00'::timestamptz) is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q6', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push'
+                     and (send_after at time zone 'Europe/Bucharest')::time = '07:00')$v$);
+
+select pg_temp.check('PUSH a suspension does not wait for the morning', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'company_suspended',
+         'Cont suspendat', 'Corp', '{}'::jsonb, null,
+         '2026-01-15 20:30:00+00'::timestamptz) is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q7', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push' and template = 'company_suspended'
+                     and send_after = '2026-01-15 20:30:00+00'::timestamptz)$v$);
+
+select pg_temp.check('PUSH a daytime notification goes straight out', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'Corp', '{}'::jsonb, null,
+         '2026-07-15 09:00:00+00'::timestamptz) is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q8', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where channel = 'push'
+                     and send_after = '2026-07-15 09:00:00+00'::timestamptz)$v$);
+
+-- Thirty buzzes in an hour is a disabled channel, and there is no policy
+-- that gets one back.
+select pg_temp.check('PUSH past the cap, the rest of the hour is one digest', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'Cerere nouă', 'Corp', '{}'::jsonb, null,
+         '2026-07-15 09:00:00+00'::timestamptz) is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q9', 'k', 'a');
+                insert into public.notification_settings (user_id, max_push_per_hour)
+                values ('f0000000-0000-0000-0000-000000000006', 2);
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, created_at)
+                select 'push', 'request_match', 'f0000000-0000-0000-0000-000000000006',
+                       '2026-07-15 08:30:00+00'
+                from generate_series(1, 2)$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'push_digest')$v$);
+
+select pg_temp.check('PUSH and a second one folds into the same digest', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'request_match',
+         'A treia', 'Corp', '{}'::jsonb, null,
+         '2026-07-15 09:10:00+00'::timestamptz) is null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/qa', 'k', 'a');
+                insert into public.notification_settings (user_id, max_push_per_hour)
+                values ('f0000000-0000-0000-0000-000000000006', 2);
+                insert into public.notification_outbox
+                  (channel, template, recipient_user_id, created_at)
+                select 'push', 'request_match', 'f0000000-0000-0000-0000-000000000006',
+                       '2026-07-15 08:40:00+00'
+                from generate_series(1, 2);
+                select public.queue_push('f0000000-0000-0000-0000-000000000006',
+                  'request_match', 'A doua', 'Corp', '{}'::jsonb, null,
+                  '2026-07-15 09:00:00+00'::timestamptz)$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'push_digest'$v$);
+
+-- ---------------------------------------------------------------------
+-- A firm's notification reaches people, because a firm has no browser
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH a firm''s notification reaches each member once', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push_for_company('fc000000-0000-0000-0000-000000000001',
+         'document_expiry', 'Document care expiră', 'ITP', '{}'::jsonb, 'doc:1') = 2$a$,
+  'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/m1', 'k', 'a'),
+                       ('f0000000-0000-0000-0000-000000000003', 'https://push.example/m2', 'k', 'a')$s$,
+  p_verify => $v$select count(*) = 2 from public.notification_outbox
+                 where template = 'document_expiry' and channel = 'push'$v$);
+
+-- One key shared by five members would deliver to exactly one of them.
+select pg_temp.check('PUSH the dedupe key is per member, not per firm', 'fix',
+  null, 'service_role',
+  $a$select public.queue_push_for_company('fc000000-0000-0000-0000-000000000001',
+         'document_expiry', 'Document care expiră', 'ITP', '{}'::jsonb, 'doc:2') = 2$a$,
+  'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000002', 'https://push.example/m3', 'k', 'a'),
+                       ('f0000000-0000-0000-0000-000000000003', 'https://push.example/m4', 'k', 'a')$s$,
+  p_verify => $v$select count(distinct dedupe_key) = 2 from public.notification_outbox
+                 where template = 'document_expiry'$v$);
+
+-- ---------------------------------------------------------------------
+-- The test button
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('PUSH the test button says so when there is no device', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.send_test_push()$a$, 'blocked');
+
+select pg_temp.check('PUSH and sends one when there is', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.send_test_push() is not null$a$, 'true',
+  p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
+                values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/t1', 'k', 'a')$s$,
+  p_verify => $v$select exists (
+                   select 1 from public.notification_outbox
+                   where template = 'push_test'
+                     and payload ->> 'deep_link' = '/cont/setari/notificari')$v$);
+
+select pg_temp.check('PUSH a visitor cannot send themselves one', 'fix',
+  null, 'anon', $a$select public.send_test_push()$a$, 'blocked');
+
+select pg_temp.check('PUSH nobody queues a push by hand from the browser', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.queue_push(auth.uid(), 'request_match', 'Titlu', 'Corp')$a$, 'blocked');
+
+select pg_temp.check('PUSH the jobs still queue and drain', 'guard',
+  null, 'service_role',
+  $a$select public.push_sent_last_hour('f0000000-0000-0000-0000-000000000006') = 0$a$, 'true');
+
+-- =====================================================================
 -- P4 - concurrency: two accepts on the same listing, at the same time
 --
 -- Two real connections (dblink). The first accepts OC1 and holds its
