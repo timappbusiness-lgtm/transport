@@ -1,7 +1,9 @@
+import { DeletionSettingsForm } from '@/components/admin/deletion-settings-form';
 import { DirectorySettingsForm } from '@/components/admin/directory-settings-form';
 import { DataRow, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { adminDirectoryCopy } from '@/content/admin-directory';
 import { showCompanyGrid, showStatsBand } from '@/lib/directory';
+import { loadDeletionSettings } from '@/lib/account-deletion-source';
 import { loadHomepageDirectory } from '@/lib/directory-source';
 import { formatNumber } from '@/lib/requests';
 
@@ -19,7 +21,10 @@ export const dynamic = 'force-dynamic';
  * the numbers are right now, and therefore what a visitor is seeing.
  */
 export default async function Page() {
-  const { stats, thresholds, companies } = await loadHomepageDirectory();
+  const [{ stats, thresholds, companies }, deletionSettings] = await Promise.all([
+    loadHomepageDirectory(),
+    loadDeletionSettings(),
+  ]);
   const bandVisible = showStatsBand(stats, thresholds);
   const gridVisible = showCompanyGrid(companies, stats, thresholds);
 
@@ -56,6 +61,7 @@ export default async function Page() {
       </section>
 
       <DirectorySettingsForm thresholds={thresholds} />
+      <DeletionSettingsForm settings={deletionSettings} />
     </div>
   );
 }

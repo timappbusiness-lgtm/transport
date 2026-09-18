@@ -59,3 +59,24 @@ export function isDriverAllowed(pathname: string): boolean {
     (allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`),
   );
 }
+
+/**
+ * What stays open to somebody who has not accepted the current terms.
+ *
+ * The gate is a real gate — the terms are the contract, and an account
+ * carrying on under a version nobody accepted is an account we cannot
+ * point at anything for. But refusing to agree has to remain possible,
+ * and „you may leave" is worth nothing if the page that lets you leave is
+ * behind the thing you are refusing.
+ *
+ * So: the personal-data page, where the export and the deletion live.
+ * Nothing else. Everything on it either takes data away from us or gives
+ * it back, and neither needs a contract.
+ */
+const OPEN_WITHOUT_TERMS: readonly string[] = [ROUTES.accountPersonalData];
+
+export function isOpenWithoutTerms(pathname: string): boolean {
+  return OPEN_WITHOUT_TERMS.some(
+    (allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`),
+  );
+}

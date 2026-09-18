@@ -328,6 +328,9 @@ export async function revealRequestContactAction(
  *     exactly as `publishRequestAction` does. A county that arrived from
  *     the browser would be a route somebody chose rather than one they
  *     typed, and county is what a county-only carrier is matched on.
+ *     Dates are not passed at all any more: since 20260918200000 the
+ *     count is about coverage, and an argument the answer does not depend
+ *     on is a promise to the next reader that it does.
  *   * `preview_matching_carriers` counts every call against an hourly
  *     cap. A route askable in a loop is a carrier base mappable in a
  *     loop, and the cap is in the database so the loop cannot go round
@@ -342,8 +345,6 @@ export async function previewCarriersAction(input: {
   fromCountry: string;
   toCity: string;
   toCountry: string;
-  loadingFrom: string;
-  loadingTo: string;
   category: string;
   isRunning: boolean;
   wheelsTurn: boolean;
@@ -356,7 +357,6 @@ export async function previewCarriersAction(input: {
 
   const fromCounty = countyCodeForCity(input.fromCity, input.fromCountry);
   const toCounty = countyCodeForCity(input.toCity, input.toCountry);
-  const loadingTo = input.loadingTo === '' ? null : input.loadingTo;
 
   // Derived exactly as the generated column in `cargo_vehicle_details`
   // derives it, so the preview and the published request cannot disagree.
@@ -368,8 +368,6 @@ export async function previewCarriersAction(input: {
     fromCounty,
     input.toCountry,
     toCounty,
-    input.loadingFrom,
-    loadingTo,
     input.category,
     needsWinch,
     input.serviceType,
@@ -384,8 +382,6 @@ export async function previewCarriersAction(input: {
     p_loading_county: fromCounty,
     p_unloading_country: input.toCountry.toUpperCase(),
     p_unloading_county: toCounty,
-    p_loading_from: input.loadingFrom,
-    p_loading_to: loadingTo,
     p_category: input.category as never,
     p_needs_winch: needsWinch,
     p_service_type: input.serviceType as never,

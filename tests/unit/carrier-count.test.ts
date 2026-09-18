@@ -11,13 +11,13 @@ import {
 describe('carrierCountSentence', () => {
   it('says the client sentence, word for word, in the plural', () => {
     expect(carrierCountSentence(4)).toBe(
-      '4 transportatori verificați circulă pe această rută în perioada aleasă.',
+      '4 transportatori verificați circulă pe această rută.',
     );
   });
 
   it('does not write „1 transportatori"', () => {
     expect(carrierCountSentence(1)).toBe(
-      'Un transportator verificat circulă pe această rută în perioada aleasă.',
+      'Un transportator verificat circulă pe această rută.',
     );
   });
 
@@ -25,6 +25,15 @@ describe('carrierCountSentence', () => {
     expect(carrierCountSentence(19)).toContain('19 transportatori verificați');
     expect(carrierCountSentence(20)).toContain('20 de transportatori verificați');
     expect(carrierCountSentence(101)).toContain('101 de transportatori verificați');
+  });
+
+  it('no longer promises a period it does not check', () => {
+    // The count is coverage, category and equipment. Saying „în perioada
+    // aleasă" over that would be the exact claim the date requirement was
+    // added to avoid, made without the requirement.
+    for (const count of [0, 1, 5, 40]) {
+      expect(carrierCountSentence(count)).not.toContain('perioada aleasă');
+    }
   });
 
   it('has its own sentence for zero rather than a rounded-up one', () => {

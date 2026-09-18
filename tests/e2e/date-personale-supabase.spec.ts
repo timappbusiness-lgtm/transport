@@ -114,7 +114,7 @@ test.describe('transportatori potriviți', () => {
 
     await page.getByRole('button', { name: /Vezi câți transportatori/ }).click();
     await expect(
-      page.getByText(/circulă pe această rută în perioada aleasă|Încă nu avem transportatori/),
+      page.getByText(/circulă pe această rută|Încă nu avem transportatori/),
     ).toBeVisible({ timeout: 15_000 });
   });
 

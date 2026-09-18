@@ -4474,8 +4474,6 @@ export type Database = {
           p_category?: Database["public"]["Enums"]["cargo_category"]
           p_loading_country: string
           p_loading_county: string
-          p_loading_from: string
-          p_loading_to?: string
           p_needs_winch?: boolean
           p_posted_by_company_id?: string
           p_service_type?: Database["public"]["Enums"]["service_type"]
@@ -4979,8 +4977,6 @@ export type Database = {
           p_company_id?: string
           p_loading_country: string
           p_loading_county: string
-          p_loading_from: string
-          p_loading_to?: string
           p_needs_winch?: boolean
           p_service_type?: Database["public"]["Enums"]["service_type"]
           p_unloading_country: string

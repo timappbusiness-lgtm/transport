@@ -12,6 +12,7 @@ import {
 } from '@/app/auth-actions';
 import { authCopy } from '@/content/auth';
 import { ROUTES } from '@/config/routes';
+import { CURRENT_TERMS_VERSION } from '@/content/legal';
 import { Field, FormError, FormNotice, SubmitButton, TextLink } from './form';
 
 const EMPTY: AuthActionState = {};
@@ -30,7 +31,11 @@ function TermsCheckbox({ label, error }: { label: string; error?: string | undef
         <span>
           {label} <TextLink href={ROUTES.terms}>{authCopy.individualSignUp.termsLink}</TextLink>{' '}
           {authCopy.individualSignUp.and}{' '}
-          <TextLink href={ROUTES.privacy}>{authCopy.individualSignUp.privacyLink}</TextLink>.
+          <TextLink href={ROUTES.privacy}>{authCopy.individualSignUp.privacyLink}</TextLink>.{' '}
+          {/* The version is on the page because it is what we store. A
+              consent record that says "accepted the terms" without saying
+              which terms is a record of nothing. */}
+          <span className="text-xs">(versiunea {CURRENT_TERMS_VERSION})</span>
         </span>
       </label>
       {error ? <p className="text-xs text-danger">{error}</p> : null}

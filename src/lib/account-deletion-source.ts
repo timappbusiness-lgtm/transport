@@ -143,3 +143,31 @@ export async function loadDeletionAdminData(): Promise<DeletionAdminView> {
     jobLate: health.error ? null : (deletionJob?.is_late ?? null),
   };
 }
+
+export interface DeletionSettings {
+  graceDays: number;
+  supportEmail: string | null;
+  contactRevealMonths: number;
+}
+
+/**
+ * The three numbers behind erasure and retention.
+ *
+ * Read with the caller's own session: `deletion_settings` is readable by
+ * anybody signed in, because the grace period is shown to the person
+ * whose account it applies to and a number the screen invents is a number
+ * the screen is wrong about.
+ */
+export async function loadDeletionSettings(): Promise<DeletionSettings> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('deletion_settings')
+    .select('grace_days, support_email, contact_reveal_months')
+    .maybeSingle();
+
+  return {
+    graceDays: data?.grace_days ?? 14,
+    supportEmail: data?.support_email ?? null,
+    contactRevealMonths: data?.contact_reveal_months ?? 24,
+  };
+}

@@ -267,7 +267,16 @@ insert into public.truck_listings (id, company_id, vehicle_id, posted_by, direct
   ('fb000000-0000-0000-0000-000000000005', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Cluj-Napoca', 'Hamburg',   current_date + 5, 'active', null),
   ('fb000000-0000-0000-0000-000000000006', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Iași',      'Berlin',      current_date + 6, 'draft',  2),
   ('fb000000-0000-0000-0000-000000000007', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'tur',   'Arad',      'Madrid',      current_date + 6, 'draft',  null),
-  ('fb000000-0000-0000-0000-000000000008', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'retur', 'Linz',      'Sibiu',       current_date,     'active', 2);
+  -- Its departure day has to end between now and now + 24 hours, whatever
+  -- the hour the suite runs, because the P10 check below asserts that the
+  -- end of the day is what the expiry clamps to.
+  --
+  -- `current_date` is the server's date, and the rule is written in
+  -- Europe/Bucharest. Between 21:00 and 24:00 UTC those are different
+  -- days: the departure day had already ended, the insert was refused
+  -- with „Plecarea a trecut", and the suite could not pass for three
+  -- hours every night. Nobody had run it at that hour.
+  ('fb000000-0000-0000-0000-000000000008', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', 'retur', 'Linz',      'Sibiu',       (now() at time zone 'Europe/Bucharest')::date, 'active', 2);
 
 update public.truck_listings set status = 'expired' where id = 'fb000000-0000-0000-0000-000000000007';
 
@@ -5259,7 +5268,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 5 from public.job_health()$a$, 'true');
+  $a$select count(*) = 8 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -5802,90 +5811,133 @@ select pg_temp.check('DEL  a user cannot read another''s export row', 'fix',
 -- =====================================================================
 -- MAT - „N transportatori verificați circulă pe această rută"
 --
--- Migration 20260918190000. The number a person sees after publishing,
--- so the checks are about two things: that it is the owner's number and
--- nobody else's, and that „în perioada aleasă" is counted rather than
--- printed over a count of something else.
+-- Migrations 20260918190000 and 20260918200000. The number a person sees
+-- after publishing, so the checks are about two things: that it is the
+-- owner's number and nobody else's, and that it counts what the sentence
+-- claims — coverage, category and equipment, and nothing about a diary.
 --
 -- The rule itself is not re-tested here — the FIRM block above already
 -- covers every branch of it, and it is now the same function body, which
 -- is the point of the refactor.
+--
+-- Every check here first takes the rest of the database out of the count.
+-- `smoke_test.sql` runs into the same database before this file and
+-- leaves a verified carrier of its own behind, so an absolute number here
+-- would be a number about two suites rather than about these fixtures.
+-- The date-aware version of this count hid that by accident — the smoke
+-- company has no announced route — which is exactly the kind of passing
+-- test that is not evidence of anything.
 -- =====================================================================
+
+\set mat_isolate 'update public.companies set is_suspended = true where id not in (''fc000000-0000-0000-0000-000000000001'', ''fc000000-0000-0000-0000-000000000002'', ''fc000000-0000-0000-0000-000000000003'')'
 
 select pg_temp.check('MAT  the owner of a request gets a number', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
-  'true');
+  'true',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  somebody else''s request answers nothing', 'fix',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') >= 0$a$,
-  'blocked');
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  a visitor gets no count at all', 'fix',
   null, 'anon',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') >= 0$a$,
-  'blocked');
+  'blocked',
+  p_setup => :'mat_isolate');
 
-select pg_temp.check('MAT  a carrier that announced no route does not circulate', 'fix',
-  'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
-  'true',
-  p_setup => $s$update public.truck_listings set status = 'draft'
-                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
-
-select pg_temp.check('MAT  nor does one whose route is in another month', 'fix',
-  'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
-  'true',
-  p_setup => $s$update public.truck_listings
-                set available_from = current_date + 60, available_to = null
-                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
-
-select pg_temp.check('MAT  a route that spans the loading window does count', 'guard',
+-- Coverage is the whole claim now. A carrier that has never announced a
+-- route still works the route it says it works, and the sentence no
+-- longer promises anything about when.
+select pg_temp.check('MAT  a carrier with no announced route still counts', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
   'true',
-  p_setup => $s$update public.truck_listings
-                set available_from = current_date, available_to = current_date + 30
+  p_setup => :'mat_isolate' || '; ' || $s$update public.truck_listings set status = 'draft'
                 where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  nor do its dates matter any more', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.truck_listings
+                set available_from = current_date + 600, available_to = null
+                where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- What does still decide it: coverage, category, and the winch.
+select pg_temp.check('MAT  a county-only carrier off the route is not counted', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000004') = 0$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_listings
+                set loading_country = 'RO', unloading_country = 'RO',
+                    loading_county = 'CJ', unloading_county = 'TM',
+                    posted_by = 'f0000000-0000-0000-0000-000000000006',
+                    company_id = null, board = 'retur'
+                where id = 'f1000000-0000-0000-0000-000000000004';
+                update public.companies
+                set coverage_scope = 'judetean', coverage_counties = array['BV']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  a car that does not roll needs a firm with a winch', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_vehicle_details set is_running = false
+                where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+                update public.companies set equipment = '{}'
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('MAT  and is counted once the firm has one', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 1$a$,
+  'true',
+  p_setup => :'mat_isolate' || '; ' || $s$update public.cargo_vehicle_details set is_running = false
+                where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+                update public.companies set equipment = array['troliu']
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  a suspended carrier is not a verified one', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
   'true',
-  p_setup => $s$update public.companies set is_suspended = true
+  p_setup => :'mat_isolate' || '; ' || $s$update public.companies set is_suspended = true
                 where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  nor is one on its way out', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
   'true',
-  p_setup => $s$update public.companies set deletion_scheduled_at = now()
+  p_setup => :'mat_isolate' || '; ' || $s$update public.companies set deletion_scheduled_at = now()
                 where id = 'fc000000-0000-0000-0000-000000000001'$s$);
 
 select pg_temp.check('MAT  the preview needs a session', 'fix',
   null, 'anon',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
-  'blocked');
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  the preview answers the same number', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) = 1$a$,
-  'true');
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) = 1$a$,
+  'true',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  thirty routes an hour, and no more', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
   'blocked',
-  p_setup => $s$insert into public.carrier_count_probes (user_id)
+  p_setup => :'mat_isolate' || '; ' || $s$insert into public.carrier_count_probes (user_id)
                 select 'f0000000-0000-0000-0000-000000000006' from generate_series(1, 30)$s$);
 
 select pg_temp.check('MAT  an hour later it answers again', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.preview_matching_carriers('RO', null, 'RO', null, current_date + 3) >= 0$a$,
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) >= 0$a$,
   'true',
-  p_setup => $s$insert into public.carrier_count_probes (user_id, created_at)
+  p_setup => :'mat_isolate' || '; ' || $s$insert into public.carrier_count_probes (user_id, created_at)
                 select 'f0000000-0000-0000-0000-000000000006', now() - interval '2 hours'
                 from generate_series(1, 30)$s$);
 
@@ -5897,13 +5949,15 @@ select pg_temp.check('MAT  the probe log is not a table a browser reads', 'fix',
 
 select pg_temp.check('MAT  the route count itself is not callable from a browser', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$select public.count_matching_carriers_on_route('RO', null, 'RO', null, current_date + 3) >= 0$a$,
-  'blocked');
+  $a$select public.count_matching_carriers_on_route('RO', null, 'RO', null) >= 0$a$,
+  'blocked',
+  p_setup => :'mat_isolate');
 
 select pg_temp.check('MAT  nor is the rule, which would name a firm', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.company_matches_route('fc000000-0000-0000-0000-000000000001',
-       'RO', null, 'RO', null)$a$, 'blocked');
+       'RO', null, 'RO', null)$a$, 'blocked',
+  p_setup => :'mat_isolate');
 
 -- A count is a count. Anything that returned a set could be read as a
 -- list of firms, which is the one thing this feature must never be.
@@ -5913,7 +5967,250 @@ select pg_temp.check('MAT  nothing here can return a name', 'fix',
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public'
        and p.proname in ('count_matching_carriers', 'preview_matching_carriers',
-                         'count_matching_carriers_on_route')$a$, 'true');
+                         'count_matching_carriers_on_route')$a$, 'true',
+  p_setup => :'mat_isolate');
+
+-- =====================================================================
+-- LAW - accepting the terms, and letting go of the reveal log
+--
+-- Migrations 20260918220000 and 20260918230000.
+--
+-- Consent that the person consenting can write is not evidence of
+-- anything, so the first half of this block is about the fact that they
+-- cannot: not the version, not the date, not a row in the history. The
+-- second half is the retention period from
+-- `docs/06-gdpr-and-antifraud.md`, which was a sentence in a document for
+-- as long as it took somebody to ask why we still held a record of who
+-- looked at their telephone number two years ago.
+-- =====================================================================
+
+select pg_temp.check('LAW  nobody writes their own acceptance', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.terms_acceptances (user_id, document, version)
+     values ('f0000000-0000-0000-0000-000000000006', 'termeni', '9.9')$a$, 'blocked');
+
+select pg_temp.check('LAW  nor the version on their profile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set terms_version_accepted = '9.9'
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked');
+
+select pg_temp.check('LAW  nor the date they agreed', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set terms_accepted_at = now() - interval '2 years'
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'blocked');
+
+select pg_temp.check('LAW  accepting records the version on the profile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('1.0')).version = '1.0'$a$, 'true',
+  p_verify => $v$select terms_version_accepted = '1.0' and terms_accepted_at is not null
+     from public.profiles where id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('LAW  and in the history, which the profile cannot hold', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('2.0')).version = '2.0'$a$, 'true',
+  p_verify => $v$select count(*) = 2 from public.terms_acceptances
+     where user_id = 'f0000000-0000-0000-0000-000000000006'$v$,
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+select pg_temp.check('LAW  accepting the same version twice keeps the first time', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('1.0')).accepted_at < now() - interval '300 days'$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version, accepted_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0',
+                        now() - interval '1 year')$s$);
+
+select pg_temp.check('LAW  a version that is not a version is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.accept_terms('am citit')).version is not null$a$, 'blocked');
+
+select pg_temp.check('LAW  a visitor accepts nothing', 'fix',
+  null, 'anon',
+  $a$select (public.accept_terms('1.0')).version is not null$a$, 'blocked');
+
+select pg_temp.check('LAW  one person cannot read another''s consent', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.terms_acceptances$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+select pg_temp.check('LAW  staff can, which is what a complaint needs', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.terms_acceptances$a$, 'true',
+  p_setup => $s$insert into public.terms_acceptances (user_id, document, version)
+                values ('f0000000-0000-0000-0000-000000000006', 'termeni', '1.0')$s$);
+
+-- Sign-up is where almost every acceptance is recorded, and it happens
+-- inside a trigger on a table no application role can write.
+select pg_temp.check('LAW  sign-up carries the version it showed', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from public.terms_acceptances
+     where user_id = 'f0000000-0000-0000-0000-0000000000e1' and version = '1.0'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e1', 'lawsignup@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"1.0"}')$s$);
+
+select pg_temp.check('LAW  and the profile with it', 'fix',
+  null, 'service_role',
+  $a$select terms_version_accepted = '1.0' and terms_accepted_at is not null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e2'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e2', 'lawsignup2@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"1.0"}')$s$);
+
+select pg_temp.check('LAW  a sign-up with no version is not refused, only unrecorded', 'guard',
+  null, 'service_role',
+  $a$select terms_version_accepted is null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e3'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e3', 'lawsignup3@test.ro',
+      '{"full_name":"Nou","account_type":"individual"}')$s$);
+
+select pg_temp.check('LAW  and a version the browser invented is not stored', 'fix',
+  null, 'service_role',
+  $a$select terms_version_accepted is null
+     from public.profiles where id = 'f0000000-0000-0000-0000-0000000000e4'$a$, 'true',
+  p_setup => $s$insert into auth.users (id, email, raw_user_meta_data) values
+     ('f0000000-0000-0000-0000-0000000000e4', 'lawsignup4@test.ro',
+      '{"full_name":"Nou","account_type":"individual","terms_version":"am citit tot"}')$s$);
+
+-- --- Retention -------------------------------------------------------
+select pg_temp.check('LAW  a reveal older than the period is deleted', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 1$a$, 'true',
+  p_verify => $v$select count(*) = 0 from public.contact_reveals$v$,
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '25 months')$s$);
+
+select pg_temp.check('LAW  one inside the period stays', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 0$a$, 'true',
+  p_verify => $v$select count(*) = 1 from public.contact_reveals$v$,
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '23 months')$s$);
+
+select pg_temp.check('LAW  the period is the setting, not a constant', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 1$a$, 'true',
+  p_setup => $s$delete from public.contact_reveals;
+                update public.deletion_settings set contact_reveal_months = 12;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now() - interval '13 months')$s$);
+
+select pg_temp.check('LAW  the clock can be handed to it, which is how this is tested', 'guard',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals(now() + interval '25 months') = 1$a$, 'true',
+  p_setup => $s$delete from public.contact_reveals;
+                insert into public.contact_reveals (user_id, cargo_listing_id, created_at)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f1000000-0000-0000-0000-000000000001', now())$s$);
+
+select pg_temp.check('LAW  a run that deletes nothing still says it ran', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() = 0$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.job_run_log
+     where workflow = 'nightly-retention')$v$,
+  p_setup => $s$delete from public.contact_reveals; delete from public.job_run_log$s$);
+
+select pg_temp.check('LAW  nobody purges the log from a browser', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.purge_contact_reveals() >= 0$a$, 'blocked');
+
+select pg_temp.check('LAW  nor shortens the period to make it disappear', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.deletion_settings set contact_reveal_months = 1$a$, 'blocked');
+
+select pg_temp.check('LAW  staff change it through the audited call', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_deletion_settings(21, 'ajutor@exemplu.ro', 36)).contact_reveal_months = 36$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'settings.deletion_changed')$v$);
+
+-- =====================================================================
+-- JOB - the scheduled jobs are actually scheduled
+--
+-- This is the check that did not exist in September, and its absence is
+-- why nobody could tell a project with a nightly compliance sweep from
+-- one without: every migration succeeded either way, because no test
+-- asked. pg_cron was never enabled, so for weeks the insurance-expiry
+-- suspension the client asked for was enforced by nothing at all.
+--
+-- The throwaway database cannot have the real pg_cron — it needs
+-- shared_preload_libraries — so `supabase_shim.sql` stubs `cron.schedule`
+-- and `net.http_post` and lets the scheduling blocks run exactly as they
+-- do on a project that has them. What is asserted below is therefore the
+-- real code path, not a description of it.
+--
+-- A job removed from a migration, or a scheduling block that returns
+-- early because somebody moved a guard, fails here.
+-- =====================================================================
+
+select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
+  null, 'service_role',
+  $a$select string_agg(jobname, ', ' order by jobname) =
+     'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
+     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-retention, outbox-dispatcher'
+     from cron.job$a$, 'true');
+
+select pg_temp.check('JOB  and every one of them is active', 'fix',
+  null, 'service_role',
+  $a$select bool_and(coalesce(active, false)) from cron.job$a$, 'true');
+
+select pg_temp.check('JOB  the compliance sweep runs the compliance sweep', 'fix',
+  null, 'service_role',
+  $a$select command like '%run_compliance_sweep%'
+     from cron.job where jobname = 'nightly-compliance-sweep'$a$, 'true');
+
+select pg_temp.check('JOB  the reminders job queues reminders', 'fix',
+  null, 'service_role',
+  $a$select command like '%queue_expiry_reminders%'
+     from cron.job where jobname = 'nightly-expiry-reminders'$a$, 'true');
+
+select pg_temp.check('JOB  the cleanup job expires stale listings', 'fix',
+  null, 'service_role',
+  $a$select command like '%expire_stale_listings%'
+     from cron.job where jobname = 'hourly-listing-cleanup'$a$, 'true');
+
+select pg_temp.check('JOB  the dispatcher calls the outbox function', 'fix',
+  null, 'service_role',
+  $a$select command like '%dispatch_outbox_http%'
+     from cron.job where jobname = 'outbox-dispatcher'$a$, 'true');
+
+select pg_temp.check('JOB  the deletion job calls the deletion function', 'fix',
+  null, 'service_role',
+  $a$select command like '%dispatch_account_deletions_http%'
+     from cron.job where jobname = 'account-deletion'$a$, 'true');
+
+-- Every job `job_health()` expects has to be one that exists, and every
+-- job that exists has to be one it watches. A job scheduled but not
+-- watched is a job that can stop without anybody noticing, which is the
+-- whole failure this block exists to prevent.
+-- Compared against the same literal as the check above rather than
+-- against `cron.job` directly: staff read the schedule through
+-- `job_health()` and have no business reading the `cron` schema, so the
+-- two lists meet on the page instead of in a join.
+select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select string_agg(job, ', ' order by job) =
+     'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
+     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-retention, outbox-dispatcher'
+     from public.job_health()$a$, 'true');
+
+select pg_temp.check('JOB  and reports them as scheduled', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select bool_and(scheduled) from public.job_health()$a$, 'true');
+
+select pg_temp.check('JOB  a visitor cannot read the schedule', 'fix',
+  null, 'anon',
+  $a$select count(*) from cron.job$a$, 'blocked');
 
 -- =====================================================================
 -- Report

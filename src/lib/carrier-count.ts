@@ -1,8 +1,15 @@
 /**
- * „N transportatori verificați circulă pe această rută în perioada aleasă."
+ * „N transportatori verificați circulă pe această rută."
  *
- * The sentence is the client's, word for word. Two things are done to it
- * and both are grammar rather than product:
+ * The period came out of the sentence, and out of the count with it. The
+ * date-aware version was honest and nearly always zero, because a
+ * verified carrier who has not posted a route has not said when it
+ * travels — and a number that is almost always zero teaches a client that
+ * the answer is „nobody". What is counted now is coverage, category and
+ * equipment: where a firm works, not what is in its diary.
+ *
+ * Two things are still done to the sentence and both are grammar rather
+ * than product:
  *
  *   * One carrier is „un transportator verificat circulă", not
  *     „1 transportatori verificați circulă". Shipping the plural form with
@@ -19,11 +26,11 @@
 
 export const CARRIER_COUNT_COPY = {
   zero:
-    'Încă nu avem transportatori verificați pe această rută în perioada aleasă. Cererea rămâne publicată și te anunțăm când apare unul.',
+    'Încă nu avem transportatori verificați pe această rută. Cererea rămâne publicată și te anunțăm când apare unul.',
   zeroLinkLabel: 'Trasee disponibile',
   /** What the number actually counts, said in one line under it. */
   how:
-    'Numărăm firmele verificate care acoperă traseul și au curse anunțate în perioada aleasă.',
+    'Numărăm firmele verificate care acoperă traseul, transportă acest tip de vehicul și au dotările necesare.',
   previewLabel: 'Vezi câți transportatori circulă pe traseu',
   previewPending: 'Se numără…',
 } as const;
@@ -31,10 +38,10 @@ export const CARRIER_COUNT_COPY = {
 export function carrierCountSentence(count: number): string {
   if (count <= 0) return CARRIER_COUNT_COPY.zero;
   if (count === 1) {
-    return 'Un transportator verificat circulă pe această rută în perioada aleasă.';
+    return 'Un transportator verificat circulă pe această rută.';
   }
   const noun = count >= 20 ? 'de transportatori' : 'transportatori';
-  return `${count} ${noun} verificați circulă pe această rută în perioada aleasă.`;
+  return `${count} ${noun} verificați circulă pe această rută.`;
 }
 
 /**
@@ -43,7 +50,7 @@ export function carrierCountSentence(count: number): string {
  * Somebody stepping back and forth between step 3 and step 4 asks the
  * same question three times in a minute, and each answer costs a scan of
  * every verified carrier. Thirty seconds is long enough to cover that and
- * short enough that a carrier who publishes a route is counted almost at
+ * short enough that a firm which widens its coverage is counted almost at
  * once.
  *
  * Keyed by caller as well as by route: the count excludes the asker's own

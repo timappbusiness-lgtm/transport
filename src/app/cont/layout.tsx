@@ -7,8 +7,10 @@ import { SkipLink } from '@/components/app/top-bar';
 import { StatusBanner } from '@/components/app/status-banner';
 import { currentPathname, navContextOf } from '@/components/app/nav-context';
 import { ROUTES } from '@/config/routes';
+import { TermsGate } from '@/components/legal/terms-gate';
+import { CURRENT_TERMS_VERSION, needsTermsAcceptance } from '@/content/legal';
 import { requireAccountContext } from '@/lib/auth/account';
-import { isDriverAllowed } from '@/lib/auth/guards';
+import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import { pickBanner } from '@/lib/banners';
 import { EXPIRY_WINDOW_DAYS } from '@/lib/dashboard-source';
 import { activeHref, bottomNav, buildNav } from '@/lib/navigation';
@@ -36,6 +38,18 @@ export const dynamic = 'force-dynamic';
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const context = await requireAccountContext(ROUTES.account);
   const pathname = await currentPathname();
+
+  // Before anything else in the account area. The terms are the contract,
+  // and an account carrying on under a version nobody accepted is an
+  // account we cannot point at anything for. Rendered in place of the
+  // shell rather than over it: no z-index, no scroll lock, and nothing
+  // behind it to reach with a keyboard.
+  if (
+    needsTermsAcceptance(context.profile?.terms_version_accepted) &&
+    !isOpenWithoutTerms(pathname)
+  ) {
+    return <TermsGate version={CURRENT_TERMS_VERSION} />;
+  }
 
   // A driver's application is two pages. Refusing here rather than on each
   // of the dozen pages they must not reach means a page added later is

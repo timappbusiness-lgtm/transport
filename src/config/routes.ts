@@ -18,6 +18,7 @@ export const ROUTES = {
   accountDepartureNew: '/cont/trasee/nou',
   terms: '/termeni',
   privacy: '/confidentialitate',
+  cookies: '/cookies',
   contact: '/contact',
 
   // Authentication
@@ -108,7 +109,5 @@ export function companyRoute(slug: string): string {
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
 export const UNBUILT_ROUTES: readonly Route[] = [
-  ROUTES.terms,
-  ROUTES.privacy,
   ROUTES.contact,
 ] as const;
