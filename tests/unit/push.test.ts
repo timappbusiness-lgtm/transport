@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createDismissalStore } from '@/lib/dismissal-store';
 import {
   DISMISS_DAYS,
   describeSubscription,
@@ -196,5 +197,74 @@ describe('the VAPID key the browser is given', () => {
 
   it('decodes the - and _ substitutions', () => {
     expect([...urlBase64ToUint8Array('-_8')]).toEqual([251, 255]);
+  });
+});
+
+describe('remembering a refusal', () => {
+  function fakeStorage(initial: Record<string, string> = {}) {
+    const data = { ...initial };
+    return {
+      getItem: (key: string) => data[key] ?? null,
+      setItem: (key: string, value: string) => {
+        data[key] = value;
+      },
+      read: () => data,
+    };
+  }
+
+  it('reads what is there', () => {
+    const store = createDismissalStore('k', fakeStorage({ k: '2026-09-01T00:00:00.000Z' }));
+    expect(store.getSnapshot()).toBe('2026-09-01T00:00:00.000Z');
+  });
+
+  it('returns the same reference until something changes', () => {
+    // `getSnapshot` runs on every render; a new value each time is an
+    // infinite re-render, which is the whole reason this is a store.
+    const store = createDismissalStore('k', fakeStorage());
+    expect(store.getSnapshot()).toBe(store.getSnapshot());
+  });
+
+  it('says "never dismissed" on the server', () => {
+    // The safe direction: the first client render may hide a card the
+    // server showed, where the reverse flashes one at somebody who
+    // dismissed it a week ago.
+    const store = createDismissalStore('k', fakeStorage({ k: '2026-09-01T00:00:00.000Z' }));
+    expect(store.getServerSnapshot()).toBeNull();
+  });
+
+  it('writes the dismissal and tells its listeners', () => {
+    const storage = fakeStorage();
+    const store = createDismissalStore('k', storage);
+    let calls = 0;
+    store.subscribe(() => {
+      calls += 1;
+    });
+
+    store.dismiss(new Date('2026-09-18T10:00:00Z'));
+    expect(storage.read().k).toBe('2026-09-18T10:00:00.000Z');
+    expect(store.getSnapshot()).toBe('2026-09-18T10:00:00.000Z');
+    expect(calls).toBe(1);
+  });
+
+  it('survives storage that throws, which is a private window', () => {
+    const throwing = {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('blocked');
+      },
+    };
+    const store = createDismissalStore('k', throwing);
+    expect(store.getSnapshot()).toBeNull();
+    // A dismissal that cannot be stored costs one extra card, which beats
+    // a component that will not render.
+    expect(() => store.dismiss()).not.toThrow();
+  });
+
+  it('survives having no storage at all', () => {
+    const store = createDismissalStore('k', null);
+    expect(store.getSnapshot()).toBeNull();
+    expect(() => store.dismiss()).not.toThrow();
   });
 });
