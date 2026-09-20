@@ -41,7 +41,7 @@ teste unitare și cele 33 de suite Playwright.
 | `pnpm db:test` | **677 de verificări RLS, 677 trecute, 0 căzute** (605 „fix", 72 „guard") |
 | `pnpm typecheck`, `pnpm lint` | curat |
 | `pnpm check:functions`, `pnpm test:functions` | **86 de teste Deno, toate trec** |
-| `pnpm test:e2e` | **nerulat integral aici** — cele 12 suite `*-supabase.spec.ts` cer un Supabase local care nu pornește în acest mediu (imaginile Docker: 429 de la Docker Hub, 403 prin proxy) |
+| `pnpm test:e2e` | **632 de verificări trecute, 284 sărite** — cele sărite sunt suitele `*-supabase.spec.ts`, care cer un Supabase local ce nu pornește în acest mediu (imaginile Docker: 429 de la Docker Hub, 403 prin proxy) |
 
 **Nu am putut verifica nimic pe producție.** Mediul în care rulez blochează
 ieșirea: `https://transport-seven-sandy.vercel.app/` răspunde `000` cu
@@ -161,7 +161,7 @@ mai mult, pentru o persoană.
 | 1.12 | **Plată recurentă, factură automată, card, coduri promo, istoric.** Azi: cerere din `/abonamente` → activare manuală de echipă, scris explicit în interfață | lipsește | mare | opțional la pilot | Decizia despre procesator |
 | 1.13 | **Suspendare pentru neplată** | lipsește | mediu | opțional la pilot | 1.12 |
 | 1.14 | **Ecran care măsoară criteriul de ieșire** (20 de transportatori verificați, 5 case de expediții active săptămânal). Datele există în `cargo_listings.published_at`, `contact_reveals`, `departure_bookings`, `profiles.last_seen_at`, `audit_log`; nimic nu le adună | lipsește | mic | important | — |
-| 1.15 | **Cele 12 suite `*-supabase.spec.ts` nu au fost văzute trecând.** Sunt scrise; rulează doar cu `E2E_SUPABASE=1` și un Supabase local, care nu pornește în acest mediu (imaginile Docker nu se pot descărca: 429 de la Docker Hub, 403 prin proxy) | scrise, nerulate | mediu | important | Docker funcțional local |
+| 1.15 | **Cele 12 suite `*-supabase.spec.ts` nu au fost văzute trecând.** Sunt scrise; rulează doar cu `E2E_SUPABASE=1` și un Supabase local, care nu pornește în acest mediu (imaginile Docker nu se pot descărca: 429 de la Docker Hub, 403 prin proxy). Ele sunt cele 284 de verificări sărite din rularea de mai sus, adică **fix fluxurile cu stare**: autentificare, publicare, verificare, export, ștergere | scrise, nerulate | mediu | important | Docker funcțional local |
 | 1.16 | **Joburile programate neconfirmate pe proiectul real.** Migrația `20260918210000` programează opt joburi și `job_health` le urmărește; nimeni nu a văzut `/admin/notificari` trecând pe „la zi" | construit, neconfirmat | mic (verificare) | **blocant** | Acces la proiect |
 | 1.17 | **Documentele juridice neverificate de un avocat** și fără datele operatorului (`src/config/company.ts` — toate câmpurile sunt `''` intenționat) | construit, nevalidat | mic (Edi) + extern (avocat) | **blocant legal** | `docs/09-verificare-juridica.md` |
 | 1.18 | **`/contact` e un placeholder** („Pagină în lucru", `UNBUILT_ROUTES` în `src/config/routes.ts`) și e linkat din footer | lipsește | mic | important | Datele de contact ale operatorului |
