@@ -146,6 +146,57 @@ export const TEMPLATES: Record<string, Template> = {
     unsubscribable: true,
   },
 
+  /**
+   * One match, for somebody who asked to hear immediately.
+   *
+   * The reasons are the point. An alert that says „a apărut o cerere" and
+   * nothing else is one a carrier learns to ignore; one that says which
+   * route, which vehicle and how far off their own corridor it is, is one
+   * they open.
+   */
+  saved_search_alert: {
+    subject: "{{ search_name }}: {{ from_city }} — {{ to_city }}",
+    lines: [
+      "Bună ziua,",
+      "A apărut o cerere care se potrivește cu căutarea „{{ search_name }}”: {{ title }}.",
+      "De ce v-am trimis-o:",
+      "· {{ reasons }}",
+    ],
+    action: { label: "Vezi cererea", href: "{{ site_url }}/cereri/{{ request_id }}" },
+    unsubscribable: true,
+  },
+
+  /** The same thing, once a day, for somebody who asked for that instead. */
+  saved_search_digest: {
+    subject: "{{ search_name }}: {{ count }} cereri noi",
+    lines: [
+      "Bună ziua,",
+      "Căutarea „{{ search_name }}” a găsit {{ count }} cereri de ieri până azi:",
+      "{{ listings }}",
+      "Le puteți deschide pe toate din panoul de cereri.",
+    ],
+    action: { label: "Vezi cererile", href: "{{ site_url }}/cereri" },
+    unsubscribable: true,
+  },
+
+  /**
+   * What happened to a report somebody sent.
+   *
+   * Neutral on purpose, and it carries the team's own sentence rather
+   * than a status word: „rezolvată" with no explanation is the answer
+   * that makes people stop reporting things.
+   */
+  report_closed: {
+    subject: "Sesizarea dumneavoastră a fost {{ outcome }}",
+    lines: [
+      "Bună ziua,",
+      "Am analizat sesizarea pe care ne-ați trimis-o. Iată ce am constatat și ce am decis:",
+      "{{ resolution }}",
+      "Dacă lucrurile arată altfel decât am înțeles noi, scrieți-ne și o redeschidem.",
+    ],
+    unsubscribable: false,
+  },
+
   // --- Rezervări --------------------------------------------------------
   reservation_created: {
     subject: "Rezervare nouă pe traseul {{ from_city }} — {{ to_city }}",

@@ -9,6 +9,7 @@ import { ROUTES, vehicleRoute } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import type { Company } from '@/lib/auth/account';
 import type { CarrierDashboard } from '@/lib/dashboard-source';
+import type { DetourFit } from '@/lib/matching';
 import { formatNumber, pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
@@ -130,7 +131,10 @@ export function CarrierHome({
             {data.matches.map((request) => (
               <li key={request.id} className="min-w-0">
                 <RequestCard request={request} now={now} />
-                <MatchReasons reasons={data.matchReasons[request.id] ?? []} />
+                <MatchReasons
+                  reasons={data.matchReasons[request.id] ?? []}
+                  detour={data.detours[request.id]}
+                />
               </li>
             ))}
           </ul>
@@ -315,19 +319,38 @@ export const vehicleHref = vehicleRoute;
  * fill the row. A card with no chips is a card matched on coverage alone,
  * which is true and does not need saying twice.
  */
-function MatchReasons({ reasons }: { reasons: readonly string[] }) {
-  if (reasons.length === 0) return null;
+function MatchReasons({
+  reasons,
+  detour,
+}: {
+  reasons: readonly string[];
+  detour: DetourFit | undefined;
+}) {
+  if (reasons.length === 0 && detour === undefined) return null;
 
   return (
-    <ul className="mt-2 flex flex-wrap gap-1.5">
-      {reasons.map((reason) => (
-        <li
-          key={reason}
-          className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-[0.6875rem] text-muted"
-        >
-          {c.matches.reasons[reason] ?? reason}
-        </li>
-      ))}
-    </ul>
+    <>
+      {reasons.length > 0 ? (
+        <ul className="mt-2 flex flex-wrap gap-1.5">
+          {reasons.map((reason) => (
+            <li
+              key={reason}
+              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-[0.6875rem] text-muted"
+            >
+              {c.matches.reasons[reason] ?? reason}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {/* A whole sentence rather than a pill: it carries two numbers and
+          a route name, and a pill that wraps to three lines on a phone is
+          not a pill. */}
+      {detour !== undefined ? (
+        <p className="mt-2 text-[0.6875rem] text-muted">
+          {c.matches.detour(detour.detourKm, detour.toleranceKm, detour.fromCity, detour.toCity)}
+        </p>
+      ) : null}
+    </>
   );
 }

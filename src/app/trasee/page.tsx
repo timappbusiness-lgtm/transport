@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { DepartureCard } from '@/components/departures/departure-card';
 import { FiltersForm } from '@/components/departures/filters-form';
 import { SavedSearchButton } from '@/components/departures/saved-search-button';
+import { SaveSearch } from '@/components/requests/save-search';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { getAccountContext } from '@/lib/auth/account';
+import { filtersFromBoard } from '@/lib/saved-searches';
 import {
   EMPTY_FILTERS,
   filtersToQuery,
@@ -123,6 +125,27 @@ function EmptyState({
           {c.request}
         </Link>
         <SavedSearchButton filters={filters} signedIn={signedIn} />
+      </div>
+
+      {/* The other half of an empty board. Whoever is reading this is
+          either looking for a carrier — the button above — or is a
+          carrier with nothing to look at, and that person wants to be
+          told when a request appears on the corridor they just typed
+          in, not to come back and check. */}
+      <div className="mt-6 border-t border-border pt-5">
+        <p className="mb-3 max-w-[58ch] text-sm text-muted">{c.carrierAlert}</p>
+        <SaveSearch
+          filters={filtersFromBoard({
+            fromCountry: filters.fromCountry,
+            fromCounty: filters.fromCounty,
+            toCountry: filters.toCountry,
+            toCounty: filters.toCounty,
+            category: filters.vehicleType,
+            scope: filters.scope,
+          })}
+          signedIn={signedIn}
+          label={c.carrierAlertAction}
+        />
       </div>
 
       {hasActiveFilters(filters) ? (

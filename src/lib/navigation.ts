@@ -110,6 +110,9 @@ function individualNav(features: FeatureMap): NavItem[] {
   // The public board is not a feature of the account, but for somebody with
   // nothing else to look at yet it is the one useful destination.
   items.push({ href: ROUTES.routes, label: 'Trasee disponibile', group: 'principal', priority: 60 });
+  if (features.savedSearches) {
+    items.push({ href: ROUTES.accountAlerts, label: 'Alerte', group: 'cont', priority: 11 });
+  }
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
   items.push({
     href: ROUTES.accountNotificationSettings,
@@ -225,6 +228,12 @@ export function buildNav(
 
   if (features.messages) {
     items.push({ href: ROUTES.accountMessages, label: 'Mesaje', group: 'principal', priority: 75 });
+  }
+  // Saved searches belong to the person, not to the firm, so every account
+  // that can browse a board gets the item — a dispatcher watches a corridor
+  // as readily as an owner does.
+  if (features.savedSearches) {
+    items.push({ href: ROUTES.accountAlerts, label: 'Alerte', group: 'cont', priority: 11 });
   }
   if (features.documents) {
     items.push({ href: ROUTES.accountDocuments, label: 'Documente', group: 'firma', priority: 45 });

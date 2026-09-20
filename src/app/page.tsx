@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Activity } from '@/components/home/activity';
 import { CarrierCta } from '@/components/home/carrier-cta';
+import { Categories } from '@/components/home/categories';
 import { Carriers } from '@/components/home/carriers';
 import { Comparison } from '@/components/home/comparison';
 import { Faq } from '@/components/home/faq';
@@ -35,6 +36,7 @@ export default function Page() {
     <>
       <Hero />
       <Activity />
+      <Categories />
       <CarrierCta />
       <Trust />
       <DataPanel />

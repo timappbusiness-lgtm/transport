@@ -1848,6 +1848,27 @@ export type Database = {
           },
         ]
       }
+      matching_settings: {
+        Row: {
+          category_window_days: number
+          default_detour_km: number
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          category_window_days?: number
+          default_detour_km?: number
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category_window_days?: number
+          default_detour_km?: number
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachment_path: string | null
@@ -2826,51 +2847,90 @@ export type Database = {
       }
       reports: {
         Row: {
+          assigned_to: string | null
+          cargo_listing_id: string | null
           created_at: string
           details: string | null
           evidence_path: string | null
           handled_by: string | null
           id: string
+          internal_notes: string | null
+          kind: string
           reason: string
           reported_company_id: string | null
           reported_user_id: string | null
+          reporter_notified_at: string | null
           reporter_user_id: string
           resolution: string | null
+          resolved_at: string | null
           status: string
           transport_id: string | null
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
+          cargo_listing_id?: string | null
           created_at?: string
           details?: string | null
           evidence_path?: string | null
           handled_by?: string | null
           id?: string
+          internal_notes?: string | null
+          kind?: string
           reason: string
           reported_company_id?: string | null
           reported_user_id?: string | null
+          reporter_notified_at?: string | null
           reporter_user_id: string
           resolution?: string | null
+          resolved_at?: string | null
           status?: string
           transport_id?: string | null
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
+          cargo_listing_id?: string | null
           created_at?: string
           details?: string | null
           evidence_path?: string | null
           handled_by?: string | null
           id?: string
+          internal_notes?: string | null
+          kind?: string
           reason?: string
           reported_company_id?: string | null
           reported_user_id?: string | null
+          reporter_notified_at?: string | null
           reporter_user_id?: string
           resolution?: string | null
+          resolved_at?: string | null
           status?: string
           transport_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reports_handled_by_fkey"
             columns: ["handled_by"]
@@ -2929,13 +2989,67 @@ export type Database = {
           },
         ]
       }
+      saved_search_matches: {
+        Row: {
+          cargo_listing_id: string
+          created_at: string
+          detour_km: number | null
+          id: string
+          notified_at: string | null
+          reasons: string[]
+          saved_search_id: string
+        }
+        Insert: {
+          cargo_listing_id: string
+          created_at?: string
+          detour_km?: number | null
+          id?: string
+          notified_at?: string | null
+          reasons?: string[]
+          saved_search_id: string
+        }
+        Update: {
+          cargo_listing_id?: string
+          created_at?: string
+          detour_km?: number | null
+          id?: string
+          notified_at?: string | null
+          reasons?: string[]
+          saved_search_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_search_matches_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_search_matches_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_search_matches_saved_search_id_fkey"
+            columns: ["saved_search_id"]
+            isOneToOne: false
+            referencedRelation: "saved_searches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_searches: {
         Row: {
           company_id: string | null
           created_at: string
           filters: Json
+          frequency: Database["public"]["Enums"]["alert_frequency"]
           id: string
           is_active: boolean
+          last_digest_at: string | null
           last_notified_at: string | null
           name: string
           notify_email: boolean
@@ -2949,8 +3063,10 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           filters?: Json
+          frequency?: Database["public"]["Enums"]["alert_frequency"]
           id?: string
           is_active?: boolean
+          last_digest_at?: string | null
           last_notified_at?: string | null
           name: string
           notify_email?: boolean
@@ -2964,8 +3080,10 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           filters?: Json
+          frequency?: Database["public"]["Enums"]["alert_frequency"]
           id?: string
           is_active?: boolean
+          last_digest_at?: string | null
           last_notified_at?: string | null
           name?: string
           notify_email?: boolean
@@ -4221,6 +4339,8 @@ export type Database = {
           from_city: string | null
           from_country: string | null
           from_county: string | null
+          from_lat: number | null
+          from_lng: number | null
           id: string | null
           is_domestic: boolean | null
           is_running: boolean | null
@@ -4235,6 +4355,8 @@ export type Database = {
           to_city: string | null
           to_country: string | null
           to_county: string | null
+          to_lat: number | null
+          to_lng: number | null
           weight_kg: number | null
           year: number | null
         }
@@ -4371,6 +4493,56 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      audit_entries: {
+        Args: {
+          p_action?: string
+          p_actor?: string
+          p_entity?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          actor_name: string
+          actor_role: string
+          actor_user_id: string
+          after: Json
+          before: Json
+          created_at: string
+          entity: string
+          entity_id: string
+          id: number
+          reason: string
+          total_count: number
+        }[]
+      }
+      audit_facets: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          kind: string
+          occurrences: number
+          value: string
+        }[]
+      }
+      best_route_detour: {
+        Args: {
+          p_company_id: string
+          p_dropoff_lat: number
+          p_dropoff_lng: number
+          p_pickup_lat: number
+          p_pickup_lng: number
+        }
+        Returns: {
+          detour_km: number
+          from_city: string
+          to_city: string
+          tolerance_km: number
+          truck_listing_id: string
+          within: boolean
+        }[]
+      }
       can_edit_cargo_listing: {
         Args: { p_listing_id: string }
         Returns: boolean
@@ -4408,6 +4580,10 @@ export type Database = {
         Args: { p_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["listing_status"]
       }
+      cargo_category_label: {
+        Args: { p_category: Database["public"]["Enums"]["cargo_category"] }
+        Returns: string
+      }
       cargo_request_title: {
         Args: {
           p_from_city: string
@@ -4417,6 +4593,14 @@ export type Database = {
           p_year: number
         }
         Returns: string
+      }
+      category_counts: {
+        Args: { p_days?: number }
+        Returns: {
+          category: Database["public"]["Enums"]["cargo_category"]
+          label: string
+          requests: number
+        }[]
       }
       claim_account_deletions: {
         Args: { p_limit?: number; p_now?: string }
@@ -4488,6 +4672,16 @@ export type Database = {
       }
       company_can_act: {
         Args: { p_company_id: string }
+        Returns: boolean
+      }
+      company_detour_ok: {
+        Args: {
+          p_company_id: string
+          p_dropoff_lat: number
+          p_dropoff_lng: number
+          p_pickup_lat: number
+          p_pickup_lng: number
+        }
         Returns: boolean
       }
       company_matches_request: {
@@ -4575,9 +4769,13 @@ export type Database = {
       count_matching_carriers_on_route: {
         Args: {
           p_category?: Database["public"]["Enums"]["cargo_category"]
+          p_dropoff_lat?: number
+          p_dropoff_lng?: number
           p_loading_country: string
           p_loading_county: string
           p_needs_winch?: boolean
+          p_pickup_lat?: number
+          p_pickup_lng?: number
           p_posted_by_company_id?: string
           p_service_type?: Database["public"]["Enums"]["service_type"]
           p_unloading_country: string
@@ -4769,6 +4967,19 @@ export type Database = {
         Args: { p_except_cargo_listing_id?: string; p_truck_listing_id: string }
         Returns: number
       }
+      detour_km: {
+        Args: {
+          p_dropoff_lat: number
+          p_dropoff_lng: number
+          p_pickup_lat: number
+          p_pickup_lng: number
+          p_route_from_lat: number
+          p_route_from_lng: number
+          p_route_to_lat: number
+          p_route_to_lng: number
+        }
+        Returns: number
+      }
       directory_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -4810,6 +5021,15 @@ export type Database = {
         Returns: {
           file_path: string
           id: string
+        }[]
+      }
+      find_account_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          email: string
+          email_confirmed: boolean
+          full_name: string
+          user_id: string
         }[]
       }
       finish_data_export: {
@@ -4889,6 +5109,36 @@ export type Database = {
       gtrgm_out: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      handle_report: {
+        Args: {
+          p_assign_to_me?: boolean
+          p_internal_notes?: string
+          p_report_id: string
+          p_resolution?: string
+          p_status: string
+        }
+        Returns: {
+          assigned_to: string | null
+          cargo_listing_id: string | null
+          created_at: string
+          details: string | null
+          evidence_path: string | null
+          handled_by: string | null
+          id: string
+          internal_notes: string | null
+          kind: string
+          reason: string
+          reported_company_id: string | null
+          reported_user_id: string | null
+          reporter_notified_at: string | null
+          reporter_user_id: string
+          resolution: string | null
+          resolved_at: string | null
+          status: string
+          transport_id: string | null
+          updated_at: string
+        }
       }
       hold_account_for_deletion: {
         Args: {
@@ -5133,9 +5383,13 @@ export type Database = {
         Args: {
           p_category?: Database["public"]["Enums"]["cargo_category"]
           p_company_id?: string
+          p_dropoff_lat?: number
+          p_dropoff_lng?: number
           p_loading_country: string
           p_loading_county: string
           p_needs_winch?: boolean
+          p_pickup_lat?: number
+          p_pickup_lng?: number
           p_service_type?: Database["public"]["Enums"]["service_type"]
           p_unloading_country: string
           p_unloading_county: string
@@ -5217,6 +5471,10 @@ export type Database = {
           p_title: string
           p_type: string
         }
+        Returns: number
+      }
+      queue_saved_search_digests: {
+        Args: { p_now?: string }
         Returns: number
       }
       reject_offer: {
@@ -5479,6 +5737,55 @@ export type Database = {
         Args: { p_text: string }
         Returns: string
       }
+      save_search: {
+        Args: {
+          p_filters: Json
+          p_frequency?: Database["public"]["Enums"]["alert_frequency"]
+          p_name: string
+          p_notify_email?: boolean
+          p_target: string
+        }
+        Returns: {
+          company_id: string | null
+          created_at: string
+          filters: Json
+          frequency: Database["public"]["Enums"]["alert_frequency"]
+          id: string
+          is_active: boolean
+          last_digest_at: string | null
+          last_notified_at: string | null
+          name: string
+          notify_email: boolean
+          notify_push: boolean
+          notify_whatsapp: boolean
+          target: string
+          updated_at: string
+          user_id: string
+        }
+      }
+      saved_search_activity: {
+        Args: { p_days?: number }
+        Returns: {
+          last_match_at: string
+          matches: number
+          saved_search_id: string
+        }[]
+      }
+      saved_search_match: {
+        Args: { p_listing_id: string; p_search_id: string }
+        Returns: {
+          detour_km: number
+          reasons: string[]
+        }[]
+      }
+      saved_search_quota: {
+        Args: { p_user: string }
+        Returns: {
+          allowed: number
+          plan_name: string
+          used: number
+        }[]
+      }
       send_test_push: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -5629,6 +5936,15 @@ export type Database = {
       set_limit: {
         Args: { "": number }
         Returns: number
+      }
+      set_matching_settings: {
+        Args: { p_category_window_days: number; p_default_detour_km: number }
+        Returns: {
+          category_window_days: number
+          default_detour_km: number
+          id: boolean
+          updated_at: string
+        }
       }
       set_plan: {
         Args: {
@@ -5897,6 +6213,18 @@ export type Database = {
           updated_at: string
         }
       }
+      staff_members: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          full_name: string
+          granted_at: string
+          granted_by: string
+          granted_by_name: string
+          role: Database["public"]["Enums"]["staff_role"]
+          user_id: string
+        }[]
+      }
       staff_set_phone_verified: {
         Args: { p_note: string; p_user: string; p_verified: boolean }
         Returns: {
@@ -6034,6 +6362,7 @@ export type Database = {
       account_deletion_status:
         "requested" | "blocked" | "scheduled" | "completed" | "cancelled"
       account_type: "company" | "individual"
+      alert_frequency: "immediate" | "daily"
       cargo_category:
         | "autoturism"
         | "autoutilitara"
@@ -6270,6 +6599,7 @@ export const Constants = {
         "cancelled",
       ],
       account_type: ["company", "individual"],
+      alert_frequency: ["immediate", "daily"],
       cargo_category: [
         "autoturism",
         "autoutilitara",

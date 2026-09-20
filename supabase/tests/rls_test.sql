@@ -1767,9 +1767,10 @@ select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix'
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
        'board','category','estimated_km','expires_at','from_city','from_country',
-       'from_county','id','is_domestic','is_running','loading_from','loading_to',
-       'make','model','needs_winch','photo_count','published_at','service_type',
-       'to_city','to_country','to_county','weight_kg','year'
+       'from_county','from_lat','from_lng','id','is_domestic','is_running',
+       'loading_from','loading_to','make','model','needs_winch','photo_count',
+       'published_at','service_type','to_city','to_country','to_county',
+       'to_lat','to_lng','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -1793,7 +1794,36 @@ select pg_temp.check('CRQ  the photographs are not in the view', 'fix',
   null, 'anon', $a$select photo_paths from public.v_requests_public$a$, 'blocked',
   p_missing_ok => true);
 
-select pg_temp.check('CRQ  the exact position is not in the view', 'fix',
+-- The coordinates the view does carry are the city centroids the card
+-- already names, resolved on the server from src/lib/cities.ts when the
+-- request was published. What must never appear is a point more precise
+-- than the locality, and the postcode is the column that would be one.
+select pg_temp.check('CRQ  the coordinates in the view are the city the card already names', 'fix',
+  null, 'anon',
+  $a$select from_lat = 48.7833 and from_lng = 9.1833
+         and to_lat = 44.4268 and to_lng = 26.1025
+     from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-0000000000c1'$a$, 'true',
+  p_setup => $s$
+    insert into public.cargo_listings (id, company_id, posted_by, board, listing_kind,
+           title, loading_city, loading_lat, loading_lng,
+           unloading_city, unloading_lat, unloading_lng, loading_from, weight_kg, status)
+    values ('f1000000-0000-0000-0000-0000000000c1',
+            'fc000000-0000-0000-0000-000000000002',
+            'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+            'Stuttgart la București', 'Stuttgart', 48.7833, 9.1833,
+            'București', 44.4268, 26.1025, current_date + 3, 1500, 'draft');
+    insert into public.cargo_vehicle_details (cargo_listing_id, make, model, year)
+    values ('f1000000-0000-0000-0000-0000000000c1', 'BMW', '320d', 2018);
+    update public.cargo_listings set status = 'active'
+    where id = 'f1000000-0000-0000-0000-0000000000c1';
+  $s$);
+
+select pg_temp.check('CRQ  the postcode is not in the view', 'fix',
+  null, 'anon', $a$select loading_postcode from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  and the raw column names stay out of it', 'fix',
   null, 'anon', $a$select loading_lat from public.v_requests_public$a$, 'blocked',
   p_missing_ok => true);
 
@@ -5275,7 +5305,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 9 from public.job_health()$a$, 'true');
+  $a$select count(*) = 10 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6163,7 +6193,8 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-listing-expiry-reminders, nightly-retention, outbox-dispatcher'
+     'nightly-listing-expiry-reminders, nightly-retention, '
+     'nightly-saved-search-digest, outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6184,6 +6215,11 @@ select pg_temp.check('JOB  the listing reminder queues listing reminders', 'fix'
   null, 'service_role',
   $a$select command like '%queue_listing_expiry_reminders%'
      from cron.job where jobname = 'nightly-listing-expiry-reminders'$a$, 'true');
+
+select pg_temp.check('JOB  the digest job queues digests', 'fix',
+  null, 'service_role',
+  $a$select command like '%queue_saved_search_digests%'
+     from cron.job where jobname = 'nightly-saved-search-digest'$a$, 'true');
 
 select pg_temp.check('JOB  the cleanup job expires stale listings', 'fix',
   null, 'service_role',
@@ -6213,7 +6249,8 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-listing-expiry-reminders, nightly-retention, outbox-dispatcher'
+     'nightly-listing-expiry-reminders, nightly-retention, '
+     'nightly-saved-search-digest, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',
@@ -6588,6 +6625,367 @@ select pg_temp.check('PHO  deleting a request takes its photographs with it', 'f
                  where name = 'f0000000-0000-0000-0000-000000000006/foto-1.jpg')$v$);
 
 
+
+
+-- =====================================================================
+-- DET - the detour tolerance, finally read
+--
+-- `max_detour_km` has been on truck_listings since 20260916120300 with a
+-- default of 50 and no reader at all. These pin down the three answers
+-- that matter: inside the tolerance, outside it, and no route to measure
+-- against — which is not the same as a bad fit and must not be treated
+-- as one.
+-- =====================================================================
+
+select pg_temp.check('DET  the insertion detour is what it costs to take the job', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  -- A route along the 45th parallel, and a request just off it. The
+  -- numbers are checked loosely on purpose: the point is the shape of the
+  -- formula, not the fourth decimal of a haversine.
+  $a$select public.detour_km(45, 21, 45, 26, 45, 22, 45, 25) < 5$a$, 'true');
+
+select pg_temp.check('DET  a request far off the line costs a lot', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.detour_km(45, 21, 45, 26, 48, 22, 48, 25) > 300$a$, 'true');
+
+select pg_temp.check('DET  a missing coordinate is "cannot tell", not zero', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.detour_km(45, 21, 45, 26, null, 22, 45, 25) is null$a$, 'true');
+
+select pg_temp.check('DET  a firm with no published route is not ruled out', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.company_detour_ok('fc000000-0000-0000-0000-000000000002', 45, 21, 45, 26)$a$,
+  'true');
+
+select pg_temp.check('DET  a request inside the tolerance matches', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.company_detour_ok('fc000000-0000-0000-0000-000000000001', 45.1, 21.1, 45.1, 25.9)$a$,
+  'true',
+  p_setup => $s$update public.truck_listings
+                  set from_lat = 45, from_lng = 21, to_lat = 45, to_lng = 26,
+                      max_detour_km = 200, status = 'active',
+                      available_from = (now() at time zone 'Europe/Bucharest')::date + 2
+                  where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DET  and one outside it does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not public.company_detour_ok('fc000000-0000-0000-0000-000000000001', 48, 22, 48, 25)$a$,
+  'true',
+  p_setup => $s$update public.truck_listings
+                  set from_lat = 45, from_lng = 21, to_lat = 45, to_lng = 26,
+                      max_detour_km = 40, status = 'active',
+                      available_from = (now() at time zone 'Europe/Bucharest')::date + 2
+                  where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DET  a route with no tolerance falls back to the setting', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select tolerance_km = 50 from public.best_route_detour(
+       'fc000000-0000-0000-0000-000000000001', 45.1, 21.1, 45.1, 25.9)$a$,
+  'true',
+  p_setup => $s$update public.truck_listings
+                  set from_lat = 45, from_lng = 21, to_lat = 45, to_lng = 26,
+                      max_detour_km = 0, status = 'active',
+                      available_from = (now() at time zone 'Europe/Bucharest')::date + 2
+                  where company_id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('DET  and the setting is what the team says it is', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_matching_settings(90, 30)).default_detour_km = 90$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'settings.matching_changed')$v$);
+
+select pg_temp.check('DET  a visitor cannot move it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.set_matching_settings(500, 365)$a$, 'blocked');
+
+-- =====================================================================
+-- SRC - saved searches and their alerts
+-- =====================================================================
+
+select pg_temp.check('SRC  somebody saves a search of their own', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.save_search('Germania → România', 'cargo',
+       '{"from_country":"DE","to_country":"RO"}'::jsonb)).name = 'Germania → România'$a$,
+  'true');
+
+select pg_temp.check('SRC  a search with no name is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.save_search('   ', 'cargo', '{}'::jsonb)$a$, 'blocked');
+
+select pg_temp.check('SRC  the plan limit is applied, and names the plan', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  -- The individual plan allows one saved search. The second is the one
+  -- that has to be refused with a sentence somebody can act on.
+  $a$select public.save_search('A doua', 'cargo', '{}'::jsonb)$a$, 'blocked',
+  p_setup => $s$insert into public.saved_searches (user_id, name, target, filters)
+                values ('f0000000-0000-0000-0000-000000000006', 'Prima', 'cargo', '{}')$s$);
+
+select pg_temp.check('SRC  the quota says what is used and what is allowed', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select used = 0 and allowed = 1
+     from public.saved_search_quota('f0000000-0000-0000-0000-000000000006')$a$, 'true');
+
+select pg_temp.check('SRC  a visitor cannot read another person''s matches', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_matches$a$, 'true',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}');
+                insert into public.saved_search_matches
+                  (saved_search_id, cargo_listing_id, reasons)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f1000000-0000-0000-0000-000000000001', array['Ruta'])$s$);
+
+select pg_temp.check('SRC  and nobody writes a match by hand', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.saved_search_matches (saved_search_id, cargo_listing_id, reasons)
+     values ('fe000000-0000-0000-0000-000000000001',
+             'f1000000-0000-0000-0000-000000000001', array['inventat'])$a$,
+  'blocked',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}')$s$);
+
+select pg_temp.check('SRC  a matching request produces reasons, not just a yes', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select array_length(reasons, 1) >= 2 from public.saved_search_match(
+       'fe000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}');
+                update public.cargo_listings set status = 'active'
+                  where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('SRC  a filter that does not fit returns nothing at all', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo',
+                        '{"from_country":"ES"}');
+                update public.cargo_listings set status = 'active'
+                  where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('SRC  a paused search matches nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$insert into public.saved_searches (id, user_id, name, target, filters, is_active)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}', false)$s$);
+
+select pg_temp.check('SRC  the digest groups a day into one e-mail', 'fix',
+  null, 'service_role',
+  $a$select public.queue_saved_search_digests() = 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.saved_searches (id, user_id, name, target, filters, frequency)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}', 'daily');
+                insert into public.saved_search_matches
+                  (saved_search_id, cargo_listing_id, reasons)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f1000000-0000-0000-0000-000000000001', array['Ruta']),
+                       ('fe000000-0000-0000-0000-000000000001',
+                        'f1000000-0000-0000-0000-000000000002', array['Ruta'])$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'saved_search_digest'$v$);
+
+select pg_temp.check('SRC  and does not send the same day twice', 'fix',
+  null, 'service_role',
+  $a$select public.queue_saved_search_digests() = 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.saved_searches (id, user_id, name, target, filters, frequency)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'A mea', 'cargo', '{}', 'daily');
+                insert into public.saved_search_matches
+                  (saved_search_id, cargo_listing_id, reasons, notified_at)
+                values ('fe000000-0000-0000-0000-000000000001',
+                        'f1000000-0000-0000-0000-000000000001', array['Ruta'], now())$s$);
+
+select pg_temp.check('SRC  a visitor cannot run the digest job', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.queue_saved_search_digests()$a$, 'blocked');
+
+-- =====================================================================
+-- REP - reports, and the person who sent one
+-- =====================================================================
+
+select pg_temp.check('REP  closing one needs a written decision', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.handle_report('fd000000-0000-0000-0000-000000000001', 'resolved', '  ')$a$,
+  'blocked',
+  p_setup => $s$insert into public.reports (id, reporter_user_id, reason)
+                values ('fd000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006', 'Firma nu răspunde')$s$);
+
+select pg_temp.check('REP  staff closes it, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.handle_report('fd000000-0000-0000-0000-000000000001', 'resolved',
+       'Am sunat firma și au confirmat. Anunțul a fost corectat.')).status = 'resolved'$a$,
+  'true',
+  p_setup => $s$insert into public.reports (id, reporter_user_id, reason)
+                values ('fd000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006', 'Firma nu răspunde')$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'report.resolved'
+                   and entity_id = 'fd000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('REP  and the person who reported it is told', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.handle_report('fd000000-0000-0000-0000-000000000001', 'resolved',
+       'Am verificat și am corectat anunțul.')).reporter_notified_at is not null$a$,
+  'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.reports (id, reporter_user_id, reason)
+                values ('fd000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006', 'Firma nu răspunde')$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'report_closed'$v$);
+
+select pg_temp.check('REP  a visitor cannot close somebody else''s report', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.handle_report('fd000000-0000-0000-0000-000000000001', 'dismissed', 'las-o')$a$,
+  'blocked',
+  p_setup => $s$insert into public.reports (id, reporter_user_id, reason)
+                values ('fd000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000006', 'Ceva')$s$);
+
+select pg_temp.check('REP  the reporter reads their own, and nobody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.reports$a$, 'true',
+  p_setup => $s$insert into public.reports (reporter_user_id, reason) values
+                  ('f0000000-0000-0000-0000-000000000006', 'A mea'),
+                  ('f0000000-0000-0000-0000-000000000002', 'A altcuiva')$s$);
+
+-- =====================================================================
+-- AUD - reading the audit log
+-- =====================================================================
+
+select pg_temp.check('AUD  staff reads it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 0 from public.audit_entries()$a$, 'true');
+
+select pg_temp.check('AUD  a visitor does not', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.audit_entries()$a$, 'blocked');
+
+select pg_temp.check('AUD  filtering by action narrows it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select bool_and(action like 'company.%') from public.audit_entries(p_action => 'company')$a$,
+  'true',
+  p_missing_ok => true,
+  p_setup => $s$insert into public.audit_log (actor_role, action, entity) values
+                  ('staff', 'company.verified', 'companies'),
+                  ('staff', 'document.approved', 'documents')$s$);
+
+select pg_temp.check('AUD  and the total travels with the page', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select bool_and(total_count >= 2) from public.audit_entries(p_limit => 1)$a$, 'true',
+  p_setup => $s$insert into public.audit_log (actor_role, action, entity) values
+                  ('staff', 'company.verified', 'companies'),
+                  ('staff', 'document.approved', 'documents')$s$);
+
+select pg_temp.check('AUD  the facets are staff-only too', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.audit_facets()$a$, 'blocked');
+
+select pg_temp.check('AUD  and nobody writes to the log through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.audit_log (actor_role, action, entity)
+     values ('staff', 'inventat', 'nimic')$a$, 'blocked');
+
+-- =====================================================================
+-- TEA - the team
+-- =====================================================================
+
+select pg_temp.check('TEA  staff sees who works here', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 1 from public.staff_members()$a$, 'true');
+
+select pg_temp.check('TEA  a visitor does not', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.staff_members()$a$, 'blocked');
+
+select pg_temp.check('TEA  an account can be found by its address', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.find_account_by_email('rls-owner-a@test.ro')$a$, 'true');
+
+select pg_temp.check('TEA  but not by anybody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.find_account_by_email('rls-owner-a@test.ro')$a$, 'blocked');
+
+select pg_temp.check('TEA  granting works and is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_platform_staff('f0000000-0000-0000-0000-000000000002', 'admin',
+       'Intră în echipa de verificare')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.platform_staff
+                 where user_id = 'f0000000-0000-0000-0000-000000000002')
+                 and exists (select 1 from public.audit_log where action = 'staff.granted')$v$);
+
+select pg_temp.check('TEA  the last administrator cannot be removed', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_platform_staff('f0000000-0000-0000-0000-000000000001', null, 'plec')$a$,
+  'blocked',
+  -- smoke_test.sql runs first into the same database and leaves a staff
+  -- row of its own behind, so „the last one" has to be made true here
+  -- rather than assumed. A check written against a constant passes or
+  -- fails depending on what ran before it.
+  p_setup => $s$delete from public.platform_staff
+                  where user_id <> 'f0000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('TEA  one of two can', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.set_platform_staff('f0000000-0000-0000-0000-000000000002', null,
+       'A plecat din echipă')$a$, 'allowed',
+  p_setup => $s$insert into public.platform_staff (user_id) values
+                  ('f0000000-0000-0000-0000-000000000002')
+                on conflict do nothing$s$,
+  p_verify => $v$select not exists (select 1 from public.platform_staff
+                 where user_id = 'f0000000-0000-0000-0000-000000000002')$v$);
+
+-- =====================================================================
+-- CAT - what the board holds, per category
+-- =====================================================================
+
+select pg_temp.check('CAT  a visitor may read the counts', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 0 from public.category_counts()$a$, 'true');
+
+select pg_temp.check('CAT  a category with nothing in it is absent, not zero', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.category_counts() where requests = 0)$a$, 'true');
+
+select pg_temp.check('CAT  our own accounts are not counted', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.category_counts()$a$, 'true',
+  p_setup => $s$update public.profiles set is_test = true$s$);
+
+-- The homepage reads this table directly to print „în ultimele 90 de
+-- zile" under the counters, and /admin/activitate reads it to fill the
+-- form. If the select ever stops working, both fall back to the built-in
+-- default and the note quietly says the wrong number.
+select pg_temp.check('CAT  a visitor may read the window itself, not only the counts', 'fix',
+  null, 'anon',
+  $a$select category_window_days > 0 from public.matching_settings$a$, 'true');
+
+select pg_temp.check('CAT  a signed-in user may too', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select default_detour_km > 0 from public.matching_settings$a$, 'true');
+
+select pg_temp.check('CAT  but nobody writes to it through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.matching_settings set default_detour_km = 999 where id$a$, 'blocked',
+  p_verify => $v$select default_detour_km <> 999 from public.matching_settings$v$);
+
+select pg_temp.check('CAT  the window is what the team set', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.category_counts(1)$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+                  set published_at = now() - interval '30 days'$s$);
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}

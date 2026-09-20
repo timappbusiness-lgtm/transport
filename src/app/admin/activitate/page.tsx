@@ -1,7 +1,9 @@
+import { MatchingForm } from '@/components/requests/matching-form';
 import { ThresholdForm } from '@/components/requests/threshold-form';
 import { DataRow, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { activityAdminCopy } from '@/content/activitate';
-import { formatNumber, showFeed, showStats } from '@/lib/requests';
+import { loadDetourSettings } from '@/lib/matching-settings-source';
+import { formatNumber, pluralRo, showCategories, showFeed, showStats } from '@/lib/requests';
 import { showCarrierCount } from '@/lib/trust';
 import { loadVerification } from '@/lib/trust-source';
 import { loadHomepageActivity } from '@/lib/requests-source';
@@ -20,11 +22,15 @@ export const dynamic = 'force-dynamic';
  * the numbers are right now, and therefore what a visitor is seeing.
  */
 export default async function Page() {
-  const [{ stats, thresholds, requests, verifiedCarriers }, { reviewTimeLabel }] =
-    await Promise.all([loadHomepageActivity(), loadVerification()]);
+  const [
+    { stats, thresholds, requests, verifiedCarriers, categories, categoryWindowDays },
+    { reviewTimeLabel },
+    detourSettings,
+  ] = await Promise.all([loadHomepageActivity(), loadVerification(), loadDetourSettings()]);
   const statsVisible = showStats(stats, thresholds);
   const feedVisible = showFeed(stats, requests, thresholds);
   const countVisible = showCarrierCount(verifiedCarriers, thresholds.verifiedCompaniesMin);
+  const categoriesVisible = showCategories(stats, categories, thresholds);
 
   return (
     <div className="flex flex-col gap-8">
@@ -58,6 +64,11 @@ export default async function Page() {
               <StatusBadge tone={countVisible ? 'success' : 'neutral'}>
                 {countVisible ? c.state.countShown : c.state.countHidden}
               </StatusBadge>
+              <StatusBadge tone={categoriesVisible ? 'success' : 'neutral'}>
+                {categoriesVisible
+                  ? c.matching.visible(pluralRo(categories.length, 'categorie', 'categorii'))
+                  : c.matching.hidden}
+              </StatusBadge>
             </div>
             <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">{c.state.cached}</p>
           </>
@@ -67,6 +78,11 @@ export default async function Page() {
       </section>
 
       <ThresholdForm thresholds={thresholds} reviewTimeLabel={reviewTimeLabel} />
+
+      <MatchingForm
+        defaultDetourKm={detourSettings.defaultDetourKm}
+        categoryWindowDays={categoryWindowDays}
+      />
     </div>
   );
 }

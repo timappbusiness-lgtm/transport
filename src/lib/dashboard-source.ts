@@ -1,12 +1,16 @@
 import { createClient } from './supabase/server';
 import { isSupabaseConfigured } from './supabase/env';
 import {
+  bestRouteDetour,
   matchReasons,
   matchingRequests,
   type CarrierProfile,
   type CarrierRoute,
+  type DetourFit,
+  type DetourSettings,
   type MatchReason,
 } from './matching';
+import { loadDetourSettings } from './matching-settings-source';
 import type { PublicRequest } from './requests';
 import type { Company } from './auth/account';
 
@@ -52,6 +56,13 @@ export interface CarrierDashboard {
   /** Why each match was shown, keyed by request id. */
   matchReasons: Record<string, MatchReason[]>;
   /**
+   * The detour each match needs, keyed by request id.
+   *
+   * Absent when no published route could be measured against it, which
+   * is not the same as zero — see `bestRouteDetour`.
+   */
+  detours: Record<string, DetourFit>;
+  /**
    * When this snapshot was taken, ISO.
    *
    * Countdowns and relative times are measured against it rather than
@@ -75,6 +86,7 @@ export const NO_CARRIER_DASHBOARD: CarrierDashboard = {
   contactsThisMonth: 0,
   matches: [],
   matchReasons: {},
+  detours: {},
   now: '1970-01-01T00:00:00.000Z',
 };
 
@@ -100,7 +112,7 @@ export async function loadCarrierDashboard(company: Company): Promise<CarrierDas
       .eq('is_active', true),
     supabase
       .from('truck_listings')
-      .select('id, from_country, to_country, from_city, to_city, available_from, available_to, platform_slots_total')
+      .select(ROUTE_COLUMNS)
       .eq('company_id', company.id)
       .eq('status', 'active'),
     supabase
@@ -167,7 +179,7 @@ export async function loadCarrierDashboard(company: Company): Promise<CarrierDas
     seatsTaken: pendingBookings.reduce((sum, booking) => sum + booking.slots, 0),
     seatsTotal: routeRows.reduce((sum, row) => sum + (row.platform_slots_total ?? 0), 0),
     contactsThisMonth: contacts.count ?? 0,
-    ...(await loadMatches(routeRows, profileOf(company))),
+    ...(await loadMatches(routeRows, profileOf(company), await loadDetourSettings())),
     now,
   };
 }
@@ -193,11 +205,29 @@ function profileOf(company: Company): CarrierProfile {
  * the contact. The matching itself is in `src/lib/matching.ts`, where it
  * can be argued about in a test.
  */
-async function loadMatches(
-  routes: readonly { from_country: string; to_country: string; available_from: string; available_to: string | null }[],
-  profile: CarrierProfile,
-): Promise<{ matches: PublicRequest[]; matchReasons: Record<string, MatchReason[]> }> {
+interface RouteRow {
+  from_country: string;
+  to_country: string;
+  from_city: string;
+  to_city: string;
+  from_lat: number | null;
+  from_lng: number | null;
+  to_lat: number | null;
+  to_lng: number | null;
+  max_detour_km: number | null;
+  available_from: string;
+  available_to: string | null;
+}
 
+async function loadMatches(
+  routes: readonly RouteRow[],
+  profile: CarrierProfile,
+  settings: DetourSettings,
+): Promise<{
+  matches: PublicRequest[];
+  matchReasons: Record<string, MatchReason[]>;
+  detours: Record<string, DetourFit>;
+}> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('v_requests_public')
@@ -207,30 +237,56 @@ async function loadMatches(
 
   if (error) {
     console.error('[acasă] matches query failed', { code: error.code, message: error.message });
-    return { matches: [], matchReasons: {} };
+    return { matches: [], matchReasons: {}, detours: {} };
   }
 
-  const carrierRoutes: CarrierRoute[] = routes.map((row) => ({
-    fromCountry: row.from_country,
-    toCountry: row.to_country,
-    availableFrom: row.available_from,
-    availableTo: row.available_to,
-  }));
+  const carrierRoutes = toCarrierRoutes(routes);
 
   const matches = matchingRequests(
     (data ?? []) as PublicRequest[],
     carrierRoutes,
     undefined,
     profile,
+    settings,
   );
 
   const reasons: Record<string, MatchReason[]> = {};
+  const detours: Record<string, DetourFit> = {};
   for (const request of matches) {
     reasons[request.id] = matchReasons(request, profile, carrierRoutes);
+    const fit = bestRouteDetour(request, carrierRoutes, settings);
+    if (fit !== null) detours[request.id] = fit;
   }
 
-  return { matches, matchReasons: reasons };
+  return { matches, matchReasons: reasons, detours };
 }
+
+/**
+ * `truck_listings` rows as matching reads them.
+ *
+ * Exported because the board's „potrivite cu firma mea" filter reads the
+ * same rows and must reach the same answer: two mappings of the same
+ * table are two chances to disagree about what a route is.
+ */
+export function toCarrierRoutes(routes: readonly RouteRow[]): CarrierRoute[] {
+  return routes.map((row) => ({
+    fromCountry: row.from_country,
+    toCountry: row.to_country,
+    availableFrom: row.available_from,
+    availableTo: row.available_to,
+    from:
+      row.from_lat === null || row.from_lng === null
+        ? null
+        : { lat: row.from_lat, lng: row.from_lng },
+    to: row.to_lat === null || row.to_lng === null ? null : { lat: row.to_lat, lng: row.to_lng },
+    fromCity: row.from_city,
+    toCity: row.to_city,
+    maxDetourKm: row.max_detour_km,
+  }));
+}
+
+export const ROUTE_COLUMNS =
+  'id, from_country, to_country, from_city, to_city, from_lat, from_lng, to_lat, to_lng, max_detour_km, available_from, available_to, platform_slots_total';
 
 function startOfMonthUtc(): string {
   const now = new Date();

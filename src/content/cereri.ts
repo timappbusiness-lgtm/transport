@@ -159,6 +159,17 @@ export const requestsCopy = {
     any: 'Oricare',
     apply: 'Caută',
     clear: 'Șterge filtrele',
+    mine: 'Doar cele potrivite cu firma mea',
+    mineHint:
+      'Acoperirea, categoriile și dotările din profil, plus ocolul pe care îl acceptă traseele tale publicate.',
+    mineNoCompany:
+      'Filtrul „potrivite cu firma mea” are nevoie de un cont de firmă cu profilul completat. Ți-am arătat deocamdată toate cererile.',
+    /**
+     * Says which window was examined, because the filter runs after the
+     * query: „3 cereri" alone would read as „the board has three".
+     */
+    mineCount: (shown: number, scanned: number) =>
+      `${shown} din cele mai recente ${scanned} cereri se potrivesc cu firma ta.`,
   },
 
   card: {
@@ -172,6 +183,10 @@ export const requestsCopy = {
   },
 
   empty: {
+    mineTitle: 'Nicio cerere potrivită cu firma ta acum.',
+    mineBody:
+      'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale. Lărgește toleranța la traseu sau scoate filtrul ca să vezi tot panoul.',
+    mineClear: 'Vezi toate cererile',
     title: 'Nicio cerere pentru această căutare.',
     body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați. Dacă ești transportator, vezi ce trasee sunt deja publicate.',
     departures: 'Vezi traseele',

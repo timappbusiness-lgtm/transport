@@ -50,6 +50,15 @@ export interface PublicRequest {
   /** ISO 3166-2:RO, resolved from the city on the server. null when unknown. */
   from_county: string | null;
   to_county: string | null;
+  /**
+   * City centroids, from the server's own city list at publication.
+   * Null on a request whose city never resolved, and every reader treats
+   * null as „cannot tell" rather than as a point at sea.
+   */
+  from_lat: number | null;
+  from_lng: number | null;
+  to_lat: number | null;
+  to_lng: number | null;
 }
 
 export interface ActivityStats {
@@ -107,6 +116,31 @@ export function scopeOf(fromCountry: string, toCountry: string): Scope {
  */
 export function showStats(stats: ActivityStats | null, t: ActivityThresholds): boolean {
   return stats !== null && stats.publishedTotal >= t.statsMinRequests;
+}
+
+/** One row of `category_counts()`: a real count, never a rounded one. */
+export interface CategoryCount {
+  category: CargoCategory;
+  label: string;
+  requests: number;
+}
+
+/**
+ * Whether the category counters may be shown at all.
+ *
+ * The same threshold the figures use, and for the same reason: „Rulote:
+ * 1" is not a statistic, it is a single row of the board reprinted as a
+ * headline. Below it the block is absent entirely rather than showing
+ * zeroes — `category_counts()` never returns a zero, so a short list is
+ * what „nothing in that category" looks like, and a short list under a
+ * confident heading reads as a site nobody uses.
+ */
+export function showCategories(
+  stats: ActivityStats | null,
+  categories: readonly CategoryCount[],
+  t: ActivityThresholds,
+): boolean {
+  return showStats(stats, t) && categories.length > 0;
 }
 
 export function showFeed(

@@ -59,10 +59,14 @@ export interface PriceSettings {
   is_published: boolean;
 }
 
-export interface Point {
-  country: string;
+/** Somewhere on the map. Distance needs no more than this. */
+export interface LatLng {
   lat: number;
   lng: number;
+}
+
+export interface Point extends LatLng {
+  country: string;
 }
 
 export interface EstimateInput {
@@ -96,7 +100,7 @@ export const LOCAL_ZONE_KM = 50;
  * Great-circle distance, the same formula the database uses in
  * `distance_km` so the two never disagree about a route.
  */
-export function straightLineKm(from: Point, to: Point): number {
+export function straightLineKm(from: LatLng, to: LatLng): number {
   const R = 6371;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const value =

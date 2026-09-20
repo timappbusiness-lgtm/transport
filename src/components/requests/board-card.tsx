@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
@@ -19,7 +20,18 @@ const c = requestsCopy.card;
  *
  * No hooks, so it renders to static markup in a test.
  */
-export function BoardRequestCard({ request }: { request: PublicRequest }) {
+export function BoardRequestCard({
+  request,
+  note,
+}: {
+  request: PublicRequest;
+  /**
+   * A line under the card explaining why it is on this list — the detour
+   * when the board is filtered to „potrivite cu firma mea". Outside the
+   * link, because it is an explanation and not a second destination.
+   */
+  note?: ReactNode;
+}) {
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
 
@@ -68,6 +80,7 @@ export function BoardRequestCard({ request }: { request: PublicRequest }) {
           ) : null}
         </div>
       </Link>
+      {note === undefined ? null : <div className="mt-1.5 text-xs text-muted">{note}</div>}
     </li>
   );
 }

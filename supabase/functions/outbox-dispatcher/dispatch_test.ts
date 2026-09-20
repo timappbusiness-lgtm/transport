@@ -51,6 +51,13 @@ const SAMPLE: Record<string, string> = {
   scheduled_for: "4 octombrie 2026",
   cancel_token: "9a1c0e77-0000-4000-8000-000000000002",
   listing_title: "Volkswagen Golf 2015, Cluj-Napoca — Arad",
+  title: "Volkswagen Golf 2015, München — Cluj-Napoca",
+  search_name: "Germania → România, autoturisme",
+  reasons: "Ruta: München (DE) — Cluj-Napoca (RO)\n· Tip vehicul: Autoturism",
+  count: "3",
+  listings: "· Volkswagen Golf 2015 (München — Cluj-Napoca)",
+  outcome: "rezolvată",
+  resolution: "Am sunat firma, au confirmat, iar anunțul a fost corectat.",
   listing_id: "5d2e9f31-0000-4000-8000-000000000003",
 };
 
@@ -303,6 +310,9 @@ Deno.test("every template a queueing function names exists", () => {
     "account_deletion_cancelled",
     "account_deletion_completed",
     "listing_expiring_soon",
+    "saved_search_alert",
+    "saved_search_digest",
+    "report_closed",
   ];
   for (const name of queuedByTheDatabase) {
     assert(TEMPLATES[name] !== undefined, `no template for ${name}`);

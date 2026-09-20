@@ -11,6 +11,7 @@ const NAV = [
   { href: ROUTES.admin, label: 'Panou' },
   { href: ROUTES.adminPilot, label: 'Pilot' },
   { href: ROUTES.adminDocuments, label: 'Documente de verificat' },
+  { href: ROUTES.adminReports, label: 'Sesizări' },
   { href: ROUTES.adminActivity, label: 'Activitate pe prima pagină' },
   { href: ROUTES.adminPrices, label: 'Prețuri orientative' },
   { href: ROUTES.adminSettings, label: 'Setări pentru lista de firme' },
@@ -22,6 +23,8 @@ const NAV = [
   { href: ROUTES.adminCompanies, label: 'Firme în lista publică' },
   { href: ROUTES.adminPlans, label: 'Planuri' },
   { href: ROUTES.adminSubscriptions, label: 'Cereri de abonament' },
+  { href: ROUTES.adminTeam, label: 'Echipa platformei' },
+  { href: ROUTES.adminAuditLog, label: 'Jurnal de acțiuni' },
 ] as const;
 
 /**

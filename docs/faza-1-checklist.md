@@ -71,7 +71,8 @@ altul pe producție cu un cont real.**
 | Element | Stare | Ce mai lipsește |
 |---|---|---|
 | Mesajul „N transportatori verificați circulă pe această rută" | gata | — *(20.09: conturile de test nu mai intră în număr)* |
-| Alerte pe e-mail pentru traseele salvate | parțial | Se pun în coadă și au șablon; **nefolosite de nimeni real**, din același motiv ca memento-urile |
+| Alerte pe e-mail pentru căutările salvate | **gata în cod** *(21.09)* | `/cont/alerte`: căutări salvate cu nume, criterii în română, imediat sau zilnic grupat, limită pe plan și motivul fiecărei potriviri, atât în aplicație cât și în e-mail. Se creează de pe panoul de cereri, din cele două stări goale și din `/cont/firma`. **Livrarea așteaptă furnizorul de e-mail** — vezi `docs/configurare-externa.md` |
+| `max_detour_km` folosit în potrivire | **gata în cod** *(21.09)* | Ocolul e costul de inserție — câți kilometri în plus face camionul ca să ia și să lase vehiculul — calculat cu `distance_km()` și factorul rutier. Se aplică la potrivirile de pe panoul transportatorului, la filtrul „potrivite cu firma mea”, la alertele căutărilor salvate și la numărul de transportatori arătat clientului. Toleranța implicită stă în `matching_settings.default_detour_km` |
 | Homepage: „alerte pe e-mail", nu „pe WhatsApp" | gata | — |
 
 ## Faza 9 — Abonamente
@@ -81,7 +82,7 @@ altul pe producție cu un cont real.**
 | Perioadă gratuită de la verificare | gata | — |
 | Plată recurentă, schimbare card, anulare | lipsește | Nu există procesator de plăți. Abonamentele se activează manual de echipă |
 | Factură pentru fiecare plată | lipsește | Aceeași cauză |
-| Memento de reînnoire, suspendare pentru neplată | parțial | Memento-ul există ca șablon; suspendarea pentru neplată nu este implementată |
+| Memento de reînnoire, suspendare pentru neplată | parțial · **amânat** *(21.09)* | Memento-ul există ca șablon. Suspendarea pentru neplată rămâne neimplementată până se decide procesatorul de plăți: fără el nu există un eveniment „nu a plătit” pe care să ne bazăm, iar o suspendare pornită dintr-un marcaj pus manual e o suspendare pe care nimeni nu o poate contesta. Când există procesator, regula se scrie ca trigger pe `company_subscriptions`, cu motiv în `audit_log`, ca toate celelalte suspendări |
 | Coduri promo, istoric de plăți | lipsește | — |
 
 ## Administrare (partea din faza 10 care ține de Faza 1)
@@ -94,6 +95,9 @@ altul pe producție cu un cont real.**
 | `/admin/setari`: praguri, grație, retenție | gata | — |
 | `/admin/pilot`: criteriile de ieșire, măsurate *(20.09)* | gata | Închide constatarea „nimic nu adună numerele" de mai jos |
 | `/admin/import`, `/admin/pagini`, `/admin/optiuni`, `/admin/preturi` | gata | — |
+| `/admin/sesizari`: coada de sesizări, cu răspuns pe e-mail *(21.09)* | gata | Închiderea cere un text scris, care se trimite exact așa cum e scris celui care a sesizat |
+| `/admin/jurnal`: jurnalul de acțiuni, filtrabil, cu export CSV *(21.09)* | gata | Doar citire. Nimeni nu are drept de scriere pe `audit_log`, nici noi |
+| `/admin/echipa`: cine are drepturi, de când, pe baza cui *(21.09)* | gata | Un singur rol, `admin` — `staff_role` are o singură valoare, deci un al doilea rol ar fi o etichetă pe care nimic nu o aplică |
 | Export de rapoarte | lipsește | Faza 2 |
 
 ## GDPR și documente legale

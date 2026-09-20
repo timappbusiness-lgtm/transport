@@ -102,6 +102,16 @@ export const appCopy = {
       } as Record<string, string>,
       /** Shown when the profile is empty enough that matching says little. */
       completeProfile: 'Completează profilul firmei ca să primești potriviri mai bune.',
+      /**
+       * The detour, in the words a dispatcher uses: extra kilometres to
+       * pick the vehicle up and drop it off, not how near the request
+       * passes. The same sentence the alert e-mail carries, so the
+       * screen and the e-mail cannot disagree.
+       */
+      detour: (km: number, tolerance: number, from: string, to: string) =>
+        from === '' || to === ''
+          ? `Ocol de ${km} km față de traseele tale (toleranță ${tolerance} km).`
+          : `Ocol de ${km} km față de traseul ${from} — ${to} (toleranță ${tolerance} km).`,
     },
     activity: {
       routes: 'Trasee active',

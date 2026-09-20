@@ -51,6 +51,7 @@ export const ROUTES = {
   accountMessages: '/cont/mesaje',
   accountTransports: '/cont/transporturi',
   accountNotifications: '/cont/notificari',
+  accountAlerts: '/cont/alerte',
   accountSettings: '/cont/setari',
   // The notifications *settings*. `accountNotifications` above is the
   // notifications centre, which is a different screen and not built yet.
@@ -76,6 +77,9 @@ export const ROUTES = {
   adminNotifications: '/admin/notificari',
   adminDeletions: '/admin/stergeri',
   adminPilot: '/admin/pilot',
+  adminReports: '/admin/sesizari',
+  adminAuditLog: '/admin/jurnal',
+  adminTeam: '/admin/echipa',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

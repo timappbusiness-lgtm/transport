@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
   MATCH_LIMIT,
+  bestRouteDetour,
   carries,
+  detourKm,
+  detourOk,
   matchReasons,
   matches,
   matchingRequests,
+  toleranceFor,
   type CarrierProfile,
   type CarrierRoute,
+  type DetourSettings,
 } from '@/lib/matching';
+import type { LatLng } from '@/lib/pricing';
 import type { PublicRequest } from '@/lib/requests';
 
 /**
@@ -41,6 +47,11 @@ function request(over: Partial<PublicRequest> = {}): PublicRequest {
     is_domestic: false,
     from_county: null,
     to_county: null,
+    // München and Cluj-Napoca, the two cities named above.
+    from_lat: 48.1351,
+    from_lng: 11.582,
+    to_lat: 46.7712,
+    to_lng: 23.6236,
     ...over,
   };
 }
@@ -248,5 +259,180 @@ describe('the profile and the routes together', () => {
   it('applies both when there are both', () => {
     const stuck = domestic({ needs_winch: true, is_running: false });
     expect(matchingRequests([stuck], [], undefined, profile())).toHaveLength(0);
+  });
+});
+
+/**
+ * The detour, which is what `max_detour_km` was always about and what
+ * nothing read until 20260921100000.
+ *
+ * The measure is the insertion cost — how much further the truck drives
+ * to pick the vehicle up and drop it off — not how near the request
+ * passes. A request sitting exactly on the corridor costs nothing; one
+ * that needs a hundred kilometres each way costs two hundred.
+ *
+ * Cities, so the numbers can be checked against a map: Timișoara
+ * (45.7489, 21.2087), Arad (46.1866, 21.3123), Budapest (47.4979,
+ * 19.0402), Constanța (44.1598, 28.6348), München (48.1351, 11.5820).
+ */
+const TIMISOARA = { lat: 45.7489, lng: 21.2087 };
+const ARAD = { lat: 46.1866, lng: 21.3123 };
+const BUDAPEST = { lat: 47.4979, lng: 19.0402 };
+const CONSTANTA = { lat: 44.1598, lng: 28.6348 };
+const MUNCHEN = { lat: 48.1351, lng: 11.582 };
+
+function corridor(over: Partial<CarrierRoute> = {}): CarrierRoute {
+  return {
+    ...route(),
+    fromCountry: 'RO',
+    toCountry: 'HU',
+    from: TIMISOARA,
+    to: BUDAPEST,
+    fromCity: 'Timișoara',
+    toCity: 'Budapesta',
+    maxDetourKm: 40,
+    ...over,
+  };
+}
+
+function at(pickup: LatLng, dropoff: LatLng, over: Partial<PublicRequest> = {}): PublicRequest {
+  return request({
+    from_lat: pickup.lat,
+    from_lng: pickup.lng,
+    to_lat: dropoff.lat,
+    to_lng: dropoff.lng,
+    ...over,
+  });
+}
+
+describe('the detour a route has to take', () => {
+  it('is nothing when the request is the route', () => {
+    expect(detourKm(corridor(), TIMISOARA, BUDAPEST)).toBe(0);
+  });
+
+  it('is small for a pickup a little off the line', () => {
+    // Arad sits roughly between Timișoara and Budapest.
+    const km = detourKm(corridor(), ARAD, BUDAPEST);
+    expect(km).not.toBeNull();
+    expect(km!).toBeGreaterThan(0);
+    expect(km!).toBeLessThan(60);
+  });
+
+  it('is large for a request on the other side of the country', () => {
+    const km = detourKm(corridor(), CONSTANTA, MUNCHEN);
+    expect(km!).toBeGreaterThan(500);
+  });
+
+  it('scales with the road factor, because a tolerance is in road kilometres', () => {
+    const straight = detourKm(corridor(), ARAD, BUDAPEST, 1);
+    const roads = detourKm(corridor(), ARAD, BUDAPEST, 2);
+    expect(roads!).toBe(straight! * 2);
+  });
+
+  it('cannot tell without coordinates, and says so rather than saying zero', () => {
+    expect(detourKm(corridor({ from: null }), ARAD, BUDAPEST)).toBeNull();
+    expect(detourKm(corridor(), null, BUDAPEST)).toBeNull();
+    expect(detourKm(corridor(), ARAD, null)).toBeNull();
+  });
+});
+
+describe('the tolerance that applies', () => {
+  const settings: DetourSettings = { defaultDetourKm: 50, roadFactor: 1.25 };
+
+  it('is the carrier’s own when they set one', () => {
+    expect(toleranceFor(corridor({ maxDetourKm: 120 }), settings)).toBe(120);
+  });
+
+  it('is the configured default when they never said', () => {
+    expect(toleranceFor(corridor({ maxDetourKm: null }), settings)).toBe(50);
+    // Zero is a row written before the column had a default, not a
+    // carrier insisting on no detour at all.
+    expect(toleranceFor(corridor({ maxDetourKm: 0 }), settings)).toBe(50);
+  });
+
+  it('follows the default wherever an administrator moves it', () => {
+    expect(toleranceFor(corridor({ maxDetourKm: null }), { ...settings, defaultDetourKm: 200 }))
+      .toBe(200);
+  });
+});
+
+describe('whether the detour rules a request out', () => {
+  const settings: DetourSettings = { defaultDetourKm: 50, roadFactor: 1.25 };
+
+  it('keeps one inside the tolerance', () => {
+    const near = at(ARAD, BUDAPEST);
+    expect(detourOk(near, [corridor({ maxDetourKm: 100 })], settings)).toBe(true);
+  });
+
+  it('drops one outside it', () => {
+    const far = at(CONSTANTA, MUNCHEN);
+    expect(detourOk(far, [corridor({ maxDetourKm: 40 })], settings)).toBe(false);
+  });
+
+  it('keeps a firm that has published no route we can measure', () => {
+    // Unmeasured is not unsuitable: refusing here would empty the board
+    // for every carrier who has not published a route yet.
+    expect(detourOk(at(CONSTANTA, MUNCHEN), [], settings)).toBe(true);
+    expect(detourOk(at(CONSTANTA, MUNCHEN), [corridor({ from: null })], settings)).toBe(true);
+  });
+
+  it('keeps a request whose cities never resolved', () => {
+    const noCoords = request({ from_lat: null, from_lng: null, to_lat: null, to_lng: null });
+    expect(detourOk(noCoords, [corridor()], settings)).toBe(true);
+  });
+
+  it('takes the best of several routes, not the first', () => {
+    const far = at(CONSTANTA, MUNCHEN);
+    const routes = [corridor({ maxDetourKm: 40 }), corridor({ from: CONSTANTA, to: MUNCHEN })];
+    expect(detourOk(far, routes, settings)).toBe(true);
+  });
+
+  it('falls back to the platform default when nobody set a tolerance', () => {
+    const far = at(CONSTANTA, MUNCHEN);
+    expect(detourOk(far, [corridor({ maxDetourKm: null })], settings)).toBe(false);
+    // Loosen the default far enough and the same request passes.
+    expect(detourOk(far, [corridor({ maxDetourKm: null })], { ...settings, defaultDetourKm: 5000 }))
+      .toBe(true);
+  });
+});
+
+describe('what the screen is told about the detour', () => {
+  const settings: DetourSettings = { defaultDetourKm: 50, roadFactor: 1.25 };
+
+  it('names the route it measured against and the tolerance it applied', () => {
+    const fit = bestRouteDetour(at(ARAD, BUDAPEST), [corridor({ maxDetourKm: 90 })], settings);
+    expect(fit).not.toBeNull();
+    expect(fit!.fromCity).toBe('Timișoara');
+    expect(fit!.toCity).toBe('Budapesta');
+    expect(fit!.toleranceKm).toBe(90);
+    expect(fit!.within).toBe(true);
+  });
+
+  it('says nothing at all when there was nothing to measure', () => {
+    expect(bestRouteDetour(at(ARAD, BUDAPEST), [], settings)).toBeNull();
+  });
+
+  it('reports the fit even when it is a bad one, so a screen can explain', () => {
+    const fit = bestRouteDetour(at(CONSTANTA, MUNCHEN), [corridor({ maxDetourKm: 40 })], settings);
+    expect(fit!.within).toBe(false);
+    expect(fit!.detourKm).toBeGreaterThan(40);
+  });
+});
+
+describe('the detour inside matchingRequests', () => {
+  const settings: DetourSettings = { defaultDetourKm: 50, roadFactor: 1.25 };
+
+  it('drops a request the firm covers but cannot reach', () => {
+    const wide = profile({ coverageScope: 'international', coverageCountries: ['HU', 'DE'] });
+    const far = at(CONSTANTA, MUNCHEN, { from_country: 'RO', to_country: 'DE' });
+    const routes = [corridor({ fromCountry: 'RO', toCountry: 'DE', maxDetourKm: 40 })];
+    expect(matchingRequests([far], routes, undefined, wide, settings)).toHaveLength(0);
+  });
+
+  it('keeps the same request once the carrier widens the tolerance', () => {
+    const wide = profile({ coverageScope: 'international', coverageCountries: ['HU', 'DE'] });
+    const far = at(CONSTANTA, MUNCHEN, { from_country: 'RO', to_country: 'DE' });
+    const routes = [corridor({ fromCountry: 'RO', toCountry: 'DE', maxDetourKm: 5000 })];
+    expect(matchingRequests([far], routes, undefined, wide, settings)).toHaveLength(1);
   });
 });

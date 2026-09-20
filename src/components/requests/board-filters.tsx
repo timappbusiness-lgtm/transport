@@ -20,7 +20,14 @@ const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-
  * and makes a search shareable and bookmarkable. The tab rides along as a
  * hidden field so narrowing by country does not silently drop it.
  */
-export function BoardFilters({ filters }: { filters: RequestFilters }) {
+export function BoardFilters({
+  filters,
+  showMine = false,
+}: {
+  filters: RequestFilters;
+  /** Only a carrier with a firm has a firm to match against. */
+  showMine?: boolean;
+}) {
   const c = requestsCopy.filters;
 
   return (
@@ -185,6 +192,22 @@ export function BoardFilters({ filters }: { filters: RequestFilters }) {
           </select>
         </div>
       </div>
+
+      {showMine ? (
+        <label className="flex items-start gap-2.5 border-t border-border pt-4 text-sm">
+          <input
+            type="checkbox"
+            name={REQUEST_FILTER_KEYS.mine}
+            value="firma"
+            defaultChecked={filters.mine}
+            className="mt-0.5 size-4 accent-[#1C262B]"
+          />
+          <span>
+            {c.mine}
+            <span className="mt-0.5 block text-xs text-muted">{c.mineHint}</span>
+          </span>
+        </label>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className={buttonClasses('primary', 'sm')}>
