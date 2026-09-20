@@ -1,4 +1,5 @@
 import { RetryNotification } from '@/components/admin/retry-notification';
+import { TestNotification } from '@/components/admin/test-notification';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { loadNotificationsAdminData } from '@/lib/notifications-admin-source';
 import { cn } from '@/lib/utils';
@@ -42,7 +43,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     search: one(params, 'cauta'),
   };
 
-  const { health, healthError, stats, rows, runs } = await loadNotificationsAdminData(filters);
+  const { health, healthError, stats, rows, runs, mail, provider } =
+    await loadNotificationsAdminData(filters);
 
   const totals = new Map<string, number>();
   for (const stat of stats) {
@@ -60,6 +62,53 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           rulează nu anunță pe nimeni — de asta se vede aici.
         </p>
       </div>
+
+      <section aria-labelledby="furnizor" className="flex flex-col gap-3">
+        <h2 id="furnizor" className="text-[1.0625rem]">
+          Furnizorul de e-mail
+        </h2>
+
+        {provider.configured === 'nu' ? (
+          <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+            <strong>Neconfigurat.</strong> Dispecerul a refuzat să pornească pentru că lipsește{' '}
+            <code className="font-mono">{provider.missing}</code>
+            {provider.reportedAt !== null ? <> (ultima dată {when(provider.reportedAt)})</> : null}.
+            Cât timp lipsește, nu pleacă niciun e-mail și coada crește. Pașii sunt în{' '}
+            <code className="font-mono">docs/configurare-externa.md</code>.
+          </p>
+        ) : provider.configured === 'necunoscut' ? (
+          <p className="rounded-card border border-border-strong bg-surface p-4 text-sm text-muted">
+            Necunoscut: dispecerul nu a rulat încă niciodată, deci nu a avut ocazia să spună dacă
+            îi lipsește ceva. Se va ști după prima rulare — cel mult cinci minute.
+          </p>
+        ) : (
+          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
+            <strong>Configurat.</strong> Ultima rulare a dispecerului nu a raportat nicio variabilă
+            lipsă.
+          </p>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Ultimul e-mail trimis</p>
+            <p className="mt-1 text-sm">{when(mail?.last_sent_at ?? null)}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Trimise în 24 h</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{mail?.sent_24h ?? 0}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Eșuate în 24 h</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{mail?.failed_24h ?? 0}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Adrese nelivrabile</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{mail?.undeliverable_addresses ?? 0}</p>
+          </div>
+        </div>
+
+        <TestNotification />
+      </section>
 
       <section aria-labelledby="joburi" className="flex flex-col gap-3">
         <h2 id="joburi" className="text-[1.0625rem]">
@@ -232,6 +281,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
                   <th className="px-4 py-3 font-medium">Destinatar</th>
                   <th className="px-4 py-3 font-medium">Stare</th>
                   <th className="px-4 py-3 font-medium">Motiv</th>
+                  <th className="px-4 py-3 font-medium">Id furnizor</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -250,6 +300,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
                     </td>
                     <td className="max-w-[24ch] truncate px-4 py-3 text-muted" title={row.last_error ?? ''}>
                       {row.last_error ?? '—'}
+                    </td>
+                    <td
+                      className="max-w-[18ch] truncate px-4 py-3 font-mono text-xs text-muted"
+                      title={row.provider_message_id ?? ''}
+                    >
+                      {row.provider_message_id ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {row.status === 'failed' || row.status === 'skipped' ? (

@@ -38,6 +38,35 @@ export interface OutboxRow {
   to_email: string | null;
   recipient_user_id: string | null;
   recipient_company_id: string | null;
+  /** The provider's id for the message, once it has one. */
+  provider_message_id: string | null;
+}
+
+export interface MailProviderState {
+  last_sent_at: string | null;
+  sent_24h: number;
+  failed_24h: number;
+  queued_now: number;
+  undeliverable_addresses: number;
+}
+
+/**
+ * Whether the mail provider is configured, as far as we can tell.
+ *
+ * The application cannot read the edge function's secrets — different
+ * deployment, different environment — so it does not guess. The
+ * dispatcher writes the name of the missing variable into `job_run_log`
+ * before refusing, and this reads it back. No row saying so means we have
+ * no evidence either way, which is a third answer and is shown as one.
+ */
+export type ProviderConfigured = 'da' | 'nu' | 'necunoscut';
+
+export interface ProviderStatus {
+  configured: ProviderConfigured;
+  /** Which variable the dispatcher last complained about, if any. */
+  missing: string | null;
+  /** When it last said so. */
+  reportedAt: string | null;
 }
 
 export interface JobRun {
@@ -46,6 +75,8 @@ export interface JobRun {
   workflow: string;
   processed: number;
   failed: number;
+  /** Whatever the run wrote about itself. `missing` names an unset secret. */
+  details: Record<string, unknown> | null;
 }
 
 export interface NotificationsAdminData {
@@ -55,6 +86,27 @@ export interface NotificationsAdminData {
   runs: JobRun[];
   /** True when the health query itself could not run. */
   healthError: string | null;
+  mail: MailProviderState | null;
+  provider: ProviderStatus;
+}
+
+/**
+ * Reading the dispatcher's own account of itself.
+ *
+ * The newest run decides. An older complaint about a missing variable
+ * that has since been set would otherwise keep the screen red long after
+ * somebody fixed it.
+ */
+export function providerStatusFrom(runs: readonly JobRun[]): ProviderStatus {
+  const last = runs.find((run) => run.workflow === 'outbox-dispatcher');
+  if (last === undefined) return { configured: 'necunoscut', missing: null, reportedAt: null };
+
+  const missing = typeof last.details?.missing === 'string' ? last.details.missing : null;
+  return {
+    configured: missing === null ? 'da' : 'nu',
+    missing,
+    reportedAt: last.ran_at,
+  };
 }
 
 export interface QueueFilters {
@@ -72,7 +124,7 @@ export async function loadNotificationsAdminData(
   let query = supabase
     .from('notification_outbox')
     .select(
-      'id, created_at, channel, template, status, attempts, last_error, send_after, sent_at, to_email, recipient_user_id, recipient_company_id',
+      'id, created_at, channel, template, status, attempts, last_error, send_after, sent_at, to_email, recipient_user_id, recipient_company_id, provider_message_id',
     )
     .order('created_at', { ascending: false })
     .limit(100);
@@ -97,23 +149,29 @@ export async function loadNotificationsAdminData(
     );
   }
 
-  const [health, stats, rows, runs] = await Promise.all([
+  const [health, stats, rows, runs, mail] = await Promise.all([
     supabase.rpc('job_health'),
     supabase.rpc('outbox_stats'),
     query,
     supabase
       .from('job_run_log')
-      .select('id, ran_at, workflow, processed, failed')
+      .select('id, ran_at, workflow, processed, failed, details')
       .order('ran_at', { ascending: false })
       .limit(20),
+    supabase.rpc('mail_provider_state'),
   ]);
+
+  const runRows = (runs.data as JobRun[] | null) ?? [];
+  const mailRow = Array.isArray(mail.data) ? (mail.data[0] as MailProviderState) : null;
 
   return {
     health: (health.data as JobHealth[] | null) ?? [],
     healthError: health.error?.message ?? null,
     stats: (stats.data as OutboxStat[] | null) ?? [],
     rows: (rows.data as OutboxRow[] | null) ?? [],
-    runs: (runs.data as JobRun[] | null) ?? [],
+    runs: runRows,
+    mail: mailRow ?? null,
+    provider: providerStatusFrom(runRows),
   };
 }
 

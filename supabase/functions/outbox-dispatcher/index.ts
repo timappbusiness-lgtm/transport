@@ -78,9 +78,23 @@ function missingSecret(): string | null {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+
   const missing = missingSecret();
   if (missing !== null) {
     console.error("outbox-dispatcher cannot run", { missing });
+    // Write the reason down before refusing. Returning 503 to pg_cron
+    // tells nobody: pg_net does not keep the body, so without this row
+    // /admin/notificari can only say „nothing has been sent" and not
+    // „nothing has been sent because MAIL_FROM is not set". Naming the
+    // variable is the difference between a mystery and a five-minute fix.
+    await admin.rpc("log_job_run", {
+      p_workflow: "outbox-dispatcher",
+      p_processed: 0,
+      p_failed: 1,
+      p_details: { missing },
+    }).then(() => {}, () => {});
+
     return json({
       ok: false,
       error: `Lipsește ${missing}. Fără el nu se trimite nimic și coada crește.`,
@@ -91,8 +105,6 @@ Deno.serve(async (req: Request) => {
   if (req.headers.get("x-cron-secret") !== CRON_SECRET) {
     return json({ error: "Unauthorized" }, 401);
   }
-
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
   let processed = 0;
   let failed = 0;
