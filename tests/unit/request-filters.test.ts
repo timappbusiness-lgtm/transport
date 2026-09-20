@@ -96,6 +96,7 @@ describe('requestFiltersToQuery', () => {
       condition: 'ruleaza',
       scope: 'international',
       service: 'expres',
+      mine: true,
     };
     const query = requestFiltersToQuery(filters);
     const params = Object.fromEntries(new URLSearchParams(query.replace(/^\?/, '')));
@@ -107,6 +108,18 @@ describe('hasActiveRequestFilters', () => {
   it('does not count the tab, which is navigation', () => {
     expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, tab: 'retur' })).toBe(false);
     expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, toCity: 'Arad' })).toBe(true);
+  });
+
+  it('counts „doar cele potrivite cu firma mea", which narrows hardest of all', () => {
+    expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: true })).toBe(true);
+  });
+});
+
+describe('the firm filter', () => {
+  it('is off unless the query says exactly „firma"', () => {
+    expect(parseRequestFilters({}).mine).toBe(false);
+    expect(parseRequestFilters({ doar: 'da' }).mine).toBe(false);
+    expect(parseRequestFilters({ doar: 'firma' }).mine).toBe(true);
   });
 });
 

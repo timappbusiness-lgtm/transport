@@ -4339,6 +4339,8 @@ export type Database = {
           from_city: string | null
           from_country: string | null
           from_county: string | null
+          from_lat: number | null
+          from_lng: number | null
           id: string | null
           is_domestic: boolean | null
           is_running: boolean | null
@@ -4353,6 +4355,8 @@ export type Database = {
           to_city: string | null
           to_country: string | null
           to_county: string | null
+          to_lat: number | null
+          to_lng: number | null
           weight_kg: number | null
           year: number | null
         }

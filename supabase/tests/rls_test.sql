@@ -1767,9 +1767,10 @@ select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix'
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
        'board','category','estimated_km','expires_at','from_city','from_country',
-       'from_county','id','is_domestic','is_running','loading_from','loading_to',
-       'make','model','needs_winch','photo_count','published_at','service_type',
-       'to_city','to_country','to_county','weight_kg','year'
+       'from_county','from_lat','from_lng','id','is_domestic','is_running',
+       'loading_from','loading_to','make','model','needs_winch','photo_count',
+       'published_at','service_type','to_city','to_country','to_county',
+       'to_lat','to_lng','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -1793,7 +1794,36 @@ select pg_temp.check('CRQ  the photographs are not in the view', 'fix',
   null, 'anon', $a$select photo_paths from public.v_requests_public$a$, 'blocked',
   p_missing_ok => true);
 
-select pg_temp.check('CRQ  the exact position is not in the view', 'fix',
+-- The coordinates the view does carry are the city centroids the card
+-- already names, resolved on the server from src/lib/cities.ts when the
+-- request was published. What must never appear is a point more precise
+-- than the locality, and the postcode is the column that would be one.
+select pg_temp.check('CRQ  the coordinates in the view are the city the card already names', 'fix',
+  null, 'anon',
+  $a$select from_lat = 48.7833 and from_lng = 9.1833
+         and to_lat = 44.4268 and to_lng = 26.1025
+     from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-0000000000c1'$a$, 'true',
+  p_setup => $s$
+    insert into public.cargo_listings (id, company_id, posted_by, board, listing_kind,
+           title, loading_city, loading_lat, loading_lng,
+           unloading_city, unloading_lat, unloading_lng, loading_from, weight_kg, status)
+    values ('f1000000-0000-0000-0000-0000000000c1',
+            'fc000000-0000-0000-0000-000000000002',
+            'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+            'Stuttgart la București', 'Stuttgart', 48.7833, 9.1833,
+            'București', 44.4268, 26.1025, current_date + 3, 1500, 'draft');
+    insert into public.cargo_vehicle_details (cargo_listing_id, make, model, year)
+    values ('f1000000-0000-0000-0000-0000000000c1', 'BMW', '320d', 2018);
+    update public.cargo_listings set status = 'active'
+    where id = 'f1000000-0000-0000-0000-0000000000c1';
+  $s$);
+
+select pg_temp.check('CRQ  the postcode is not in the view', 'fix',
+  null, 'anon', $a$select loading_postcode from public.v_requests_public$a$, 'blocked',
+  p_missing_ok => true);
+
+select pg_temp.check('CRQ  and the raw column names stay out of it', 'fix',
   null, 'anon', $a$select loading_lat from public.v_requests_public$a$, 'blocked',
   p_missing_ok => true);
 

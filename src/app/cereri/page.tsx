@@ -6,8 +6,19 @@ import { BoardRequestCard } from '@/components/requests/board-card';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
+import { appCopy } from '@/content/app';
 import { requestsCopy } from '@/content/cereri';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, type Company } from '@/lib/auth/account';
+import { ROUTE_COLUMNS, toCarrierRoutes } from '@/lib/dashboard-source';
+import {
+  bestRouteDetour,
+  carries,
+  detourOk,
+  type CarrierProfile,
+  type CarrierRoute,
+  type DetourFit,
+} from '@/lib/matching';
+import { loadDetourSettings } from '@/lib/matching-settings-source';
 import { filtersFromBoard } from '@/lib/saved-searches';
 import {
   EMPTY_REQUEST_FILTERS,
@@ -41,7 +52,18 @@ export default async function Page({
   const filters = parseRequestFilters(await searchParams);
   const c = requestsCopy.board;
 
-  const [requests, context] = await Promise.all([loadRequests(filters), getAccountContext()]);
+  const [all, context] = await Promise.all([loadRequests(filters), getAccountContext()]);
+
+  // „Doar cele potrivite cu firma mea" is applied here rather than in the
+  // query: what a firm carries is coverage, categories, equipment and the
+  // detour its own routes allow, and none of those are columns on the
+  // board view. The rule is `src/lib/matching.ts` — the same one the
+  // dashboard and the alert e-mails use, so the three cannot disagree.
+  const company = context?.activeCompany ?? null;
+  const canFilterByCompany = company !== null && company.company_type !== 'expeditie';
+  const applyMine = filters.mine && canFilterByCompany;
+  const mine = applyMine ? await onlyForCompany(all, company) : null;
+  const requests = mine?.requests ?? all;
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -77,7 +99,7 @@ export default async function Page({
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
         <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
           <h2 className="mb-4 text-sm font-medium">{requestsCopy.filters.title}</h2>
-          <BoardFilters filters={filters} />
+          <BoardFilters filters={filters} showMine={canFilterByCompany} />
 
           {/* Whatever is filtered right now is what a saved search would
               watch, so the button belongs here rather than at the top of
@@ -98,17 +120,34 @@ export default async function Page({
         </aside>
 
         <section aria-label={c.title}>
+          {filters.mine && !canFilterByCompany ? (
+            <p className="mb-4 rounded-card border border-border bg-surface p-4 text-sm text-muted">
+              {requestsCopy.filters.mineNoCompany}
+            </p>
+          ) : null}
+
           {requests.length > 0 ? (
             <>
               <p className="mb-4 text-sm text-muted">
-                {c.count(requests.length)} · {c.sortNote}
+                {mine === null
+                  ? `${c.count(requests.length)} · ${c.sortNote}`
+                  : `${requestsCopy.filters.mineCount(requests.length, all.length)} · ${c.sortNote}`}
               </p>
               <ul className="flex flex-col gap-4">
                 {requests.map((request) => (
-                  <BoardRequestCard key={request.id} request={request} />
+                  <BoardRequestCard
+                    key={request.id}
+                    request={request}
+                    // The tolerance is what decided this card was here, so
+                    // it says so rather than leaving the carrier to wonder
+                    // why a Hamburg run is on their list.
+                    {...detourNote(mine?.detours[request.id])}
+                  />
                 ))}
               </ul>
             </>
+          ) : applyMine ? (
+            <MineEmptyState filters={filters} />
           ) : (
             <EmptyState filters={filters} signedIn={context !== null} />
           )}
@@ -173,6 +212,105 @@ function EmptyState({ filters, signedIn }: { filters: RequestFilters; signedIn: 
           </Link>
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/** The detour sentence as a prop, or no prop at all when there is none. */
+function detourNote(fit: DetourFit | undefined): { note?: string } {
+  if (fit === undefined) return {};
+  return {
+    note: appCopy.carrier.matches.detour(
+      fit.detourKm,
+      fit.toleranceKm,
+      fit.fromCity,
+      fit.toCity,
+    ),
+  };
+}
+
+/**
+ * The board narrowed to what this firm can actually do.
+ *
+ * Two rules, both from `src/lib/matching.ts`: `carries()` for coverage,
+ * categories and equipment, and the detour for how far off the firm's
+ * own published routes each request sits. A firm with no measurable
+ * route keeps every request `carries()` allowed — unmeasured is not the
+ * same as unsuitable.
+ */
+async function onlyForCompany(
+  requests: readonly PublicRequest[],
+  company: Company,
+): Promise<{ requests: PublicRequest[]; detours: Record<string, DetourFit> }> {
+  const [routes, settings] = await Promise.all([loadCompanyRoutes(company.id), loadDetourSettings()]);
+  const profile = profileOf(company);
+
+  const kept = requests.filter(
+    (request) => carries(request, profile) && detourOk(request, routes, settings),
+  );
+
+  const detours: Record<string, DetourFit> = {};
+  for (const request of kept) {
+    const fit = bestRouteDetour(request, routes, settings);
+    if (fit !== null) detours[request.id] = fit;
+  }
+
+  return { requests: kept, detours };
+}
+
+function profileOf(company: Company): CarrierProfile {
+  return {
+    companyType: company.company_type,
+    coverageScope: company.coverage_scope,
+    coverageCounties: company.coverage_counties,
+    coverageCountries: company.coverage_countries,
+    vehicleTypesAccepted: company.vehicle_types_accepted,
+    equipment: company.equipment,
+    services: company.services,
+  };
+}
+
+async function loadCompanyRoutes(companyId: string): Promise<CarrierRoute[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('truck_listings')
+    .select(ROUTE_COLUMNS)
+    .eq('company_id', companyId)
+    .eq('status', 'active');
+
+  if (error) {
+    console.error('[cereri] routes query failed', { message: error.message });
+    return [];
+  }
+  return toCarrierRoutes(data ?? []);
+}
+
+/**
+ * „Potrivite cu firma mea" found nothing.
+ *
+ * A different screen from the general empty board: the board is not
+ * empty, the filter is strict, and what to do about it is to loosen the
+ * tolerance or drop the filter — not to publish a request.
+ */
+function MineEmptyState({ filters }: { filters: RequestFilters }) {
+  const c = requestsCopy.empty;
+  return (
+    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
+      <h2 className="text-[1.125rem]">{c.mineTitle}</h2>
+      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.mineBody}</p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
+          className={buttonClasses('primary', 'md')}
+        >
+          {c.mineClear}
+        </Link>
+        <Link href={ROUTES.accountDepartures} className={buttonClasses('secondary', 'md')}>
+          Vezi traseele mele
+        </Link>
+      </div>
     </div>
   );
 }

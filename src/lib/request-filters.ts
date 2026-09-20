@@ -58,6 +58,16 @@ export interface RequestFilters {
   condition: ConditionFilter | null;
   scope: ScopeFilter | null;
   service: ServiceFilter | null;
+  /**
+   * „Doar cele potrivite cu firma mea".
+   *
+   * Applied after the query rather than inside it: what a firm carries
+   * is coverage, categories, equipment and the detour its own published
+   * routes allow, and none of those are columns on the board view. The
+   * rule is `src/lib/matching.ts`, the same one the dashboard and the
+   * alert e-mails use.
+   */
+  mine: boolean;
 }
 
 export const EMPTY_REQUEST_FILTERS: RequestFilters = {
@@ -72,6 +82,7 @@ export const EMPTY_REQUEST_FILTERS: RequestFilters = {
   condition: null,
   scope: null,
   service: null,
+  mine: false,
 };
 
 /** Query keys, Romanian so a shared link reads like the site. */
@@ -87,6 +98,7 @@ export const REQUEST_FILTER_KEYS = {
   condition: 'stare',
   scope: 'acoperire',
   service: 'serviciu',
+  mine: 'doar',
 } as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -172,6 +184,7 @@ export function parseRequestFilters(params: SearchParams): RequestFilters {
     service: isService(one(params, REQUEST_FILTER_KEYS.service)) 
       ? (one(params, REQUEST_FILTER_KEYS.service) as ServiceFilter)
       : null,
+    mine: one(params, REQUEST_FILTER_KEYS.mine) === 'firma',
   };
 }
 
@@ -189,6 +202,7 @@ export function requestFiltersToQuery(filters: RequestFilters): string {
   if (filters.condition) query.set(REQUEST_FILTER_KEYS.condition, filters.condition);
   if (filters.scope) query.set(REQUEST_FILTER_KEYS.scope, filters.scope);
   if (filters.service) query.set(REQUEST_FILTER_KEYS.service, filters.service);
+  if (filters.mine) query.set(REQUEST_FILTER_KEYS.mine, 'firma');
   const text = query.toString();
   return text === '' ? '' : `?${text}`;
 }

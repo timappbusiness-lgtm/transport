@@ -159,6 +159,13 @@ export const requestsCopy = {
     any: 'Oricare',
     apply: 'Caută',
     clear: 'Șterge filtrele',
+    mine: 'Doar cele potrivite cu firma mea',
+    mineHint:
+      'Acoperirea, categoriile și dotările din profil, plus ocolul pe care îl acceptă traseele tale publicate.',
+    mineNoCompany:
+      'Filtrul „potrivite cu firma mea” are nevoie de un cont de firmă cu profilul completat. Ți-am arătat deocamdată toate cererile.',
+    mineCount: (shown: number, total: number) =>
+      `${shown} din ${total} cereri se potrivesc cu firma ta.`,
   },
 
   card: {
@@ -172,6 +179,10 @@ export const requestsCopy = {
   },
 
   empty: {
+    mineTitle: 'Nicio cerere potrivită cu firma ta acum.',
+    mineBody:
+      'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale. Lărgește toleranța la traseu sau scoate filtrul ca să vezi tot panoul.',
+    mineClear: 'Vezi toate cererile',
     title: 'Nicio cerere pentru această căutare.',
     body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați. Dacă ești transportator, vezi ce trasee sunt deja publicate.',
     departures: 'Vezi traseele',

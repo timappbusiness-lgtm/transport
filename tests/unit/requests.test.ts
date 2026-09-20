@@ -46,6 +46,10 @@ const REQUEST: PublicRequest = {
   is_domestic: false,
   from_county: null,
   to_county: null,
+  from_lat: null,
+  from_lng: null,
+  to_lat: null,
+  to_lng: null,
 };
 
 const STATS: ActivityStats = {

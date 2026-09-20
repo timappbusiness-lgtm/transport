@@ -50,6 +50,15 @@ export interface PublicRequest {
   /** ISO 3166-2:RO, resolved from the city on the server. null when unknown. */
   from_county: string | null;
   to_county: string | null;
+  /**
+   * City centroids, from the server's own city list at publication.
+   * Null on a request whose city never resolved, and every reader treats
+   * null as „cannot tell" rather than as a point at sea.
+   */
+  from_lat: number | null;
+  from_lng: number | null;
+  to_lat: number | null;
+  to_lng: number | null;
 }
 
 export interface ActivityStats {

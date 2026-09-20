@@ -483,6 +483,69 @@ $fn$;
 comment on function public.company_matches_request(uuid, uuid) is
   'Whether a company carries a request: coverage, category, winch, recovery, and the detour its own published routes allow. A filter, never a score.';
 
+/**
+ * The board view gains the two pairs of coordinates.
+ *
+ * Reproduced from 20260920100000 with four columns appended — a view is
+ * only ever added to, never re-cut, because Postgres refuses to drop a
+ * column from one and every column below is somebody else's query.
+ *
+ * Nothing private is exposed. These are the city centroids from
+ * `src/lib/cities.ts`, resolved on the server when the request was
+ * published; the city itself is already on every card. What they buy is
+ * the detour, computed in one process for the dashboard
+ * and the board filter instead of a round trip per row.
+ */
+create or replace view public.v_requests_public as
+select
+  c.id,
+  d.category,
+  d.make,
+  d.model,
+  d.year,
+  d.is_running,
+  c.service_type,
+  c.loading_city as from_city,
+  c.loading_country as from_country,
+  c.unloading_city as to_city,
+  c.unloading_country as to_country,
+  round(
+    public.distance_km(c.loading_lat, c.loading_lng, c.unloading_lat, c.unloading_lng)
+  )::integer as estimated_km,
+  c.published_at,
+  c.board,
+  c.loading_from,
+  c.loading_to,
+  c.weight_kg,
+  d.needs_winch,
+  coalesce(array_length(c.photo_paths, 1), 0) as photo_count,
+  c.loading_country = c.unloading_country as is_domestic,
+  c.loading_county as from_county,
+  c.unloading_county as to_county,
+  c.expires_at,
+
+  -- Appended by 20260921100000.
+  c.loading_lat as from_lat,
+  c.loading_lng as from_lng,
+  c.unloading_lat as to_lat,
+  c.unloading_lng as to_lng
+from public.cargo_listings c
+join public.cargo_vehicle_details d on d.cargo_listing_id = c.id
+join public.profiles p on p.id = c.posted_by
+left join public.companies co on co.id = c.company_id
+where c.status = 'active'
+  and c.listing_kind = 'vehicul'
+  and c.published_at is not null
+  and coalesce(c.loading_to, c.loading_from) >= current_date
+  and not p.is_test
+  and not coalesce(co.is_test, false);
+
+comment on view public.v_requests_public is
+  'Active vehicle transport requests at locality level, for anon and authenticated. No notes, photos, price, contact, address or owner. Coordinates are the city centroids the card already names. Test accounts are excluded.';
+
+revoke all on public.v_requests_public from public;
+grant select on public.v_requests_public to anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 3. Saved searches that actually alert
 --
