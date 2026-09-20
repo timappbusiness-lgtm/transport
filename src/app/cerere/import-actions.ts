@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { getAccountContext } from '@/lib/auth/account';
 import { normaliseImage } from '@/lib/listing-image';
+import { MAX_FILE_BYTES, ownsPhotoPath } from '@/lib/photo-upload';
 import {
   ACCEPTED_IMAGE_TYPES,
   looksLikeListingUrl,
@@ -176,4 +177,83 @@ export async function attachListingPhotoAction(imageUrl: string): Promise<Attach
 
   if (error) return { ok: false, reason: 'unknown' };
   return { ok: true, path };
+}
+
+// ---------------------------------------------------------------------
+// The client's own photographs
+// ---------------------------------------------------------------------
+
+export type UploadPhotoResult =
+  | { ok: true; path: string }
+  | { ok: false; message: string };
+
+/**
+ * One photograph, from the person's phone into our bucket.
+ *
+ * The browser has already drawn it down to 2000px where it could, which
+ * is a courtesy. This is where the guarantee is: `normaliseImage`
+ * re-encodes with sharp, and sharp writes no metadata unless asked — so
+ * the EXIF block, and the GPS coordinates inside it that say where the
+ * car was photographed, do not survive. A canvas in a browser does the
+ * same thing today in every browser anyone uses, and "every browser
+ * anyone uses" is not something to rest a privacy property on.
+ *
+ * The file lands under the person's own id, which is what the bucket's
+ * policy checks and what `ownsPhotoPath` checks again at publish time.
+ */
+export async function uploadRequestPhotoAction(formData: FormData): Promise<UploadPhotoResult> {
+  const context = await getAccountContext();
+  if (context === null) {
+    return { ok: false, message: 'Intră în cont ca să adaugi poze la cerere.' };
+  }
+
+  const file = formData.get('photo');
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: 'Nu am primit nicio poză.' };
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return { ok: false, message: 'Poza este prea mare. Maximum 10 MB.' };
+  }
+
+  let bytes: Buffer;
+  try {
+    bytes = await normaliseImage(Buffer.from(await file.arrayBuffer()));
+  } catch {
+    // A file that sharp refuses is not a photograph, whatever it is
+    // called. Saying so beats "a apărut o eroare".
+    return {
+      ok: false,
+      message: 'Fișierul nu pare o poză pe care o putem folosi. Încearcă un JPG sau un PNG.',
+    };
+  }
+
+  const supabase = await createClient();
+  const path = `${context.user.id}/foto-${crypto.randomUUID()}.jpg`;
+
+  const { error } = await supabase.storage
+    .from('listing-photos')
+    .upload(path, bytes, { contentType: 'image/jpeg', upsert: false });
+
+  if (error) {
+    console.error('[cerere] photo upload failed', { message: error.message });
+    return { ok: false, message: 'Nu am putut salva poza. Mai încearcă o dată.' };
+  }
+
+  return { ok: true, path };
+}
+
+/**
+ * Taking one back off, before the request is published.
+ *
+ * The storage policy already refuses a path that is not in this person's
+ * folder, so this is not the boundary — it is the tidying. Without it, a
+ * photo somebody added and then removed stays in a public bucket for
+ * ever, attached to nothing and referenced by nothing.
+ */
+export async function removeRequestPhotoAction(path: string): Promise<void> {
+  const context = await getAccountContext();
+  if (context === null || !ownsPhotoPath(path, context.user.id)) return;
+
+  const supabase = await createClient();
+  await supabase.storage.from('listing-photos').remove([path]);
 }

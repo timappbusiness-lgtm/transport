@@ -125,6 +125,13 @@ function Empty() {
         <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
           {c.empty.primary}
         </Link>
+        {/* The board itself, not only the form. A carrier reading this
+            section wants to see what is there, and "nothing yet" is a
+            thing they are allowed to see for themselves — hiding the
+            board until it is busy is how a marketplace stays empty. */}
+        <Link href={ROUTES.requests} className={buttonClasses('secondary', 'md')}>
+          {c.empty.board}
+        </Link>
         <Link href={ROUTES.routes} className={buttonClasses('secondary', 'md')}>
           {c.empty.secondary}
         </Link>

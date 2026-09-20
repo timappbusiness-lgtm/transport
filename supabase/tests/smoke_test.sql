@@ -52,10 +52,13 @@ end $$;
 -- ---------------------------------------------------------------------
 -- Fixtures
 -- ---------------------------------------------------------------------
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('11111111-1111-1111-1111-111111111111','carrier@test.ro','{"full_name":"Ion Pop","account_type":"company"}'),
-  ('22222222-2222-2222-2222-222222222222','admin@test.ro','{"full_name":"Admin","account_type":"company"}'),
-  ('33333333-3333-3333-3333-333333333333','pf@test.ro','{"full_name":"Maria Ion","account_type":"individual"}');
+-- email_confirmed_at is set on every fixture because that is what GoTrue
+-- does the moment somebody follows the link, and since 20260920100000 it
+-- is what the publish guard asks an individual for.
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('11111111-1111-1111-1111-111111111111','carrier@test.ro',now(),'{"full_name":"Ion Pop","account_type":"company"}'),
+  ('22222222-2222-2222-2222-222222222222','admin@test.ro',now(),'{"full_name":"Admin","account_type":"company"}'),
+  ('33333333-3333-3333-3333-333333333333','pf@test.ro',now(),'{"full_name":"Maria Ion","account_type":"individual"}');
 
 select pg_temp.check('profile is auto-created for every new auth user',
   (select count(*) = 3 from public.profiles));
@@ -156,16 +159,48 @@ exception when check_violation then
   raise notice 'PASS  individual cannot publish on the curse board';
 end $$;
 
--- An unverified phone must block publishing.
+-- Since 20260920100000 the publish gate is a confirmed e-mail and a phone
+-- number on file, not a phone confirmed by SMS. An unverified phone still
+-- blocks opening somebody's contact details — that check is in the RLS
+-- suite, where it can be run as the API roles.
 update public.profiles set phone_verified = false where id = '33333333-3333-3333-3333-333333333333';
 do $$
 begin
   perform pg_temp.new_vehicle_request(
     '33333333-3333-3333-3333-333333333333','Golf 2015','Cluj','Arad');
-  raise exception 'FAIL  unverified phone was allowed to publish';
+  raise notice 'PASS  an unverified phone no longer blocks publishing';
 exception when sqlstate '42501' then
-  raise notice 'PASS  unverified phone cannot publish';
+  raise exception 'FAIL  publishing still asks for a phone confirmed by SMS';
 end $$;
+update public.profiles set phone_verified = true where id = '33333333-3333-3333-3333-333333333333';
+
+-- No phone at all, however, still blocks: a carrier who cannot ring the
+-- client has a request they cannot act on.
+update public.profiles set phone = null where id = '33333333-3333-3333-3333-333333333333';
+do $$
+begin
+  perform pg_temp.new_vehicle_request(
+    '33333333-3333-3333-3333-333333333333','Golf 2016','Cluj','Arad');
+  raise exception 'FAIL  a request published with no telephone number on file';
+exception when sqlstate '42501' then
+  raise notice 'PASS  no phone number on file cannot publish';
+end $$;
+update public.profiles set phone = '+40722000333' where id = '33333333-3333-3333-3333-333333333333';
+
+-- And so does an unconfirmed address.
+update auth.users set email_confirmed_at = null where id = '33333333-3333-3333-3333-333333333333';
+do $$
+begin
+  perform pg_temp.new_vehicle_request(
+    '33333333-3333-3333-3333-333333333333','Golf 2017','Cluj','Arad');
+  raise exception 'FAIL  a request published from an unconfirmed address';
+exception when sqlstate '42501' then
+  raise notice 'PASS  an unconfirmed e-mail cannot publish';
+end $$;
+update auth.users set email_confirmed_at = now() where id = '33333333-3333-3333-3333-333333333333';
+-- Every write to auth.users recomputes phone_verified from GoTrue's own
+-- columns, and this fixture's phone lives only on the profile — so the
+-- restore has to come after the last auth.users write, not before it.
 update public.profiles set phone_verified = true where id = '33333333-3333-3333-3333-333333333333';
 
 -- ---------------------------------------------------------------------

@@ -78,14 +78,21 @@ export function SignInForm({ next }: { next: string }) {
 function SignUpForm({
   action,
   copy,
+  withPhone = false,
+  next = '',
 }: {
   action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState>;
   copy: typeof authCopy.individualSignUp | typeof authCopy.companySignUp;
+  /** A private person is asked for a number; a firm's comes from its profile. */
+  withPhone?: boolean;
+  /** Where the confirmation link should come back to. */
+  next?: string;
 }) {
   const [state, formAction] = useActionState(action, EMPTY);
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <Field
         label={copy.fullName}
@@ -103,6 +110,18 @@ function SignUpForm({
         defaultValue={state.values?.email}
         error={state.fieldErrors?.email}
       />
+      {withPhone ? (
+        <Field
+          label={authCopy.individualSignUp.phone}
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          hint={authCopy.individualSignUp.phoneHint}
+          defaultValue={state.values?.phone}
+          error={state.fieldErrors?.phone}
+        />
+      ) : null}
       <Field
         label={copy.password}
         name="password"
@@ -117,12 +136,19 @@ function SignUpForm({
   );
 }
 
-export function IndividualSignUpForm() {
-  return <SignUpForm action={signUpIndividualAction} copy={authCopy.individualSignUp} />;
+export function IndividualSignUpForm({ next = '' }: { next?: string }) {
+  return (
+    <SignUpForm
+      action={signUpIndividualAction}
+      copy={authCopy.individualSignUp}
+      withPhone
+      next={next}
+    />
+  );
 }
 
-export function CompanySignUpForm() {
-  return <SignUpForm action={signUpCompanyAction} copy={authCopy.companySignUp} />;
+export function CompanySignUpForm({ next = '' }: { next?: string }) {
+  return <SignUpForm action={signUpCompanyAction} copy={authCopy.companySignUp} next={next} />;
 }
 
 export function ResendConfirmationForm({ email }: { email: string }) {

@@ -115,6 +115,13 @@ function EmptyState({ filters }: { filters: RequestFilters }) {
         <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
           {requestsCopy.board.publish}
         </Link>
+        {/* A carrier who finds the board empty is not here to publish a
+            request. The other board is what they came for, and an empty
+            state with one button aimed at the other side of the market
+            is a dead end for half the people who reach it. */}
+        <Link href={ROUTES.routes} className={buttonClasses('secondary', 'md')}>
+          {c.departures}
+        </Link>
       </div>
 
       {hasActiveRequestFilters(filters) ? (
@@ -166,6 +173,7 @@ async function loadRequests(filters: RequestFilters): Promise<PublicRequest[]> {
   const running = conditionIsRunning(filters.condition);
   if (running !== null) query = query.eq('is_running', running);
   if (filters.scope) query = query.eq('is_domestic', filters.scope === 'intern');
+  if (filters.service) query = query.eq('service_type', filters.service);
 
   const { data, error } = await query;
   if (error) {

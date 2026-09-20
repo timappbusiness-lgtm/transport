@@ -26,8 +26,17 @@ import sharp from 'sharp';
  * depended on is gone.
  */
 
-/** The longest edge we keep. Beyond this is detail nobody looks at. */
-export const MAX_EDGE_PX = 1600;
+/**
+ * The longest edge we keep.
+ *
+ * Two thousand rather than sixteen hundred since the client can upload
+ * their own: a photograph of a scratch on a wing is evidence at delivery,
+ * and at 1600px across a whole car the scratch is four pixels. The
+ * browser resizes to the same number before uploading, so this is
+ * normally a no-op — it is the guarantee for the files it could not
+ * resize, which is every HEIC.
+ */
+export const MAX_EDGE_PX = 2000;
 
 /** A guard against a decompression bomb: a small file, an enormous canvas. */
 export const MAX_INPUT_PIXELS = 50_000_000;

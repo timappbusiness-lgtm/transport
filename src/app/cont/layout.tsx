@@ -5,6 +5,7 @@ import { MobileNav } from '@/components/app/mobile-nav';
 import { Sidebar } from '@/components/app/sidebar';
 import { SkipLink } from '@/components/app/top-bar';
 import { StatusBanner } from '@/components/app/status-banner';
+import { AccountNotices } from '@/components/app/account-notices';
 import { currentPathname, navContextOf } from '@/components/app/nav-context';
 import { ROUTES } from '@/config/routes';
 import { TermsGate } from '@/components/legal/terms-gate';
@@ -86,6 +87,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
 
           {/* The bottom bar is fixed, so the content needs room under it. */}
           <div id="continut" className="min-w-0 flex-1 pb-20 lg:pb-0">
+            <AccountNotices profile={context.profile} />
             {banner ? (
               <div className="mb-6">
                 <StatusBanner

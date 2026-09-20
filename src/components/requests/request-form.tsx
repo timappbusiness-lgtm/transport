@@ -3,6 +3,9 @@
 import { useActionState, useEffect, useId, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { attachListingPhotoAction } from '@/app/cerere/import-actions';
+import { PhotoPanel, type ChosenPhoto } from '@/components/requests/photo-panel';
+import { MAX_PHOTOS } from '@/lib/photo-upload';
+import { DURATION_OPTIONS } from '@/lib/request-form';
 import { publishRequestAction, type PublishRequestState } from '@/app/cerere/actions';
 import { FormError } from '@/components/auth/form';
 import { PushPermissionCard } from '@/components/push/permission-card';
@@ -126,6 +129,10 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   // themselves is a lie about where it came from.
   const [auto, setAuto] = useState<Set<ImportedField>>(new Set());
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  // The person's own photographs, already in our bucket under their own
+  // folder. The form submits the paths; the action re-checks that each
+  // one is theirs before it reaches the database.
+  const [photos, setPhotos] = useState<ChosenPhoto[]>([]);
   const [attachPhoto, setAttachPhoto] = useState(false);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoNote, setPhotoNote] = useState<string | null>(null);
@@ -177,16 +184,36 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
     setPhotoNote(null);
   }
 
+  /**
+   * The imported photo joins the six, rather than sitting beside them.
+   *
+   * It used to be a hidden field of its own, which meant a request could
+   * carry the photo somebody else took and none of the ones its owner
+   * did. Now it is one of the list — labelled „din anunț" so nobody
+   * mistakes it for their own — and removable like the rest.
+   */
   function onAttachChange(checked: boolean): void {
     setAttachPhoto(checked);
-    if (!checked || photoUrl === null || photoPath !== null) {
-      if (!checked) setPhotoNote(null);
+
+    if (!checked) {
+      setPhotoNote(null);
+      if (photoPath !== null) {
+        setPhotos((current) => current.filter((photo) => photo.path !== photoPath));
+      }
       return;
     }
+    if (photoUrl === null || photoPath !== null) return;
+
     void attachListingPhotoAction(photoUrl).then((result) => {
       if (result.ok && result.path !== undefined) {
-        setPhotoPath(result.path);
+        const path = result.path;
+        setPhotoPath(path);
         setPhotoNote(importCopy.attach.attached);
+        setPhotos((current) =>
+          current.length >= MAX_PHOTOS || current.some((photo) => photo.path === path)
+            ? current
+            : [...current, { path, preview: photoUrl, fromImport: true }],
+        );
         return;
       }
       // The request is worth more than the photo, so a failure here
@@ -231,9 +258,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   return (
     <form action={action} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="draft" value={serialiseDraft(draft)} />
-      {photoPath !== null && attachPhoto ? (
-        <input type="hidden" name="photo_path" value={photoPath} />
-      ) : null}
+
 
       <Steps current={step} onSelect={goTo} />
 
@@ -355,6 +380,13 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           />
 
           {auto.size > 0 ? <ImportDisclaimer /> : null}
+
+          {/* The client's own photographs. Before this, the only picture a
+              request could carry was whatever the import found in the
+              source listing — so the one case where a photograph decides
+              the price, a damaged car somebody is selling privately, was
+              the case that could not have one. */}
+          {signedIn ? <PhotoPanel photos={photos} onChange={setPhotos} /> : null}
 
           {photoUrl !== null && signedIn ? (
             <div className="flex flex-col gap-1.5 rounded-card border border-border bg-ground-alt p-4">
@@ -538,6 +570,25 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               actually asking before they commit — "is anybody going to
               see this". */}
           <CarrierPreview draft={draft} signedIn={signedIn} />
+
+          {/* How long it stays up. Fourteen days used to be a number in a
+              database trigger: twelve wasted days for a car collected on
+              Saturday, and far too short for a caravan moving in spring.
+              We write before it expires, not after. */}
+          <Labelled label={c.duration.label} htmlFor={`${id}-duration`} hint={c.duration.hint}>
+            <select
+              id={`${id}-duration`}
+              value={draft.durationDays}
+              onChange={(event) => set('durationDays', event.target.value)}
+              className={CONTROL}
+            >
+              {DURATION_OPTIONS.map((days) => (
+                <option key={days} value={String(days)}>
+                  {c.duration.option(days)}
+                </option>
+              ))}
+            </select>
+          </Labelled>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.contact.name} htmlFor={`${id}-name`}>

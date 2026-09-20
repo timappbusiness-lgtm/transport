@@ -52,6 +52,9 @@ test.describe('individual account', () => {
     await page.goto('/inregistrare/persoana-fizica');
     await page.getByLabel('Nume și prenume').fill('Ion Popescu');
     await page.getByLabel('Adresă de e-mail').fill(email);
+    // Required since 20260920100000: the number a carrier rings. Shape
+    // checked, not confirmed by SMS — there is no SMS provider.
+    await page.getByLabel('Telefon').fill('0722 123 456');
     await page.getByLabel('Parolă').fill('parolaSigura1');
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Creează contul' }).click();

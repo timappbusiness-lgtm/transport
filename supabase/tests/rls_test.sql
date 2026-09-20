@@ -186,17 +186,22 @@ $$;
 --   C  carrier, draft                       VX  C's platform, approved ITP
 -- =====================================================================
 
-insert into auth.users (id, email, raw_user_meta_data) values
-  ('f0000000-0000-0000-0000-000000000001', 'rls-staff@test.ro',   '{"full_name":"Staff","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000002', 'rls-owner-a@test.ro', '{"full_name":"Owner A","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000003', 'rls-disp-a@test.ro',  '{"full_name":"Dispatcher A","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000004', 'rls-owner-b@test.ro', '{"full_name":"Owner B","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000005', 'rls-disp-b@test.ro',  '{"full_name":"Dispatcher B","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000006', 'rls-pf@test.ro',      '{"full_name":"Persoană Fizică","account_type":"individual"}'),
-  ('f0000000-0000-0000-0000-000000000007', 'rls-pf2@test.ro',     '{"full_name":"Fără Telefon","account_type":"individual"}'),
-  ('f0000000-0000-0000-0000-000000000008', 'rls-noco@test.ro',    '{"full_name":"Fără Firmă","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-000000000009', 'rls-newco@test.ro',   '{"full_name":"Firmă Nouă","account_type":"company"}'),
-  ('f0000000-0000-0000-0000-00000000000a', 'rls-owner-c@test.ro', '{"full_name":"Owner C","account_type":"company"}');
+-- Every fixture's address is confirmed, because that is the ordinary
+-- state of an account: GoTrue stamps it the moment somebody follows the
+-- link. Since 20260920100000 it is also what the publish guard asks an
+-- individual for, and the REQ block below tests the unconfirmed case
+-- explicitly rather than relying on a fixture being half-made.
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('f0000000-0000-0000-0000-000000000001', 'rls-staff@test.ro',   now(), '{"full_name":"Staff","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000002', 'rls-owner-a@test.ro', now(), '{"full_name":"Owner A","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000003', 'rls-disp-a@test.ro',  now(), '{"full_name":"Dispatcher A","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000004', 'rls-owner-b@test.ro', now(), '{"full_name":"Owner B","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000005', 'rls-disp-b@test.ro',  now(), '{"full_name":"Dispatcher B","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000006', 'rls-pf@test.ro',      now(), '{"full_name":"Persoană Fizică","account_type":"individual"}'),
+  ('f0000000-0000-0000-0000-000000000007', 'rls-pf2@test.ro',     now(), '{"full_name":"Fără Telefon","account_type":"individual"}'),
+  ('f0000000-0000-0000-0000-000000000008', 'rls-noco@test.ro',    now(), '{"full_name":"Fără Firmă","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-000000000009', 'rls-newco@test.ro',   now(), '{"full_name":"Firmă Nouă","account_type":"company"}'),
+  ('f0000000-0000-0000-0000-00000000000a', 'rls-owner-c@test.ro', now(), '{"full_name":"Owner C","account_type":"company"}');
 
 -- Confirmed e-mail addresses, for the invitation checks.
 insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
@@ -1193,7 +1198,9 @@ select pg_temp.check('INV  someone else cannot accept an invitation', 'fix',
 select pg_temp.check('INV  an unconfirmed e-mail address cannot accept', 'fix',
   'f0000000-0000-0000-0000-000000000008', 'authenticated',
   $a$select public.accept_company_invitation('f8000000-0000-0000-0000-000000000002')$a$, 'blocked',
-  p_setup => $s$insert into public.company_invitations (id, company_id, invited_email, role)
+  p_setup => $s$update auth.users set email_confirmed_at = null
+                  where id = 'f0000000-0000-0000-0000-000000000008';
+                insert into public.company_invitations (id, company_id, invited_email, role)
                 values ('f8000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000001', 'rls-noco@test.ro', 'dispatcher')$s$,
   p_verify => $v$select not exists (select 1 from public.company_members where user_id = 'f0000000-0000-0000-0000-000000000008')$v$);
 
@@ -1759,10 +1766,10 @@ select pg_temp.check('PRP  the corridor medians are still their own thing', 'gua
 select pg_temp.check('CRQ  the public view carries only the safe columns', 'fix',
   null, 'anon',
   $a$select array_agg(column_name::text order by column_name) = array[
-       'board','category','estimated_km','from_city','from_country','from_county',
-       'id','is_domestic','is_running','loading_from','loading_to','make','model',
-       'needs_winch','photo_count','published_at','service_type','to_city',
-       'to_country','to_county','weight_kg','year'
+       'board','category','estimated_km','expires_at','from_city','from_country',
+       'from_county','id','is_domestic','is_running','loading_from','loading_to',
+       'make','model','needs_winch','photo_count','published_at','service_type',
+       'to_city','to_country','to_county','weight_kg','year'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_requests_public'$a$, 'true');
@@ -5268,7 +5275,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 8 from public.job_health()$a$, 'true');
+  $a$select count(*) = 9 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6156,7 +6163,7 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-retention, outbox-dispatcher'
+     'nightly-listing-expiry-reminders, nightly-retention, outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6172,6 +6179,11 @@ select pg_temp.check('JOB  the reminders job queues reminders', 'fix',
   null, 'service_role',
   $a$select command like '%queue_expiry_reminders%'
      from cron.job where jobname = 'nightly-expiry-reminders'$a$, 'true');
+
+select pg_temp.check('JOB  the listing reminder queues listing reminders', 'fix',
+  null, 'service_role',
+  $a$select command like '%queue_listing_expiry_reminders%'
+     from cron.job where jobname = 'nightly-listing-expiry-reminders'$a$, 'true');
 
 select pg_temp.check('JOB  the cleanup job expires stale listings', 'fix',
   null, 'service_role',
@@ -6201,7 +6213,7 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-retention, outbox-dispatcher'
+     'nightly-listing-expiry-reminders, nightly-retention, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',
@@ -6216,6 +6228,366 @@ select pg_temp.check('JOB  a visitor cannot read the schedule', 'fix',
 -- Report
 -- =====================================================================
 drop function public.zz_rls_default_privilege_probe();
+
+-- =====================================================================
+-- PUB - who may publish a request, after 20260920100000
+--
+-- The rule that was closed by accident. Publishing used to need a phone
+-- confirmed by SMS, and no SMS provider was ever configured, so the whole
+-- individual side of the marketplace was shut by a condition nobody could
+-- meet. These checks pin down both halves of the replacement: what
+-- publishing asks for now, and what still asks for a verified number.
+-- =====================================================================
+
+select pg_temp.check('PUB  a confirmed e-mail and a phone on file is enough to publish', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.create_cargo_request(
+       p_from_city => 'Cluj-Napoca', p_to_city => 'Arad',
+       p_loading_from => (now() at time zone 'Europe/Bucharest')::date + 3,
+       p_category => 'autoturism', p_make => 'VW', p_model => 'Golf',
+       p_year => 2015, p_is_running => true)).request_status = 'active'$a$,
+  'true',
+  -- The individual plan allows two active requests and the fixtures use
+  -- both, so the quota would refuse a third and this check would read as
+  -- a publish-guard failure. Clearing them first keeps it about the guard.
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                  where posted_by = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('PUB  an unconfirmed address cannot', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.create_cargo_request(
+       p_from_city => 'Cluj-Napoca', p_to_city => 'Arad',
+       p_loading_from => (now() at time zone 'Europe/Bucharest')::date + 3,
+       p_category => 'autoturism', p_make => 'VW', p_model => 'Golf',
+       p_year => 2015, p_is_running => true)).publish_error
+     like 'Confirmă adresa de e-mail%'$a$,
+  'true',
+  p_setup => $s$update auth.users set email_confirmed_at = null
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('PUB  nor can somebody with no telephone number', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select (public.create_cargo_request(
+       p_from_city => 'Cluj-Napoca', p_to_city => 'Arad',
+       p_loading_from => (now() at time zone 'Europe/Bucharest')::date + 3,
+       p_category => 'autoturism', p_make => 'VW', p_model => 'Golf',
+       p_year => 2015, p_is_running => true)).request_status$a$,
+  'blocked');
+
+-- The RPC refuses first, with its own sentence about the telephone
+-- number, so the guard underneath never runs in the check above. This one
+-- drives the guard directly, as the role that writes the table.
+select pg_temp.check('PUB  and the guard underneath refuses it too', 'fix',
+  null, 'service_role',
+  $a$insert into public.cargo_listings
+       (posted_by, board, listing_kind, title, loading_city, unloading_city,
+        loading_from, status)
+     values ('f0000000-0000-0000-0000-000000000007', 'retur', 'vehicul', 'Golf 2015',
+             'Cluj-Napoca', 'Arad',
+             (now() at time zone 'Europe/Bucharest')::date + 3, 'active')$a$,
+  'blocked');
+
+select pg_temp.check('PUB  and a phone that was never confirmed by SMS is no longer a reason to refuse', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.create_cargo_request(
+       p_from_city => 'Cluj-Napoca', p_to_city => 'Arad',
+       p_loading_from => (now() at time zone 'Europe/Bucharest')::date + 3,
+       p_category => 'autoturism', p_make => 'VW', p_model => 'Golf',
+       p_year => 2015, p_is_running => true)).request_status = 'active'$a$,
+  'true',
+  p_setup => $s$update public.profiles set phone_verified = false
+                  where id = 'f0000000-0000-0000-0000-000000000006';
+                update public.cargo_listings set status = 'cancelled'
+                  where posted_by = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+-- The other half: opening a stranger's telephone number still needs a
+-- confirmed one, and says so in a sentence a person can act on.
+select pg_temp.check('PUB  opening a contact still needs a confirmed number', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.reveal_contact('f1000000-0000-0000-0000-000000000001', null)$a$,
+  'blocked',
+  p_setup => $s$update public.profiles set phone_verified = false
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('PUB  and the refusal says where to write', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select case when public.reveal_contact('f1000000-0000-0000-0000-000000000001', null) is null
+              then false else false end$a$,
+  'blocked',
+  p_setup => $s$update public.profiles set phone_verified = false
+                  where id = 'f0000000-0000-0000-0000-000000000006';
+                update public.deletion_settings set support_email = 'ajutor@coridor.ro' where id$s$);
+
+-- =====================================================================
+-- STF - staff confirming a number by hand
+--
+-- Until an SMS provider exists this is the only way a number becomes
+-- verified, so it is a real function with a real audit row.
+-- =====================================================================
+
+select pg_temp.check('STF  staff can confirm a number, with a reason', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_set_phone_verified(
+       'f0000000-0000-0000-0000-000000000006', true, 'sunat 20.09, a raspuns')).phone_verified$a$,
+  'true',
+  p_setup => $s$update public.profiles set phone_verified = false
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'profile.phone_verified'
+                   and entity_id = 'f0000000-0000-0000-0000-000000000006')$v$);
+
+select pg_temp.check('STF  without a reason it refuses', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_set_phone_verified(
+       'f0000000-0000-0000-0000-000000000006', true, '   ')$a$, 'blocked');
+
+select pg_temp.check('STF  and it cannot confirm a number that is not there', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_set_phone_verified(
+       'f0000000-0000-0000-0000-000000000007', true, 'sunat')$a$, 'blocked');
+
+select pg_temp.check('STF  a visitor cannot confirm their own number', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.staff_set_phone_verified(
+       'f0000000-0000-0000-0000-000000000006', true, 'eu zic ca e bun')$a$, 'blocked');
+
+select pg_temp.check('STF  a staff confirmation survives a change to the e-mail address', 'fix',
+  null, 'service_role',
+  $a$select phone_verified from public.profiles
+     where id = 'f0000000-0000-0000-0000-000000000006'$a$, 'true',
+  p_setup => $s$update public.profiles
+                  set phone_verified = true, phone_verified_by_staff = true
+                  where id = 'f0000000-0000-0000-0000-000000000006';
+                update auth.users set email = 'rls-pf-nou@test.ro'
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$);
+
+select pg_temp.check('STF  but changing the number itself drops it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set phone = '+40711000999' where id = auth.uid()$a$,
+  'allowed',
+  p_setup => $s$update public.profiles
+                  set phone_verified = true, phone_verified_by_staff = true
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$,
+  p_verify => $v$select not phone_verified and not phone_verified_by_staff
+                 from public.profiles where id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+-- =====================================================================
+-- TST - our own accounts, kept out of everything public
+--
+-- A counter that includes the firms we seeded is a counter that lies, and
+-- every number on the homepage invites a visitor to check it.
+-- =====================================================================
+
+select pg_temp.check('TST  only staff may mark an account as ours', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.staff_set_test_account(
+       p_company => 'fc000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('TST  staff may, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_set_test_account(
+       p_company => 'fc000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'company.test_flag'
+                   and entity_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('TST  a test firm disappears from the verified count', 'fix',
+  null, 'anon',
+  $a$select (public.directory_stats()).verified_companies = 0$a$, 'true',
+  p_setup => $s$update public.companies set is_test = true$s$);
+
+select pg_temp.check('TST  a test firm cannot be listed in the directory', 'fix',
+  null, 'service_role',
+  $a$select not public_profile_enabled from public.companies
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'true',
+  p_setup => $s$update public.companies
+                  set is_test = true, public_profile_enabled = true
+                  where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('TST  a test account''s request is off the public board', 'fix',
+  null, 'anon',
+  $a$select not exists (select 1 from public.v_requests_public
+                        where id = 'f1000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$update public.profiles set is_test = true
+                  where id = (select posted_by from public.cargo_listings
+                              where id = 'f1000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('TST  and out of the route count a client is shown', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.preview_matching_carriers('RO', null, 'RO', null) = 0$a$, 'true',
+  p_setup => $s$update public.companies set is_test = true;
+                delete from public.carrier_count_probes$s$);
+
+-- =====================================================================
+-- DUR - how long a request stays on the board
+-- =====================================================================
+
+select pg_temp.check('DUR  the client''s choice decides when it comes off', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.create_cargo_request(
+       p_from_city => 'Cluj-Napoca', p_to_city => 'Arad',
+       p_loading_from => (now() at time zone 'Europe/Bucharest')::date + 2,
+       p_category => 'autoturism', p_make => 'VW', p_model => 'Golf', p_year => 2015,
+       p_is_running => true, p_duration_days => 3)).request_status = 'active'$a$,
+  'true',
+  p_setup => $s$update public.cargo_listings set status = 'cancelled'
+                  where posted_by = 'f0000000-0000-0000-0000-000000000006'$s$,
+  p_verify => $v$select expires_at < now() + interval '4 days'
+                 from public.cargo_listings
+                 where posted_by = 'f0000000-0000-0000-0000-000000000006'
+                 order by created_at desc limit 1$v$);
+
+select pg_temp.check('DUR  a duration nobody offers is refused by the column, not the form', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set duration_days = 365
+     where id = 'f1000000-0000-0000-0000-000000000001'$a$, 'blocked');
+
+-- =====================================================================
+-- MAIL - what the provider tells us back
+-- =====================================================================
+
+select pg_temp.check('MAIL  a hard bounce marks the address and skips what is queued', 'fix',
+  null, 'service_role',
+  $a$select public.flag_email_undeliverable('rls-pf@test.ro', 'mailbox does not exist') = 1$a$,
+  'true',
+  p_setup => $s$insert into public.notification_outbox (channel, template, to_email)
+                values ('email', 'company_verified', 'rls-pf@test.ro')$s$,
+  p_verify => $v$select email_undeliverable_at is not null
+                 from public.profiles where id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('MAIL  a visitor cannot flag somebody else''s address', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.flag_email_undeliverable('rls-owner-a@test.ro', 'nu imi place')$a$, 'blocked');
+
+select pg_temp.check('MAIL  only staff clear the flag, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_clear_email_undeliverable(
+       'f0000000-0000-0000-0000-000000000006')).email_undeliverable_at is null$a$, 'true',
+  p_setup => $s$update public.profiles set email_undeliverable_at = now()
+                  where id = 'f0000000-0000-0000-0000-000000000006'$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'profile.email_reactivated')$v$);
+
+select pg_temp.check('MAIL  a visitor cannot clear it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.staff_clear_email_undeliverable(
+       'f0000000-0000-0000-0000-000000000006')$a$, 'blocked');
+
+select pg_temp.check('MAIL  the dispatcher records the provider''s id', 'fix',
+  null, 'service_role',
+  $a$select public.finish_outbox(
+       (select id from public.notification_outbox order by created_at desc limit 1),
+       'sent', null, now(), 'resend-abc-123') = 'sent'$a$, 'true',
+  p_setup => $s$insert into public.notification_outbox (channel, template, to_email)
+                values ('email', 'company_verified', 'cineva@exemplu.ro')$s$,
+  p_verify => $v$select provider_message_id = 'resend-abc-123'
+                 from public.notification_outbox order by created_at desc limit 1$v$);
+
+select pg_temp.check('MAIL  staff only for the test send, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.enqueue_test_notification(
+       'company_verified', 'edi@exemplu.ro', '{"company_name":"Test SRL"}'::jsonb) is not null$a$,
+  'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'notification.test_send')$v$);
+
+select pg_temp.check('MAIL  a visitor cannot send themselves one', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.enqueue_test_notification('company_verified', 'oricine@exemplu.ro')$a$,
+  'blocked');
+
+select pg_temp.check('MAIL  and an address that is not one is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.enqueue_test_notification('company_verified', 'nu e o adresa')$a$,
+  'blocked');
+
+select pg_temp.check('MAIL  the provider state is staff-only reading', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.mail_provider_state()).queued_now >= 0$a$, 'true');
+
+-- =====================================================================
+-- REM - telling somebody before the request comes off the board
+-- =====================================================================
+
+select pg_temp.check('REM  a request about to expire gets one e-mail, once', 'fix',
+  null, 'service_role',
+  $a$select public.queue_listing_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.profiles set is_test = false;
+                update public.cargo_listings
+                  set status = 'active', expires_at = now() + interval '1 day',
+                      expiry_reminded_at = null
+                  where id = 'f1000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'listing_expiring_soon'$v$);
+
+select pg_temp.check('REM  and not a second time the next night', 'fix',
+  null, 'service_role',
+  $a$select public.queue_listing_expiry_reminders() = 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.cargo_listings
+                  set status = 'active', expires_at = now() + interval '1 day',
+                      expiry_reminded_at = now() - interval '1 hour'
+                  where id = 'f1000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('REM  an address that bounces is not written to again', 'fix',
+  null, 'service_role',
+  $a$select public.queue_listing_expiry_reminders() = 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.cargo_listings
+                  set status = 'active', expires_at = now() + interval '1 day',
+                      expiry_reminded_at = null
+                  where id = 'f1000000-0000-0000-0000-000000000001';
+                update public.profiles set email_undeliverable_at = now()
+                  where id = (select posted_by from public.cargo_listings
+                              where id = 'f1000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('REM  a visitor cannot run the job', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.queue_listing_expiry_reminders()$a$, 'blocked');
+
+-- =====================================================================
+-- PIL - the pilot dashboard
+-- =====================================================================
+
+select pg_temp.check('PIL  staff can read the two exit criteria', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select carriers_target = 20 and forwarders_target = 5
+     from public.pilot_overview()$a$, 'true');
+
+select pg_temp.check('PIL  a visitor cannot', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.pilot_overview()$a$, 'blocked');
+
+select pg_temp.check('PIL  and our own firms are not counted towards them', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select verified_carriers = 0 from public.pilot_overview()$a$, 'true',
+  p_setup => $s$update public.companies set is_test = true$s$);
+
+select pg_temp.check('PIL  the weekly series has a row per week, newest last', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 3 from public.pilot_weekly_activity(
+       (current_date - 14)::date, current_date)$a$, 'true');
+
+-- =====================================================================
+-- PHO - a request's photographs go when the request goes
+-- =====================================================================
+
+select pg_temp.check('PHO  deleting a request takes its photographs with it', 'fix',
+  null, 'service_role',
+  $a$delete from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000001'$a$, 'allowed',
+  p_setup => $s$insert into storage.objects (bucket_id, name, owner)
+                values ('listing-photos',
+                        'f0000000-0000-0000-0000-000000000006/foto-1.jpg',
+                        'f0000000-0000-0000-0000-000000000006');
+                update public.cargo_listings
+                  set photo_paths = array['f0000000-0000-0000-0000-000000000006/foto-1.jpg']
+                  where id = 'f1000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select not exists (select 1 from storage.objects
+                 where name = 'f0000000-0000-0000-0000-000000000006/foto-1.jpg')$v$);
+
+
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}

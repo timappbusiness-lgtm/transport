@@ -12,7 +12,7 @@ import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
  *
  * What *is* promised is the e-mail, because migration 20260918090000
  * writes a row into `notification_outbox` for every matching request and
- * the n8n dispatcher delivers it.
+ * the `outbox-dispatcher` edge function delivers it.
  */
 
 export const firmaCopy = {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isDurationDays,
+  durationOrDefault,
+  DURATION_OPTIONS,
   CATEGORY_FROM_CLASS,
   DRAFT_STORAGE_KEY,
   MAX_WEIGHT_KG,
@@ -229,5 +232,31 @@ describe('isoToday', () => {
 
   it('pads the month and the day', () => {
     expect(isoToday(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
+
+describe('how long the request stays on the board', () => {
+  it('starts at the fourteen days that used to be hardcoded', () => {
+    expect(emptyDraft().durationDays).toBe('14');
+  });
+
+  it('accepts the four the column accepts', () => {
+    for (const days of DURATION_OPTIONS) {
+      expect(isDurationDays(String(days))).toBe(true);
+      expect(validateDraft(draft({ durationDays: String(days) }), TODAY).durationDays)
+        .toBeUndefined();
+    }
+  });
+
+  it('refuses a fifth, which is what an old saved draft would carry', () => {
+    expect(isDurationDays('365')).toBe(false);
+    expect(validateDraft(draft({ durationDays: '365' }), TODAY).durationDays).toBeDefined();
+    expect(validateDraft(draft({ durationDays: '' }), TODAY).durationDays).toBeDefined();
+  });
+
+  it('falls back rather than sending nonsense to the database', () => {
+    expect(durationOrDefault('7')).toBe(7);
+    expect(durationOrDefault('365')).toBe(14);
+    expect(durationOrDefault('')).toBe(14);
   });
 });

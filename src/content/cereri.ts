@@ -97,6 +97,25 @@ export const requestsCopy = {
       seeBoard: 'Vezi panoul de cereri',
     },
 
+    duration: {
+      label: 'Cât timp stă pe panou',
+      hint: 'Îți scriem cu două zile înainte să iasă, ca să o prelungești sau să o închizi. O poți prelungi oricând.',
+      option: (days: number) =>
+        days === 3 ? '3 zile' : days === 30 ? 'o lună' : `${days} zile`,
+    },
+
+    photos: {
+      title: 'Pozele vehiculului',
+      hint: 'Până la 6 poze. Ajută cel mai mult dacă mașina e avariată sau nu pornește — un transportator care vede exact ce ridică dă un preț ferm din prima. Ștergem datele de localizare din poză înainte să o salvăm.',
+      add: 'Adaugă poze',
+      remove: 'Șterge poza',
+      fromImport: 'din anunț',
+      uploading: 'Se încarcă…',
+      remaining: (left: number, max: number) =>
+        left === 1 ? `Mai poți adăuga o poză (din ${max}).` : `Mai poți adăuga ${left} poze (din ${max}).`,
+      full: (max: number) => `Ai adăugat toate cele ${max} poze.`,
+    },
+
     errors: {
       generic: 'Nu am putut salva cererea. Mai încearcă o dată.',
       offline: 'Nu avem legătură cu baza de date. Cererea nu a fost salvată.',
@@ -131,6 +150,9 @@ export const requestsCopy = {
     condition: 'Starea vehiculului',
     conditionRunning: 'Pornește',
     conditionNotRunning: 'Nu pornește',
+    service: 'Tip de serviciu',
+    servicePeSens: 'Pe sens (mai ieftin)',
+    serviceExpres: 'Expres (pleacă dedicat)',
     scope: 'Acoperire',
     scopeDomestic: 'Intern',
     scopeInternational: 'Internațional',
@@ -151,7 +173,8 @@ export const requestsCopy = {
 
   empty: {
     title: 'Nicio cerere pentru această căutare.',
-    body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați.',
+    body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați. Dacă ești transportator, vezi ce trasee sunt deja publicate.',
+    departures: 'Vezi traseele',
     clear: 'Vezi toate cererile',
   },
 

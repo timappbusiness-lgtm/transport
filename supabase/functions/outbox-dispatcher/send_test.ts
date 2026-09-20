@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@^1";
-import { isPermanent, renderValues, sendEmail } from "./send.ts";
+import { formatSender, isHardBounce, isPermanent, renderValues, sendEmail } from "./send.ts";
 
 /**
  * No network anywhere here. The fetch is injected, and the only thing
@@ -98,4 +98,114 @@ Deno.test("the payload can override the site url, and usually does not", () => {
     "https://altceva.ro",
   );
   assertEquals(renderValues({ company_name: "X SRL" }, "https://coridor.ro").company_name, "X SRL");
+});
+
+// ---------------------------------------------------------------------
+// The sender, the reply-to and what the provider says back
+// ---------------------------------------------------------------------
+
+Deno.test("the display name is put in front of the address", () => {
+  assertEquals(
+    formatSender("nu-raspunde@coridor.ro", "Coridor"),
+    '"Coridor" <nu-raspunde@coridor.ro>',
+  );
+});
+
+Deno.test("no display name leaves the address alone", () => {
+  assertEquals(formatSender("nu-raspunde@coridor.ro", undefined), "nu-raspunde@coridor.ro");
+  assertEquals(formatSender("nu-raspunde@coridor.ro", "   "), "nu-raspunde@coridor.ro");
+});
+
+Deno.test("a quote in the name cannot break the header", () => {
+  const sender = formatSender("a@b.ro", 'Cori"dor\\');
+  assertEquals(sender, '"Coridor" <a@b.ro>');
+});
+
+Deno.test("reply-to is sent when there is one, and left out when there is not", async () => {
+  let body: Record<string, unknown> = {};
+  const capture: typeof fetch = (_url, init) => {
+    body = JSON.parse(String(init?.body ?? "{}"));
+    return Promise.resolve(new Response('{"id":"abc"}', { status: 200 }));
+  };
+
+  await sendEmail(
+    { ...CONFIG, replyTo: "contact@coridor.ro", fetchImpl: capture },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assertEquals(body.reply_to, "contact@coridor.ro");
+
+  await sendEmail({ ...CONFIG, fetchImpl: capture }, "cineva@example.ro", "S", "<p>x</p>", "x");
+  assertEquals("reply_to" in body, false);
+});
+
+Deno.test("the provider's id comes back with the success", async () => {
+  const result = await sendEmail(
+    {
+      ...CONFIG,
+      fetchImpl: () => Promise.resolve(new Response('{"id":"re_123"}', { status: 200 })),
+    },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assertEquals(result.ok, true);
+  assertEquals(result.providerId, "re_123");
+});
+
+Deno.test("a 200 whose body is not JSON is still a send", async () => {
+  const result = await sendEmail(
+    { ...CONFIG, fetchImpl: () => Promise.resolve(new Response("ok", { status: 200 })) },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assertEquals(result.ok, true);
+  assertEquals(result.providerId, undefined);
+});
+
+Deno.test("a 422 about the address is a hard bounce, not a retry", async () => {
+  const result = await sendEmail(
+    {
+      ...CONFIG,
+      fetchImpl: () =>
+        Promise.resolve(
+          new Response('{"message":"Invalid `to` field: not a valid email"}', { status: 422 }),
+        ),
+    },
+    "gresit@", "S", "<p>x</p>", "x",
+  );
+  assertEquals(result.ok, false);
+  assertEquals(result.hardBounce, true);
+  assertEquals(result.permanent, true);
+});
+
+Deno.test("a 403 is a suppressed address", () => {
+  assertEquals(isHardBounce(403, ""), true);
+});
+
+Deno.test("a 422 about something else is not the address's fault", async () => {
+  const result = await sendEmail(
+    {
+      ...CONFIG,
+      fetchImpl: () =>
+        Promise.resolve(new Response('{"message":"Subject is required"}', { status: 422 })),
+    },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assertEquals(result.hardBounce, undefined);
+  assertEquals(result.permanent, true);
+});
+
+Deno.test("a 429 is still worth waiting for, and never a bounce", async () => {
+  const result = await sendEmail(
+    { ...CONFIG, fetchImpl: () => Promise.resolve(new Response("slow down", { status: 429 })) },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assertEquals(result.permanent, false);
+  assertEquals(result.hardBounce, undefined);
+});
+
+Deno.test("the provider's own words survive into the error", async () => {
+  const result = await sendEmail(
+    { ...CONFIG, fetchImpl: () => Promise.resolve(new Response("domain not verified", { status: 401 })) },
+    "cineva@example.ro", "S", "<p>x</p>", "x",
+  );
+  assert(result.error?.includes("401"));
+  assert(result.error?.includes("domain not verified"));
 });

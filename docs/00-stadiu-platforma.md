@@ -12,6 +12,15 @@ să te bazezi pe vreun rând din tabele.
 > |---|---|
 > | Dispecerul de notificări și joburile programate (`20260918160000`) | §3, „niciun e-mail nu pleacă" |
 > | Ștergerea contului și a firmei, exportul datelor (`20260918180000`) | §5 GDPR, „nu există flux de ștergere a contului" |
+> | Deblocarea Fazei 1 (`20260920100000`) | §3 „matching și alerte", §5 „cota de contacte", și constatarea că nimic nu adună numerele criteriului de ieșire |
+>
+> Două lucruri din document au fost între timp depășite de cod și se
+> citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge
+> prin n8n (cele patru workflow-uri nu au fost construite niciodată; drena
+> este funcția edge `outbox-dispatcher`, din `20260918160000`), iar
+> publicarea unei cereri de către o persoană fizică **nu** mai cere un
+> telefon confirmat prin SMS — cere o adresă de e-mail confirmată și un
+> număr în profil, din `20260920100000`.
 >
 > Restul constatărilor stau în picioare, inclusiv retenția pentru
 > `contact_reveals` și paginile juridice.
