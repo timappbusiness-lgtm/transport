@@ -86,7 +86,7 @@ cu fișier, tabelă sau test.
 | Funcție | Are competitorul | Avem noi | Unde se vede la noi | Cum o facem mai bine / de ce nu o facem | Fază |
 |---|---|---|---|---|---|
 | **Publicare cerere gratuit și fără cont** | da | **nu** | `/cerere/noua` — formularul se completează fără cont, dar la pasul final `AccountPanel` cere înregistrare (`src/components/requests/request-form.tsx:604`) | Ei ne bat aici și e decizia cea mai scumpă din listă. Vezi 3.1 | **1** |
-| **17 tipuri de vehicule** | da (13 categorii + „alte cereri" pe contoarele lor) | **da** | `cargo_category`, 14 valori (`supabase/migrations/20260916120800_vehicle_cargo.sql:20`) | Categoriile lor, în ordinea volumului lor, plus `ambarcatiune`. Filtrul public expune însă doar 6 (`FILTERABLE_CATEGORIES`, `src/lib/departures.ts:102`) — restul se pot publica, dar nu se pot filtra | 1 |
+| **17 tipuri de vehicule** | da, după lista din brief — **dar contoarele lor din `docs/07-competitor-analysis.md` arată 13 rânduri**, inclusiv „Alte cereri". Cele două surse nu se potrivesc și nu am putut verifica azi | **da** | `cargo_category`, 14 valori (`supabase/migrations/20260916120800_vehicle_cargo.sql:20`) | Cele 13 categorii ale lor, în ordinea volumului lor, plus `ambarcatiune`. Filtrul public expune însă doar 6 (`FILTERABLE_CATEGORIES`, `src/lib/departures.ts:102`) — restul se pot publica, dar nu se pot filtra | 1 |
 | **Marcaj „avariat"** | da | **da** | `cargo_vehicle_details.is_damaged`, `damage_notes` | La noi avaria nu e o bifă decorativă: `needs_winch` e o coloană **generată** din `is_running`, `wheels_turn`, `steering_works`, deci cardul nu poate minți despre ce utilaj trebuie adus | 1 |
 | **Marcaj „urgent"** | da | **nu** | — | Avem `service_type = 'expres'` (`20260916120800:41`), care e același lucru spus onest: urgența are un preț, nu e o etichetă gratuită. Ce ne lipsește e vizibilitatea ei pe card. Vezi 3.5 | 1 |
 | **Număr de poziții / persoane** | da | **nu** | — | O cerere = un vehicul la noi. Pentru „3 mașini pe aceeași platformă" modelul nostru e altul și mai bun: plecări cu locuri (`platform_slots_total`, `v_departure_seats`). Nu e expus în interfață | 2 |
@@ -111,7 +111,7 @@ cu fișier, tabelă sau test.
 | **Generator de contract de transport** | da | **nu** | — | „PDF contract with electronic acceptance" e listat „After the MVP" în `docs/01-product-spec.md`. Vezi 3.11 | 3 |
 | **Alerte de accidente prin Waze / Telegram** | da | **nu** | — | Nu are legătură cu bursa. Vezi secțiunea 4 | — |
 | **Grupuri Facebook / WhatsApp / Telegram** | da | **nu** | — | Nu e produs, e distribuție — și e ieftină. Vezi 3.12 | 1 (operațional) |
-| **Două aplicații mobile (client și șofer)** | da | **parțial** | PWA instalabil: `public/manifest.webmanifest`, `public/sw.js`, `public/offline.html`, push cu VAPID (`20260918120000`), `tests/e2e/push-pwa.spec.ts` | Decizie luată: PWA în loc de două aplicații native. Rolul `driver` există în navigație și vede aproape nimic până când `FEATURES.transports` pornește (`src/lib/navigation.ts:56`) | 3 |
+| **Două aplicații mobile (client și șofer)** | da | **parțial** | PWA instalabil: `public/manifest.webmanifest`, `public/sw.js`, `public/offline.html`, push cu VAPID (`20260918120000`), `tests/e2e/push-pwa.spec.ts` | Decizie luată: PWA în loc de două aplicații native. Rolul `driver` există în navigație și vede aproape nimic până când `FEATURES.transports` pornește (`driverNav`, `src/lib/navigation.ts:59`) | 3 |
 | **Asistență rutieră (combustibil, baterie, deblocare)** | da | **nu** | `service_type = 'tractare'` există în schemă, ascuns în interfață | Alt business: dispecerat de intervenții, nu bursă. Vezi secțiunea 4 | — |
 
 ### 1.2 Ce avem noi și ei nu
@@ -149,9 +149,9 @@ mai mult, pentru o persoană.
 |---|---|---|---|---|---|
 | 1.1 | **Furnizor de e-mail configurat.** `RESEND_API_KEY` și `MAIL_FROM` nu sunt setate pe Edge Functions; `supabase/functions/outbox-dispatcher/index.ts:68` răspunde 503 și numește variabila lipsă | construit, fără credențiale | mic (configurare) | **blocant** | Decizia Edi/Madalin despre furnizor |
 | 1.2 | **Confirmarea contului depinde de mailerul intern Supabase.** `supabase.auth.signUp` cu `emailRedirectTo` (`src/app/auth-actions.ts:97`) folosește SMTP-ul implicit Supabase, care e limitat la câteva mesaje pe oră și vine de la o adresă care nu e a noastră | construit, nepotrivit pentru producție | mic | **blocant** | 1.1 |
-| 1.3 | **Furnizor de SMS pentru OTP.** `sendPhoneOtpAction` cheamă `supabase.auth.updateUser({ phone })` (`src/app/cont/actions.ts:311`). Fără un provider configurat în Supabase Auth, codul nu pleacă — iar fără telefon confirmat, `guard_cargo_listing_publish` refuză publicarea unei persoane fizice (`20260916120300:236`) | construit, fără provider | mic (configurare) | **blocant** | Decizia clientului |
+| 1.3 | **Furnizor de SMS pentru OTP.** `sendPhoneOtpAction` cheamă `supabase.auth.updateUser({ phone })` (`src/app/cont/actions.ts:310`). Fără un provider configurat în Supabase Auth, codul nu pleacă — iar fără telefon confirmat, `guard_cargo_listing_publish` refuză publicarea unei persoane fizice (`20260916120300:229`) | construit, fără provider | mic (configurare) | **blocant** | Decizia clientului |
 | 1.4 | **Contul „rapid" al persoanei fizice nu e rapid.** Specificația și `docs/faza-1-checklist.md` spun „telefon confirmat prin OTP"; în realitate fluxul e e-mail + parolă → confirmare pe e-mail → `/cont/profil` → telefon → SMS → abia apoi publicare. Nu există `signInWithOtp` nicăieri în `src/` | construit altfel decât e documentat | mediu | **blocant** | 1.1, 1.3 |
-| 1.5 | **Tarifele orientative sunt nepublicate și placeholder.** `price_settings.is_published` e `false` implicit și migrația marchează explicit cifrele ca neconfirmate (`20260917170000:106`). `/preturi` e în meniul public (`header-menu.tsx:27`) și nu arată nimic unui vizitator | construit, fără date aprobate | mic (aprobare) + mediu (cifre reale) | **blocant** pentru SEO | Validare de la partenerul de transport |
+| 1.5 | **Tarifele orientative sunt nepublicate și placeholder.** `price_settings.is_published` e `false` implicit și migrația marchează explicit cifrele ca neconfirmate (`20260917170000:110`). `/preturi` e în meniul public (`header-menu.tsx:27`) și nu arată nimic unui vizitator | construit, fără date aprobate | mic (aprobare) + mediu (cifre reale) | **blocant** pentru SEO | Validare de la partenerul de transport |
 | 1.6 | **Cele 161 de pagini SEO sunt nepublicate**, iar tot site-ul e `noindex` până se setează `NEXT_PUBLIC_SEO_INDEXABLE` (`src/app/robots.ts`) | construit, neactivat | mic (activare) + mediu (citit textele) | important | 1.5, aprobare redacțională |
 | 1.7 | **Panoul public de cereri e inaccesibil pe o platformă goală.** `/cereri` nu e în constanta `PAGES` din `src/components/layout/header-menu.tsx:25-30`; singurul link din pagina principală e în interiorul blocului `withFeed` (`src/components/home/activity.tsx:79`), iar sub prag se afișează `Empty()`, care linkează spre `/cerere/noua` și `/trasee`, nu spre `/cereri` | construit, inaccesibil | mic | important | — |
 | 1.8 | **Clientul nu își poate urca propriile poze.** Coloana `photo_paths` și bucket-ul `listing-photos` există; formularul oferă doar poza găsită de importul AI (§1.1, §3.6) | doar în bază | mediu | important | — |
@@ -474,7 +474,7 @@ simultan un preț mai bun și un termen-limită. Modelul e deja în bază:
 Ce lipsește: cererea să se poată lega de **o plecare anume**, nu să
 plutească într-un bazin. **Efort:** mediu. **Impact:** important.
 **Fază:** 2. **Risc:** supra-rezervare — deja prevenită de triggerul care
-refuză peste `platform_slots_total` (`20260916130200:280`).
+refuză peste `platform_slots_total` (`20260916130200:286`).
 
 ### 5.4 Avertismentul care leagă expirarea de calendarul firmei
 
@@ -595,7 +595,7 @@ Merită corectat, pentru că un checklist greșit e mai rău decât unul lipsă:
   telefon confirmat prin OTP — gata"**. Codul spune altceva: înregistrarea
   individuală e e-mail + parolă (`src/app/auth-actions.ts:97`), iar OTP-ul
   pe telefon e un pas ulterior din `/cont/profil`
-  (`src/app/cont/actions.ts:311`). **Starea reală: parțial.**
+  (`src/app/cont/actions.ts:310`). **Starea reală: parțial.**
 - `docs/00-stadiu-platforma.md` §4 și `src/components/firma/alerts-tab.tsx`
   descriu livrarea prin **n8n**; între timp livrarea s-a mutat în funcția
   edge `outbox-dispatcher`, iar `n8n/` conține doar `README.md`. Comentariul
@@ -784,7 +784,7 @@ Fiecare e sub o oră și niciunul nu merită un PR propriu:
 - Corectează `docs/faza-1-checklist.md`: contul rapid al persoanei fizice
   este **parțial**, nu gata.
 - Corectează comentariile care mai trimit la n8n pentru livrarea
-  notificărilor (`src/components/firma/alerts-tab.tsx:15`,
+  notificărilor (`src/components/firma/alerts-tab.tsx:19`,
   `docs/00-stadiu-platforma.md` §4) — livrarea e în funcția edge
   `outbox-dispatcher`.
 
