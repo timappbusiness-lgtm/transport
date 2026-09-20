@@ -7,11 +7,13 @@ import { safeNextPath } from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import {
+  normalisePhone,
   validateEmail,
   validateIndividualSignUp,
   validatePassword,
   validateSignIn,
 } from '@/lib/validation/auth';
+import { ROUTES } from '@/config/routes';
 
 /**
  * Server actions for the authentication flow.
@@ -84,12 +86,25 @@ async function signUp(
   const fullName = text(formData, 'fullName').trim();
   const email = text(formData, 'email').trim();
   const password = text(formData, 'password');
+  const rawPhone = text(formData, 'phone').trim();
   const terms = formData.get('terms') !== null;
+  // Where the confirmation link comes back to. A person who was halfway
+  // through a request when they were asked for an account should land
+  // back on the form with their draft, not on a dashboard that makes them
+  // find it again. `safeNextPath` is what stops this being an open
+  // redirect somebody can put in a confirmation e-mail.
+  const next = safeNextPath(text(formData, 'next'), ROUTES.account);
 
-  const validation = validateIndividualSignUp({ fullName, email, password, terms });
+  const requirePhone = accountType === 'individual';
+  const validation = validateIndividualSignUp(
+    { fullName, email, password, phone: rawPhone, terms },
+    { requirePhone },
+  );
   if (!validation.ok) {
-    return { fieldErrors: validation.errors, values: { fullName, email } };
+    return { fieldErrors: validation.errors, values: { fullName, email, phone: rawPhone } };
   }
+
+  const phone = requirePhone ? normalisePhone(rawPhone) : null;
 
   const supabase = await createClient();
   const origin = await siteOrigin();
@@ -98,7 +113,7 @@ async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/cont')}`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
       // A trigger copies these into `profiles`; the column is not writable
       // from the client. The version is the one this server rendered on
       // the checkbox, never a value from the form: a browser that could
@@ -107,12 +122,19 @@ async function signUp(
         full_name: fullName,
         account_type: accountType,
         terms_version: CURRENT_TERMS_VERSION,
+        // Normalised to E.164 here so the profile never holds two shapes
+        // of the same number. `handle_new_user` copies it across; the
+        // column is not writable from the browser.
+        ...(phone === null ? {} : { phone }),
       },
     },
   });
 
   if (error) {
-    return { error: toAppError(error, 'signUp').message, values: { fullName, email } };
+    return {
+      error: toAppError(error, 'signUp').message,
+      values: { fullName, email, phone: rawPhone },
+    };
   }
 
   redirect(`/confirmare-email?email=${encodeURIComponent(email)}`);

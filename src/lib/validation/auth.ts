@@ -96,14 +96,31 @@ export function validateOtp(value: string): string | undefined {
 // Form-level validators
 // ---------------------------------------------------------------------
 
-export type IndividualSignUpField = 'fullName' | 'email' | 'password' | 'terms';
+export type IndividualSignUpField = 'fullName' | 'email' | 'password' | 'phone' | 'terms';
 
+/**
+ * Signing up, for a person and for a firm.
+ *
+ * The telephone number is asked for here rather than later because it is
+ * what a carrier rings, and because the alternative — collecting it on a
+ * second screen after the account exists — is the flow that left people
+ * with an account they could not publish from. Its shape is checked; it
+ * is not confirmed by SMS, and nothing here pretends otherwise. See
+ * `phone_is_on_file` and `phone_verified` in the database for the two
+ * different bars and which action each one guards.
+ *
+ * `requirePhone` is false for a company sign-up: the firm's number comes
+ * from its ANAF record and its profile, and asking the person who happens
+ * to be registering for their own mobile would be collecting a personal
+ * detail we have no use for.
+ */
 export function validateIndividualSignUp(input: {
   fullName: string;
   email: string;
   password: string;
+  phone?: string;
   terms: boolean;
-}): ValidationResult<IndividualSignUpField> {
+}, options: { requirePhone?: boolean } = {}): ValidationResult<IndividualSignUpField> {
   const errors: FieldErrors<IndividualSignUpField> = {};
 
   const fullName = validateFullName(input.fullName);
@@ -112,6 +129,10 @@ export function validateIndividualSignUp(input: {
   if (email) errors.email = email;
   const password = validatePassword(input.password);
   if (password) errors.password = password;
+  if (options.requirePhone === true) {
+    const phone = validatePhone(input.phone ?? '');
+    if (phone) errors.phone = phone;
+  }
   if (!input.terms) {
     errors.terms = 'Confirmă că ai citit termenii și politica de confidențialitate.';
   }

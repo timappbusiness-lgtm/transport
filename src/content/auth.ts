@@ -33,9 +33,14 @@ export const authCopy = {
   },
   individualSignUp: {
     title: 'Cont persoană fizică',
-    lede: 'Ai nevoie doar de un nume, o adresă de e-mail și o parolă.',
+    lede: 'Nume, e-mail, telefon și o parolă. Atât — publici imediat ce confirmi e-mailul.',
     fullName: 'Nume și prenume',
     email: 'Adresă de e-mail',
+    phone: 'Telefon',
+    // Said plainly, because the alternative is somebody waiting for an SMS
+    // that is not coming. The number is what a carrier rings; it is not
+    // confirmed by code, and we do not imply that it is.
+    phoneHint: 'Numărul la care te sună transportatorul. Nu îți trimitem niciun cod prin SMS.',
     password: 'Parolă',
     passwordHint: 'Cel puțin 8 caractere.',
     terms: 'Am citit și accept',

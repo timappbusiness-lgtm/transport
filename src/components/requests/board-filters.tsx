@@ -1,7 +1,7 @@
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
-import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from '@/lib/departures';
+import { CARGO_CATEGORIES, CARGO_CATEGORY_LABELS } from '@/lib/departures';
 import {
   EMPTY_REQUEST_FILTERS,
   REQUEST_FILTER_KEYS,
@@ -129,7 +129,7 @@ export function BoardFilters({ filters }: { filters: RequestFilters }) {
             className={CONTROL}
           >
             <option value="">{c.any}</option>
-            {FILTERABLE_CATEGORIES.map((category) => (
+            {CARGO_CATEGORIES.map((category) => (
               <option key={category} value={category}>
                 {CARGO_CATEGORY_LABELS[category]}
               </option>
@@ -150,6 +150,22 @@ export function BoardFilters({ filters }: { filters: RequestFilters }) {
             <option value="">{c.any}</option>
             <option value="ruleaza">{c.conditionRunning}</option>
             <option value="nu-ruleaza">{c.conditionNotRunning}</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="rf-service" className="text-xs font-medium">
+            {c.service}
+          </label>
+          <select
+            id="rf-service"
+            name={REQUEST_FILTER_KEYS.service}
+            defaultValue={filters.service ?? ''}
+            className={CONTROL}
+          >
+            <option value="">{c.any}</option>
+            <option value="pe_sens">{c.servicePeSens}</option>
+            <option value="expres">{c.serviceExpres}</option>
           </select>
         </div>
 

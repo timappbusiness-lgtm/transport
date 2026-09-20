@@ -90,8 +90,9 @@ export const homeCopy = {
     },
 
     empty: {
-      body: 'Primele cereri apar aici imediat ce sunt publicate.',
+      body: 'Primele cereri apar aici imediat ce sunt publicate. Până atunci, panoul e deschis: poți vedea singur ce e pe el.',
       primary: 'Publică o cerere',
+      board: 'Vezi panoul de cereri',
       secondary: 'Trasee disponibile',
     },
 

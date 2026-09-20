@@ -15,6 +15,7 @@ import {
   type RequestField,
 } from '@/lib/request-form';
 import { cacheKey, readCache, writeCache } from '@/lib/carrier-count';
+import { ownedPhotoPaths } from '@/lib/photo-upload';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import type { FieldErrors } from '@/lib/validation/auth';
@@ -61,11 +62,11 @@ export async function publishRequestAction(
   const draft = parseDraft(String(formData.get('draft') ?? ''));
   if (draft === null) return { error: 'Formularul s-a pierdut pe drum. Ia-o de la capăt.' };
 
-  // A photo the person chose to attach, already in our own bucket under
-  // their own folder. Re-checked here rather than trusted: the field is
-  // in the form, so it is a path a browser could put anything into, and
-  // the storage policy already refuses a folder that is not theirs.
-  const photoPath = String(formData.get('photo_path') ?? '').trim();
+  // The photographs, already in our own bucket under this person's own
+  // folder. Re-checked here rather than trusted: they arrive as form
+  // fields, so they are paths a browser could put anything into. The
+  // storage policy refuses a folder that is not theirs, and
+  // `ownedPhotoPaths` refuses one that got past it.
 
   const errors = validateDraft(draft, isoToday(new Date()));
   if (Object.keys(errors).length > 0) return { fieldErrors: errors };
@@ -93,9 +94,10 @@ export async function publishRequestAction(
   const fromCounty = countyCodeForCity(draft.fromCity, draft.fromCountry);
   const toCounty = countyCodeForCity(draft.toCity, draft.toCountry);
 
-  const photoPaths = photoPath !== '' && photoPath.startsWith(`${context.user.id}/`)
-    ? [photoPath]
-    : [];
+  const photoPaths = ownedPhotoPaths(
+    formData.getAll('photo_paths').map((value) => String(value).trim()),
+    context.user.id,
+  );
 
   const supabase = await createClient();
   const { data, error } = await supabase

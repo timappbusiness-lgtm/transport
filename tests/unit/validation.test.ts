@@ -147,6 +147,37 @@ describe('individual sign-up', () => {
       'terms',
     ]);
   });
+
+  // The telephone number moved into sign-up, because collecting it on a
+  // second screen afterwards is what left people holding an account they
+  // could not publish from.
+  describe('the telephone number', () => {
+    it('is required for a private person', () => {
+      const result = validateIndividualSignUp(valid, { requirePhone: true });
+      expect(result.ok).toBe(false);
+      expect(result.errors.phone).toBeDefined();
+    });
+
+    it('is accepted in any of the shapes somebody types it', () => {
+      for (const phone of ['0722 123 456', '+40722123456', '0722.123.456', '40722123456']) {
+        const result = validateIndividualSignUp({ ...valid, phone }, { requirePhone: true });
+        expect(result.ok, phone).toBe(true);
+      }
+    });
+
+    it('refuses something that is not a Romanian mobile', () => {
+      const result = validateIndividualSignUp(
+        { ...valid, phone: '0264 123 456' },
+        { requirePhone: true },
+      );
+      expect(result.errors.phone).toBeDefined();
+    });
+
+    it('is not asked of a firm, whose number comes from its profile', () => {
+      expect(validateIndividualSignUp(valid)).toEqual({ ok: true, errors: {} });
+      expect(validateIndividualSignUp(valid, { requirePhone: false }).ok).toBe(true);
+    });
+  });
 });
 
 describe('company details', () => {

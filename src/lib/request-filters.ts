@@ -1,5 +1,6 @@
-import { FILTERABLE_CATEGORIES, type CargoCategory } from './departures';
+import { CARGO_CATEGORIES, type CargoCategory } from './departures';
 import type { ListingBoard } from './requests';
+import type { Database } from './supabase/database.types';
 
 /**
  * The request board's filters, in the URL and nowhere else.
@@ -27,6 +28,23 @@ export type ConditionFilter = 'ruleaza' | 'nu-ruleaza';
 /** Whether the move crosses a border. Computed as `is_domestic` in the view. */
 export type ScopeFilter = 'intern' | 'international';
 
+/**
+ * How the job is run, which is the price.
+ *
+ * `pe_sens` waits for the platform to fill and is the cheap one;
+ * `expres` is a dedicated departure. The distinction has been on the
+ * card since the schema was written and could not be filtered on, which
+ * made it decoration. A carrier who only runs express wants to see only
+ * those, and a client choosing express wants to know somebody does.
+ *
+ * `tractare` stays out of the filter for the same reason it stays out of
+ * the form: the product spec hides it at launch.
+ */
+export type ServiceFilter = Extract<
+  Database['public']['Enums']['service_type'],
+  'pe_sens' | 'expres'
+>;
+
 export interface RequestFilters {
   tab: Tab;
   fromCountry: string | null;
@@ -39,6 +57,7 @@ export interface RequestFilters {
   category: CargoCategory | null;
   condition: ConditionFilter | null;
   scope: ScopeFilter | null;
+  service: ServiceFilter | null;
 }
 
 export const EMPTY_REQUEST_FILTERS: RequestFilters = {
@@ -52,6 +71,7 @@ export const EMPTY_REQUEST_FILTERS: RequestFilters = {
   category: null,
   condition: null,
   scope: null,
+  service: null,
 };
 
 /** Query keys, Romanian so a shared link reads like the site. */
@@ -66,6 +86,7 @@ export const REQUEST_FILTER_KEYS = {
   category: 'categorie',
   condition: 'stare',
   scope: 'acoperire',
+  service: 'serviciu',
 } as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -110,8 +131,19 @@ function isScope(value: string | null): value is ScopeFilter {
   return value === 'intern' || value === 'international';
 }
 
+/**
+ * Every category the schema has, not the six the filter used to offer.
+ *
+ * A board that accepts fourteen kinds of vehicle and lets you filter on
+ * six is a board where the other eight are unfindable — which for a
+ * caravan or a tractor is the whole search.
+ */
 function isCategory(value: string | null): value is CargoCategory {
-  return value !== null && (FILTERABLE_CATEGORIES as readonly string[]).includes(value);
+  return value !== null && (CARGO_CATEGORIES as readonly string[]).includes(value);
+}
+
+function isService(value: string | null): value is ServiceFilter {
+  return value === 'pe_sens' || value === 'expres';
 }
 
 export function parseRequestFilters(params: SearchParams): RequestFilters {
@@ -137,6 +169,9 @@ export function parseRequestFilters(params: SearchParams): RequestFilters {
     category: isCategory(rawCategory) ? rawCategory : null,
     condition: isCondition(rawCondition) ? rawCondition : null,
     scope: isScope(rawScope) ? rawScope : null,
+    service: isService(one(params, REQUEST_FILTER_KEYS.service)) 
+      ? (one(params, REQUEST_FILTER_KEYS.service) as ServiceFilter)
+      : null,
   };
 }
 
@@ -153,6 +188,7 @@ export function requestFiltersToQuery(filters: RequestFilters): string {
   if (filters.category) query.set(REQUEST_FILTER_KEYS.category, filters.category);
   if (filters.condition) query.set(REQUEST_FILTER_KEYS.condition, filters.condition);
   if (filters.scope) query.set(REQUEST_FILTER_KEYS.scope, filters.scope);
+  if (filters.service) query.set(REQUEST_FILTER_KEYS.service, filters.service);
   const text = query.toString();
   return text === '' ? '' : `?${text}`;
 }

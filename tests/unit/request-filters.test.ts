@@ -95,6 +95,7 @@ describe('requestFiltersToQuery', () => {
       category: 'motocicleta',
       condition: 'ruleaza',
       scope: 'international',
+      service: 'expres',
     };
     const query = requestFiltersToQuery(filters);
     const params = Object.fromEntries(new URLSearchParams(query.replace(/^\?/, '')));
@@ -120,5 +121,38 @@ describe('what the query means', () => {
     expect(conditionIsRunning(null)).toBeNull();
     expect(conditionIsRunning('ruleaza')).toBe(true);
     expect(conditionIsRunning('nu-ruleaza')).toBe(false);
+  });
+});
+
+describe('the service filter', () => {
+  it('defaults to nothing, so the board shows both', () => {
+    expect(parseRequestFilters({}).service).toBeNull();
+  });
+
+  it('accepts the two levels a client can choose', () => {
+    expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.service]: 'expres' }).service).toBe('expres');
+    expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.service]: 'pe_sens' }).service).toBe('pe_sens');
+  });
+
+  it('refuses tractare, which the interface hides at launch', () => {
+    expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.service]: 'tractare' }).service).toBeNull();
+  });
+
+  it('refuses anything else somebody puts in the address bar', () => {
+    expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.service]: 'gratis' }).service).toBeNull();
+  });
+});
+
+describe('the category filter covers the whole schema', () => {
+  it('accepts a category the old six-item list left out', () => {
+    for (const category of ['camion', 'remorca', 'container', 'ambarcatiune', 'cap_tractor']) {
+      expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.category]: category }).category).toBe(
+        category,
+      );
+    }
+  });
+
+  it('still refuses one that does not exist', () => {
+    expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.category]: 'elicopter' }).category).toBeNull();
   });
 });

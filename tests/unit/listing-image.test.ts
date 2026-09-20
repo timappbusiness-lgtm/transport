@@ -43,10 +43,13 @@ describe('normaliseImage', () => {
     expect(after.icc).toBeUndefined();
   });
 
-  it('brings the longest edge down to the bound', async () => {
+  it('brings the longest edge down to the bound, keeping the proportions', async () => {
+    // Derived from the constant rather than written out: the bound moved
+    // from 1600 to 2000 when clients started uploading their own photos,
+    // and a hardcoded height turns that into a failing test about nothing.
     const after = await sharp(await normaliseImage(await photoWithExif(4000, 3000))).metadata();
     expect(after.width).toBe(MAX_EDGE_PX);
-    expect(after.height).toBe(1200);
+    expect(after.height).toBe(Math.round((MAX_EDGE_PX * 3) / 4));
   });
 
   it('and leaves a small photo alone rather than blowing it up', async () => {

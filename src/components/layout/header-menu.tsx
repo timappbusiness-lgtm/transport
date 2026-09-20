@@ -22,9 +22,24 @@ const SECTIONS = [
  * `#tarife` anchor; it is a page now, and a link that leaves the homepage
  * has to work from the other pages too.
  */
+/**
+ * The public bar.
+ *
+ * The two boards come first, because they are the product: a carrier who
+ * lands on the homepage and cannot find the requests has no reason to
+ * come back, and until 20260920 there was no link to `/cereri` anywhere
+ * on an empty platform — the only one sat inside a block that is hidden
+ * below the activity threshold.
+ *
+ * Prețuri is not here. The page exists and is reachable by link, but
+ * `price_settings.is_published` is false and a visitor who clicks a menu
+ * item to be told there is nothing to see has learned not to trust the
+ * menu. It goes back the moment the team publishes the table — see
+ * docs/configurare-externa.md.
+ */
 const PAGES = [
+  { href: ROUTES.requests, label: 'Cereri' },
   { href: ROUTES.routes, label: 'Trasee' },
-  { href: ROUTES.prices, label: 'Prețuri' },
   { href: ROUTES.companies, label: 'Firme' },
   { href: ROUTES.plans, label: 'Abonamente' },
 ] as const;

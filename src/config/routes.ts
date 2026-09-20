@@ -108,6 +108,4 @@ export function companyRoute(slug: string): string {
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
-export const UNBUILT_ROUTES: readonly Route[] = [
-  ROUTES.contact,
-] as const;
+export const UNBUILT_ROUTES: readonly Route[] = [] as const;
