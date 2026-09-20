@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { attachListingPhotoAction } from '@/app/cerere/import-actions';
 import { PhotoPanel, type ChosenPhoto } from '@/components/requests/photo-panel';
 import { MAX_PHOTOS } from '@/lib/photo-upload';
+import { DURATION_OPTIONS } from '@/lib/request-form';
 import { publishRequestAction, type PublishRequestState } from '@/app/cerere/actions';
 import { FormError } from '@/components/auth/form';
 import { PushPermissionCard } from '@/components/push/permission-card';
@@ -569,6 +570,25 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               actually asking before they commit — "is anybody going to
               see this". */}
           <CarrierPreview draft={draft} signedIn={signedIn} />
+
+          {/* How long it stays up. Fourteen days used to be a number in a
+              database trigger: twelve wasted days for a car collected on
+              Saturday, and far too short for a caravan moving in spring.
+              We write before it expires, not after. */}
+          <Labelled label={c.duration.label} htmlFor={`${id}-duration`} hint={c.duration.hint}>
+            <select
+              id={`${id}-duration`}
+              value={draft.durationDays}
+              onChange={(event) => set('durationDays', event.target.value)}
+              className={CONTROL}
+            >
+              {DURATION_OPTIONS.map((days) => (
+                <option key={days} value={String(days)}>
+                  {c.duration.option(days)}
+                </option>
+              ))}
+            </select>
+          </Labelled>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.contact.name} htmlFor={`${id}-name`}>

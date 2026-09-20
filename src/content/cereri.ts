@@ -97,6 +97,13 @@ export const requestsCopy = {
       seeBoard: 'Vezi panoul de cereri',
     },
 
+    duration: {
+      label: 'Cât timp stă pe panou',
+      hint: 'Îți scriem cu două zile înainte să iasă, ca să o prelungești sau să o închizi. O poți prelungi oricând.',
+      option: (days: number) =>
+        days === 3 ? '3 zile' : days === 30 ? 'o lună' : `${days} zile`,
+    },
+
     photos: {
       title: 'Pozele vehiculului',
       hint: 'Până la 6 poze. Ajută cel mai mult dacă mașina e avariată sau nu pornește — un transportator care vede exact ce ridică dă un preț ferm din prima. Ștergem datele de localizare din poză înainte să o salvăm.',

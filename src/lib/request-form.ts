@@ -47,6 +47,14 @@ export interface RequestDraft {
   isDamaged: boolean;
   damageNotes: string;
   serviceType: OfferedService;
+  /**
+   * How long it stays on the board, in days.
+   *
+   * A string because it lives in a `<select>` and in sessionStorage, and
+   * a draft that holds one type in the browser and another after a
+   * round trip is a bug waiting for somebody to find it.
+   */
+  durationDays: string;
   description: string;
   contactName: string;
   contactPhone: string;
@@ -54,6 +62,25 @@ export interface RequestDraft {
 }
 
 export type RequestField = keyof RequestDraft;
+
+/**
+ * How long a request may stay on the board.
+ *
+ * Four choices rather than a free number: a board full of year-long
+ * listings is a board nobody trusts, and the column's check constraint
+ * holds the same four so the browser cannot invent a fifth.
+ */
+export const DURATION_OPTIONS = [3, 7, 14, 30] as const;
+export const DEFAULT_DURATION_DAYS = 14;
+
+export function isDurationDays(value: string): boolean {
+  return (DURATION_OPTIONS as readonly number[]).includes(Number(value));
+}
+
+/** The chosen duration, or the default when the form sent nonsense. */
+export function durationOrDefault(value: string): number {
+  return isDurationDays(value) ? Number(value) : DEFAULT_DURATION_DAYS;
+}
 
 export const MAX_DESCRIPTION = 1200;
 export const MAX_DAMAGE_NOTES = 500;
@@ -80,6 +107,7 @@ export function emptyDraft(): RequestDraft {
     isDamaged: false,
     damageNotes: '',
     serviceType: 'pe_sens',
+    durationDays: String(DEFAULT_DURATION_DAYS),
     description: '',
     contactName: '',
     contactPhone: '',
@@ -169,7 +197,14 @@ export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   ruta: ['fromCity', 'fromCountry', 'toCity', 'toCountry', 'loadingFrom', 'loadingTo'],
   vehicul: ['category', 'make', 'model', 'year', 'weightKg'],
   stare: ['isRunning', 'wheelsTurn', 'steeringWorks', 'hasKeys', 'isDamaged', 'damageNotes'],
-  contact: ['serviceType', 'description', 'contactName', 'contactPhone', 'contactEmail'],
+  contact: [
+    'serviceType',
+    'durationDays',
+    'description',
+    'contactName',
+    'contactPhone',
+    'contactEmail',
+  ],
 };
 
 /**
@@ -179,6 +214,13 @@ export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
  */
 export function validateDraft(draft: RequestDraft, today: string): FieldErrors<RequestField> {
   const errors: FieldErrors<RequestField> = {};
+
+  // The select offers four values and the column accepts the same four.
+  // This is what catches a draft restored from an older sessionStorage,
+  // which is the one way a fifth can turn up.
+  if (!isDurationDays(draft.durationDays)) {
+    errors.durationDays = 'Alege cât timp stă cererea pe panou.';
+  }
 
   if (draft.fromCity.trim() === '') errors.fromCity = 'Scrie orașul de plecare.';
   else if (draft.fromCity.trim().length > 60) errors.fromCity = 'Numele este prea lung.';

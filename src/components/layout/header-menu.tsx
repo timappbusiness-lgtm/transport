@@ -98,16 +98,29 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
 
   return (
     <>
-      <nav aria-label="Navigare" className="hidden gap-1 min-[900px]:flex">
+      {/* Below 900px this used to disappear entirely, which meant a
+          visitor on a phone — most of this market — had no way to reach
+          either board from the header at all. It stays now and scrolls
+          sideways inside itself: the row scrolls, the page does not.
+          The in-page anchors drop out first, because on a phone they are
+          the least useful of the two kinds and the ones that fit worst. */}
+      <nav
+        aria-label="Navigare"
+        className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[900px]:flex-none"
+      >
         {onHome
           ? SECTIONS.map((section) => (
-              <a key={section.href} href={section.href} className={PILL_QUIET}>
+              <a
+                key={section.href}
+                href={section.href}
+                className={cn(PILL_QUIET, 'hidden min-[900px]:inline-flex')}
+              >
                 {section.label}
               </a>
             ))
           : null}
         {PAGES.map((page) => (
-          <Link key={page.href} href={page.href} className={PILL_QUIET}>
+          <Link key={page.href} href={page.href} className={cn(PILL_QUIET, 'whitespace-nowrap')}>
             {page.label}
           </Link>
         ))}

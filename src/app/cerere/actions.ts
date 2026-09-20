@@ -9,6 +9,7 @@ import { toAppError } from '@/lib/errors';
 import { countyCodeForCity } from '@/lib/counties';
 import {
   coordinatesFor,
+  durationOrDefault,
   isoToday,
   parseDraft,
   validateDraft,
@@ -120,6 +121,7 @@ export async function publishRequestAction(
       p_damage_notes: draft.isDamaged ? draft.damageNotes.trim() : null,
       p_weight_kg: draft.weightKg.trim() === '' ? null : Number(draft.weightKg),
       p_service_type: draft.serviceType,
+      p_duration_days: durationOrDefault(draft.durationDays),
       p_description: draft.description.trim() === '' ? null : draft.description.trim(),
       p_contact_name: draft.contactName.trim(),
       p_contact_phone: draft.contactPhone.trim(),

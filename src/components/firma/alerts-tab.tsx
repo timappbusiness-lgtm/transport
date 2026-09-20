@@ -16,8 +16,10 @@ const EMPTY: ActionState = {};
  * `notify_push` columns since phase 0 and nothing sends either, so a
  * switch for them here would be a promise the platform does not keep. The
  * e-mail is real: publishing a request writes a row into
- * `notification_outbox` for every matching carrier, and the n8n dispatcher
- * delivers it.
+ * `notification_outbox` for every matching carrier, and the
+ * `outbox-dispatcher` edge function delivers it. (It used to say n8n;
+ * the four n8n workflows were never built and the drain moved into an
+ * edge function in 20260918160000. `n8n/` holds only a README now.)
  *
  * The rules are listed rather than described, because "cererile potrivite"
  * means nothing until somebody says what potrivite is — and the four lines

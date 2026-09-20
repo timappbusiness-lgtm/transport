@@ -1,6 +1,8 @@
 # Faza 1 — lista de ieșire
 
-Scris pe `main` la commit-ul care adaugă paginile legale, 18 septembrie 2026.
+Scris pe `main` la commit-ul care adaugă paginile legale, 18 septembrie
+2026. **Actualizat pe 20 septembrie 2026**, la commit-ul care deblochează
+Faza 1: rândurile schimbate poartă data.
 
 „Faza 1" în briefurile noastre înseamnă MVP-ul fără oferte, comenzi,
 mesagerie și moderare — adică fazele 1, 2, 3, 4 și 9 din
@@ -28,11 +30,11 @@ regula aici.
 | Înscriere firmă cu `create_company()` | gata | — |
 | Căutare CUI la ANAF, autocompletare, marcaj inactiv | gata | — |
 | Membri prin invitație, transfer de proprietate | gata | — |
-| Cont rapid persoană fizică, telefon confirmat prin OTP | gata | — |
+| Cont rapid persoană fizică | **parțial** *(corectat 20.09)* | Era marcat „gata, telefon confirmat prin OTP". Nu era: înscrierea individuală este e-mail + parolă, iar OTP-ul pe telefon era un pas ulterior din `/cont/profil` — și fără furnizor de SMS nu se putea face deloc, deci nimeni nu putea publica. Din 20.09 înscrierea cere nume, e-mail, telefon și parolă, iar publicarea cere e-mailul confirmat și telefonul în profil. **Ce se schimbă când apare SMS-ul:** confirmarea telefonului devine automată, se șterge unealta manuală din `/admin/pilot`, iar `staff_set_phone_verified` rămâne doar pentru cazurile în care SMS-ul nu ajunge |
 | Încărcare documente, extragere AI, coadă de aprobare | gata | — |
 | Stări de document: valid, expiră curând, expirat | gata | — |
 | Registru vehicule: număr, VIN, tip, dimensiuni, șofer, trasee | gata | — |
-| Memento-uri de expirare pe e-mail la 30/14/7/1 zile | parțial | Coada se umple și dispecerul le trimite; **nu a fost văzut niciun e-mail real ajuns în inbox**, pentru că furnizorul nu este configurat |
+| Memento-uri de expirare pe e-mail la 30/14/7/1 zile | parțial | Coada se umple și dispecerul le trimite; **nu a fost văzut niciun e-mail real ajuns în inbox**, pentru că furnizorul nu este configurat. *(20.09: drumul complet, de la rând `queued` la `sent`, este acum dovedit pentru toate cele 20 de șabloane în `dispatch_test.ts`, cu furnizorul înlocuit de un dublu. Rămâne de confirmat cu un furnizor real — pașii sunt în `docs/configurare-externa.md`.)* |
 | Suspendare și reactivare automată | gata | — |
 | Administrarea echipei (`set_platform_staff()`) | gata | — |
 
@@ -52,6 +54,8 @@ altul pe producție cu un cont real.**
 | Panou public cu filtre | gata | — |
 | Deschiderea contactului, limitată de plan | gata | — |
 | Import din anunț (link sau poză) | gata | — |
+| Poze urcate de client *(20.09)* | gata | Până la 6, redimensionate în browser, EXIF și GPS scoase pe server |
+| Durata anunțului aleasă de client *(20.09)* | gata | 3, 7, 14 sau 30 de zile, cu memento cu două zile înainte |
 
 ## Faza 3 — Trasee tur și retur
 
@@ -66,7 +70,7 @@ altul pe producție cu un cont real.**
 
 | Element | Stare | Ce mai lipsește |
 |---|---|---|
-| Mesajul „N transportatori verificați circulă pe această rută" | gata | — |
+| Mesajul „N transportatori verificați circulă pe această rută" | gata | — *(20.09: conturile de test nu mai intră în număr)* |
 | Alerte pe e-mail pentru traseele salvate | parțial | Se pun în coadă și au șablon; **nefolosite de nimeni real**, din același motiv ca memento-urile |
 | Homepage: „alerte pe e-mail", nu „pe WhatsApp" | gata | — |
 
@@ -88,6 +92,7 @@ altul pe producție cu un cont real.**
 | `/admin/notificari`: starea joburilor și coada | gata | — |
 | `/admin/stergeri`: cereri de ștergere și anonimizare | gata | — |
 | `/admin/setari`: praguri, grație, retenție | gata | — |
+| `/admin/pilot`: criteriile de ieșire, măsurate *(20.09)* | gata | Închide constatarea „nimic nu adună numerele" de mai jos |
 | `/admin/import`, `/admin/pagini`, `/admin/optiuni`, `/admin/preturi` | gata | — |
 | Export de rapoarte | lipsește | Faza 2 |
 
@@ -111,11 +116,12 @@ nu are sens.
 
 | Element | Stare | Cine |
 |---|---|---|
-| **Furnizor de e-mail configurat** (`RESEND_API_KEY`, `MAIL_FROM`) | lipsește | Madalin / Edi. Fără el dispecerul răspunde 503 și numește variabila lipsă. Nimeni nu a primit niciodată un e-mail de la platformă |
+| **Furnizor de e-mail configurat** (`RESEND_API_KEY`, `MAIL_FROM`) | lipsește | Madalin / Edi. Pașii exacți: `docs/configurare-externa.md` §1–2. Fără el dispecerul răspunde 503, numește variabila lipsă și o scrie în `job_run_log`, iar `/admin/notificari` o arată ca „neconfigurat" |
+| **SMTP propriu în Supabase Auth** *(20.09)* | lipsește | Madalin. `docs/configurare-externa.md` §3. Mailerul implicit e limitat la câteva mesaje pe oră, iar fără e-mail confirmat nimeni nu poate publica |
 | **Joburile programate rulează** | de confirmat | Migrația `20260918210000` le programează pe toate opt. De verificat pe `/admin/notificari` că trec pe „la zi" în 24 de ore |
 | **Documentele legale verificate** | lipsește | Avocat. Lista este în `docs/09-verificare-juridica.md` |
 | **Datele operatorului completate** | lipsește | Edi, în `src/config/company.ts` |
-| **Conturile de test separate de cele reale** | parțial | Există conturi de test pe producție. De marcat vizibil și de exclus din orice număr arătat public — azi nu sunt |
+| **Conturile de test separate de cele reale** | **gata în cod** *(20.09)* | `is_test` pe conturi și firme, marcat de echipă din `/admin/pilot` și auditat; exclus din ambele panouri, din lista de firme, din numerele de pe prima pagină, din numărul de transportatori de pe rută și din tot ce arată `/admin/pilot`. Un cont de test vede o insignă pe fiecare ecran. **De făcut pe producție:** de marcat conturile existente — migrația le prinde pe cele de pe `@test.ro` și `@example.com`, restul manual |
 | **Decizia despre proiectul Supabase de producție** | de luat | Proiectul actual a fost creat pentru dezvoltare. De decis dacă lansăm pe el sau creăm unul nou în `eu-central-1`, cu datele migrate. Regiunea nu se schimbă după creare |
 | **Secretele în Vault** | parțial | `outbox_dispatcher_url`, `account_deletion_url`, `cron_secret`. De confirmat că toate trei există |
 | **Backup și restaurare** | de confirmat | Supabase face backup automat pe planul plătit. De testat o restaurare o dată, înainte de lansare, nu după |
@@ -153,11 +159,16 @@ acțiunile de mai jos în acea săptămână. Toate sunt deja înregistrate.
 săptămâna respectivă, în afara aprobării documentelor. Se citește din
 `audit_log`, filtrat pe `actor_role = 'staff'`.
 
-**Ce lipsește ca să putem măsura**: un ecran care pune numerele astea
-împreună. `audit_log` și tabelele de mai sus au datele; nimic nu le
-adună. Este o zi de lucru și ar trebui făcut înainte de lansare, nu după —
-un criteriu de ieșire pe care nu îl poți citi într-o pagină este un criteriu
-pe care nimeni nu îl verifică.
+**Ce lipsea ca să putem măsura**: un ecran care pune numerele astea
+împreună. `audit_log` și tabelele de mai sus aveau datele; nimic nu le
+aduna.
+
+**Rezolvat pe 20 septembrie:** `/admin/pilot`. Definiția de mai sus a
+„activ" e implementată exact așa cum e scrisă, în
+`pilot_weekly_activity()`, iar conturile noastre de test sunt scoase din
+toate cifrele. Pagina arată și cât așteaptă un client de la publicare
+până îi deschide cineva contactul, și câte intervenții manuale a făcut
+echipa — adică jumătatea „fără noi în buclă" a criteriului.
 
 Al doilea criteriu — **peste jumătate din înțelegeri pornite de la o ofertă
 în platformă, nu de la un telefon** — nu se poate măsura deloc în Faza 1,

@@ -50,9 +50,19 @@ test.describe('prices, unpublished', () => {
     await expect(page).toHaveURL(/\/preturi$/);
   });
 
-  test('is in the header nav', async ({ page }) => {
+  test('is out of the header nav while the table is unpublished', async ({ page }) => {
+    // Decided 20 September 2026: a menu item that leads to „nothing to
+    // see yet" teaches people not to trust the menu. It goes back the
+    // moment the team publishes the table — see docs/configurare-externa.md
+    // §7, and the comment on PAGES in header-menu.tsx.
     await page.goto('/');
-    await expect(page.locator('header a[href="/preturi"]')).toHaveCount(1);
+    await expect(page.locator('header a[href="/preturi"]')).toHaveCount(0);
+  });
+
+  test('but is still reachable by link', async ({ page }) => {
+    await page.goto('/preturi');
+    await expect(page).toHaveURL(/\/preturi$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('the homepage band points here instead of printing a rate', async ({ page }) => {

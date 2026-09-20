@@ -110,3 +110,7 @@ export function companyRoute(slug: string): string {
  * by a unit test so a route cannot quietly stay a stub after it is built.
  */
 export const UNBUILT_ROUTES: readonly Route[] = [] as const;
+// Empty since 20 September 2026: /contact was the last one, and it is a
+// real page now. `PlaceholderPage` stays for the next route that needs a
+// stub — the mechanism is what keeps a link in the footer from being a
+// 404, and rebuilding it later costs more than leaving it.
