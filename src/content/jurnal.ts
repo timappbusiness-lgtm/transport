@@ -24,7 +24,8 @@ export const auditCopy = {
     apply: 'Caută',
     clear: 'Șterge filtrele',
     export: 'Descarcă CSV',
-    exportHint: 'Exact rândurile filtrate acum, până la 5000.',
+    exportHint:
+      'Exact rândurile din filtrele aplicate acum, până la 5000. Dacă tocmai ai schimbat un filtru, apasă întâi „Caută”.',
   },
   list: {
     /** Takes "120". */

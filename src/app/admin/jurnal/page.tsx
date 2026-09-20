@@ -73,7 +73,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
   const [page, facets] = await Promise.all([loadAuditPage(query), loadAuditFacets()]);
   const lastPage = Math.max(1, Math.ceil(page.total / AUDIT_PAGE_SIZE));
-  const filtered = toSearch(query, 1) !== '';
+  // A page past the end is a dead end too, so it counts as „narrowed":
+  // without it somebody who typed ?p=99 gets an empty screen with no way
+  // back to the list.
+  const filtered = toSearch(query, 1) !== '' || query.page > 1;
 
   const actions = facets.filter((facet) => facet.kind === 'action');
   const entities = facets.filter((facet) => facet.kind === 'entity');
