@@ -6964,6 +6964,23 @@ select pg_temp.check('CAT  our own accounts are not counted', 'fix',
   $a$select count(*) = 0 from public.category_counts()$a$, 'true',
   p_setup => $s$update public.profiles set is_test = true$s$);
 
+-- The homepage reads this table directly to print „în ultimele 90 de
+-- zile" under the counters, and /admin/activitate reads it to fill the
+-- form. If the select ever stops working, both fall back to the built-in
+-- default and the note quietly says the wrong number.
+select pg_temp.check('CAT  a visitor may read the window itself, not only the counts', 'fix',
+  null, 'anon',
+  $a$select category_window_days > 0 from public.matching_settings$a$, 'true');
+
+select pg_temp.check('CAT  a signed-in user may too', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select default_detour_km > 0 from public.matching_settings$a$, 'true');
+
+select pg_temp.check('CAT  but nobody writes to it through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.matching_settings set default_detour_km = 999 where id$a$, 'blocked',
+  p_verify => $v$select default_detour_km <> 999 from public.matching_settings$v$);
+
 select pg_temp.check('CAT  the window is what the team set', 'fix',
   null, 'anon',
   $a$select count(*) = 0 from public.category_counts(1)$a$, 'true',
