@@ -95,7 +95,9 @@ test.describe('the detour tolerance decides what a carrier is shown', () => {
     // The board filtered to „potrivite cu firma mea" is the same rule,
     // so the count there is the check: fewer than the whole board.
     await page.goto('/cereri?doar=firma');
-    await expect(page.getByText(/din .* cereri se potrivesc cu firma ta/)).toBeVisible();
+    await expect(
+      page.getByText(/din cele mai recente \d+ cereri se potrivesc cu firma ta/),
+    ).toBeVisible();
   });
 
   test('the filter explains an empty result rather than looking broken', async ({ page }) => {

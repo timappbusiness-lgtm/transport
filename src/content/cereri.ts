@@ -164,8 +164,12 @@ export const requestsCopy = {
       'Acoperirea, categoriile și dotările din profil, plus ocolul pe care îl acceptă traseele tale publicate.',
     mineNoCompany:
       'Filtrul „potrivite cu firma mea” are nevoie de un cont de firmă cu profilul completat. Ți-am arătat deocamdată toate cererile.',
-    mineCount: (shown: number, total: number) =>
-      `${shown} din ${total} cereri se potrivesc cu firma ta.`,
+    /**
+     * Says which window was examined, because the filter runs after the
+     * query: „3 cereri" alone would read as „the board has three".
+     */
+    mineCount: (shown: number, scanned: number) =>
+      `${shown} din cele mai recente ${scanned} cereri se potrivesc cu firma ta.`,
   },
 
   card: {

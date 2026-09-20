@@ -44,6 +44,19 @@ export const metadata: Metadata = {
 const TABS: readonly Tab[] = ['toate', 'curse', 'retur'];
 const BOARD_LIMIT = 60;
 
+/**
+ * How many rows „potrivite cu firma mea" looks at.
+ *
+ * The filter runs after the query — coverage, categories, equipment and
+ * the detour are not columns on the board view — so the window it scans
+ * decides how much it can find. Sixty would mean a firm matching one row
+ * in twenty sees three matches and concludes the board is empty for
+ * them. Two hundred is still one page of rows from Postgres and gives
+ * the filter something to work with; the count on screen says which
+ * window it examined rather than implying it saw everything.
+ */
+const MINE_SCAN_LIMIT = 200;
+
 export default async function Page({
   searchParams,
 }: {
@@ -52,7 +65,10 @@ export default async function Page({
   const filters = parseRequestFilters(await searchParams);
   const c = requestsCopy.board;
 
-  const [all, context] = await Promise.all([loadRequests(filters), getAccountContext()]);
+  const [all, context] = await Promise.all([
+    loadRequests(filters, filters.mine ? MINE_SCAN_LIMIT : BOARD_LIMIT),
+    getAccountContext(),
+  ]);
 
   // „Doar cele potrivite cu firma mea" is applied here rather than in the
   // query: what a firm carries is coverage, categories, equipment and the
@@ -63,7 +79,7 @@ export default async function Page({
   const canFilterByCompany = company !== null && company.company_type !== 'expeditie';
   const applyMine = filters.mine && canFilterByCompany;
   const mine = applyMine ? await onlyForCompany(all, company) : null;
-  const requests = mine?.requests ?? all;
+  const requests = (mine?.requests ?? all).slice(0, BOARD_LIMIT);
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -131,7 +147,7 @@ export default async function Page({
               <p className="mb-4 text-sm text-muted">
                 {mine === null
                   ? `${c.count(requests.length)} · ${c.sortNote}`
-                  : `${requestsCopy.filters.mineCount(requests.length, all.length)} · ${c.sortNote}`}
+                  : `${requestsCopy.filters.mineCount(mine.requests.length, all.length)} · ${c.sortNote}`}
               </p>
               <ul className="flex flex-col gap-4">
                 {requests.map((request) => (
@@ -320,7 +336,10 @@ function MineEmptyState({ filters }: { filters: RequestFilters }) {
  * query is identical for a visitor and for a signed-in carrier. What a
  * session adds is on the detail page, and what a plan adds is the contact.
  */
-async function loadRequests(filters: RequestFilters): Promise<PublicRequest[]> {
+async function loadRequests(
+  filters: RequestFilters,
+  limit: number = BOARD_LIMIT,
+): Promise<PublicRequest[]> {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
@@ -328,7 +347,7 @@ async function loadRequests(filters: RequestFilters): Promise<PublicRequest[]> {
     .from('v_requests_public')
     .select('*')
     .order('loading_from', { ascending: true })
-    .limit(BOARD_LIMIT);
+    .limit(limit);
 
   const board = tabBoard(filters.tab);
   if (board) query = query.eq('board', board);
