@@ -8,11 +8,13 @@ import {
   pluralRo,
   relativeTimeRo,
   scopeOf,
+  showCategories,
   showFeed,
   showStats,
   vehicleLine,
   type ActivityStats,
   type ActivityThresholds,
+  type CategoryCount,
   type PublicRequest,
 } from '@/lib/requests';
 
@@ -215,6 +217,49 @@ describe('the thresholds', () => {
   it('fetches six and hides the last two on a phone', () => {
     expect(FEED_LIMIT).toBe(6);
     expect(FEED_LIMIT_MOBILE).toBe(4);
+  });
+});
+
+describe('the category counters', () => {
+  const CATEGORIES: CategoryCount[] = [
+    { category: 'autoturism', label: 'Autoturism', requests: 12 },
+    { category: 'motocicleta', label: 'Motocicletă', requests: 3 },
+  ];
+
+  it('hides the whole block below the activity threshold', () => {
+    // Not „shows zeroes": a grid of ones under a confident heading is a
+    // claim about a busy board that the board does not support.
+    expect(showCategories({ ...STATS, publishedTotal: 49 }, CATEGORIES, THRESHOLDS)).toBe(false);
+  });
+
+  it('shows it at the threshold and above', () => {
+    expect(showCategories({ ...STATS, publishedTotal: 50 }, CATEGORIES, THRESHOLDS)).toBe(true);
+    expect(showCategories(STATS, CATEGORIES, THRESHOLDS)).toBe(true);
+  });
+
+  it('hides it when the counts came back empty, whatever the total says', () => {
+    // `category_counts()` has `having count(*) > 0`, so an empty list is
+    // what „nothing published in any category" looks like.
+    expect(showCategories(STATS, [], THRESHOLDS)).toBe(false);
+  });
+
+  it('hides it when there is no database to ask', () => {
+    expect(showCategories(null, CATEGORIES, THRESHOLDS)).toBe(false);
+  });
+
+  it('follows the threshold wherever the team moves it', () => {
+    const loose: ActivityThresholds = { ...THRESHOLDS, statsMinRequests: 1 };
+    expect(showCategories({ ...STATS, publishedTotal: 1 }, CATEGORIES, loose)).toBe(true);
+  });
+});
+
+describe('the window the counters cover', () => {
+  it('says „90 de zile", not „90 zile"', () => {
+    // The note under the block is the thing that makes the numbers
+    // checkable, so it has to read like Romanian.
+    expect(pluralRo(90, 'zi', 'zile')).toBe('90 de zile');
+    expect(pluralRo(7, 'zi', 'zile')).toBe('7 zile');
+    expect(pluralRo(1, 'zi', 'zile')).toBe('o zi');
   });
 });
 

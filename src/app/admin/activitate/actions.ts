@@ -87,3 +87,51 @@ export async function setThresholdsAction(
 
   return { notice: c.saved };
 }
+
+/**
+ * The two matching dials.
+ *
+ * `default_detour_km` is the tolerance a published route gets when it
+ * never named one — `truck_listings.max_detour_km` carries a default of
+ * 50, but a column default applies at insert and says nothing about the
+ * rows written before it. `category_window_days` is the window the
+ * homepage counters cover, and the number printed under them.
+ *
+ * `set_matching_settings` is SECURITY DEFINER, checks staff itself and
+ * writes the before/after pair to `audit_log`. The checks below only
+ * produce a better message than a constraint violation would.
+ */
+export async function setMatchingSettingsAction(
+  _prev: ThresholdActionState,
+  formData: FormData,
+): Promise<ThresholdActionState> {
+  const context = await getAccountContext();
+  if (!context?.isStaff) return { error: c.noAccess };
+
+  const detour = whole(formData, 'default_detour_km');
+  const window = whole(formData, 'category_window_days');
+
+  const fieldErrors: Record<string, string> = {};
+  if (detour === null || detour < 0 || detour > 500) {
+    fieldErrors.default_detour_km = c.matching.invalidDetour;
+  }
+  if (window === null || window < 7 || window > 365) {
+    fieldErrors.category_window_days = c.matching.invalidWindow;
+  }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_matching_settings', {
+    p_default_detour_km: detour,
+    p_category_window_days: window,
+  });
+
+  if (error) return { error: toAppError(error, 'matching.settings').message };
+
+  // The category counters ride on the cached homepage payload, so the
+  // tag has to drop or a new window is invisible for up to a minute.
+  updateTag(ACTIVITY_TAG);
+  revalidatePath(ROUTES.adminActivity);
+  revalidatePath(ROUTES.home);
+  return { notice: c.matching.saved };
+}

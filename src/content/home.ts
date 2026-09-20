@@ -89,6 +89,23 @@ export const homeCopy = {
       routeLabel: (from: string, to: string) => `De la ${from} la ${to}`,
     },
 
+    /**
+     * The counters per kind of vehicle.
+     *
+     * The note is the whole point: a number without a window is a number
+     * nobody can check, and „în ultimele 90 de zile" is what makes this
+     * a fact rather than a boast.
+     */
+    categories: {
+      eyebrow: 'Ce se transportă',
+      strong: 'Pe categorii',
+      soft: 'de vehicule.',
+      /** Takes „90 de zile". */
+      note: (window: string) => `Cereri publicate în ultimele ${window}.`,
+      /** Takes „12 cereri" and the category name. */
+      linkLabel: (count: string, category: string) => `${count} la categoria ${category}`,
+    },
+
     empty: {
       body: 'Primele cereri apar aici imediat ce sunt publicate. Până atunci, panoul e deschis: poți vedea singur ce e pe el.',
       primary: 'Publică o cerere',

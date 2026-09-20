@@ -3,6 +3,7 @@ import {
   FEED_LIMIT,
   type ActivityStats,
   type ActivityThresholds,
+  type CategoryCount,
   type PublicRequest,
 } from './requests';
 import { createPublicClient } from './supabase/public';
@@ -27,6 +28,10 @@ export interface HomepageActivity {
   requests: PublicRequest[];
   /** Verified, unsuspended carriers. null when we could not ask. */
   verifiedCarriers: number | null;
+  /** Published requests per category, real counts, never a zero row. */
+  categories: CategoryCount[];
+  /** The window those counts cover, from `matching_settings`. */
+  categoryWindowDays: number;
 }
 
 /**
@@ -40,18 +45,23 @@ export const DEFAULT_THRESHOLDS: ActivityThresholds = {
   verifiedCompaniesMin: 20,
 };
 
+/** The column default in `matching_settings`, for a checkout with no database. */
+export const DEFAULT_CATEGORY_WINDOW_DAYS = 90;
+
 export const NO_ACTIVITY: HomepageActivity = {
   stats: null,
   thresholds: DEFAULT_THRESHOLDS,
   requests: [],
   verifiedCarriers: null,
+  categories: [],
+  categoryWindowDays: DEFAULT_CATEGORY_WINDOW_DAYS,
 };
 
 async function fetchActivity(): Promise<HomepageActivity> {
   if (!isSupabaseConfigured()) return NO_ACTIVITY;
 
   const supabase = createPublicClient();
-  const [activity, settings, requests, carriers] = await Promise.all([
+  const [activity, settings, requests, carriers, categories, matching] = await Promise.all([
     supabase.rpc('homepage_activity'),
     supabase.from('homepage_settings').select('*').maybeSingle(),
     supabase
@@ -60,6 +70,8 @@ async function fetchActivity(): Promise<HomepageActivity> {
       .order('published_at', { ascending: false })
       .limit(FEED_LIMIT),
     supabase.rpc('verified_carriers_count'),
+    supabase.rpc('category_counts'),
+    supabase.from('matching_settings').select('category_window_days').maybeSingle(),
   ]);
 
   for (const [label, result] of [
@@ -67,6 +79,8 @@ async function fetchActivity(): Promise<HomepageActivity> {
     ['settings', settings],
     ['requests', requests],
     ['carriers', carriers],
+    ['categories', categories],
+    ['matching', matching],
   ] as const) {
     if (result.error) {
       console.error(`[acasă] ${label} query failed`, {
@@ -89,6 +103,17 @@ async function fetchActivity(): Promise<HomepageActivity> {
       : DEFAULT_THRESHOLDS,
     requests: (requests.data ?? []) as PublicRequest[],
     verifiedCarriers: typeof carriers.data === 'number' ? carriers.data : null,
+    // `category_counts()` has `having count(*) > 0`, so a category with
+    // nothing in it is absent rather than a zero. Nothing here adds one
+    // back: a grid of zeroes is a claim that the board covers something
+    // it does not.
+    categories: ((categories.data ?? []) as CategoryCount[]).map((row) => ({
+      category: row.category,
+      label: row.label,
+      requests: Number(row.requests) || 0,
+    })),
+    categoryWindowDays:
+      matching.data?.category_window_days ?? DEFAULT_CATEGORY_WINDOW_DAYS,
   };
 }
 

@@ -66,7 +66,8 @@ export async function loadAuditPage(query: AuditQuery): Promise<AuditPage> {
 
   const rows = (data ?? []) as (AuditEntry & { total_count: number })[];
   return {
-    entries: rows.map(({ total_count: _total, ...entry }) => entry),
+    entries: rows.map(withoutCount),
+    // The window function rides along on every row, so any row carries it.
     total: rows[0]?.total_count ?? 0,
     error: null,
   };
@@ -107,11 +108,28 @@ export async function loadAuditForExport(
     }
 
     const rows = (data ?? []) as (AuditEntry & { total_count: number })[];
-    for (const { total_count: _total, ...entry } of rows) all.push(entry);
+    for (const row of rows) all.push(withoutCount(row));
     if (rows.length < size) break;
   }
 
   return all;
+}
+
+/** The paging total travels on every row; the entry itself does not want it. */
+function withoutCount(row: AuditEntry & { total_count: number }): AuditEntry {
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    actor_user_id: row.actor_user_id,
+    actor_name: row.actor_name,
+    actor_role: row.actor_role,
+    action: row.action,
+    entity: row.entity,
+    entity_id: row.entity_id,
+    before: row.before,
+    after: row.after,
+    reason: row.reason,
+  };
 }
 
 export async function loadAuditFacets(): Promise<AuditFacet[]> {

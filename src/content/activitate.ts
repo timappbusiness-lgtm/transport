@@ -29,6 +29,29 @@ export const activityAdminCopy = {
   invalidFeed: 'Introdu un număr de cel puțin 1.',
   noAccess: 'Nu ai drepturi pentru această acțiune.',
 
+  /**
+   * The two matching dials, which are not thresholds but live on the
+   * same screen because they are the same kind of decision: a number the
+   * team sets that changes what people are shown.
+   */
+  matching: {
+    title: 'Potrivire și categorii',
+    lede: 'Două numere pe care le poate schimba echipa. Amândouă se văd imediat pe prima pagină și în potriviri.',
+    detour: 'Toleranță de ocol implicită (km)',
+    detourHint:
+      'Cât ocol acceptă un traseu publicat care nu și-a spus toleranța. Ocolul e costul de inserție: câți kilometri în plus face camionul ca să ia și să lase vehiculul.',
+    window: 'Fereastra pentru categorii (zile)',
+    windowHint:
+      'Peste câte zile se numără cererile publicate în blocul de categorii de pe prima pagină. Numărul apare scris sub bloc.',
+    save: 'Salvează',
+    saved: 'Setările de potrivire au fost salvate.',
+    invalidDetour: 'Introdu un număr între 0 și 500.',
+    invalidWindow: 'Introdu un număr între 7 și 365.',
+    /** Takes „12 categorii". */
+    visible: (categories: string) => `Blocul de categorii este vizibil, cu ${categories}.`,
+    hidden: 'Blocul de categorii este ascuns: sunt prea puține cereri publicate.',
+  },
+
   state: {
     title: 'Ce se vede acum',
     publishedTotal: 'Cereri publicate vreodată',
