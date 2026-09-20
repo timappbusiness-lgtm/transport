@@ -126,3 +126,35 @@ export function auditCsvName(now: Date): string {
   const stamp = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Bucharest' }).format(now);
   return `jurnal-${stamp}.csv`;
 }
+
+const OFFSET_FORMAT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Bucharest',
+  timeZoneName: 'longOffset',
+});
+
+/**
+ * Midnight in Bucharest on a given day, as an instant.
+ *
+ * The offset has to be looked up per date rather than hardcoded:
+ * Romania is UTC+3 in summer and UTC+2 in winter, so a fixed `+03:00`
+ * would put every winter query's boundary an hour into the previous
+ * day — quietly, and only for half the year.
+ *
+ * Takes `YYYY-MM-DD`. Returns an RFC 3339 string Postgres reads as a
+ * `timestamptz`.
+ */
+export function bucharestMidnight(day: string): string {
+  const parts = OFFSET_FORMAT.formatToParts(new Date(`${day}T12:00:00Z`));
+  const name = parts.find((part) => part.type === 'timeZoneName')?.value ?? 'GMT+02:00';
+  // "GMT+03:00" — and plain "GMT" at an offset of zero, which Romania
+  // never has but the format allows.
+  const offset = name.replace('GMT', '') || '+00:00';
+  return `${day}T00:00:00${offset}`;
+}
+
+/** The day after, so „până la 21" includes the whole of the 21st. */
+export function bucharestNextMidnight(day: string): string {
+  const next = new Date(`${day}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return bucharestMidnight(next.toISOString().slice(0, 10));
+}

@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { auditCsv, auditCsvName, changedFields, display, hasDiff, type AuditEntry } from '@/lib/audit';
+import {
+  auditCsv,
+  auditCsvName,
+  bucharestMidnight,
+  bucharestNextMidnight,
+  changedFields,
+  display,
+  hasDiff,
+  type AuditEntry,
+} from '@/lib/audit';
 
 /**
  * The audit log is only worth opening if the diff is readable, and it is
@@ -113,5 +122,31 @@ describe('the CSV of a filtered range', () => {
   it('names the file for the day it was taken, in Bucharest time', () => {
     // 22:30 UTC on the 20th is already the 21st here.
     expect(auditCsvName(new Date('2026-09-20T22:30:00.000Z'))).toBe('jurnal-2026-09-21.csv');
+  });
+});
+
+describe('the day boundaries the filters ask for', () => {
+  it('uses the offset that was actually in force on that date', () => {
+    // Romania is UTC+3 in summer and UTC+2 in winter. A hardcoded
+    // +03:00 would put every winter query an hour into the previous
+    // day — quietly, and only for half the year.
+    expect(bucharestMidnight('2026-07-15')).toBe('2026-07-15T00:00:00+03:00');
+    expect(bucharestMidnight('2026-01-15')).toBe('2026-01-15T00:00:00+02:00');
+  });
+
+  it('gets the switch-over days right', () => {
+    expect(bucharestMidnight('2026-03-29')).toBe('2026-03-29T00:00:00+03:00');
+    expect(bucharestMidnight('2026-10-25')).toBe('2026-10-25T00:00:00+02:00');
+  });
+
+  it('ends the range at the next midnight, so the last day is included', () => {
+    // SQL compares `created_at < p_to`, so „până la 21" has to mean the
+    // start of the 22nd or the whole of the 21st is missing.
+    expect(bucharestNextMidnight('2026-07-15')).toBe('2026-07-16T00:00:00+03:00');
+  });
+
+  it('crosses a month and a year without arithmetic of its own', () => {
+    expect(bucharestNextMidnight('2026-01-31')).toBe('2026-02-01T00:00:00+02:00');
+    expect(bucharestNextMidnight('2026-12-31')).toBe('2027-01-01T00:00:00+02:00');
   });
 });

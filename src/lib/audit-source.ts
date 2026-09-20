@@ -1,5 +1,5 @@
 import 'server-only';
-import type { AuditEntry, AuditFacet } from './audit';
+import { bucharestMidnight, bucharestNextMidnight, type AuditEntry, type AuditFacet } from './audit';
 import { createClient } from './supabase/server';
 import { isSupabaseConfigured } from './supabase/env';
 
@@ -33,16 +33,12 @@ export const NO_AUDIT: AuditPage = { entries: [], total: 0, error: null };
 
 /** A `YYYY-MM-DD` from the form as an instant, in the timezone people use. */
 function dayStart(day: string | null): string | undefined {
-  if (day === null) return undefined;
-  return `${day}T00:00:00+03:00`;
+  return day === null ? undefined : bucharestMidnight(day);
 }
 
 /** The end of the range is exclusive in SQL, so „până la 21" includes the 21st. */
 function dayAfter(day: string | null): string | undefined {
-  if (day === null) return undefined;
-  const next = new Date(`${day}T00:00:00Z`);
-  next.setUTCDate(next.getUTCDate() + 1);
-  return `${next.toISOString().slice(0, 10)}T00:00:00+03:00`;
+  return day === null ? undefined : bucharestNextMidnight(day);
 }
 
 export async function loadAuditPage(query: AuditQuery): Promise<AuditPage> {
