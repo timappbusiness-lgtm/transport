@@ -33,6 +33,7 @@ ordine.
 | 8 | Verificarea juridică | Avocat | Lansarea |
 | 9 | Publicarea paginilor SEO și indexarea | Madalin | Traficul organic |
 | 10 | Furnizor de SMS (opțional la pilot) | Decizie client | Confirmarea telefonului |
+| 11 | Cele două rotițe de potrivire, verificate | Madalin | Nimic — au valori implicite care funcționează |
 
 ---
 
@@ -250,6 +251,27 @@ cineva din echipă să fi atins ceva.
 
 ---
 
+## 11. Cele două rotițe de potrivire
+
+**Ce:** toleranța implicită de ocol și fereastra pentru contoarele de
+categorii de pe prima pagină. Amândouă au valori implicite care
+funcționează — 50 km și 90 de zile — deci **nu blochează nimic**. Sunt
+aici pentru că sunt numere pe care le vede lumea și pe care ar trebui să
+le fi văzut cineva din echipă măcar o dată.
+
+**Unde exact:** `/admin/activitate` → „Potrivire și categorii".
+
+**Cum verifici:** schimbi fereastra la 30, salvezi, deschizi prima
+pagină: sub blocul de categorii trebuie să scrie „Cereri publicate în
+ultimele 30 de zile." Schimbi înapoi la 90. Ambele schimbări apar în
+`/admin/jurnal`, filtrate pe acțiunea `settings`.
+
+**De reținut:** toleranța implicită se aplică doar traseelor care nu
+și-au spus propria toleranță. Un traseu publicat cu `max_detour_km`
+completat rămâne cu al lui.
+
+---
+
 ## Ce rămâne de decis, nu de configurat
 
 Astea nu sunt variabile de mediu, sunt decizii. Sunt aici pentru că
@@ -262,3 +284,4 @@ blochează la fel de tare.
 | **Proiect Supabase separat pentru producție** | Edi + Madalin | Azi previzualizările și producția folosesc același proiect. Regiunea nu se schimbă după creare |
 | **Test de restaurare din backup**, o dată | Madalin | Un backup netestat nu e un backup |
 | **Cine primește alertele** când pică dispecerul | Madalin | `job_health` arată starea, dar nu anunță pe nimeni |
+| **Suspendarea pentru neplată** | Client, odată cu procesatorul | Fără procesator nu există un eveniment „nu a plătit" pe care să o pornim. O suspendare declanșată dintr-un marcaj pus manual e o suspendare pe care nimeni nu o poate contesta. Când există procesator, regula se scrie ca trigger pe `company_subscriptions`, cu motiv în `audit_log`, ca toate celelalte suspendări |
