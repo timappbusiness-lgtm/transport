@@ -19,6 +19,8 @@ export interface FeatureMap {
   requests: boolean;
   /** The public board of requests, with filters. */
   requestBoard: boolean;
+  /** Saved searches and the alerts they cause — /cont/alerte. */
+  savedSearches: boolean;
   /** Carrier routes, and the bookings against them. */
   departures: boolean;
   /** Offers on a request: `offers` + accept/withdraw/reject exist in SQL. */
@@ -43,6 +45,7 @@ export interface FeatureMap {
 export const FEATURES: FeatureMap = {
   requests: true,
   requestBoard: true,
+  savedSearches: true,
   departures: true,
   offers: false,
   messages: false,

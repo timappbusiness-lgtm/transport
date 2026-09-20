@@ -49,6 +49,9 @@ export const departuresCopy = {
     alertSignedOut: 'Intră în cont ca să primești anunțul',
     alertSaved: 'Gata. Te anunțăm pe e-mail când apare un traseu care se potrivește.',
     alertExists: 'Ai deja o alertă salvată pentru această căutare.',
+    carrierAlert:
+      'Ești transportator? Salvează-ți căutarea pe panoul de cereri și te anunțăm când apare o cerere pe ruta asta.',
+    carrierAlertAction: 'Salvează căutarea de cereri',
     clear: 'Vezi toate traseele',
   },
 

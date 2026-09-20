@@ -113,7 +113,12 @@ export const firmaCopy = {
       'Categoriile de vehicule pe care le transporți.',
       'Vehiculele care nu se deplasează, doar dacă ai troliu.',
       'Tractările, doar dacă ai trecut tractarea între servicii.',
+      'Cererile la care ocolul față de un traseu publicat de tine rămâne în toleranța pe care ai setat-o.',
     ],
+    savedTitle: 'Alerte pe o căutare anume',
+    savedLede:
+      'Alerta de mai sus urmărește tot ce acoperă firma. Dacă vrei un anunț doar pe un anumit coridor sau tip de vehicul, salvează-ți căutarea de pe panoul de cereri.',
+    savedAction: 'Vezi alertele mele',
   },
 
   publicProfile: {

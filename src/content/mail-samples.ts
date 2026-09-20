@@ -34,6 +34,9 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'company_rejected', label: 'Firmă respinsă' },
   { id: 'company_invitation', label: 'Invitație în echipă' },
   { id: 'request_match_alert', label: 'Cerere nouă pe traseul tău' },
+  { id: 'saved_search_alert', label: 'Potrivire pentru o căutare salvată' },
+  { id: 'saved_search_digest', label: 'Rezumatul zilnic al unei căutări' },
+  { id: 'report_closed', label: 'Răspuns la o sesizare' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
   { id: 'reservation_confirmed', label: 'Rezervare confirmată' },
@@ -76,6 +79,13 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   what: 'contul de exemplu',
   scheduled_for: '4 octombrie 2026',
   cancel_token: '00000000-0000-4000-8000-000000000003',
+  title: 'Volkswagen Golf 2015, München — Cluj-Napoca',
+  search_name: 'Germania → România, autoturisme',
+  reasons: 'Ruta: München (DE) — Cluj-Napoca (RO)\n· Tip vehicul: Autoturism',
+  count: '3',
+  listings: '· Volkswagen Golf 2015 (München — Cluj-Napoca)',
+  outcome: 'rezolvată',
+  resolution: 'Exemplu: am sunat firma, au confirmat, iar anunțul a fost corectat.',
 };
 
 export function mailTemplateLabel(id: string): string {

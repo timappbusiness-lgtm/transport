@@ -1,9 +1,11 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { updateAlertsAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError, FormNotice } from '@/components/auth/form';
 import { SaveBar } from '@/components/firma/save-bar';
+import { ROUTES } from '@/config/routes';
 import { firmaCopy } from '@/content/firma';
 import type { Company } from '@/lib/auth/account';
 
@@ -76,6 +78,20 @@ export function AlertsTab({ company }: { company: Company }) {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* The switch above is the firm-wide alert and stays what it was.
+          Per-corridor alerts are a different thing with their own
+          screen, and somebody reading this tab is the person looking
+          for them. */}
+      <div className="border-t border-border pt-5">
+        <p className="text-sm font-medium">{c.savedTitle}</p>
+        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.savedLede}</p>
+        <p className="mt-2.5 text-sm">
+          <Link href={ROUTES.accountAlerts} className="underline underline-offset-4">
+            {c.savedAction}
+          </Link>
+        </p>
       </div>
 
       <SaveBar />

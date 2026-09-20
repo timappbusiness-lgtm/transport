@@ -32,6 +32,7 @@ function context(over: Partial<NavContext> = {}): NavContext {
 const ALL: FeatureMap = {
   requests: true,
   requestBoard: true,
+  savedSearches: true,
   departures: true,
   offers: true,
   messages: true,
@@ -50,6 +51,7 @@ const ALL: FeatureMap = {
 const NONE: FeatureMap = {
   requests: false,
   requestBoard: false,
+  savedSearches: false,
   departures: false,
   offers: false,
   messages: false,
@@ -128,6 +130,19 @@ describe('what each kind of account sees', () => {
   it('drops a group with nothing in it', () => {
     const groups = groupNav(buildNav(context(), ALL)).map((g) => g.group);
     expect(groups).not.toContain('expeditii');
+  });
+
+  it('offers alerts to everybody who browses a board, whatever their role', () => {
+    for (const ctx of [
+      context(),
+      context({ companyType: 'expeditie' }),
+      context({ role: 'dispatcher' }),
+      context({ accountType: 'individual', companyType: null, role: null }),
+    ]) {
+      expect(hrefs(ctx)).toContain(ROUTES.accountAlerts);
+    }
+    // A driver publishes nothing and searches nothing.
+    expect(hrefs(context({ role: 'driver' }))).not.toContain(ROUTES.accountAlerts);
   });
 
   it('an individual gets the board, not a company section', () => {

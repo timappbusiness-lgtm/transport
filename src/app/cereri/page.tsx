@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
+import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { getAccountContext } from '@/lib/auth/account';
+import { filtersFromBoard } from '@/lib/saved-searches';
 import {
   EMPTY_REQUEST_FILTERS,
   conditionIsRunning,
@@ -76,6 +78,23 @@ export default async function Page({
         <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
           <h2 className="mb-4 text-sm font-medium">{requestsCopy.filters.title}</h2>
           <BoardFilters filters={filters} />
+
+          {/* Whatever is filtered right now is what a saved search would
+              watch, so the button belongs here rather than at the top of
+              a page somebody has stopped reading. */}
+          <div className="mt-5 border-t border-border pt-5">
+            <SaveSearch
+              filters={filtersFromBoard({
+                fromCountry: filters.fromCountry,
+                toCountry: filters.toCountry,
+                category: filters.category,
+                condition: filters.condition,
+                service: filters.service,
+                scope: filters.scope,
+              })}
+              signedIn={context !== null}
+            />
+          </div>
         </aside>
 
         <section aria-label={c.title}>
@@ -91,7 +110,7 @@ export default async function Page({
               </ul>
             </>
           ) : (
-            <EmptyState filters={filters} />
+            <EmptyState filters={filters} signedIn={context !== null} />
           )}
         </section>
       </div>
@@ -104,7 +123,7 @@ export default async function Page({
  * rather than a shrug — and the one action it offers is the one that makes
  * the board fill up.
  */
-function EmptyState({ filters }: { filters: RequestFilters }) {
+function EmptyState({ filters, signedIn }: { filters: RequestFilters; signedIn: boolean }) {
   const c = requestsCopy.empty;
   return (
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
@@ -122,6 +141,23 @@ function EmptyState({ filters }: { filters: RequestFilters }) {
         <Link href={ROUTES.routes} className={buttonClasses('secondary', 'md')}>
           {c.departures}
         </Link>
+      </div>
+
+      {/* An empty board is the moment to ask to be told when it changes,
+          not the moment to leave. */}
+      <div className="mt-6 border-t border-border pt-5">
+        <SaveSearch
+          filters={filtersFromBoard({
+            fromCountry: filters.fromCountry,
+            toCountry: filters.toCountry,
+            category: filters.category,
+            condition: filters.condition,
+            service: filters.service,
+            scope: filters.scope,
+          })}
+          signedIn={signedIn}
+          label="Anunță-mă când apare ceva"
+        />
       </div>
 
       {hasActiveRequestFilters(filters) ? (
