@@ -37,6 +37,10 @@ export interface Profile {
   account_type: AccountType;
   /** Which version of the terms this account last accepted, if any. */
   terms_version_accepted: string | null;
+  /** One of ours. Shown as a badge, and excluded from every public number. */
+  is_test: boolean;
+  /** Set when the mail provider said this address will never work. */
+  email_undeliverable_at: string | null;
 }
 
 export interface Company {
@@ -129,7 +133,9 @@ export const getAccountContext = cache(async (): Promise<AccountContext | null> 
   const [profileResult, membershipResult, staffResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, full_name, email, phone, phone_verified, account_type, terms_version_accepted')
+      .select(
+        'id, full_name, email, phone, phone_verified, account_type, terms_version_accepted, is_test, email_undeliverable_at',
+      )
       .eq('id', user.id)
       .maybeSingle(),
     supabase

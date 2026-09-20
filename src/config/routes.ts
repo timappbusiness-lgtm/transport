@@ -75,6 +75,7 @@ export const ROUTES = {
   adminImport: '/admin/import',
   adminNotifications: '/admin/notificari',
   adminDeletions: '/admin/stergeri',
+  adminPilot: '/admin/pilot',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
