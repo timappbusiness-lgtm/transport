@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { appCopy } from '@/content/app';
 import { MAIL_SAMPLE_PAYLOAD, MAIL_TEMPLATES, mailTemplateLabel } from '@/content/mail-samples';
 import { providerStatusFrom } from '@/lib/notifications-admin-source';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
@@ -140,5 +141,42 @@ describe('the Romanian category labels, against the ones the database holds', ()
   it('and no category the app does not', () => {
     const inSql = [...body.matchAll(/when '([a-z_]+)' then/g)].map((m) => m[1]!);
     expect(inSql.sort()).toEqual(Object.keys(CARGO_CATEGORY_LABELS).sort());
+  });
+});
+
+describe('the detour sentence, in both places it is written', () => {
+  // The reason stored on a saved-search match is built in SQL, because
+  // the edge function renders it into an e-mail and cannot import the
+  // application. The dashboard and the board build the same sentence in
+  // TypeScript. Two copies of one sentence drift within a month unless
+  // something fails when they do.
+  const migration = readFileSync(
+    'supabase/migrations/20260921100000_faza1_final.sql',
+    'utf8',
+  );
+
+  it('says the same thing in SQL as on screen', () => {
+    const fromScreen = appCopy.carrier.matches.detour(18, 40, 'Timișoara', 'Budapesta');
+    expect(fromScreen).toBe('Ocol de 18 km față de traseul Timișoara — Budapesta (toleranță 40 km).');
+
+    // The plpgsql format string, with its placeholders filled the same way.
+    const inSql = migration.match(
+      /format\('(Ocol de %s km[^']*)'/,
+    )?.[1];
+    expect(inSql).toBeDefined();
+    const rendered = `${inSql!
+      .replace('%s', '18')
+      .replace('%s', 'Timișoara')
+      .replace('%s', 'Budapesta')
+      .replace('%s', '40')}.`;
+    expect(rendered).toBe(fromScreen);
+  });
+
+  it('falls back to naming no route rather than printing an empty one', () => {
+    // A firm whose route has no city name would otherwise read
+    // „față de traseul  —  (toleranță 40 km)".
+    expect(appCopy.carrier.matches.detour(18, 40, '', '')).toBe(
+      'Ocol de 18 km față de traseele tale (toleranță 40 km).',
+    );
   });
 });
