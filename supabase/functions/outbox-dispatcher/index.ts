@@ -34,6 +34,11 @@ const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? null;
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? null;
 const MAIL_FROM = Deno.env.get("MAIL_FROM") ?? null;
+// Optional, both of them: a missing display name or reply-to degrades to
+// the plain sending address rather than stopping the run. Only the two
+// secrets above are things without which nothing can go out at all.
+const MAIL_SENDER_NAME = Deno.env.get("MAIL_SENDER_NAME") ?? undefined;
+const MAIL_REPLY_TO = Deno.env.get("MAIL_REPLY_TO") ?? undefined;
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://coridor.ro";
 
 const BATCH = 50;
@@ -91,6 +96,8 @@ Deno.serve(async (req: Request) => {
 
   let processed = 0;
   let failed = 0;
+  let bounced = 0;
+  let skippedByBounce = 0;
   const reasons: Record<string, number> = {};
 
   try {
@@ -120,7 +127,12 @@ Deno.serve(async (req: Request) => {
               unsubscribeUrl,
             });
             result = await sendEmail(
-              { apiKey: RESEND_API_KEY!, from: MAIL_FROM! },
+              {
+                apiKey: RESEND_API_KEY!,
+                from: MAIL_FROM!,
+                senderName: MAIL_SENDER_NAME,
+                replyTo: MAIL_REPLY_TO,
+              },
               row.to_email,
               mail.subject,
               mail.html,
@@ -142,7 +154,11 @@ Deno.serve(async (req: Request) => {
 
       if (result.ok) {
         processed += 1;
-        await admin.rpc("finish_outbox", { p_id: row.id, p_status: "sent" });
+        await admin.rpc("finish_outbox", {
+          p_id: row.id,
+          p_status: "sent",
+          p_provider_id: result.providerId ?? null,
+        });
         continue;
       }
 
@@ -156,7 +172,23 @@ Deno.serve(async (req: Request) => {
         p_id: row.id,
         p_status: "failed",
         p_error: result.permanent ? `definitiv: ${reason}` : reason,
+        p_provider_id: result.providerId ?? null,
       });
+
+      // A hard bounce is about the address rather than this message, so
+      // everything else queued for it goes too. Doing it here rather than
+      // leaving each row to fail on its own is the difference between one
+      // rejection and five a week for ever.
+      if (result.hardBounce === true && row.to_email !== null) {
+        const { data: skipped, error: flagError } = await admin.rpc(
+          "flag_email_undeliverable",
+          { p_email: row.to_email, p_reason: reason },
+        );
+        if (flagError === null) {
+          bounced += 1;
+          skippedByBounce += (typeof skipped === "number" ? skipped : 0);
+        }
+      }
     }
 
     // Push has its own claim function and its own sender. Calling it from
@@ -179,10 +211,22 @@ Deno.serve(async (req: Request) => {
       p_workflow: "outbox-dispatcher",
       p_processed: processed,
       p_failed: failed,
-      p_details: { reasons, push_invoked: pushInvoked },
+      p_details: {
+        reasons,
+        push_invoked: pushInvoked,
+        bounced,
+        skipped_by_bounce: skippedByBounce,
+      },
     });
 
-    return json({ ok: true, processed, failed, push_invoked: pushInvoked });
+    return json({
+      ok: true,
+      processed,
+      failed,
+      bounced,
+      skipped_by_bounce: skippedByBounce,
+      push_invoked: pushInvoked,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("outbox-dispatcher failed", { message });

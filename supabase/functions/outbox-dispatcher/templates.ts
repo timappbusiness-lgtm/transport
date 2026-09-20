@@ -129,6 +129,23 @@ export const TEMPLATES: Record<string, Template> = {
     unsubscribable: true,
   },
 
+  /**
+   * Two days before a request comes off the board.
+   *
+   * Before, not after. A client who finds out on Monday that the request
+   * expired on Friday has already decided nobody wanted the job.
+   */
+  listing_expiring_soon: {
+    subject: "Cererea „{{ listing_title }}” iese de pe panou în {{ days_left }} zile",
+    lines: [
+      "Bună ziua,",
+      "Cererea dumneavoastră „{{ listing_title }}” mai este vizibilă pe panou încă {{ days_left }} zile.",
+      "Dacă transportul nu s-a rezolvat, o puteți prelungi dintr-un singur clic; dacă s-a rezolvat, o puteți închide ca să nu mai primiți telefoane.",
+    ],
+    action: { label: "Vezi cererea", href: "{{ site_url }}/cereri/{{ listing_id }}" },
+    unsubscribable: true,
+  },
+
   // --- Rezervări --------------------------------------------------------
   reservation_created: {
     subject: "Rezervare nouă pe traseul {{ from_city }} — {{ to_city }}",

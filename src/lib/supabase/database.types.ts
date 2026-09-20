@@ -309,7 +309,9 @@ export type Database = {
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           description: string | null
+          duration_days: number
           expires_at: string | null
+          expiry_reminded_at: string | null
           id: string
           is_promoted: boolean
           listing_kind: Database["public"]["Enums"]["listing_kind"]
@@ -353,7 +355,9 @@ export type Database = {
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           description?: string | null
+          duration_days?: number
           expires_at?: string | null
+          expiry_reminded_at?: string | null
           id?: string
           is_promoted?: boolean
           listing_kind?: Database["public"]["Enums"]["listing_kind"]
@@ -397,7 +401,9 @@ export type Database = {
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           description?: string | null
+          duration_days?: number
           expires_at?: string | null
+          expiry_reminded_at?: string | null
           id?: string
           is_promoted?: boolean
           listing_kind?: Database["public"]["Enums"]["listing_kind"]
@@ -618,6 +624,7 @@ export type Database = {
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
           is_suspended: boolean
+          is_test: boolean
           legal_name: string
           logo_path: string | null
           profile_updated_at: string | null
@@ -667,6 +674,7 @@ export type Database = {
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
           is_suspended?: boolean
+          is_test?: boolean
           legal_name: string
           logo_path?: string | null
           profile_updated_at?: string | null
@@ -716,6 +724,7 @@ export type Database = {
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
           is_suspended?: boolean
+          is_test?: boolean
           legal_name?: string
           logo_path?: string | null
           profile_updated_at?: string | null
@@ -1149,6 +1158,7 @@ export type Database = {
       }
       deletion_settings: {
         Row: {
+          contact_reveal_months: number
           export_per_day: number
           export_valid_hours: number
           grace_days: number
@@ -1157,6 +1167,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          contact_reveal_months?: number
           export_per_day?: number
           export_valid_hours?: number
           grace_days?: number
@@ -1165,6 +1176,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          contact_reveal_months?: number
           export_per_day?: number
           export_valid_hours?: number
           grace_days?: number
@@ -1890,6 +1902,7 @@ export type Database = {
           id: string
           last_error: string | null
           payload: Json
+          provider_message_id: string | null
           recipient_company_id: string | null
           recipient_user_id: string | null
           send_after: string
@@ -1908,6 +1921,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           payload?: Json
+          provider_message_id?: string | null
           recipient_company_id?: string | null
           recipient_user_id?: string | null
           send_after?: string
@@ -1926,6 +1940,7 @@ export type Database = {
           id?: string
           last_error?: string | null
           payload?: Json
+          provider_message_id?: string | null
           recipient_company_id?: string | null
           recipient_user_id?: string | null
           send_after?: string
@@ -2569,13 +2584,22 @@ export type Database = {
           created_at: string
           deletion_scheduled_at: string | null
           email: string | null
+          email_confirmed_at: string | null
+          email_undeliverable_at: string | null
+          email_undeliverable_reason: string | null
           full_name: string | null
           id: string
+          is_test: boolean
           last_seen_at: string | null
           marketing_consent: boolean
           phone: string | null
           phone_verified: boolean
+          phone_verified_at: string | null
+          phone_verified_by: string | null
+          phone_verified_by_staff: boolean
+          phone_verified_note: string | null
           terms_accepted_at: string | null
+          terms_version_accepted: string | null
           updated_at: string
         }
         Insert: {
@@ -2583,13 +2607,22 @@ export type Database = {
           created_at?: string
           deletion_scheduled_at?: string | null
           email?: string | null
+          email_confirmed_at?: string | null
+          email_undeliverable_at?: string | null
+          email_undeliverable_reason?: string | null
           full_name?: string | null
           id: string
+          is_test?: boolean
           last_seen_at?: string | null
           marketing_consent?: boolean
           phone?: string | null
           phone_verified?: boolean
+          phone_verified_at?: string | null
+          phone_verified_by?: string | null
+          phone_verified_by_staff?: boolean
+          phone_verified_note?: string | null
           terms_accepted_at?: string | null
+          terms_version_accepted?: string | null
           updated_at?: string
         }
         Update: {
@@ -2597,16 +2630,33 @@ export type Database = {
           created_at?: string
           deletion_scheduled_at?: string | null
           email?: string | null
+          email_confirmed_at?: string | null
+          email_undeliverable_at?: string | null
+          email_undeliverable_reason?: string | null
           full_name?: string | null
           id?: string
+          is_test?: boolean
           last_seen_at?: string | null
           marketing_consent?: boolean
           phone?: string | null
           phone_verified?: boolean
+          phone_verified_at?: string | null
+          phone_verified_by?: string | null
+          phone_verified_by_staff?: boolean
+          phone_verified_note?: string | null
           terms_accepted_at?: string | null
+          terms_version_accepted?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_phone_verified_by_fkey"
+            columns: ["phone_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -3241,6 +3291,41 @@ export type Database = {
           },
         ]
       }
+      terms_acceptances: {
+        Row: {
+          accepted_at: string
+          created_at: string
+          document: string
+          id: number
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          created_at?: string
+          document?: string
+          id?: never
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          created_at?: string
+          document?: string
+          id?: never
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_acceptances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transports: {
         Row: {
           agreed_price: number
@@ -3461,7 +3546,9 @@ export type Database = {
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           direction: Database["public"]["Enums"]["truck_direction"]
+          duration_days: number
           expires_at: string | null
+          expiry_reminded_at: string | null
           free_capacity_kg: number | null
           free_ldm: number | null
           free_volume_m3: number | null
@@ -3502,7 +3589,9 @@ export type Database = {
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           direction: Database["public"]["Enums"]["truck_direction"]
+          duration_days?: number
           expires_at?: string | null
+          expiry_reminded_at?: string | null
           free_capacity_kg?: number | null
           free_ldm?: number | null
           free_volume_m3?: number | null
@@ -3543,7 +3632,9 @@ export type Database = {
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           direction?: Database["public"]["Enums"]["truck_direction"]
+          duration_days?: number
           expires_at?: string | null
+          expiry_reminded_at?: string | null
           free_capacity_kg?: number | null
           free_ldm?: number | null
           free_volume_m3?: number | null
@@ -4126,6 +4217,7 @@ export type Database = {
           board: Database["public"]["Enums"]["listing_board"] | null
           category: Database["public"]["Enums"]["cargo_category"] | null
           estimated_km: number | null
+          expires_at: string | null
           from_city: string | null
           from_country: string | null
           from_county: string | null
@@ -4226,6 +4318,17 @@ export type Database = {
           truck_listing_id: string | null
           updated_at: string
           vehicle_id: string | null
+        }
+      }
+      accept_terms: {
+        Args: { p_document?: string; p_version: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          document: string
+          id: number
+          user_id: string
+          version: string
         }
       }
       account_deletion_blockers: {
@@ -4491,6 +4594,7 @@ export type Database = {
           p_contact_phone?: string
           p_damage_notes?: string
           p_description?: string
+          p_duration_days?: number
           p_from_city: string
           p_from_country?: string
           p_from_county?: string
@@ -4560,6 +4664,7 @@ export type Database = {
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
           is_suspended: boolean
+          is_test: boolean
           legal_name: string
           logo_path: string | null
           profile_updated_at: string | null
@@ -4684,6 +4789,14 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      email_is_confirmed: {
+        Args: { p_user: string }
+        Returns: boolean
+      }
+      enqueue_test_notification: {
+        Args: { p_payload?: Json; p_template: string; p_to_email: string }
+        Returns: string
+      }
       expire_stale_listings: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -4740,6 +4853,7 @@ export type Database = {
           p_error?: string
           p_id: string
           p_now?: string
+          p_provider_id?: string
           p_status: string
         }
         Returns: string
@@ -4747,6 +4861,10 @@ export type Database = {
       finish_push: {
         Args: { p_error?: string; p_id: string; p_status: string }
         Returns: undefined
+      }
+      flag_email_undeliverable: {
+        Args: { p_email: string; p_reason: string }
+        Returns: number
       }
       forget_data_export: {
         Args: { p_id: string }
@@ -4890,6 +5008,16 @@ export type Database = {
         }
         Returns: string
       }
+      mail_provider_state: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          failed_24h: number
+          last_sent_at: string
+          queued_now: number
+          sent_24h: number
+          undeliverable_addresses: number
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: number
@@ -4967,6 +5095,36 @@ export type Database = {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
         Returns: boolean
       }
+      phone_is_on_file: {
+        Args: { p_user: string }
+        Returns: boolean
+      }
+      pilot_overview: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          carriers_target: number
+          carriers_weekly: number
+          documents_pending: number
+          forwarders_target: number
+          forwarders_weekly: number
+          median_hours_to_first_contact: number
+          notifications_failed_24h: number
+          oldest_pending_hours: number
+          staff_interventions: number
+          verified_carriers: number
+          verified_forwarders: number
+        }[]
+      }
+      pilot_weekly_activity: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          active_carriers: number
+          active_forwarders: number
+          departures_published: number
+          requests_published: number
+          week_start: string
+        }[]
+      }
       plan_features_valid: {
         Args: { p_features: Json }
         Returns: boolean
@@ -4994,6 +5152,10 @@ export type Database = {
       }
       purge_audit_log: {
         Args: { p_older_than: unknown }
+        Returns: number
+      }
+      purge_contact_reveals: {
+        Args: { p_now?: string }
         Returns: number
       }
       push_send_after: {
@@ -5027,6 +5189,10 @@ export type Database = {
           p_now?: string
           p_spent: number
         }
+        Returns: number
+      }
+      queue_listing_expiry_reminders: {
+        Args: { p_now?: string }
         Returns: number
       }
       queue_push: {
@@ -5172,6 +5338,7 @@ export type Database = {
           id: string
           last_error: string | null
           payload: Json
+          provider_message_id: string | null
           recipient_company_id: string | null
           recipient_user_id: string | null
           send_after: string
@@ -5225,6 +5392,7 @@ export type Database = {
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
           is_suspended: boolean
+          is_test: boolean
           legal_name: string
           logo_path: string | null
           profile_updated_at: string | null
@@ -5345,6 +5513,7 @@ export type Database = {
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
           is_suspended: boolean
+          is_test: boolean
           legal_name: string
           logo_path: string | null
           profile_updated_at: string | null
@@ -5368,8 +5537,13 @@ export type Database = {
         }
       }
       set_deletion_settings: {
-        Args: { p_grace_days: number; p_support_email: string }
+        Args: {
+          p_contact_reveal_months?: number
+          p_grace_days: number
+          p_support_email: string
+        }
         Returns: {
+          contact_reveal_months: number
           export_per_day: number
           export_valid_hours: number
           grace_days: number
@@ -5697,6 +5871,62 @@ export type Database = {
           user_id: string | null
         }
       }
+      staff_clear_email_undeliverable: {
+        Args: { p_user: string }
+        Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          created_at: string
+          deletion_scheduled_at: string | null
+          email: string | null
+          email_confirmed_at: string | null
+          email_undeliverable_at: string | null
+          email_undeliverable_reason: string | null
+          full_name: string | null
+          id: string
+          is_test: boolean
+          last_seen_at: string | null
+          marketing_consent: boolean
+          phone: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
+          phone_verified_by: string | null
+          phone_verified_by_staff: boolean
+          phone_verified_note: string | null
+          terms_accepted_at: string | null
+          terms_version_accepted: string | null
+          updated_at: string
+        }
+      }
+      staff_set_phone_verified: {
+        Args: { p_note: string; p_user: string; p_verified: boolean }
+        Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          created_at: string
+          deletion_scheduled_at: string | null
+          email: string | null
+          email_confirmed_at: string | null
+          email_undeliverable_at: string | null
+          email_undeliverable_reason: string | null
+          full_name: string | null
+          id: string
+          is_test: boolean
+          last_seen_at: string | null
+          marketing_consent: boolean
+          phone: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
+          phone_verified_by: string | null
+          phone_verified_by_staff: boolean
+          phone_verified_note: string | null
+          terms_accepted_at: string | null
+          terms_version_accepted: string | null
+          updated_at: string
+        }
+      }
+      staff_set_test_account: {
+        Args: { p_company?: string; p_is_test?: boolean; p_user?: string }
+        Returns: undefined
+      }
       submit_company_for_review: {
         Args: { p_company_id: string }
         Returns: {
@@ -5727,6 +5957,7 @@ export type Database = {
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
           is_suspended: boolean
+          is_test: boolean
           legal_name: string
           logo_path: string | null
           profile_updated_at: string | null
