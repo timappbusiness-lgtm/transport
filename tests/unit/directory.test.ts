@@ -61,6 +61,23 @@ function company(over: Partial<PublicCompany> = {}): PublicCompany {
     indicativeRateNote: null,
     website: null,
     vehiclesTotal: 4,
+    // Reputația calculată. Zero peste tot este starea unei firme care
+    // tocmai s-a verificat și încă nu a transportat nimic — cazul de
+    // pornire, nu unul special.
+    ratingPunctuality: null,
+    ratingCommunication: null,
+    ratingVehicleCare: null,
+    ratingInfoAccuracy: null,
+    ratingHandover: null,
+    completedAsCarrier: 0,
+    completedAsClient: 0,
+    punctualityPct: null,
+    punctualitySample: 0,
+    responsePct: null,
+    responseSample: 0,
+    disputesOpened12m: 0,
+    disputesResolved12m: 0,
+    reputationComputedAt: null,
     ...over,
   };
 }

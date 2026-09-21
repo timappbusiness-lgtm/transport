@@ -234,12 +234,13 @@ function plural(n: number, one: string, many: string, article: 'o' | 'un' = 'o')
   return lastTwo >= 1 && lastTwo <= 19 ? `${n} ${many}` : `${n} de ${many}`;
 }
 
-export type OfferSort = 'pret' | 'ridicare' | 'livrare';
+export type OfferSort = 'pret' | 'ridicare' | 'livrare' | 'evaluare';
 
 export const SORT_LABELS: Record<OfferSort, string> = {
   pret: 'Cel mai mic preț',
   ridicare: 'Cea mai apropiată ridicare',
   livrare: 'Cea mai apropiată livrare',
+  evaluare: 'Cea mai bună evaluare',
 };
 
 export interface SortableOffer {
@@ -247,6 +248,8 @@ export interface SortableOffer {
   currency: Currency;
   estimated_pickup_date: string | null;
   estimated_delivery_date: string | null;
+  company_rating_avg?: number | null;
+  company_rating_count?: number;
 }
 
 /**
@@ -262,10 +265,33 @@ export interface SortableOffer {
  * A missing date sorts last rather than first: „did not say" is not
  * „tomorrow".
  */
+/** The average, or -1 for a firm that has none to show. */
+function ratedValue(offer: SortableOffer): number {
+  const count = offer.company_rating_count ?? 0;
+  const avg = offer.company_rating_avg;
+  return avg === null || avg === undefined || count < MIN_PUBLIC_RATINGS ? -1 : avg;
+}
+
+/** Same threshold as `rating_settings.min_public_ratings`, and the same default. */
+const MIN_PUBLIC_RATINGS = 3;
+
 export function sortOffers<T extends SortableOffer>(offers: readonly T[], by: OfferSort): T[] {
   const copy = [...offers];
   if (by === 'pret') {
     return copy.sort((a, b) => {
+      if (a.currency !== b.currency) return a.currency === 'RON' ? -1 : 1;
+      return a.price_amount - b.price_amount;
+    });
+  }
+  if (by === 'evaluare') {
+    // A firm below the publication threshold has no average to sort by,
+    // and giving it one — zero, or five — would put it either last or
+    // first for a reason that is not true. They keep their place at the
+    // bottom of the rated ones, in price order among themselves.
+    return copy.sort((a, b) => {
+      const x = ratedValue(a);
+      const y = ratedValue(b);
+      if (x !== y) return y - x;
       if (a.currency !== b.currency) return a.currency === 'RON' ? -1 : 1;
       return a.price_amount - b.price_amount;
     });

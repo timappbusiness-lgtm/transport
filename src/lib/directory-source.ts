@@ -31,7 +31,7 @@ const REVALIDATE_SECONDS = 300;
 
 /** The columns every page reads. Listed once so no page invents its own. */
 const COMPANY_COLUMNS =
-  'slug,name,legal_name,cui,city,county,company_type,logo_path,public_description,verified_since,rating_avg,rating_count,compliant_vehicles,serves_national,serves_international,last_checked_at,coverage_scope,coverage_counties,coverage_countries,vehicle_types_accepted,equipment,services,indicative_rate_ron_per_km,indicative_rate_note,website,vehicles_total' as const;
+  'slug,name,legal_name,cui,city,county,company_type,logo_path,public_description,verified_since,rating_avg,rating_count,compliant_vehicles,serves_national,serves_international,last_checked_at,coverage_scope,coverage_counties,coverage_countries,vehicle_types_accepted,equipment,services,indicative_rate_ron_per_km,indicative_rate_note,website,vehicles_total,rating_punctuality,rating_communication,rating_vehicle_care,rating_info_accuracy,rating_handover,completed_as_carrier,completed_as_client,punctuality_pct,punctuality_sample,response_pct,response_sample,disputes_opened_12m,disputes_resolved_12m,reputation_computed_at' as const;
 
 export interface HomepageDirectory {
   /** null when there is no database configured, or the query failed. */

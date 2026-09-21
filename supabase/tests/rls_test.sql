@@ -2469,13 +2469,22 @@ select pg_temp.check('REV  nor clear a rejection note they did not like', 'fix',
 
 select pg_temp.check('DIR  the directory carries only what a profile shows', 'fix',
   null, 'anon',
+  -- An allow-list, not a snapshot: it is here so that a column added to
+  -- `companies` cannot reach the public view without somebody deciding
+  -- it should. 20260924100000 added the fourteen reputation columns, all
+  -- of them derived and all of them meant to be read.
   $a$select array_agg(column_name::text order by column_name) = array[
-       'city','company_type','compliant_vehicles','county','coverage_counties',
-       'coverage_countries','coverage_scope','cui','equipment','indicative_rate_note',
-       'indicative_rate_ron_per_km','last_checked_at','legal_name','logo_path','name',
-       'public_description','rating_avg','rating_count','serves_international',
-       'serves_national','services','slug','vehicle_types_accepted','vehicles_total',
-       'verified_since','website'
+       'city','company_type','completed_as_carrier','completed_as_client',
+       'compliant_vehicles','county','coverage_counties','coverage_countries',
+       'coverage_scope','cui','disputes_opened_12m','disputes_resolved_12m',
+       'equipment','indicative_rate_note','indicative_rate_ron_per_km',
+       'last_checked_at','legal_name','logo_path','name','public_description',
+       'punctuality_pct','punctuality_sample','rating_avg',
+       'rating_communication','rating_count','rating_handover',
+       'rating_info_accuracy','rating_punctuality','rating_vehicle_care',
+       'reputation_computed_at','response_pct','response_sample',
+       'serves_international','serves_national','services','slug',
+       'vehicle_types_accepted','vehicles_total','verified_since','website'
      ]
      from information_schema.columns
      where table_schema = 'public' and table_name = 'v_public_companies'$a$, 'true');

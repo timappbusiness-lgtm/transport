@@ -16,6 +16,7 @@ import {
 import { ComparisonView, EvidenceGallery } from '@/components/orders/evidence-gallery';
 import { OrderTimeline } from '@/components/orders/order-timeline';
 import { PhotoCapture } from '@/components/orders/photo-capture';
+import { OrderRatingCard } from '@/components/ratings/order-rating-card';
 import { Card, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, companyRoute, myRequestRoute, offerRoute, requestRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
@@ -32,6 +33,7 @@ import {
   signEvidence,
   signRequestPhotos,
 } from '@/lib/orders-source';
+import { loadOrderRatingState } from '@/lib/ratings-source';
 
 export const metadata: Metadata = { title: ordersCopy.detail.title };
 export const dynamic = 'force-dynamic';
@@ -67,13 +69,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const order = await loadOrder(id);
   if (order === null) notFound();
 
-  const [events, evidence, crew, reasons] = await Promise.all([
+  const [events, evidence, crew, reasons, rating] = await Promise.all([
     loadTimeline(id),
     loadEvidence(id),
     order.my_side === 'carrier' || order.my_side === 'staff'
       ? loadCrewOptions(id)
       : Promise.resolve([]),
     order.my_side === 'client' ? loadDisputeReasons() : Promise.resolve([]),
+    // Staff get `side = null` back and the card draws nothing; asking
+    // anyway keeps this list free of a condition that would then have to
+    // agree with the one inside the card.
+    loadOrderRatingState(id),
   ]);
 
   const counts = countByKind(evidence);
@@ -191,6 +197,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               needsCrew={order.driver_id === null || order.vehicle_id === null}
             />
           )}
+
+          <OrderRatingCard orderId={order.id} state={rating} />
 
           <Card className="p-5">
             <h2 className="text-[1.0625rem]">{c.summary}</h2>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CarrierHome } from '@/components/app/dashboard/carrier';
 import { OrdersWidget } from '@/components/orders/orders-widget';
+import { RatingsWidget } from '@/components/ratings/ratings-widget';
 import { PhoneVerification } from '@/components/account/phone-verification';
 import { TopBar } from '@/components/app/top-bar';
 import { buttonClasses } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { loadMyRequests } from '@/lib/my-requests-source';
 import { publishActions } from '@/lib/navigation';
 import { navContextOf } from '@/components/app/nav-context';
 import { loadMyOrders } from '@/lib/orders-source';
+import { loadMyRatings } from '@/lib/ratings-source';
 import { loadPricing } from '@/lib/plans-source';
 import { loadCompanySubscription } from '@/lib/subscription-source';
 
@@ -71,10 +73,12 @@ async function Body({ context }: { context: AccountContext }) {
   const plan = pricing.plans.find((candidate) => candidate.code === subscription?.planCode);
   const dashboard = data ?? NO_CARRIER_DASHBOARD;
   const orders = FEATURES.transports ? await loadMyOrders('active') : [];
+  const pending = FEATURES.ratings ? await loadMyRatings('de-dat') : [];
 
   return (
     <>
       <OrdersWidget orders={orders} side="carrier" />
+      <RatingsWidget pending={pending} />
       <CarrierHome
         company={company}
         context={context}
@@ -141,9 +145,10 @@ function NoCompany({ context }: { context: AccountContext }) {
 async function IndividualHome({ context }: { context: AccountContext }) {
   const c = appCopy.individual;
   const verified = context.profile?.phone_verified === true;
-  const [requests, orders] = await Promise.all([
+  const [requests, orders, pending] = await Promise.all([
     loadMyRequests(context),
     FEATURES.transports ? loadMyOrders('active') : Promise.resolve([]),
+    FEATURES.ratings ? loadMyRatings('de-dat') : Promise.resolve([]),
   ]);
 
   return (
@@ -162,6 +167,7 @@ async function IndividualHome({ context }: { context: AccountContext }) {
       ) : null}
 
       <OrdersWidget orders={orders} side="client" />
+      <RatingsWidget pending={pending} />
 
       <RequestsPanel requests={requests} />
 
@@ -178,13 +184,15 @@ async function IndividualHome({ context }: { context: AccountContext }) {
 
 /** A forwarder posts on the main board; the panel is the same one. */
 async function ForwarderHome({ context }: { context: AccountContext }) {
-  const [requests, orders] = await Promise.all([
+  const [requests, orders, pending] = await Promise.all([
     loadMyRequests(context),
     FEATURES.transports ? loadMyOrders('active') : Promise.resolve([]),
+    FEATURES.ratings ? loadMyRatings('de-dat') : Promise.resolve([]),
   ]);
   return (
     <div className="flex flex-col gap-6">
       <OrdersWidget orders={orders} side="client" />
+      <RatingsWidget pending={pending} />
       <RequestsPanel requests={requests} />
     </div>
   );

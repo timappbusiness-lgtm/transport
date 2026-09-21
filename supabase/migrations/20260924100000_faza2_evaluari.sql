@@ -1980,3 +1980,177 @@ exception
     order by e.job;
 end;
 $fn$;
+
+-- ---------------------------------------------------------------------
+-- 20. Profilul public arată reputația
+--
+-- `v_public_companies` reprodusă din 20260918090000 cu cele paisprezece
+-- coloane noi adăugate la coadă. `create or replace view` nu poate
+-- șterge sau reordona coloane, deci corpul vine în întregime, neatins,
+-- iar noutățile stau la final.
+-- ---------------------------------------------------------------------
+create or replace view public.v_public_companies as
+select
+  c.slug,
+  coalesce(c.display_name, c.legal_name) as name,
+  c.legal_name,
+  c.cui,
+  case when c.base_address_hidden then null else c.city end as city,
+  c.county,
+  c.company_type,
+  c.logo_path,
+  c.public_description,
+  c.verified_at as verified_since,
+  c.rating_avg,
+  c.rating_count,
+
+  (
+    select count(*)::integer from public.vehicles v
+    where v.company_id = c.id and v.is_active and v.is_compliant
+  ) as compliant_vehicles,
+
+  exists (
+    select 1 from public.truck_listings t
+    where t.company_id = c.id and t.status = 'active'
+      and t.from_country = t.to_country
+  ) as serves_national,
+  exists (
+    select 1 from public.truck_listings t
+    where t.company_id = c.id and t.status = 'active'
+      and t.from_country <> t.to_country
+  ) as serves_international,
+
+  greatest(
+    (select max(d.reviewed_at) from public.documents d
+     where d.company_id = c.id and d.status = 'approved'),
+    (select max(v.compliance_checked_at) from public.vehicles v where v.company_id = c.id)
+  ) as last_checked_at,
+
+  -- Appended by migration 20260918090000.
+  c.coverage_scope,
+  c.coverage_counties,
+  c.coverage_countries,
+  c.vehicle_types_accepted,
+  c.equipment,
+  c.services,
+  c.indicative_rate_ron_per_km,
+  c.indicative_rate_note,
+  c.website,
+
+  -- Derived from the fleet, never typed. A firm cannot claim eleven
+  -- platforms and register two.
+  (
+    select count(*)::integer from public.vehicles v
+    where v.company_id = c.id and v.is_active
+  ) as vehicles_total,
+
+  -- Adăugate de 20260924100000: reputația calculată. Fiecare are o
+  -- formulă în recompute_company_reputation() și aceeași formulă scrisă
+  -- în docs/02-data-model.md.
+  c.rating_punctuality,
+  c.rating_communication,
+  c.rating_vehicle_care,
+  c.rating_info_accuracy,
+  c.rating_handover,
+  c.completed_as_carrier,
+  c.completed_as_client,
+  c.punctuality_pct,
+  c.punctuality_sample,
+  c.response_pct,
+  c.response_sample,
+  c.disputes_opened_12m,
+  c.disputes_resolved_12m,
+  c.reputation_computed_at
+from public.companies c
+where c.public_profile_enabled
+  and c.verification_status = 'verified'
+  and not c.is_suspended
+  and c.slug is not null;
+
+-- ---------------------------------------------------------------------
+-- 21. Reputația pe cardul de ofertă
+--
+-- Patru coloane în plus pe `offers_for_request`. Se șterge întâi și se
+-- creează din nou, pentru că `create or replace function` nu poate
+-- schimba forma unui `returns table` — restul corpului este identic cu
+-- cel din 20260922100000.
+--
+-- De ce pe card și nu doar pe profil: clientul compară patru oferte
+-- într-un ecran și deschide, în cel mai bun caz, un profil. Numărul
+-- trebuie să fie acolo unde se ia decizia. „Evaluări insuficiente" se
+-- scrie tot acolo, ca lipsa lui să nu se citească drept zero.
+-- ---------------------------------------------------------------------
+drop function if exists public.offers_for_request(uuid);
+
+create or replace function public.offers_for_request(p_listing_id uuid)
+returns table (
+  id uuid,
+  created_at timestamptz,
+  status public.offer_status,
+  price_amount numeric,
+  currency public.currency_code,
+  estimated_pickup_date date,
+  estimated_delivery_date date,
+  conditions text,
+  payment_term_days integer,
+  message text,
+  valid_until timestamptz,
+  company_id uuid,
+  company_name text,
+  company_slug text,
+  company_verified boolean,
+  company_verified_at timestamptz,
+  vehicle_type public.vehicle_type,
+  vehicle_plate text,
+  conversation_id uuid,
+  unread_messages integer,
+  company_rating_avg numeric,
+  company_rating_count integer,
+  company_completed integer,
+  company_punctuality integer
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+begin
+  if not public.can_edit_cargo_listing(p_listing_id) and not public.is_platform_admin() then
+    raise exception 'Cererea nu îți aparține' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    o.id, o.created_at, o.status, o.price_amount, o.currency,
+    o.estimated_pickup_date, o.estimated_delivery_date, o.conditions,
+    o.payment_term_days, o.message, o.valid_until,
+    c.id,
+    coalesce(c.display_name, c.legal_name, p.full_name),
+    c.slug,
+    c.verification_status = 'verified',
+    c.verified_at,
+    v.vehicle_type,
+    v.plate_number,
+    cv.id,
+    (select count(*)::integer from public.messages m
+     where m.conversation_id = cv.id
+       and m.sender_user_id <> auth.uid()
+       and m.read_at is null
+       and m.hidden_at is null),
+    c.rating_avg,
+    c.rating_count,
+    c.completed_as_carrier,
+    c.punctuality_pct
+  from public.offers o
+  join public.profiles p on p.id = o.from_user_id
+  left join public.companies c on c.id = o.from_company_id
+  left join public.vehicles v on v.id = o.vehicle_id
+  left join public.conversations cv on cv.offer_id = o.id
+  where o.cargo_listing_id = p_listing_id
+  order by
+    case o.status when 'pending' then 0 when 'accepted' then 1 else 2 end,
+    o.price_amount;
+end;
+$fn$;
+
+grant execute on function public.offers_for_request(uuid) to authenticated;

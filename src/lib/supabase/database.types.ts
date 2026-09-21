@@ -4794,12 +4794,16 @@ export type Database = {
         Row: {
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier: number | null
+          completed_as_client: number | null
           compliant_vehicles: number | null
           county: string | null
           coverage_counties: string[] | null
           coverage_countries: string[] | null
           coverage_scope: Database["public"]["Enums"]["coverage_scope"] | null
           cui: string | null
+          disputes_opened_12m: number | null
+          disputes_resolved_12m: number | null
           equipment: string[] | null
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
@@ -4808,8 +4812,18 @@ export type Database = {
           logo_path: string | null
           name: string | null
           public_description: string | null
+          punctuality_pct: number | null
+          punctuality_sample: number | null
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number | null
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number | null
           serves_international: boolean | null
           serves_national: boolean | null
           services: string[] | null
@@ -4823,12 +4837,16 @@ export type Database = {
         Insert: {
           city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier?: number | null
+          completed_as_client?: number | null
           compliant_vehicles?: never
           county?: string | null
           coverage_counties?: string[] | null
           coverage_countries?: string[] | null
           coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          disputes_opened_12m?: number | null
+          disputes_resolved_12m?: number | null
           equipment?: string[] | null
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
@@ -4837,8 +4855,18 @@ export type Database = {
           logo_path?: string | null
           name?: never
           public_description?: string | null
+          punctuality_pct?: number | null
+          punctuality_sample?: number | null
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number | null
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number | null
           serves_international?: never
           serves_national?: never
           services?: string[] | null
@@ -4852,12 +4880,16 @@ export type Database = {
         Update: {
           city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier?: number | null
+          completed_as_client?: number | null
           compliant_vehicles?: never
           county?: string | null
           coverage_counties?: string[] | null
           coverage_countries?: string[] | null
           coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          disputes_opened_12m?: number | null
+          disputes_resolved_12m?: number | null
           equipment?: string[] | null
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
@@ -4866,8 +4898,18 @@ export type Database = {
           logo_path?: string | null
           name?: never
           public_description?: string | null
+          punctuality_pct?: number | null
+          punctuality_sample?: number | null
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number | null
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number | null
           serves_international?: never
           serves_national?: never
           services?: string[] | null
@@ -6375,8 +6417,12 @@ export type Database = {
       offers_for_request: {
         Args: { p_listing_id: string }
         Returns: {
+          company_completed: number
           company_id: string
           company_name: string
+          company_punctuality: number
+          company_rating_avg: number
+          company_rating_count: number
           company_slug: string
           company_verified: boolean
           company_verified_at: string

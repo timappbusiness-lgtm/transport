@@ -68,6 +68,8 @@ function driverNav(features: FeatureMap): NavItem[] {
       priority: 90,
     });
   }
+  // A driver never rates and is never rated — a rating is between the two
+  // firms — so there is no item here.
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
   items.push({
     href: ROUTES.accountNotificationSettings,
@@ -111,6 +113,14 @@ function individualNav(features: FeatureMap): NavItem[] {
       label: 'Transporturi',
       group: 'principal',
       priority: 78,
+    });
+  }
+  if (features.ratings) {
+    items.push({
+      href: ROUTES.accountRatings,
+      label: 'Evaluări',
+      group: 'principal',
+      priority: 77,
     });
   }
   if (features.messages) {
@@ -178,6 +188,14 @@ function carrierItems(features: FeatureMap, role: MemberRole | null): NavItem[] 
       priority: 78,
     });
   }
+  if (features.ratings) {
+    items.push({
+      href: ROUTES.accountRatings,
+      label: 'Evaluări',
+      group: 'transport',
+      priority: 77,
+    });
+  }
   if (features.fleet) {
     // A dispatcher reads the fleet but does not change it, which is a rule
     // the page enforces; the item is the same either way.
@@ -213,6 +231,14 @@ function forwarderItems(features: FeatureMap): NavItem[] {
       label: 'Transporturi',
       group: 'expeditii',
       priority: 78,
+    });
+  }
+  if (features.ratings) {
+    items.push({
+      href: ROUTES.accountRatings,
+      label: 'Evaluări',
+      group: 'expeditii',
+      priority: 77,
     });
   }
   items.push({
