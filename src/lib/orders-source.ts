@@ -245,15 +245,31 @@ export async function signEvidence(paths: readonly string[]): Promise<Map<string
   return urls;
 }
 
-/** The client's own photographs of the vehicle, for the comparison view. */
+/**
+ * The client's own photographs of the vehicle, for the comparison view.
+ *
+ * Signed, not public. The bucket used to be public and its read policy
+ * was the bucket name and nothing else, so anyone with the anon key
+ * listed every photo on the platform and downloaded it — including the
+ * photos on a private request. Migration `20260928100000` closed both
+ * halves; this is the side of it the screens see.
+ */
 export async function signRequestPhotos(paths: readonly string[]): Promise<Map<string, string>> {
   const urls = new Map<string, string>();
-  if (!isSupabaseConfigured() || paths.length === 0) return urls;
+  const wanted = [...new Set(paths)].filter((path) => path !== '');
+  if (!isSupabaseConfigured() || wanted.length === 0) return urls;
 
   const supabase = await createClient();
-  for (const path of paths) {
-    const { data } = supabase.storage.from('listing-photos').getPublicUrl(path);
-    if (data.publicUrl) urls.set(path, data.publicUrl);
+  const { data, error } = await supabase.storage
+    .from('listing-photos')
+    .createSignedUrls(wanted, EVIDENCE_URL_TTL_SECONDS);
+
+  if (error) {
+    console.error('[comenzi] signing request photos failed', { message: error.message });
+    return urls;
+  }
+  for (const row of data ?? []) {
+    if (row.signedUrl && row.path) urls.set(row.path, row.signedUrl);
   }
   return urls;
 }

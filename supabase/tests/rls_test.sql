@@ -8963,8 +8963,13 @@ select pg_temp.check('ERV  and never a second time', 'fix',
   $a$select public.edit_rating('f9000000-0000-0000-0000-000000000002', 1)$a$, 'blocked',
   p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000012',
                   'f9000000-0000-0000-0000-000000000002');
+                -- Scurtătura fixturii trece acum prin aceeași ușă ca
+                -- `edit_rating()`: garda de pe `ratings` chiar rulează,
+                -- iar `edited_at` nu este un câmp de moderare.
+                select set_config('app.rating_write', 'on', true);
                 update public.ratings set edited_at = now()
-                where id = 'f9000000-0000-0000-0000-000000000002'$s$,
+                where id = 'f9000000-0000-0000-0000-000000000002';
+                select set_config('app.rating_write', 'off', true)$s$,
   p_verify => $v$select score = 4 from public.ratings
                  where id = 'f9000000-0000-0000-0000-000000000002'$v$);
 
@@ -11454,21 +11459,6 @@ select pg_temp.check('SEC  and a carrier still cannot', 'fix',
              'f0000000-0000-0000-0000-00000000000e')$s$);
 
 -- --- M1, M2: gărzile moarte de pe evaluări ---------------------------
---
--- O comandă încheiată plus evaluarea clientului pe ea, cu un id ales,
--- ca verificările de mai jos să aibă pe ce lucra.
-create or replace function pg_temp.a_rating(p_order uuid, p_rating uuid)
-returns void language plpgsql as $ar$
-begin
-  perform pg_temp.rated_order(p_order);
-  insert into public.ratings
-    (id, order_id, rater_user_id, rater_company_id, rated_company_id,
-     direction, score, punctuality, communication)
-  values
-    (p_rating, p_order, 'f0000000-0000-0000-0000-000000000004',
-     'fc000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000001',
-     'client_to_carrier', 5, 5, 5);
-end $ar$;
 
 --
 -- Amândouă începeau cu `current_user not in ('authenticated','anon')`,
@@ -11480,18 +11470,18 @@ select pg_temp.check('SEC  the rating guard is alive: a direct rewrite is refuse
   null, 'service_role',
   $a$update public.ratings set score = 1
      where id = 'f9000000-0000-0000-0000-0000000000c1'$a$, 'blocked',
-  p_setup => $s$select pg_temp.a_rating('f5000000-0000-0000-0000-0000000000c1', 'f9000000-0000-0000-0000-0000000000c1')$s$);
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c1', 'f9000000-0000-0000-0000-0000000000c1')$s$);
 
 select pg_temp.check('SEC  but moderation still passes through it', 'fix',
   null, 'service_role',
   $a$update public.ratings set hidden_at = now()
      where id = 'f9000000-0000-0000-0000-0000000000c2'$a$, 'allowed',
-  p_setup => $s$select pg_temp.a_rating('f5000000-0000-0000-0000-0000000000c2', 'f9000000-0000-0000-0000-0000000000c2')$s$);
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c2', 'f9000000-0000-0000-0000-0000000000c2')$s$);
 
 select pg_temp.check('SEC  and the author can still correct it through the RPC', 'fix',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
   $a$select (public.edit_rating('f9000000-0000-0000-0000-0000000000c3'::uuid, 4, 5, 5, null, null, null, 'Corectat')).id is not null$a$, 'true',
-  p_setup => $s$select pg_temp.a_rating('f5000000-0000-0000-0000-0000000000c3', 'f9000000-0000-0000-0000-0000000000c3')$s$);
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c3', 'f9000000-0000-0000-0000-0000000000c3')$s$);
 
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
