@@ -23,6 +23,8 @@ import {
 import { formatWindow } from '@/lib/departures';
 import { isOnBoard, type MyRequest } from '@/lib/my-requests';
 import { loadMyRequests } from '@/lib/my-requests-source';
+import { HandoverBanner } from '@/components/onboarding/handover-banner';
+import { loadHandover } from '@/lib/onboarding-source';
 import { publishActions } from '@/lib/navigation';
 import { navContextOf } from '@/components/app/nav-context';
 import { loadMyOrders } from '@/lib/orders-source';
@@ -59,8 +61,24 @@ async function Body({ context }: { context: AccountContext }) {
   const company = context.activeCompany;
   if (!company) return <NoCompany context={context} />;
 
+  // Nothing for a firm nobody onboarded: `assisted_handover_summary()`
+  // returns no row, and the banner never renders. It stays for good
+  // rather than being dismissible — a list of what somebody else typed
+  // into your account is worth re-reading in a month, and the one thing
+  // we want people to do with it is check it.
+  const handover = await loadHandover(company.id);
+
+  const banner = handover === null ? null : <HandoverBanner summary={handover} />;
+
   const isCarrier = company.company_type === 'transport' || company.company_type === 'both';
-  if (!isCarrier) return <ForwarderHome context={context} />;
+  if (!isCarrier) {
+    return (
+      <>
+        {banner}
+        <ForwarderHome context={context} />
+      </>
+    );
+  }
 
   // Three reads in parallel: the dashboard itself, the plan the limits come
   // from, and the subscription that says which plan is in force.
@@ -77,6 +95,7 @@ async function Body({ context }: { context: AccountContext }) {
 
   return (
     <>
+      {banner}
       <OrdersWidget orders={orders} side="carrier" />
       <RatingsWidget pending={pending} />
       <CarrierHome

@@ -41,6 +41,20 @@ export const pilotCopy = {
     staffNote:
       'Orice a făcut echipa în afară de aprobarea documentelor. „Fără noi în buclă" înseamnă că numărul ăsta scade.',
   },
+  assisted: {
+    title: 'Înscrieri asistate',
+    lede: 'Conturile pe care le-am pregătit noi pentru firme care au fost de acord.',
+    started: 'Începute',
+    sent: 'Așteaptă preluarea',
+    claimed: 'Preluate',
+    expired: 'Expirate',
+    verified: 'Ajunse firme verificate',
+    median: 'De la primul contact la firmă verificată',
+    medianNote: 'Mediană. Se socotește de la deschiderea înscrierii, pentru că înainte de ea nu există nimic de măsurat.',
+    solo: 'Documente verificate de cine le-a încărcat',
+    soloNote: 'Excepția de la regula celor patru ochi, permisă doar cu o notă scrisă și numai cât echipa are un singur om.',
+  },
+
   weekly: {
     title: 'Săptămână de săptămână',
     carriers: 'Transportatori',

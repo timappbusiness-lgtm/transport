@@ -232,6 +232,25 @@ export function looksLikeToken(value: string): boolean {
   return /^[0-9a-f]{64}$/.test(value.trim());
 }
 
+/**
+ * Aceeași mască pe care o pune `assisted_onboarding_preview()`.
+ *
+ * Pagina de preluare cere adresa, pentru că previzualizarea nu o dă —
+ * dinadins, ca un token ghicit să nu scoată din bază o adresă de
+ * e-mail. Comparând masca adresei tastate cu indiciul, o greșeală de
+ * tastare se prinde **înainte** de înregistrare, deci nu rămâne în urmă
+ * un cont pe jumătate făcut. Nu spune nimic în plus față de ce arăta
+ * deja indiciul.
+ */
+export function maskEmail(email: string): string {
+  const match = /^(.{1,2}).*(@.*)$/.exec(email.trim().toLowerCase());
+  return match === null ? '' : `${match[1]}***${match[2]}`;
+}
+
+export function matchesHint(email: string, hint: string): boolean {
+  return maskEmail(email) === hint.trim().toLowerCase();
+}
+
 export function claimPath(token: string): string {
   return `/revendica/${token}`;
 }
