@@ -5371,12 +5371,10 @@ export type Database = {
           county: string | null
           cui: string | null
           id: string | null
-          is_suspended: boolean | null
           member_since: string | null
           name: string | null
           rating_avg: number | null
           rating_count: number | null
-          trust_score: number | null
           verification_status:
             Database["public"]["Enums"]["company_verification_status"] | null
         }
@@ -5387,12 +5385,10 @@ export type Database = {
           county?: string | null
           cui?: string | null
           id?: string | null
-          is_suspended?: boolean | null
           member_since?: string | null
           name?: never
           rating_avg?: number | null
           rating_count?: number | null
-          trust_score?: number | null
           verification_status?:
             Database["public"]["Enums"]["company_verification_status"] | null
         }
@@ -5403,12 +5399,10 @@ export type Database = {
           county?: string | null
           cui?: string | null
           id?: string | null
-          is_suspended?: boolean | null
           member_since?: string | null
           name?: never
           rating_avg?: number | null
           rating_count?: number | null
-          trust_score?: number | null
           verification_status?:
             Database["public"]["Enums"]["company_verification_status"] | null
         }
@@ -6375,6 +6369,10 @@ export type Database = {
       }
       can_see_listing: {
         Args: { p_listing_id: string }
+        Returns: boolean
+      }
+      can_see_listing_photo: {
+        Args: { p_path: string }
         Returns: boolean
       }
       can_see_order: {
@@ -8048,6 +8046,10 @@ export type Database = {
       }
       purge_old_conversations: {
         Args: { p_now?: string }
+        Returns: number
+      }
+      purge_order_evidence: {
+        Args: { p_order_id: string }
         Returns: number
       }
       push_send_after: {

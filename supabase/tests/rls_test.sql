@@ -4855,8 +4855,16 @@ end $$;
 -- record, it claims one itself.
 -- =====================================================================
 
-select pg_temp.check('IMP the limits are readable by anyone, logged out included', 'fix',
+-- Erau citibile de oricine, inclusiv delogat. Auditul a spus de ce nu
+-- e bine: `daily_limit_per_ip` și `monthly_budget_usd` sunt exact ce
+-- vrea să afle cineva care se pregătește să ne consume bugetul. Un
+-- singur ecran le citește, și acolo există o sesiune.
+select pg_temp.check('IMP the limits are not public any more', 'fix',
   null, 'anon',
+  $a$select count(*) from public.import_settings$a$, 'blocked');
+
+select pg_temp.check('IMP but a signed-in user still reads them', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select count(*) = 1 from public.import_settings$a$, 'true');
 
 select pg_temp.check('IMP a user cannot raise their own daily limit', 'fix',
@@ -7324,9 +7332,13 @@ select pg_temp.check('OFR  the client sees what it received', 'fix',
              'f0000000-0000-0000-0000-000000000002', 2400,
              'fe000000-0000-0000-0000-000000000001')$s$);
 
-select pg_temp.check('OFR  a visitor reads no offers at all', 'fix',
+-- Era „întreabă și primește zero rânduri". Acum nici nu poate întreba:
+-- grantul de `select` pentru `anon` a fost retras de pe tabelele care
+-- nu au politică pentru el, ca RLS să nu mai fie singurul lucru care
+-- stă între un vizitator și datele astea.
+select pg_temp.check('OFR  a visitor cannot even ask for the offers', 'fix',
   null, 'anon',
-  $a$select count(*) = 0 from public.offers$a$, 'true');
+  $a$select count(*) from public.offers$a$, 'blocked');
 
 -- Settings.
 select pg_temp.check('OFR  anybody signed in reads the ceilings the form prints', 'fix',
@@ -8963,8 +8975,13 @@ select pg_temp.check('ERV  and never a second time', 'fix',
   $a$select public.edit_rating('f9000000-0000-0000-0000-000000000002', 1)$a$, 'blocked',
   p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000012',
                   'f9000000-0000-0000-0000-000000000002');
+                -- Scurtătura fixturii trece acum prin aceeași ușă ca
+                -- `edit_rating()`: garda de pe `ratings` chiar rulează,
+                -- iar `edited_at` nu este un câmp de moderare.
+                select set_config('app.rating_write', 'on', true);
                 update public.ratings set edited_at = now()
-                where id = 'f9000000-0000-0000-0000-000000000002'$s$,
+                where id = 'f9000000-0000-0000-0000-000000000002';
+                select set_config('app.rating_write', 'off', true)$s$,
   p_verify => $v$select score = 4 from public.ratings
                  where id = 'f9000000-0000-0000-0000-000000000002'$v$);
 
@@ -9657,9 +9674,9 @@ select pg_temp.check('MSG  a stranger reads no thread at all', 'fix',
      where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
   p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
 
-select pg_temp.check('MSG  and anon reads nothing anywhere near one', 'fix',
+select pg_temp.check('MSG  and anon cannot even ask for a conversation', 'fix',
   null, 'anon',
-  $a$select count(*) = 0 from public.conversations$a$, 'true');
+  $a$select count(*) from public.conversations$a$, 'blocked');
 
 -- --- masca, înainte și după comandă -----------------------------------
 
@@ -11353,6 +11370,137 @@ select pg_temp.check('PRV  and a stranger cannot make somebody''s request privat
        (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
   p_setup => $s$select pg_temp.private_request(false, 'draft')$s$);
 
+-- =====================================================================
+-- SEC - ce a găsit auditul
+--
+-- Fiecare verificare de aici corespunde unei constatări din
+-- `docs/12-audit-securitate.md` și a fost scrisă **înainte** de
+-- reparație, ca să cadă pe schema de atunci. Dacă una dintre ele începe
+-- să treacă fără să se fi schimbat nimic, înseamnă că cineva a repus
+-- gaura la loc.
+--
+-- Perechile contează: „neinvitatul nu vede" fără „invitatul vede" trece
+-- și pe o implementare care nu lasă pe nimeni să facă nimic.
+-- =====================================================================
+
+-- --- C1: pozele anunțurilor ------------------------------------------
+--
+-- Bucketul era `public = true`, iar politica de citire era numai
+-- `bucket_id = 'listing-photos'`. Deci oricine cu cheia anon cerea lista
+-- întreagă și o descărca. Calea începe cu id-ul celui care a încărcat,
+-- deci pozele se grupau pe om; iar cererile private au poze, ceea ce
+-- ocolea tot ce ține cererea privată privată.
+select pg_temp.check('SEC  anon cannot enumerate the listing photos', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'listing-photos'$a$, 'true',
+  p_setup => $s$insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos',
+             'f0000000-0000-0000-0000-000000000006/poza.jpg',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('SEC  nor can a signed-in stranger', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000006/poza.jpg'$a$, 'true',
+  p_setup => $s$insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos',
+             'f0000000-0000-0000-0000-000000000006/poza.jpg',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('SEC  but the person who uploaded it still reads their own', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000006/poza.jpg'$a$, 'true',
+  p_setup => $s$insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos',
+             'f0000000-0000-0000-0000-000000000006/poza.jpg',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('SEC  and the bucket is not public', 'fix',
+  null, 'anon',
+  $a$select not public from storage.buckets where id = 'listing-photos'$a$, 'true');
+
+-- --- R1: directorul de firme -----------------------------------------
+--
+-- `v_companies_public` era dată lui anon, deși comentariul ei spune
+-- „what any logged-in user may see". Nu filtrează `public_profile_enabled`
+-- și expunea `trust_score` și `is_suspended`.
+select pg_temp.check('SEC  anon cannot read the company directory view', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.v_companies_public$a$, 'blocked');
+
+select pg_temp.check('SEC  a signed-in user still can, because a page needs it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) from public.v_companies_public$a$, 'allowed');
+
+select pg_temp.check('SEC  and it no longer carries the internal moderation signals', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 0 from information_schema.columns
+     where table_schema = 'public' and table_name = 'v_companies_public'
+       and column_name in ('trust_score', 'is_suspended')$a$, 'true');
+
+-- --- R4: dovezile comenzii -------------------------------------------
+--
+-- Garda era `if current_user = 'service_role'`, într-o funcție SECURITY
+-- DEFINER — unde `current_user` este proprietarul funcției, niciodată
+-- apelantul. Portița nu se deschidea niciodată, deci nici un job de
+-- retenție nu putea șterge o dovadă.
+select pg_temp.check('SEC  a retention job can delete order evidence', 'fix',
+  null, 'service_role',
+  $a$select public.purge_order_evidence(
+       (select id from public.transports
+        where id = 'f5000000-0000-0000-0000-0000000000b1'))$a$, 'allowed',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000b1', 'order_completed');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-evidence', 'f5000000-0000-0000-0000-0000000000b1/x.jpg',
+             'f0000000-0000-0000-0000-00000000000e')$s$,
+  p_verify => $v$select count(*) = 0 from public.order_evidence
+                 where order_id = 'f5000000-0000-0000-0000-0000000000b1'$v$,
+  p_verify_as_role => true);
+
+select pg_temp.check('SEC  and a carrier still cannot', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$delete from storage.objects
+     where name = 'f5000000-0000-0000-0000-0000000000b2/x.jpg'$a$, 'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000b2', 'vehicle_picked_up');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-evidence', 'f5000000-0000-0000-0000-0000000000b2/x.jpg',
+             'f0000000-0000-0000-0000-00000000000e')$s$);
+
+-- --- M1, M2: gărzile moarte de pe evaluări ---------------------------
+
+--
+-- Amândouă începeau cu `current_user not in ('authenticated','anon')`,
+-- care într-o funcție SECURITY DEFINER este întotdeauna adevărat. Deci
+-- se întorceau imediat și regula nu exista. RLS refuza oricum scrierea
+-- directă — dar a doua plasă care nu există este exact felul în care o
+-- migrare viitoare deschide gaura în tăcere.
+select pg_temp.check('SEC  the rating guard is alive: a direct rewrite is refused', 'fix',
+  null, 'service_role',
+  $a$update public.ratings set score = 1
+     where id = 'f9000000-0000-0000-0000-0000000000c1'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c1', 'f9000000-0000-0000-0000-0000000000c1')$s$);
+
+select pg_temp.check('SEC  but moderation still passes through it', 'fix',
+  null, 'service_role',
+  $a$update public.ratings set hidden_at = now()
+     where id = 'f9000000-0000-0000-0000-0000000000c2'$a$, 'allowed',
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c2', 'f9000000-0000-0000-0000-0000000000c2')$s$);
+
+select pg_temp.check('SEC  and the author can still correct it through the RPC', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.edit_rating('f9000000-0000-0000-0000-0000000000c3'::uuid, 4, 5, 5, null, null, null, 'Corectat')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c3', 'f9000000-0000-0000-0000-0000000000c3')$s$);
+
+select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
+              count(*), count(*) filter (where pass), count(*) filter (where not pass),
+              count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),
+              count(*) filter (where pass and kind = 'guard'), count(*) filter (where kind = 'guard'))
+from rls_results;
+
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
 select format('%s  %-5s  %s%s',
@@ -11366,11 +11514,6 @@ select format('%s  %-5s  %s%s',
 from rls_results order by n;
 \endif
 
-select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
-              count(*), count(*) filter (where pass), count(*) filter (where not pass),
-              count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),
-              count(*) filter (where pass and kind = 'guard'), count(*) filter (where kind = 'guard'))
-from rls_results;
 
 do $$
 begin
