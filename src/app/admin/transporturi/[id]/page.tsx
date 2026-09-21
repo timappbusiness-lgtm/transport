@@ -72,6 +72,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <StatusBadge tone={order.status === 'disputed' ? 'warning' : 'neutral'}>
             {orderStatusLabel(order.status)}
           </StatusBadge>
+          {/* The nightly check flags; it never cancels. Staff see the same
+              badge the carrier does, because the two of us are who can do
+              anything about a lorry whose copie conformă lapsed on Sunday. */}
+          {order.vehicle_flagged ? (
+            <StatusBadge tone="warning">{ordersCopy.list.flagged}</StatusBadge>
+          ) : null}
         </h1>
       </div>
 
