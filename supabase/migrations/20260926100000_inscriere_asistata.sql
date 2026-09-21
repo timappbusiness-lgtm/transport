@@ -997,7 +997,13 @@ declare
   v_touched integer := 0;
   v_request uuid;
 begin
-  if not (public.is_platform_admin() or current_user = 'service_role') then
+  -- `current_user` inside a SECURITY DEFINER function is the function's
+  -- owner, never the caller, so a check against 'service_role' here
+  -- would have been false for everybody — including the nightly job,
+  -- which would have refused to run and taken sixty days to be noticed.
+  -- What actually distinguishes the job is that it has no session user
+  -- at all; the grant below is what keeps anybody else out.
+  if not (public.is_platform_admin() or auth.uid() is null) then
     raise exception 'Doar jobul sau echipa platformei pot rula curățenia'
       using errcode = '42501';
   end if;
@@ -1078,9 +1084,8 @@ $fn$;
 comment on function public.sweep_unclaimed_onboardings(timestamptz) is
   'Nudges the team at thirty days and hands the firm to the erasure job at sixty. Takes the clock as an argument so the tests can move it.';
 
-revoke all on function public.sweep_unclaimed_onboardings(timestamptz) from public;
+revoke all on function public.sweep_unclaimed_onboardings(timestamptz) from public, anon, authenticated;
 grant execute on function public.sweep_unclaimed_onboardings(timestamptz) to service_role;
-grant execute on function public.sweep_unclaimed_onboardings(timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 13. The two new e-mails

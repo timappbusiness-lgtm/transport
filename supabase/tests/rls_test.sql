@@ -10026,6 +10026,629 @@ select pg_temp.check('MSG  staff can, and it has a header row', 'fix',
   $a$select public.export_moderation_csv(current_date - 30, current_date)
        like 'data,tip,ce,stare,motiv,detalii%'$a$, 'true');
 
+
+-- =====================================================================
+-- ASI - înscrierea asistată
+--
+-- The one feature in this repository where a member of staff writes into
+-- somebody else's firm. Everything below is an attempt to catch that
+-- going wrong, in the four ways it could:
+--
+--   * the team doing it for a firm that never agreed;
+--   * somebody other than the firm redeeming the link;
+--   * one person uploading a licence and approving it themselves;
+--   * the extra power outliving the onboarding it was granted for.
+--
+-- Fixtures are built in `p_setup`, which runs with no session user, so
+-- the rows go in directly. Where the point of a check *is* the function
+-- that creates them, it is called as the staff fixture instead.
+-- =====================================================================
+
+-- One onboarding, with or without a firm, at whatever age the check
+-- needs. Returns its id. `p_token` stores that token's digest and moves
+-- the row to „trimis", which is what the claim checks need.
+-- Where `pg_temp.assisted()` leaves the firm it just made.
+--
+-- Needed because `assisted_onboardings` is readable by staff alone: a
+-- check that looked the company up through it would get null as anybody
+-- else, call the function with null, be refused for the wrong reason and
+-- pass. A temp table is outside RLS, so every role in the check sees the
+-- same id.
+create table if not exists pg_temp.asi_ctx (company_id uuid, onboarding_id uuid);
+-- Readable by the roles the checks run as; without this a check is
+-- refused by the temp table rather than by the rule it is testing, and
+-- an „expected blocked" would pass on the wrong error.
+grant select on pg_temp.asi_ctx to authenticated, anon;
+
+create or replace function pg_temp.assisted(
+  p_email text default 'nou@exemplu.ro',
+  p_with_company boolean default true,
+  p_token text default null,
+  p_created timestamptz default now(),
+  p_expires timestamptz default now() + interval '7 days',
+  p_claimed_by uuid default null
+) returns uuid language plpgsql as $as$
+declare
+  v_id uuid;
+  v_company uuid;
+begin
+  if p_with_company then
+    insert into public.companies (cui, legal_name, company_type, created_by)
+    values ((90000900 + floor(random() * 90000)::int)::text, 'RLS Asistat SRL', 'transport',
+            'f0000000-0000-0000-0000-000000000001')
+    returning id into v_company;
+  end if;
+
+  insert into public.assisted_onboardings
+    (staff_user_id, contact_name, contact_email, contact_phone,
+     consent_channel, consent_at, company_id, created_at,
+     claim_token_hash, claim_sent_at, claim_expires_at,
+     status, claimed_by, claimed_at)
+  values
+    ('f0000000-0000-0000-0000-000000000001', 'Ion Popescu', p_email, '+40711999001',
+     'telefon', now() - interval '1 day', v_company, p_created,
+     case when p_token is null then null
+          else encode(sha256(convert_to(p_token, 'UTF8')), 'hex') end,
+     case when p_token is null then null else p_created end,
+     case when p_token is null then null else p_expires end,
+     case when p_claimed_by is not null then 'revendicat'::public.assisted_status
+          when p_token is null then 'in_lucru'::public.assisted_status
+          else 'trimis'::public.assisted_status end,
+     p_claimed_by,
+     case when p_claimed_by is null then null else now() end)
+  returning id into v_id;
+
+  if p_claimed_by is not null and v_company is not null then
+    insert into public.company_members (company_id, user_id, role)
+    values (v_company, p_claimed_by, 'owner')
+    on conflict do nothing;
+  end if;
+
+  delete from pg_temp.asi_ctx;
+  insert into pg_temp.asi_ctx (company_id, onboarding_id) values (v_company, v_id);
+
+  return v_id;
+end;
+$as$;
+
+-- A document the team uploaded for a firm it is onboarding, ready to be
+-- reviewed. Returns its id.
+create or replace function pg_temp.assisted_doc(
+  p_onboarding uuid,
+  p_uploader uuid default 'f0000000-0000-0000-0000-000000000001'
+) returns uuid language plpgsql as $ad$
+declare
+  v_company uuid;
+  v_id uuid;
+begin
+  select company_id into v_company from public.assisted_onboardings where id = p_onboarding;
+  insert into public.documents
+    (company_id, scope, kind, file_path, status, uploaded_by, uploaded_on_behalf)
+  values (v_company, 'company', 'certificat_inregistrare_onrc',
+          v_company::text || '/onrc.pdf', 'uploaded', p_uploader, true)
+  returning id into v_id;
+  return v_id;
+end;
+$ad$;
+
+-- ---------------------------------------------------------------------
+-- Who may start one
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  a firm owner cannot start an assisted onboarding', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon', now())$a$, 'blocked');
+
+select pg_temp.check('ASI  nor an individual', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon', now())$a$, 'blocked');
+
+select pg_temp.check('ASI  nor an anonymous visitor', 'fix',
+  null, 'anon',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon', now())$a$, 'blocked');
+
+select pg_temp.check('ASI  staff can, and the consent is recorded', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon',
+       now() - interval '2 hours', 'A confirmat la telefon')).id is not null$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.assisted_onboardings
+     where contact_email = 'ion@exemplu.ro'
+       and consent_channel = 'telefon' and consent_at is not null
+       and consent_note = 'A confirmat la telefon')$v$);
+
+select pg_temp.check('ASI  and it is in the audit log', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon', now())).id is not null$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'assisted.started' and actor_role = 'staff')$v$);
+
+-- ---------------------------------------------------------------------
+-- Consent is not optional, and not retrospective
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  no consent channel, nothing is created', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', null, now())$a$, 'blocked');
+
+select pg_temp.check('ASI  no consent date either', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon', null)$a$, 'blocked');
+
+select pg_temp.check('ASI  a consent dated tomorrow is a form filled in wrongly', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon',
+       now() + interval '1 day')$a$, 'blocked');
+
+select pg_temp.check('ASI  and one from four months ago is not consent any more', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'ion@exemplu.ro', '+40711999002', 'telefon',
+       now() - interval '120 days')$a$, 'blocked');
+
+select pg_temp.check('ASI  an address that already has an account is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Owner A', 'rls-owner-a@test.ro', '+40711999002', 'telefon', now())$a$, 'blocked');
+
+select pg_temp.check('ASI  and so is a second open one for the same address', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.start_assisted_onboarding(
+       'Ion Popescu', 'dublu@exemplu.ro', '+40711999002', 'telefon', now())$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('dublu@exemplu.ro', false)$s$);
+
+-- ---------------------------------------------------------------------
+-- The firm, created on its behalf
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  a firm owner cannot create the company for one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.assisted_create_company(
+       (select id from public.assisted_onboardings limit 1),
+       '90000801', 'Firma Furată SRL', 'transport')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('unu@exemplu.ro', false)$s$);
+
+select pg_temp.check('ASI  staff can, and nobody owns it yet', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.assisted_create_company(
+       (select id from public.assisted_onboardings where contact_email = 'unu@exemplu.ro'),
+       '90000801', 'Firma Asistată SRL', 'transport')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('unu@exemplu.ro', false)$s$,
+  p_verify => $v$select not exists (
+     select 1 from public.company_members m
+     join public.companies c on c.id = m.company_id
+     where c.cui = '90000801')$v$);
+
+select pg_temp.check('ASI  and the audit entry says who it was for', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.assisted_create_company(
+       (select id from public.assisted_onboardings where contact_email = 'unu@exemplu.ro'),
+       '90000802', 'Firma Asistată SRL', 'transport')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('unu@exemplu.ro', false)$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log a
+     join public.companies c on c.id = a.on_behalf_of_company_id
+     where a.action = 'company.created_on_behalf' and c.cui = '90000802'
+       and a.reason = 'adăugat de echipă în numele firmei')$v$);
+
+select pg_temp.check('ASI  a CUI that already exists is refused here too', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.assisted_create_company(
+       (select id from public.assisted_onboardings where contact_email = 'unu@exemplu.ro'),
+       '90000001', 'Firma Duplicat SRL', 'transport')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('unu@exemplu.ro', false)$s$);
+
+select pg_temp.check('ASI  and an onboarding cannot have two firms', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.assisted_create_company(
+       (select id from public.assisted_onboardings where contact_email = 'unu@exemplu.ro'),
+       '90000803', 'A Doua Firmă SRL', 'transport')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('unu@exemplu.ro', true)$s$);
+
+
+-- ---------------------------------------------------------------------
+-- The link
+--
+-- The token itself is never stored, so these checks hash a known string
+-- into the row and then present the string — exactly what the browser
+-- does with the link out of the e-mail.
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  a firm owner cannot issue a claim link', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.issue_assisted_claim(
+       (select id from public.assisted_onboardings limit 1))$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('link@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  staff can, and the token is not what is stored', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select length(public.issue_assisted_claim(
+       (select id from public.assisted_onboardings where contact_email = 'link@exemplu.ro'))) = 64$a$,
+  'true',
+  p_setup => $s$select pg_temp.assisted('link@exemplu.ro')$s$,
+  p_verify => $v$select exists (select 1 from public.assisted_onboardings
+     where contact_email = 'link@exemplu.ro'
+       and status = 'trimis'
+       and claim_token_hash ~ '^[0-9a-f]{64}$'
+       and claim_expires_at between now() + interval '6 days' and now() + interval '8 days')$v$);
+
+select pg_temp.check('ASI  and the e-mail is queued with the link in it', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.issue_assisted_claim(
+       (select id from public.assisted_onboardings where contact_email = 'link@exemplu.ro'))
+     is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('link@exemplu.ro')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+     where template = 'assisted_claim' and to_email = 'link@exemplu.ro'
+       and payload ->> 'claim_path' like '/revendica/%')$v$);
+
+select pg_temp.check('ASI  no firm, no link', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.issue_assisted_claim(
+       (select id from public.assisted_onboardings where contact_email = 'link@exemplu.ro'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.assisted('link@exemplu.ro', false)$s$);
+
+-- ---------------------------------------------------------------------
+-- What the person sees before they commit
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  a visitor with the link sees the firm and a masked address', 'fix',
+  null, 'anon',
+  $a$select company_name = 'RLS Asistat SRL' and email_hint = 'ma***@exemplu.ro'
+     from public.assisted_onboarding_preview('tok-bun')$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('marian@exemplu.ro', true, 'tok-bun')$s$);
+
+select pg_temp.check('ASI  a token nobody issued says the same thing as a used one', 'fix',
+  null, 'anon',
+  $a$select public.assisted_onboarding_preview('tok-inventat')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('marian@exemplu.ro', true, 'tok-bun')$s$);
+
+select pg_temp.check('ASI  an expired link is refused', 'fix',
+  null, 'anon',
+  $a$select public.assisted_onboarding_preview('tok-vechi')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('marian@exemplu.ro', true, 'tok-vechi',
+                  now() - interval '10 days', now() - interval '3 days')$s$);
+
+select pg_temp.check('ASI  and so is an empty one', 'fix',
+  null, 'anon',
+  $a$select public.assisted_onboarding_preview('')$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The handover
+--
+-- `rls-newco@test.ro` has an account and no firm, which is exactly the
+-- state somebody is in one second after signing up from the link.
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  the right person claims it and becomes owner', 'guard',
+  'f0000000-0000-0000-0000-000000000009', 'authenticated',
+  $a$select (public.claim_assisted_onboarding('tok-bun')).status = 'revendicat'$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-bun')$s$,
+  p_verify => $v$select exists (
+     select 1 from public.company_members m
+     join public.assisted_onboardings a on a.company_id = m.company_id
+     where m.user_id = 'f0000000-0000-0000-0000-000000000009' and m.role = 'owner'
+       and a.status = 'revendicat' and a.claimed_at is not null)$v$);
+
+select pg_temp.check('ASI  and the link stops working the moment it is used', 'guard',
+  'f0000000-0000-0000-0000-000000000009', 'authenticated',
+  $a$select (public.claim_assisted_onboarding('tok-bun')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-bun')$s$,
+  p_verify => $v$select not exists (select 1 from public.assisted_onboardings
+     where claim_token_hash = encode(sha256(convert_to('tok-bun', 'UTF8')), 'hex'))$v$);
+
+select pg_temp.check('ASI  somebody else with the link cannot redeem it', 'fix',
+  'f0000000-0000-0000-0000-000000000008', 'authenticated',
+  $a$select public.claim_assisted_onboarding('tok-bun')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-bun')$s$);
+
+select pg_temp.check('ASI  and neither can an anonymous visitor', 'fix',
+  null, 'anon',
+  $a$select public.claim_assisted_onboarding('tok-bun')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-bun')$s$);
+
+select pg_temp.check('ASI  an expired link cannot be claimed either', 'fix',
+  'f0000000-0000-0000-0000-000000000009', 'authenticated',
+  $a$select public.claim_assisted_onboarding('tok-vechi')$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-vechi',
+                  now() - interval '10 days', now() - interval '3 days')$s$);
+
+select pg_temp.check('ASI  the claim is in the log, against the firm', 'guard',
+  'f0000000-0000-0000-0000-000000000009', 'authenticated',
+  $a$select (public.claim_assisted_onboarding('tok-bun')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, 'tok-bun')$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'assisted.claimed' and on_behalf_of_company_id is not null)$v$);
+
+select pg_temp.check('ASI  the new owner is told what we filled in', 'fix',
+  'f0000000-0000-0000-0000-000000000009', 'authenticated',
+  $a$select claimed_at is not null from public.assisted_handover_summary(
+       (select company_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, null, now(), now(),
+                  'f0000000-0000-0000-0000-000000000009')$s$);
+
+select pg_temp.check('ASI  but a stranger is not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.assisted_handover_summary(
+       (select company_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('rls-newco@test.ro', true, null, now(), now(),
+                  'f0000000-0000-0000-0000-000000000009')$s$);
+
+select pg_temp.check('ASI  and a firm nobody onboarded has no banner', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.assisted_handover_summary(
+       'fc000000-0000-0000-0000-000000000001')$a$, 'true');
+
+
+-- ---------------------------------------------------------------------
+-- Four eyes
+--
+-- The fixture team has one member, so the exception is the default state
+-- here and the rule itself needs a second staff row inserted for it.
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  with two of us, you cannot approve your own upload', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_document_assisted(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, null)$a$, 'blocked',
+  p_setup => $s$insert into public.platform_staff (user_id)
+                values ('f0000000-0000-0000-0000-000000000004');
+                select pg_temp.assisted_doc(pg_temp.assisted('patru@exemplu.ro'))$s$);
+
+select pg_temp.check('ASI  and a note does not buy your way past it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_document_assisted(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, 'Sunt grăbit')$a$, 'blocked',
+  p_setup => $s$insert into public.platform_staff (user_id)
+                values ('f0000000-0000-0000-0000-000000000004');
+                select pg_temp.assisted_doc(pg_temp.assisted('patru@exemplu.ro'))$s$);
+
+select pg_temp.check('ASI  the other one can', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.review_document_assisted(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, null)).status = 'approved'$a$, 'true',
+  p_setup => $s$insert into public.platform_staff (user_id)
+                values ('f0000000-0000-0000-0000-000000000004');
+                select pg_temp.assisted_doc(pg_temp.assisted('patru@exemplu.ro'))$s$);
+
+select pg_temp.check('ASI  alone on the team, you can — but you have to say why', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_document_assisted(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, null)$a$, 'blocked',
+  -- The fixtures ship two staff rows, so being alone is something this
+  -- check has to arrange. Without the delete both of these passed on
+  -- the two-of-us rule and never exercised the note at all.
+  p_setup => $s$delete from public.platform_staff
+                where user_id <> 'f0000000-0000-0000-0000-000000000001';
+                select pg_temp.assisted_doc(pg_temp.assisted('singur@exemplu.ro'))$s$);
+
+select pg_temp.check('ASI  with the note it goes through, and the note is kept', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_document_assisted(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, 'Sunt singurul om din echipă în pilot')).status = 'approved'$a$,
+  'true',
+  -- The fixtures ship two staff rows, so being alone is something this
+  -- check has to arrange. Without the delete both of these passed on
+  -- the two-of-us rule and never exercised the note at all.
+  p_setup => $s$delete from public.platform_staff
+                where user_id <> 'f0000000-0000-0000-0000-000000000001';
+                select pg_temp.assisted_doc(pg_temp.assisted('singur@exemplu.ro'))$s$,
+  p_verify => $v$select exists (select 1 from public.documents
+     where solo_review_note = 'Sunt singurul om din echipă în pilot')$v$);
+
+select pg_temp.check('ASI  a document the firm uploaded itself needs no note', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_document_assisted(
+       (select id from public.documents where status = 'uploaded'
+         and not uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null, null)).status = 'approved'$a$, 'true',
+  p_setup => $s$insert into public.documents
+     (company_id, scope, kind, file_path, status, uploaded_by, uploaded_on_behalf)
+   values ('fc000000-0000-0000-0000-000000000001', 'company', 'certificat_fiscal',
+           'fc000000-0000-0000-0000-000000000001/fiscal.pdf', 'uploaded',
+           'f0000000-0000-0000-0000-000000000002', false)$s$,
+  -- And no note is stored on a review that did not need one, or the
+  -- count on /admin/pilot would stop meaning anything.
+  p_verify => $v$select not exists (select 1 from public.documents
+     where kind = 'certificat_fiscal' and solo_review_note is not null)$v$);
+
+select pg_temp.check('ASI  the four-argument review still works for everyone else', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.review_document(
+       (select id from public.documents where status = 'uploaded'
+         and not uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null)).status = 'approved'$a$, 'true',
+  p_setup => $s$insert into public.documents
+     (company_id, scope, kind, file_path, status, uploaded_by, uploaded_on_behalf)
+   values ('fc000000-0000-0000-0000-000000000001', 'company', 'certificat_fiscal',
+           'fc000000-0000-0000-0000-000000000001/fiscal.pdf', 'uploaded',
+           'f0000000-0000-0000-0000-000000000002', false)$s$);
+
+select pg_temp.check('ASI  and it refuses a staff upload of its own, like the five-argument one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.review_document(
+       (select id from public.documents where uploaded_on_behalf order by created_at desc limit 1),
+       true, current_date + 300, null)$a$, 'blocked',
+  p_setup => $s$insert into public.platform_staff (user_id)
+                values ('f0000000-0000-0000-0000-000000000004');
+                select pg_temp.assisted_doc(pg_temp.assisted('patru@exemplu.ro'))$s$);
+
+-- ---------------------------------------------------------------------
+-- How far the extra power reaches
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  staff may add a vehicle to a firm they are onboarding', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, max_weight_kg)
+     values ((select company_id from pg_temp.asi_ctx), 'B100ASI', 'platforma_auto', 3500)$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.assisted('vehicul@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  and a document, on its behalf', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.documents
+     (company_id, scope, kind, file_path, uploaded_by, uploaded_on_behalf)
+     values ((select company_id from pg_temp.asi_ctx), 'company', 'certificat_fiscal',
+             (select company_id from pg_temp.asi_ctx)::text || '/fiscal.pdf',
+             auth.uid(), true)$a$, 'allowed',
+  p_setup => $s$select pg_temp.assisted('document@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  but not to an ordinary firm nobody asked us to fill in', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, max_weight_kg)
+     values ('fc000000-0000-0000-0000-000000000001', 'B101ASI', 'platforma_auto', 3500)$a$,
+  'blocked');
+
+select pg_temp.check('ASI  nor a document to one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.documents
+     (company_id, scope, kind, file_path, uploaded_by, uploaded_on_behalf)
+     values ('fc000000-0000-0000-0000-000000000001', 'company', 'certificat_fiscal',
+             'fc000000-0000-0000-0000-000000000001/fiscal.pdf', auth.uid(), true)$a$, 'blocked');
+
+select pg_temp.check('ASI  and the power ends the moment the owner claims it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, max_weight_kg)
+     values ((select company_id from pg_temp.asi_ctx), 'B102ASI', 'platforma_auto', 3500)$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.assisted('gata@exemplu.ro', true, null, now(), now(),
+                  'f0000000-0000-0000-0000-000000000009')$s$);
+
+select pg_temp.check('ASI  a firm owner cannot use the onboarding to reach another firm', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, max_weight_kg)
+     values ((select company_id from pg_temp.asi_ctx), 'B103ASI', 'platforma_auto', 3500)$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.assisted('altcineva@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  and a document has to carry the uploader''s own name', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$insert into public.documents
+     (company_id, scope, kind, file_path, uploaded_by, uploaded_on_behalf)
+     values ((select company_id from pg_temp.asi_ctx), 'company', 'certificat_fiscal',
+             (select company_id from pg_temp.asi_ctx)::text || '/fiscal.pdf',
+             'f0000000-0000-0000-0000-000000000002', true)$a$, 'blocked',
+  p_setup => $s$select pg_temp.assisted('nume@exemplu.ro')$s$);
+
+-- ---------------------------------------------------------------------
+-- Nobody claimed it
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  at thirty days the responsible person is told, once', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() >= 1$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('uitat@exemplu.ro', true, 'tok-uitat',
+                  now() - interval '35 days', now() + interval '7 days')$s$,
+  p_verify => $v$select (select count(*) from public.notification_outbox
+     where template = 'assisted_unclaimed') = 1
+     and exists (select 1 from public.assisted_onboardings
+       where contact_email = 'uitat@exemplu.ro' and alerted_at is not null)$v$);
+
+select pg_temp.check('ASI  and not a second time on the next night', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('uitat@exemplu.ro', true, 'tok-uitat',
+                  now() - interval '35 days', now() + interval '7 days');
+                update public.assisted_onboardings set alerted_at = now() - interval '1 day'
+                where contact_email = 'uitat@exemplu.ro'$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox
+     where template = 'assisted_unclaimed')$v$);
+
+select pg_temp.check('ASI  a fresh one is left alone', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('proaspat@exemplu.ro', true, 'tok-nou')$s$,
+  p_verify => $v$select exists (select 1 from public.assisted_onboardings
+     where contact_email = 'proaspat@exemplu.ro' and status = 'trimis'
+       and alerted_at is null)$v$);
+
+select pg_temp.check('ASI  at sixty days the firm goes to the erasure job', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() >= 1$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('abandonat@exemplu.ro', true, 'tok-vechi',
+                  now() - interval '70 days', now() - interval '60 days')$s$,
+  p_verify => $v$select exists (select 1 from public.account_deletion_requests r
+     where r.source = 'assisted_unclaimed' and r.kind = 'company'
+       and r.user_id is null and r.status = 'scheduled'
+       and r.company_id = (select company_id from pg_temp.asi_ctx))$v$);
+
+select pg_temp.check('ASI  and the person''s details go right away, not when the job gets there', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() >= 1$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('abandonat@exemplu.ro', true, 'tok-vechi',
+                  now() - interval '70 days', now() - interval '60 days')$s$,
+  p_verify => $v$select not exists (select 1 from public.assisted_onboardings
+       where contact_email = 'abandonat@exemplu.ro')
+     and exists (select 1 from public.assisted_onboardings
+       where id = (select onboarding_id from pg_temp.asi_ctx)
+         and status = 'expirat' and contact_name = 'Șters'
+         and claim_token_hash is null)$v$);
+
+select pg_temp.check('ASI  a link that merely ran out does not take the firm with it', 'fix',
+  null, 'service_role',
+  $a$select public.sweep_unclaimed_onboardings() is not null$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('expirat@exemplu.ro', true, 'tok-scurt',
+                  now() - interval '10 days', now() - interval '2 days')$s$,
+  p_verify => $v$select exists (select 1 from public.assisted_onboardings
+       where contact_email = 'expirat@exemplu.ro' and status = 'expirat'
+         and claim_token_hash is null)
+     and not exists (select 1 from public.account_deletion_requests
+       where source = 'assisted_unclaimed')$v$);
+
+-- Refused twice over: no grant to `authenticated`, and the guard inside.
+select pg_temp.check('ASI  a firm owner cannot run the sweep', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.sweep_unclaimed_onboardings()$a$, 'blocked');
+
+select pg_temp.check('ASI  nor a member of staff from the browser', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.sweep_unclaimed_onboardings()$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- The two staff screens
+-- ---------------------------------------------------------------------
+select pg_temp.check('ASI  a firm owner cannot open the onboarding list', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.admin_assisted_onboardings()$a$, 'blocked');
+
+select pg_temp.check('ASI  nor read the table directly', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.assisted_onboardings$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('privat@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  staff can, and every step is derived', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select step_company and not step_vehicles and not step_documents
+     from public.admin_assisted_onboardings()
+     where contact_email = 'pasi@exemplu.ro'$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('pasi@exemplu.ro')$s$);
+
+select pg_temp.check('ASI  and adding a vehicle ticks its step', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select step_vehicles from public.admin_assisted_onboardings()
+     where contact_email = 'pasi@exemplu.ro'$a$, 'true',
+  p_setup => $s$select pg_temp.assisted('pasi@exemplu.ro');
+                insert into public.vehicles (company_id, plate_number, vehicle_type, max_weight_kg)
+                values ((select company_id from pg_temp.asi_ctx), 'B900ASI',
+                        'platforma_auto', 3500)$s$);
+
+select pg_temp.check('ASI  a firm owner cannot read the pilot numbers', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.pilot_assisted()$a$, 'blocked');
+
+select pg_temp.check('ASI  staff can, and the solo reviews are counted there', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select started >= 1 and solo_reviews = 1 from public.pilot_assisted()$a$, 'true',
+  p_setup => $s$select pg_temp.assisted_doc(pg_temp.assisted('numarat@exemplu.ro'));
+                update public.documents set solo_review_note = 'Singur în echipă'
+                where uploaded_on_behalf$s$);
+
+
+
+
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
 select format('%s  %-5s  %s%s',
