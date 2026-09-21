@@ -414,6 +414,83 @@ export type Database = {
           },
         ]
       }
+      cargo_listing_invites: {
+        Row: {
+          cargo_listing_id: string
+          company_id: string
+          created_at: string
+          id: string
+          invited_by: string
+          notified_at: string | null
+        }
+        Insert: {
+          cargo_listing_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          invited_by: string
+          notified_at?: string | null
+        }
+        Update: {
+          cargo_listing_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          invited_by?: string
+          notified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargo_listing_invites_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cargo_listings: {
         Row: {
           board: Database["public"]["Enums"]["listing_board"]
@@ -439,6 +516,7 @@ export type Database = {
           loading_postcode: string | null
           loading_to: string | null
           offers_count: number
+          opened_to_public_at: string | null
           payment_term_days: number | null
           photo_paths: string[]
           posted_by: string
@@ -462,6 +540,7 @@ export type Database = {
           unloading_to: string | null
           updated_at: string
           views_count: number
+          visibility: Database["public"]["Enums"]["listing_visibility"]
           weight_kg: number | null
         }
         Insert: {
@@ -488,6 +567,7 @@ export type Database = {
           loading_postcode?: string | null
           loading_to?: string | null
           offers_count?: number
+          opened_to_public_at?: string | null
           payment_term_days?: number | null
           photo_paths?: string[]
           posted_by: string
@@ -511,6 +591,7 @@ export type Database = {
           unloading_to?: string | null
           updated_at?: string
           views_count?: number
+          visibility?: Database["public"]["Enums"]["listing_visibility"]
           weight_kg?: number | null
         }
         Update: {
@@ -537,6 +618,7 @@ export type Database = {
           loading_postcode?: string | null
           loading_to?: string | null
           offers_count?: number
+          opened_to_public_at?: string | null
           payment_term_days?: number | null
           photo_paths?: string[]
           posted_by?: string
@@ -560,6 +642,7 @@ export type Database = {
           unloading_to?: string | null
           updated_at?: string
           views_count?: number
+          visibility?: Database["public"]["Enums"]["listing_visibility"]
           weight_kg?: number | null
         }
         Relationships: [
@@ -1820,6 +1903,97 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      favourite_carriers: {
+        Row: {
+          added_by: string
+          carrier_company_id: string
+          company_id: string
+          created_at: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          added_by: string
+          carrier_company_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          added_by?: string
+          carrier_company_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favourite_carriers_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_carrier_company_id_fkey"
+            columns: ["carrier_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_carrier_company_id_fkey"
+            columns: ["carrier_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_carrier_company_id_fkey"
+            columns: ["carrier_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_carrier_company_id_fkey"
+            columns: ["carrier_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "favourite_carriers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
       homepage_settings: {
         Row: {
@@ -3676,6 +3850,27 @@ export type Database = {
           },
         ]
       }
+      recurrence_settings: {
+        Row: {
+          horizon_days: number
+          id: boolean
+          max_per_run: number
+          updated_at: string
+        }
+        Insert: {
+          horizon_days?: number
+          id?: boolean
+          max_per_run?: number
+          updated_at?: string
+        }
+        Update: {
+          horizon_days?: number
+          id?: boolean
+          max_per_run?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           assigned_to: string | null
@@ -3836,6 +4031,155 @@ export type Database = {
             columns: ["transport_id"]
             isOneToOne: false
             referencedRelation: "transports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_series: {
+        Row: {
+          accepted_vehicle_types: Database["public"]["Enums"]["cargo_category"][]
+          company_id: string
+          created_at: string
+          created_by: string
+          direction: Database["public"]["Enums"]["truck_direction"]
+          ended_at: string | null
+          ends_on: string
+          every_n_days: number | null
+          from_city: string
+          from_country: string
+          from_county: string | null
+          generated_through: string | null
+          id: string
+          is_paused: boolean
+          kind: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km: number
+          notes: string | null
+          paused_reason: string | null
+          platform_slots_total: number | null
+          price_indicative: number | null
+          service_types: Database["public"]["Enums"]["service_type"][]
+          starts_on: string
+          to_city: string
+          to_country: string
+          to_county: string | null
+          updated_at: string
+          vehicle_id: string
+          waypoints: Json
+          weekdays: number[]
+          window_days: number | null
+        }
+        Insert: {
+          accepted_vehicle_types?: Database["public"]["Enums"]["cargo_category"][]
+          company_id: string
+          created_at?: string
+          created_by: string
+          direction: Database["public"]["Enums"]["truck_direction"]
+          ended_at?: string | null
+          ends_on: string
+          every_n_days?: number | null
+          from_city: string
+          from_country?: string
+          from_county?: string | null
+          generated_through?: string | null
+          id?: string
+          is_paused?: boolean
+          kind: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km?: number
+          notes?: string | null
+          paused_reason?: string | null
+          platform_slots_total?: number | null
+          price_indicative?: number | null
+          service_types?: Database["public"]["Enums"]["service_type"][]
+          starts_on: string
+          to_city: string
+          to_country?: string
+          to_county?: string | null
+          updated_at?: string
+          vehicle_id: string
+          waypoints?: Json
+          weekdays?: number[]
+          window_days?: number | null
+        }
+        Update: {
+          accepted_vehicle_types?: Database["public"]["Enums"]["cargo_category"][]
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          direction?: Database["public"]["Enums"]["truck_direction"]
+          ended_at?: string | null
+          ends_on?: string
+          every_n_days?: number | null
+          from_city?: string
+          from_country?: string
+          from_county?: string | null
+          generated_through?: string | null
+          id?: string
+          is_paused?: boolean
+          kind?: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km?: number
+          notes?: string | null
+          paused_reason?: string | null
+          platform_slots_total?: number | null
+          price_indicative?: number | null
+          service_types?: Database["public"]["Enums"]["service_type"][]
+          starts_on?: string
+          to_city?: string
+          to_country?: string
+          to_county?: string | null
+          updated_at?: string
+          vehicle_id?: string
+          waypoints?: Json
+          weekdays?: number[]
+          window_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_series_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_series_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_series_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "route_series_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "route_series_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_series_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "v_vehicle_missing_documents"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "route_series_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -4598,6 +4942,7 @@ export type Database = {
           price_indicative: number | null
           promoted_until: string | null
           published_at: string | null
+          series_id: string | null
           service_types: Database["public"]["Enums"]["service_type"][]
           status: Database["public"]["Enums"]["listing_status"]
           to_city: string
@@ -4644,6 +4989,7 @@ export type Database = {
           price_indicative?: number | null
           promoted_until?: string | null
           published_at?: string | null
+          series_id?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           status?: Database["public"]["Enums"]["listing_status"]
           to_city: string
@@ -4690,6 +5036,7 @@ export type Database = {
           price_indicative?: number | null
           promoted_until?: string | null
           published_at?: string | null
+          series_id?: string | null
           service_types?: Database["public"]["Enums"]["service_type"][]
           status?: Database["public"]["Enums"]["listing_status"]
           to_city?: string
@@ -4743,6 +5090,13 @@ export type Database = {
             columns: ["posted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "truck_listings_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "route_series"
             referencedColumns: ["id"]
           },
           {
@@ -5473,6 +5827,21 @@ export type Database = {
           updated_at: string
         }
       }
+      add_favourite_carrier: {
+        Args: {
+          p_carrier_company_id: string
+          p_company_id: string
+          p_note?: string
+        }
+        Returns: {
+          added_by: string
+          carrier_company_id: string
+          company_id: string
+          created_at: string
+          id: string
+          note: string | null
+        }
+      }
       admin_assisted_onboardings: {
         Args: { p_status?: Database["public"]["Enums"]["assisted_status"] }
         Returns: {
@@ -5885,6 +6254,10 @@ export type Database = {
         Returns: boolean
       }
       can_see_cargo_listing: {
+        Args: { p_listing_id: string }
+        Returns: boolean
+      }
+      can_see_listing: {
         Args: { p_listing_id: string }
         Returns: boolean
       }
@@ -6409,6 +6782,63 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      create_route_series: {
+        Args: {
+          p_accepted_vehicle_types?: Database["public"]["Enums"]["cargo_category"][]
+          p_direction: Database["public"]["Enums"]["truck_direction"]
+          p_ends_on: string
+          p_every_n_days: number
+          p_from_city: string
+          p_from_country: string
+          p_from_county: string
+          p_kind: Database["public"]["Enums"]["recurrence_kind"]
+          p_max_detour_km?: number
+          p_notes?: string
+          p_platform_slots_total?: number
+          p_price_indicative?: number
+          p_service_types?: Database["public"]["Enums"]["service_type"][]
+          p_starts_on: string
+          p_to_city: string
+          p_to_country: string
+          p_to_county: string
+          p_vehicle_id: string
+          p_waypoints?: Json
+          p_weekdays: number[]
+          p_window_days?: number
+        }
+        Returns: {
+          accepted_vehicle_types: Database["public"]["Enums"]["cargo_category"][]
+          company_id: string
+          created_at: string
+          created_by: string
+          direction: Database["public"]["Enums"]["truck_direction"]
+          ended_at: string | null
+          ends_on: string
+          every_n_days: number | null
+          from_city: string
+          from_country: string
+          from_county: string | null
+          generated_through: string | null
+          id: string
+          is_paused: boolean
+          kind: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km: number
+          notes: string | null
+          paused_reason: string | null
+          platform_slots_total: number | null
+          price_indicative: number | null
+          service_types: Database["public"]["Enums"]["service_type"][]
+          starts_on: string
+          to_city: string
+          to_country: string
+          to_county: string | null
+          updated_at: string
+          vehicle_id: string
+          waypoints: Json
+          weekdays: number[]
+          window_days: number | null
+        }
+      }
       current_plan: {
         Args: { p_company_id?: string }
         Returns: {
@@ -6638,6 +7068,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      generate_route_departures: {
+        Args: { p_now?: string }
+        Returns: number
+      }
       gtrgm_compress: {
         Args: { "": unknown }
         Returns: unknown
@@ -6794,6 +7228,10 @@ export type Database = {
         Args: { p_codes: string[] }
         Returns: boolean
       }
+      is_invited_to_listing: {
+        Args: { p_listing_id: string }
+        Returns: boolean
+      }
       is_order_driver: {
         Args: { p_order_id: string }
         Returns: boolean
@@ -6912,6 +7350,20 @@ export type Database = {
       my_deletion_blockers: {
         Args: { p_company_id?: string; p_kind: string }
         Returns: string[]
+      }
+      my_favourite_carriers: {
+        Args: { p_company_id: string }
+        Returns: {
+          carrier_company_id: string
+          city: string
+          county: string
+          created_at: string
+          name: string
+          note: string
+          rating_avg: number
+          rating_count: number
+          slug: string
+        }[]
       }
       my_invitations: {
         Args: Record<PropertyKey, never>
@@ -7056,6 +7508,60 @@ export type Database = {
           vehicle_plate: string
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
         }[]
+      }
+      open_listing_to_public: {
+        Args: { p_cargo_listing_id: string }
+        Returns: {
+          board: Database["public"]["Enums"]["listing_board"]
+          company_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          description: string | null
+          duration_days: number
+          expires_at: string | null
+          expiry_reminded_at: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          is_promoted: boolean
+          listing_kind: Database["public"]["Enums"]["listing_kind"]
+          loading_city: string
+          loading_country: string
+          loading_county: string | null
+          loading_from: string
+          loading_lat: number | null
+          loading_lng: number | null
+          loading_postcode: string | null
+          loading_to: string | null
+          offers_count: number
+          opened_to_public_at: string | null
+          payment_term_days: number | null
+          photo_paths: string[]
+          posted_by: string
+          previous_status: Database["public"]["Enums"]["listing_status"] | null
+          price_amount: number | null
+          price_type: Database["public"]["Enums"]["price_type"]
+          promoted_until: string | null
+          published_at: string | null
+          required_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          unloading_city: string
+          unloading_country: string
+          unloading_county: string | null
+          unloading_from: string | null
+          unloading_lat: number | null
+          unloading_lng: number | null
+          unloading_postcode: string | null
+          unloading_to: string | null
+          updated_at: string
+          views_count: number
+          visibility: Database["public"]["Enums"]["listing_visibility"]
+          weight_kg: number | null
+        }
       }
       open_offer_thread: {
         Args: { p_offer_id: string }
@@ -7265,6 +7771,10 @@ export type Database = {
           oldest: string
           status: string
         }[]
+      }
+      owns_listing: {
+        Args: { p_listing_id: string }
+        Returns: boolean
       }
       owns_offer_listing: {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
@@ -7497,6 +8007,17 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      recurrence_dates: {
+        Args: {
+          p_every_n_days: number
+          p_from: string
+          p_kind: Database["public"]["Enums"]["recurrence_kind"]
+          p_limit?: number
+          p_to: string
+          p_weekdays: number[]
+        }
+        Returns: string[]
+      }
       reject_offer: {
         Args: { p_offer_id: string }
         Returns: {
@@ -7551,6 +8072,10 @@ export type Database = {
       remind_pending_ratings: {
         Args: { p_now?: string }
         Returns: number
+      }
+      remove_favourite_carrier: {
+        Args: { p_carrier_company_id: string; p_company_id: string }
+        Returns: undefined
       }
       reopen_cargo_request: {
         Args: { p_id: string; p_loading_from: string; p_loading_to?: string }
@@ -7924,6 +8449,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      route_series_upcoming: {
+        Args: { p_limit?: number; p_series_id: string }
+        Returns: string[]
+      }
       run_compliance_sweep: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -8150,6 +8679,10 @@ export type Database = {
         Args: { "": number }
         Returns: number
       }
+      set_listing_invites: {
+        Args: { p_cargo_listing_id: string; p_company_ids: string[] }
+        Returns: number
+      }
       set_matching_settings: {
         Args: { p_category_window_days: number; p_default_detour_km: number }
         Returns: {
@@ -8362,6 +8895,50 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           window_days: number
+        }
+      }
+      set_recurrence_settings: {
+        Args: { p_horizon_days: number; p_max_per_run: number }
+        Returns: {
+          horizon_days: number
+          id: boolean
+          max_per_run: number
+          updated_at: string
+        }
+      }
+      set_route_series_state: {
+        Args: { p_action: string; p_reason?: string; p_series_id: string }
+        Returns: {
+          accepted_vehicle_types: Database["public"]["Enums"]["cargo_category"][]
+          company_id: string
+          created_at: string
+          created_by: string
+          direction: Database["public"]["Enums"]["truck_direction"]
+          ended_at: string | null
+          ends_on: string
+          every_n_days: number | null
+          from_city: string
+          from_country: string
+          from_county: string | null
+          generated_through: string | null
+          id: string
+          is_paused: boolean
+          kind: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km: number
+          notes: string | null
+          paused_reason: string | null
+          platform_slots_total: number | null
+          price_indicative: number | null
+          service_types: Database["public"]["Enums"]["service_type"][]
+          starts_on: string
+          to_city: string
+          to_country: string
+          to_county: string | null
+          updated_at: string
+          vehicle_id: string
+          waypoints: Json
+          weekdays: number[]
+          window_days: number | null
         }
       }
       set_seo_page: {
@@ -8831,6 +9408,51 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      update_route_series: {
+        Args: {
+          p_ends_on: string
+          p_every_n_days: number
+          p_kind: Database["public"]["Enums"]["recurrence_kind"]
+          p_notes?: string
+          p_platform_slots_total?: number
+          p_price_indicative?: number
+          p_series_id: string
+          p_weekdays: number[]
+          p_window_days?: number
+        }
+        Returns: {
+          accepted_vehicle_types: Database["public"]["Enums"]["cargo_category"][]
+          company_id: string
+          created_at: string
+          created_by: string
+          direction: Database["public"]["Enums"]["truck_direction"]
+          ended_at: string | null
+          ends_on: string
+          every_n_days: number | null
+          from_city: string
+          from_country: string
+          from_county: string | null
+          generated_through: string | null
+          id: string
+          is_paused: boolean
+          kind: Database["public"]["Enums"]["recurrence_kind"]
+          max_detour_km: number
+          notes: string | null
+          paused_reason: string | null
+          platform_slots_total: number | null
+          price_indicative: number | null
+          service_types: Database["public"]["Enums"]["service_type"][]
+          starts_on: string
+          to_city: string
+          to_country: string
+          to_county: string | null
+          updated_at: string
+          vehicle_id: string
+          waypoints: Json
+          weekdays: number[]
+          window_days: number | null
+        }
+      }
       verified_carriers_count: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -8957,6 +9579,7 @@ export type Database = {
         | "expired"
         | "suspended"
         | "disputed"
+      listing_visibility: "publica" | "privata"
       offer_status:
         "pending" | "accepted" | "rejected" | "withdrawn" | "expired"
       order_evidence_kind:
@@ -8968,6 +9591,7 @@ export type Database = {
         | "incident_note"
       plan_audience: "carrier" | "forwarder"
       price_type: "fixed" | "negotiable" | "auction"
+      recurrence_kind: "saptamanal" | "la_n_zile"
       seo_page_type:
         "corridor_international" | "route_internal" | "county" | "vehicle_type"
       service_type: "pe_sens" | "expres" | "tractare"
@@ -9218,6 +9842,7 @@ export const Constants = {
         "suspended",
         "disputed",
       ],
+      listing_visibility: ["publica", "privata"],
       offer_status: ["pending", "accepted", "rejected", "withdrawn", "expired"],
       order_evidence_kind: [
         "pickup_photo",
@@ -9229,6 +9854,7 @@ export const Constants = {
       ],
       plan_audience: ["carrier", "forwarder"],
       price_type: ["fixed", "negotiable", "auction"],
+      recurrence_kind: ["saptamanal", "la_n_zile"],
       seo_page_type: [
         "corridor_international",
         "route_internal",

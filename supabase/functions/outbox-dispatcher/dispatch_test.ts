@@ -72,6 +72,9 @@ const SAMPLE: Record<string, string> = {
   claim_path: "/revendica/8f2c1d4e5a6b7c8d9e0f1a2b3c4d5e6f",
   expires_at: "28.09.2026",
   days: "30",
+  route: "Cluj-Napoca → Timișoara",
+  client_name: "Expediții Ardeal SRL",
+  loading_from: "24 septembrie 2026",
 };
 
 interface QueueRow {

@@ -62,6 +62,8 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'listing_hidden', label: 'Anunț scos de pe panou' },
   { id: 'listing_restored', label: 'Anunț repus pe panou' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
+  { id: 'series_paused', label: 'Serie de plecări oprită' },
+  { id: 'private_request_invite', label: 'Cerere trimisă direct' },
   { id: 'assisted_claim', label: 'Înscriere asistată: linkul de preluare' },
   { id: 'assisted_unclaimed', label: 'Înscriere asistată: nepreluată de 30 de zile' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
@@ -127,6 +129,9 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   claim_path: '/revendica/' + '0'.repeat(64),
   expires_at: '28.09.2026',
   days: '30',
+  route: 'Cluj-Napoca → Timișoara',
+  client_name: 'Expediții Ardeal SRL',
+  loading_from: '24 septembrie 2026',
 };
 
 export function mailTemplateLabel(id: string): string {
