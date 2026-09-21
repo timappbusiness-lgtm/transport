@@ -13,6 +13,7 @@ import {
   type PilotWeek,
 } from '@/lib/pilot';
 import { PilotTools } from '@/components/admin/pilot-tools';
+import { loadAssistedPilot } from '@/lib/onboarding-source';
 import { loadPilot } from '@/lib/pilot-source';
 import { cn } from '@/lib/utils';
 
@@ -45,7 +46,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
   const from = parseIsoDate(one(params, 'de-la')) ?? fallback.from;
   const to = parseIsoDate(one(params, 'pana-la')) ?? fallback.to;
 
-  const { overview, weeks, error } = await loadPilot(from, to);
+  const [{ overview, weeks, error }, assisted] = await Promise.all([
+    loadPilot(from, to),
+    loadAssistedPilot(from, to),
+  ]);
   const ordered = chronological(weeks);
 
   const carriers = progress(overview?.carriers_weekly ?? 0, overview?.carriers_target ?? 20);
@@ -154,6 +158,36 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
             label={c.flow.staff}
             value={overview?.staff_interventions ?? 0}
             note={c.flow.staffNote}
+          />
+        </div>
+      </section>
+
+      <section aria-labelledby="asistate" className="flex flex-col gap-3">
+        <div>
+          <h2 id="asistate" className="text-[1.0625rem]">
+            {c.assisted.title}
+          </h2>
+          <p className="mt-1 max-w-[70ch] text-sm text-muted">{c.assisted.lede}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Figure label={c.assisted.started} value={assisted?.started ?? 0} />
+          <Figure label={c.assisted.sent} value={assisted?.sent ?? 0} />
+          <Figure label={c.assisted.claimed} value={assisted?.claimed ?? 0} />
+          <Figure label={c.assisted.expired} value={assisted?.expired ?? 0} />
+          <Figure label={c.assisted.verified} value={assisted?.verified ?? 0} />
+          <Figure
+            label={c.assisted.median}
+            text={humanHours(assisted?.median_hours_to_verified ?? null)}
+            note={c.assisted.medianNote}
+          />
+          {/* Kept out of the grid's rhythm on purpose: the four-eyes
+              exception is the one number here that should feel like an
+              exception rather than a statistic. */}
+          <Figure
+            label={c.assisted.solo}
+            value={assisted?.solo_reviews ?? 0}
+            tone={(assisted?.solo_reviews ?? 0) > 0 ? 'warning' : 'neutral'}
+            note={c.assisted.soloNote}
           />
         </div>
       </section>

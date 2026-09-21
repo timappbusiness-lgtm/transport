@@ -66,6 +66,12 @@ const SAMPLE: Record<string, string> = {
   plate: "CJ 12 ABC",
   deadline: "5 octombrie 2026",
   context: "cererea München — Cluj-Napoca",
+  full_name: "Marian Popescu",
+  contact_name: "Marian Popescu",
+  contact_phone: "+40722123456",
+  claim_path: "/revendica/8f2c1d4e5a6b7c8d9e0f1a2b3c4d5e6f",
+  expires_at: "28.09.2026",
+  days: "30",
 };
 
 interface QueueRow {

@@ -62,6 +62,11 @@ export const ROUTES = {
   accountPersonalData: '/cont/setari/date-personale',
   /** The link in the deletion e-mail. Public: the account it rescues is held. */
   cancelDeletion: '/stergere/anuleaza',
+  /**
+   * The assisted-onboarding claim link. Public, and necessarily so: the
+   * person opening it has no account yet — making one is what it is for.
+   */
+  claimAccount: '/revendica',
 
   // Staff
   admin: '/admin',
@@ -86,6 +91,8 @@ export const ROUTES = {
   adminReports: '/admin/sesizari',
   adminAuditLog: '/admin/jurnal',
   adminTeam: '/admin/echipa',
+  adminOnboardings: '/admin/inscrieri',
+  adminOnboardingNew: '/admin/inscrieri/noua',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -132,6 +139,12 @@ export function adminOrderRoute(id: string): string {
 /** One offer on the staff screen. */
 export function adminOfferRoute(id: string): string {
   return `${ROUTES.adminOffers}/${id}`;
+}
+
+/** One assisted onboarding, at whichever step it stopped. */
+export function onboardingRoute(id: string, step?: string): string {
+  const base = `${ROUTES.adminOnboardings}/${id}`;
+  return step === undefined ? base : `${base}?pas=${encodeURIComponent(step)}`;
 }
 
 /** One offer, opened in whichever box it belongs to. */
