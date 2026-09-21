@@ -10987,6 +10987,42 @@ select pg_temp.check('PRV  and staff do, because somebody has to', 'fix',
   p_setup => $s$select pg_temp.private_request(false)$s$);
 
 -- ---------------------------------------------------------------------
+-- Pagina cererii, pe linkul din invitație
+--
+-- Vederea publică filtrează cererile private, deci `/cereri/<id>` ar fi
+-- dat 404 tocmai celui invitat. `private_request_for_viewer()` este
+-- poarta, și pune aceeași întrebare ca politica.
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  the invited carrier opens the link from the e-mail', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.private_request_for_viewer(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  the owner opens it too', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from public.private_request_for_viewer(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$select pg_temp.private_request()$s$);
+
+select pg_temp.check('PRV  a carrier who was not invited gets nothing back', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.private_request_for_viewer(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  a visitor cannot even ask', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.private_request_for_viewer(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  and the view behind it is nobody''s to read', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.v_requests_private$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+-- ---------------------------------------------------------------------
 -- Panoul public, numerele și alertele
 -- ---------------------------------------------------------------------
 select pg_temp.check('PRV  it is not on the public board', 'fix',

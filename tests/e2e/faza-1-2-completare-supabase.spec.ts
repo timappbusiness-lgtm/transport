@@ -280,6 +280,14 @@ test.describe('cererea privată', () => {
 
     const id = page.url().split('/').pop() ?? '';
 
+    // Întâi că linkul merge pentru cine are voie. Vederea publică
+    // filtrează cererile private, deci pagina cade pe
+    // `private_request_for_viewer()` — dacă ea nu ar răspunde, și
+    // proprietarul ar primi 404, iar testul de dedesubt ar trece din
+    // motivul greșit.
+    const own = await page.goto(`/cereri/${id}`);
+    expect(own?.status()).toBe(200);
+
     // Același link, alt cont. Politica din bază decide, nu ecranul, iar
     // răspunsul este 404 — nu 403: un „nu ai voie" ar confirma că
     // cererea există, ceea ce este exact ce ascundem.

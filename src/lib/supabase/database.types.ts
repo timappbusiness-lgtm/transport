@@ -409,6 +409,13 @@ export type Database = {
             foreignKeyName: "cargo_freight_details_cargo_listing_id_fkey"
             columns: ["cargo_listing_id"]
             isOneToOne: true
+            referencedRelation: "v_requests_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_freight_details_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
             referencedRelation: "v_requests_public"
             referencedColumns: ["id"]
           },
@@ -445,6 +452,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_listing_invites_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -769,6 +783,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: true
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargo_vehicle_details_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -1204,6 +1225,13 @@ export type Database = {
             foreignKeyName: "contact_reveals_cargo_listing_id_fkey"
             columns: ["cargo_listing_id"]
             isOneToOne: false
+            referencedRelation: "v_requests_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_reveals_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
             referencedRelation: "v_requests_public"
             referencedColumns: ["id"]
           },
@@ -1318,6 +1346,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -1521,6 +1556,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departure_bookings_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -2136,6 +2178,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: true
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_contacts_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: true
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -2821,6 +2870,13 @@ export type Database = {
             foreignKeyName: "offers_booking_cargo_listing_id_fkey"
             columns: ["booking_cargo_listing_id"]
             isOneToOne: false
+            referencedRelation: "v_requests_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_booking_cargo_listing_id_fkey"
+            columns: ["booking_cargo_listing_id"]
+            isOneToOne: false
             referencedRelation: "v_requests_public"
             referencedColumns: ["id"]
           },
@@ -2829,6 +2885,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -3960,6 +4023,13 @@ export type Database = {
             foreignKeyName: "reports_cargo_listing_id_fkey"
             columns: ["cargo_listing_id"]
             isOneToOne: false
+            referencedRelation: "v_requests_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
             referencedRelation: "v_requests_public"
             referencedColumns: ["id"]
           },
@@ -4218,6 +4288,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_search_matches_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -4770,6 +4847,13 @@ export type Database = {
             columns: ["cargo_listing_id"]
             isOneToOne: false
             referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transports_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
             referencedColumns: ["id"]
           },
           {
@@ -5648,6 +5732,38 @@ export type Database = {
           to_city: string | null
           to_country: string | null
           truck_listing_id: string | null
+        }
+        Relationships: []
+      }
+      v_requests_private: {
+        Row: {
+          board: Database["public"]["Enums"]["listing_board"] | null
+          category: Database["public"]["Enums"]["cargo_category"] | null
+          estimated_km: number | null
+          expires_at: string | null
+          from_city: string | null
+          from_country: string | null
+          from_county: string | null
+          from_lat: number | null
+          from_lng: number | null
+          id: string | null
+          is_domestic: boolean | null
+          is_running: boolean | null
+          loading_from: string | null
+          loading_to: string | null
+          make: string | null
+          model: string | null
+          needs_winch: boolean | null
+          photo_count: number | null
+          published_at: string | null
+          service_type: Database["public"]["Enums"]["service_type"] | null
+          to_city: string | null
+          to_country: string | null
+          to_county: string | null
+          to_lat: number | null
+          to_lng: number | null
+          weight_kg: number | null
+          year: number | null
         }
         Relationships: []
       }
@@ -7885,6 +8001,38 @@ export type Database = {
       prices_are_published: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      private_request_for_viewer: {
+        Args: { p_id: string }
+        Returns: {
+          board: Database["public"]["Enums"]["listing_board"] | null
+          category: Database["public"]["Enums"]["cargo_category"] | null
+          estimated_km: number | null
+          expires_at: string | null
+          from_city: string | null
+          from_country: string | null
+          from_county: string | null
+          from_lat: number | null
+          from_lng: number | null
+          id: string | null
+          is_domestic: boolean | null
+          is_running: boolean | null
+          loading_from: string | null
+          loading_to: string | null
+          make: string | null
+          model: string | null
+          needs_winch: boolean | null
+          photo_count: number | null
+          published_at: string | null
+          service_type: Database["public"]["Enums"]["service_type"] | null
+          to_city: string | null
+          to_country: string | null
+          to_county: string | null
+          to_lat: number | null
+          to_lng: number | null
+          weight_kg: number | null
+          year: number | null
+        }[]
       }
       publish_cargo_request: {
         Args: { p_id: string }

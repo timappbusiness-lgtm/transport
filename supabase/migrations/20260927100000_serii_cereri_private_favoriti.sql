@@ -1609,3 +1609,97 @@ $fn$;
 
 revoke all on function public.my_offers(text, public.offer_status) from public;
 grant execute on function public.my_offers(text, public.offer_status) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+-- Pagina cererii private, pentru cine are voie să o deschidă
+--
+-- `v_requests_public` este poarta către `/cereri/<id>`, iar ea filtrează
+-- acum cererile private. Fără ce urmează, transportatorul invitat ar
+-- primi 404 exact pe cererea la care a fost invitat — iar e-mailul de
+-- invitație duce fix acolo. Baza îl lăsa să vadă rândul; ecranul nu îl
+-- întreba niciodată.
+--
+-- Aceleași coloane, aceeași formă, altă condiție. Vederea nu se dă
+-- nimănui: se citește numai prin funcția de sub ea, care întreabă întâi
+-- `can_see_listing()`. `is_test` nu se filtrează aici — o cerere
+-- privată nu ajunge pe niciun panou și pe nicio statistică, deci
+-- singurul lucru pe care l-ar face filtrul este să facă pilotul
+-- netestabil.
+-- ---------------------------------------------------------------------
+create or replace view public.v_requests_private as
+select
+  c.id,
+  d.category,
+  d.make,
+  d.model,
+  d.year,
+  d.is_running,
+  c.service_type,
+  c.loading_city as from_city,
+  c.loading_country as from_country,
+  c.unloading_city as to_city,
+  c.unloading_country as to_country,
+  round(
+    public.distance_km(c.loading_lat, c.loading_lng, c.unloading_lat, c.unloading_lng)
+  )::integer as estimated_km,
+  c.published_at,
+  c.board,
+  c.loading_from,
+  c.loading_to,
+  c.weight_kg,
+  d.needs_winch,
+  coalesce(array_length(c.photo_paths, 1), 0) as photo_count,
+  c.loading_country = c.unloading_country as is_domestic,
+  c.loading_county as from_county,
+  c.unloading_county as to_county,
+  c.expires_at,
+  c.loading_lat as from_lat,
+  c.loading_lng as from_lng,
+  c.unloading_lat as to_lat,
+  c.unloading_lng as to_lng
+from public.cargo_listings c
+join public.cargo_vehicle_details d on d.cargo_listing_id = c.id
+where c.status = 'active'
+  and c.hidden_at is null
+  and c.visibility = 'privata'
+  and c.listing_kind = 'vehicul'
+  and c.published_at is not null
+  and coalesce(c.loading_to, c.loading_from) >= current_date;
+
+comment on view public.v_requests_private is
+  'Cererile private, în forma lui v_requests_public. Nu se citește direct: '
+  'numai prin private_request_for_viewer(), care verifică dreptul.';
+
+revoke all on public.v_requests_private from public, anon, authenticated;
+
+/**
+ * O cerere privată, pentru cine are voie să o vadă.
+ *
+ * `can_see_listing()` este aceeași funcție pe care o folosește politica
+ * de pe `cargo_listings`: proprietarul, firmele invitate și echipa. O
+ * scriem o dată și o întrebăm de două ori, ca răspunsul să nu poată
+ * ajunge diferit.
+ *
+ * `auth.uid()` înăuntrul unei funcții `security definer` este tot
+ * apelantul — vine din JWT, nu din rolul de execuție. Proprietarul
+ * funcției nu este.
+ */
+create or replace function public.private_request_for_viewer(p_id uuid)
+returns setof public.v_requests_private
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select v.*
+  from public.v_requests_private v
+  where v.id = p_id
+    and public.can_see_listing(p_id);
+$fn$;
+
+comment on function public.private_request_for_viewer(uuid) is
+  'Rândul de panou al unei cereri private, dacă apelantul are voie să o vadă.';
+
+revoke all on function public.private_request_for_viewer(uuid) from public, anon;
+grant execute on function public.private_request_for_viewer(uuid) to authenticated;

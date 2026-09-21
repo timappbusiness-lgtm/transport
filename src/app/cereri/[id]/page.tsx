@@ -69,12 +69,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     .eq('id', id)
     .maybeSingle();
 
-  const request = data as PublicRequest | null;
+  const context = await getAccountContext();
+
+  // O cerere privată nu este în vederea publică, dar cei invitați au
+  // voie să o deschidă — iar e-mailul de invitație duce exact aici.
+  // Dreptul îl decide `can_see_listing()`, în bază; pagina doar
+  // întreabă. Pentru un vizitator nici nu se întreabă: o cerere privată
+  // nu are cum să fie a lui.
+  const fallback =
+    data === null && context !== null
+      ? ((await supabase.rpc('private_request_for_viewer', { p_id: id })).data ?? [])[0] ?? null
+      : null;
+
+  const request = (data ?? fallback) as PublicRequest | null;
   // A request that is not on the public board — a draft, withdrawn, or past
   // its loading window — is indistinguishable from one that never existed.
   if (!request) notFound();
-
-  const context = await getAccountContext();
   const detail = context ? await loadDetail(id) : null;
   // Owner only, and enforced by `count_matching_carriers` rather than by
   // this line: a carrier reading somebody else's request has no business
