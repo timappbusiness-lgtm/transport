@@ -11,6 +11,7 @@ const NAV = [
   { href: ROUTES.admin, label: 'Panou' },
   { href: ROUTES.adminPilot, label: 'Pilot' },
   { href: ROUTES.adminDocuments, label: 'Documente de verificat' },
+  { href: ROUTES.adminOffers, label: 'Oferte' },
   { href: ROUTES.adminReports, label: 'Sesizări' },
   { href: ROUTES.adminActivity, label: 'Activitate pe prima pagină' },
   { href: ROUTES.adminPrices, label: 'Prețuri orientative' },

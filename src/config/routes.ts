@@ -77,6 +77,7 @@ export const ROUTES = {
   adminNotifications: '/admin/notificari',
   adminDeletions: '/admin/stergeri',
   adminPilot: '/admin/pilot',
+  adminOffers: '/admin/oferte',
   adminReports: '/admin/sesizari',
   adminAuditLog: '/admin/jurnal',
   adminTeam: '/admin/echipa',
@@ -106,6 +107,26 @@ export function requestRoute(id: string): string {
 /** One company's public profile. */
 export function companyRoute(slug: string): string {
   return `${ROUTES.companies}/${slug}`;
+}
+
+/** One of your own requests, with the offers it has received. */
+export function myRequestRoute(id: string): string {
+  return `${ROUTES.accountRequests}/${id}`;
+}
+
+/** One confirmed order. */
+export function transportRoute(id: string): string {
+  return `${ROUTES.accountTransports}/${id}`;
+}
+
+/** One offer on the staff screen. */
+export function adminOfferRoute(id: string): string {
+  return `${ROUTES.adminOffers}/${id}`;
+}
+
+/** One offer, opened in whichever box it belongs to. */
+export function offerRoute(id: string): string {
+  return `${ROUTES.accountOffers}?oferta=${encodeURIComponent(id)}`;
 }
 
 

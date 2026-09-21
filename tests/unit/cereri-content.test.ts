@@ -6,10 +6,11 @@ import type { ListingStatus } from '@/lib/requests';
  * The same guard the other copy files carry: not the wording, which changes
  * freely, but the rules that keep the flow honest.
  *
- * The one that matters most here: nothing may promise an offer. `offers`
- * has a table, RLS and an RPC, and no screen — so a carrier who sees a
- * request today telephones. A form that said "primești oferte în câteva
- * ore" would be selling a feature nobody can use.
+ * Until Faza 2 the rule here was that nothing may name an offer, because
+ * `offers` had a table and no screen. It has both now, and the test that
+ * enforced the silence would enforce a lie. What survives is the part that
+ * was never about offers: no promised reply time, because nothing measures
+ * one, and no invented number.
  */
 
 function strings(value: unknown, out: string[] = []): string[] {
@@ -30,20 +31,21 @@ function strings(value: unknown, out: string[] = []): string[] {
 const ALL = strings(requestsCopy);
 const JOINED = ALL.join(' ');
 
-/**
- * The status labels are exempt from the "no offer" rule below. A label for
- * a state nothing can reach is not a promise — it is what keeps a badge
- * from rendering blank the day the state becomes reachable.
- */
-const PROSE = strings({ ...requestsCopy, status: {}, statusNote: {} }).join(' ');
-
 describe('request copy rules', () => {
   it('uses no exclamation marks', () => {
     expect(ALL.filter((s) => s.includes('!'))).toEqual([]);
   });
 
-  it('promises no offer, because no screen makes one', () => {
-    expect(PROSE).not.toMatch(/ofert[ăaei]/i);
+  it('names offers only where a screen answers for them', () => {
+    // Every sentence that says "ofertă" belongs to a request the client
+    // owns, and the card that carries them links to /cont/cereri/[id],
+    // which is built. The board's own copy still promises nothing: a
+    // visitor reading /cereri is not being sold the account.
+    // The status labels are exempt: a label for a state is not a promise,
+    // and it is what keeps a badge from rendering blank.
+    const board = strings({ ...requestsCopy, mine: {}, status: {}, statusNote: {} }).join(' ');
+    expect(board).not.toMatch(/ofert[ăaei]/i);
+    expect(strings(requestsCopy.mine).join(' ')).toMatch(/Oferte primite/);
   });
 
   it('promises no reply time, because nothing measures one', () => {

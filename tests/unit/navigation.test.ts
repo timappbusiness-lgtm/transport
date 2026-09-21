@@ -72,13 +72,22 @@ function hrefs(ctx: NavContext, features: FeatureMap = FEATURES): string[] {
 
 describe('a menu item exists only if the feature does', () => {
   it('offers nothing that is not built', () => {
-    // As the application stands: no request flow, no offers, no messages,
-    // no orders. None of them may appear.
+    // Offers went live with Faza 2 and are no longer on this list.
+    // General messaging and the order screens are not built: the tables
+    // exist, which is not the same thing.
     const items = hrefs(context());
-    expect(items).not.toContain(ROUTES.accountRequests);
-    expect(items).not.toContain(ROUTES.accountOffers);
     expect(items).not.toContain(ROUTES.accountMessages);
     expect(items).not.toContain(ROUTES.accountTransports);
+  });
+
+  it('offers the ones that are', () => {
+    // A carrier sends offers; a forwarder and an individual receive them.
+    // Both ends of the flow exist now, so both sides get the item.
+    expect(hrefs(context())).toContain(ROUTES.accountOffers);
+    expect(hrefs(context({ companyType: 'expeditie' }))).toContain(ROUTES.accountOffers);
+    expect(
+      hrefs(context({ accountType: 'individual', companyType: null, role: null })),
+    ).toContain(ROUTES.accountOffers);
   });
 
   it('offers them the moment they are built', () => {

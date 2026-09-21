@@ -10,6 +10,14 @@ import { appCopy } from '@/content/app';
 import { requestsCopy } from '@/content/cereri';
 import { requireAccountContext, type AccountContext } from '@/lib/auth/account';
 import { loadCarrierDashboard, NO_CARRIER_DASHBOARD } from '@/lib/dashboard-source';
+import { FEATURES } from '@/lib/features';
+import {
+  loadEligibleVehicles,
+  loadMyPendingOffers,
+  loadOfferQuota,
+  loadOfferSettings,
+  loadOwnListings,
+} from '@/lib/offers-source';
 import { formatWindow } from '@/lib/departures';
 import { isOnBoard, type MyRequest } from '@/lib/my-requests';
 import { loadMyRequests } from '@/lib/my-requests-source';
@@ -59,14 +67,43 @@ async function Body({ context }: { context: AccountContext }) {
   ]);
 
   const plan = pricing.plans.find((candidate) => candidate.code === subscription?.planCode);
+  const dashboard = data ?? NO_CARRIER_DASHBOARD;
 
   return (
     <CarrierHome
       company={company}
-      data={data ?? NO_CARRIER_DASHBOARD}
+      context={context}
+      data={dashboard}
       contactsLimit={plan?.limits.contactsPerMonth ?? null}
+      offering={FEATURES.offers ? await loadOffering(context, company, dashboard.matches) : null}
     />
   );
+}
+
+/**
+ * The fleet, the ceilings, the plan's room and the offers already sent —
+ * four reads for the whole page rather than four for each match.
+ */
+async function loadOffering(
+  context: AccountContext,
+  company: NonNullable<AccountContext['activeCompany']>,
+  matches: readonly { id: string }[],
+) {
+  const ids = matches.map((match) => match.id);
+  const [vehicles, settings, quota, pending, own] = await Promise.all([
+    company.company_type === 'expeditie'
+      ? Promise.resolve([])
+      : loadEligibleVehicles(company.id),
+    loadOfferSettings(),
+    loadOfferQuota(),
+    loadMyPendingOffers(ids),
+    loadOwnListings(
+      ids,
+      context.user.id,
+      context.memberships.map((membership) => membership.company.id),
+    ),
+  ]);
+  return { vehicles, settings, quota, pending: Object.fromEntries(pending), own };
 }
 
 /**

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CalendarClock, FileWarning, Truck } from 'lucide-react';
+import { SendOffer } from '@/components/offers/send-offer';
 import { PushPermissionCard } from '@/components/push/permission-card';
 import { RequestCard } from '@/components/requests/request-card';
 import { Checklist, type ChecklistStep } from '@/components/account/checklist';
@@ -7,9 +8,11 @@ import { buttonClasses } from '@/components/ui/button';
 import { Card, DataRow } from '@/components/ui/primitives';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { appCopy } from '@/content/app';
-import type { Company } from '@/lib/auth/account';
+import type { AccountContext, Company } from '@/lib/auth/account';
 import type { CarrierDashboard } from '@/lib/dashboard-source';
 import type { DetourFit } from '@/lib/matching';
+import type { OfferSettings } from '@/lib/offers';
+import type { EligibleVehicle, OfferQuota } from '@/lib/offers-source';
 import { formatNumber, pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
@@ -29,13 +32,34 @@ const h = appCopy.home;
  */
 export function CarrierHome({
   company,
+  context,
   data,
   contactsLimit,
+  offering,
 }: {
   company: Company;
+  context: AccountContext;
   data: CarrierDashboard;
   /** null means unlimited, and then there is nothing to count against. */
   contactsLimit: number | null;
+  /**
+   * What a match card needs to offer „Trimite ofertă", read once for the
+   * whole page. null while the feature is off, and then the cards are
+   * what they were: something to read and click through to.
+   */
+  offering: {
+    vehicles: readonly EligibleVehicle[];
+    settings: OfferSettings;
+    quota: OfferQuota | null;
+    /** Request id → the live offer already on it. */
+    pending: Record<string, string>;
+    /**
+     * Matches that are this firm's own requests. Subcontracting puts
+     * them here, and an offer on your own listing is refused, so they
+     * get no button rather than one that always fails.
+     */
+    own: readonly string[];
+  } | null;
 }) {
   const verified = company.verification_status === 'verified';
   const attention = hasAttention(data);
@@ -129,12 +153,25 @@ export function CarrierHome({
           <p className="mt-1 text-[0.8125rem] text-muted">{c.matches.lede}</p>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {data.matches.map((request) => (
-              <li key={request.id} className="min-w-0">
+              <li key={request.id} className="flex min-w-0 flex-col">
                 <RequestCard request={request} now={now} />
                 <MatchReasons
                   reasons={data.matchReasons[request.id] ?? []}
                   detour={data.detours[request.id]}
                 />
+                {offering !== null && !offering.own.includes(request.id) ? (
+                  <div className="mt-3">
+                    <SendOffer
+                      request={{ id: request.id, loading_from: request.loading_from }}
+                      context={context}
+                      vehicles={offering.vehicles}
+                      settings={offering.settings}
+                      quota={offering.quota}
+                      pendingOfferId={offering.pending[request.id] ?? null}
+                      compact
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

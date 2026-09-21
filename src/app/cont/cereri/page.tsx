@@ -7,8 +7,10 @@ import { Card } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { requireAccountContext } from '@/lib/auth/account';
+import { FEATURES } from '@/lib/features';
 import type { MyRequest } from '@/lib/my-requests';
 import { loadMatchingCounts, loadMyRequests } from '@/lib/my-requests-source';
+import { loadPendingOfferCounts } from '@/lib/offers-source';
 import { isoToday } from '@/lib/request-form';
 
 export const metadata: Metadata = { title: requestsCopy.mine.title };
@@ -22,18 +24,20 @@ async function load(): Promise<{
   requests: MyRequest[];
   today: string;
   counts: Map<string, number>;
+  offers: Map<string, number> | null;
 }> {
   const context = await requireAccountContext(ROUTES.accountRequests);
   const requests = await loadMyRequests(context);
-  return {
-    requests,
-    today: isoToday(new Date()),
-    counts: await loadMatchingCounts(requests),
-  };
+  const ids = requests.map((request) => request.id);
+  const [counts, offers] = await Promise.all([
+    loadMatchingCounts(requests),
+    FEATURES.offers ? loadPendingOfferCounts(ids) : Promise.resolve(null),
+  ]);
+  return { requests, today: isoToday(new Date()), counts, offers };
 }
 
 export default async function Page() {
-  const { requests, today, counts } = await load();
+  const { requests, today, counts, offers } = await load();
   const c = requestsCopy.mine;
 
   return (
@@ -59,6 +63,7 @@ export default async function Page() {
               request={request}
               today={today}
               carrierCount={counts.get(request.id) ?? null}
+              offerCount={offers === null ? null : (offers.get(request.id) ?? 0)}
             />
           ))}
         </ul>

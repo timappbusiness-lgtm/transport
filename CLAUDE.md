@@ -48,6 +48,28 @@ One more, learned the hard way: **one session per phase.** Two sessions on
 phase 1 produced two complete implementations and a reconciliation that cost
 more than the feature.
 
+## Which phase we are in
+
+**Faza 2, the offer flow.** Started 21 September 2026.
+
+Faza 1 is **code-complete**: everything still open in it depends on
+configuration outside the repository — the e-mail provider, SMTP in
+Supabase Auth, the operator's legal details, the indicative prices, the
+legal review — and on two decisions, the payment processor and the
+production Supabase project. The list with an owner against each line is
+`docs/faza-1-checklist.md`; the steps themselves are
+`docs/configurare-externa.md`. **No more Faza 1 code work is expected.**
+
+Faza 2 starts with offers and stops there for now. Order execution
+screens, proof of delivery, ratings and general messaging are the phases
+after it — the tables exist for all of them, and a table is not a
+feature. `src/lib/features.ts` is what decides whether a menu item may
+appear, and it is the file to change when one of those becomes real.
+
+The one thing Faza 2 borrows from messaging is the clarification thread
+on a single offer, with contact details masked in the database until an
+offer is accepted.
+
 ## Sources of truth
 
 - `docs/01-product-spec.md` — what the product does. Changes are shown as a

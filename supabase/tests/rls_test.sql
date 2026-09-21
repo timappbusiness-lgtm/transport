@@ -5305,7 +5305,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 10 from public.job_health()$a$, 'true');
+  $a$select count(*) = 11 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6192,9 +6192,9 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   null, 'service_role',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
-     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-listing-expiry-reminders, nightly-retention, '
-     'nightly-saved-search-digest, outbox-dispatcher'
+     'hourly-offer-expiry, hourly-push-cleanup, nightly-compliance-sweep, '
+     'nightly-expiry-reminders, nightly-listing-expiry-reminders, '
+     'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6248,9 +6248,9 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
-     'hourly-push-cleanup, nightly-compliance-sweep, nightly-expiry-reminders, '
-     'nightly-listing-expiry-reminders, nightly-retention, '
-     'nightly-saved-search-digest, outbox-dispatcher'
+     'hourly-offer-expiry, hourly-push-cleanup, nightly-compliance-sweep, '
+     'nightly-expiry-reminders, nightly-listing-expiry-reminders, '
+     'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',
@@ -6986,6 +6986,961 @@ select pg_temp.check('CAT  the window is what the team set', 'fix',
   $a$select count(*) = 0 from public.category_counts(1)$a$, 'true',
   p_setup => $s$update public.cargo_listings
                   set published_at = now() - interval '30 days'$s$);
+
+-- =====================================================================
+-- OFR - the offer, from its terms to its expiry
+--
+-- `offers` has carried accept, reject and withdraw since phase 0, all
+-- of them locked and tested in the P4 block above. What is checked here
+-- is what 20260922100000 added: the terms the offer must satisfy, the
+-- one-pending rule, the expiry job, and the vehicle.
+--
+-- The fixture carrier is Carrier A (fc…0001, verified, company_type
+-- `transport`), bidding on the individual's active request f1…0002.
+-- Vehicle fe…0001 is Carrier A's and is made compliant by the sweep in
+-- the fixture block; the offer guard requires exactly that.
+-- =====================================================================
+
+select pg_temp.check('OFR  a verified carrier sends an offer', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, currency,
+        estimated_pickup_date, estimated_delivery_date, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             auth.uid(), 2400, 'RON',
+             current_date + 4, current_date + 6,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_verify => $v$select count(*) = 1 from public.offers
+                 where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'
+                   and status = 'pending'$v$);
+
+select pg_temp.check('OFR  and the validity defaults to 48 hours', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_verify => $v$select valid_until between now() + interval '47 hours'
+                                        and now() + interval '49 hours'
+                 from public.offers
+                 where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('OFR  a second pending offer from the same firm is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2100,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('OFR  but a new one after withdrawing is fine, and the old stays', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2100,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, status, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000a1',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400, 'withdrawn',
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select count(*) = 2 from public.offers
+                 where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('OFR  delivery cannot be before pickup', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount,
+        estimated_pickup_date, estimated_delivery_date, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             current_date + 6, current_date + 4,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  pickup cannot be before the request can be loaded', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount,
+        estimated_pickup_date, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             current_date,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  but later than the client hoped is the client''s call', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount,
+        estimated_pickup_date, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             current_date + 30,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'allowed');
+
+select pg_temp.check('OFR  a price of nothing is not an offer', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 0,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  and neither is a typo above the ceiling', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 3200000,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  the ceiling is per currency', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, currency, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 50000, 'EUR',
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  validity beyond the cap is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, valid_until, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             now() + interval '30 days',
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  a message longer than the box allows is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, message, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             repeat('x', 1001),
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('OFR  a firm that carries must name a vehicle', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400)$a$, 'blocked');
+
+select pg_temp.check('OFR  a forwarder subcontracts and names none', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000002', auth.uid(), 2400)$a$, 'allowed');
+
+select pg_temp.check('OFR  a vehicle with expired papers cannot be offered', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$update public.vehicles set is_compliant = false
+                where id = 'fe000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('OFR  nor somebody else''s vehicle', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             'fe000000-0000-0000-0000-000000000003')$a$, 'blocked');
+
+select pg_temp.check('OFR  the eligible list offers only what the guard accepts', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select bool_and(id <> 'fe000000-0000-0000-0000-000000000003')
+     from public.eligible_vehicles('fc000000-0000-0000-0000-000000000001')$a$, 'true');
+
+select pg_temp.check('OFR  and nobody reads another firm''s fleet through it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.eligible_vehicles('fc000000-0000-0000-0000-000000000003')$a$,
+  'blocked');
+
+-- The quota. NULL on every plan today, so the check moves the number
+-- rather than asserting the default: a limit nobody set is not a limit
+-- anybody tested.
+select pg_temp.check('OFR  a plan limit stops the next offer, and names the plan', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$update public.plans set max_offers_month = 0$s$);
+
+select pg_temp.check('OFR  with no limit set, the quota reads as unlimited', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select allowed is null from public.offer_quota(auth.uid())$a$, 'true');
+
+select pg_temp.check('OFR  and nobody reads somebody else''s quota', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.offer_quota('f0000000-0000-0000-0000-000000000006')$a$,
+  'blocked');
+
+-- Expiry.
+select pg_temp.check('OFR  the job expires an offer nobody answered', 'fix',
+  null, 'service_role',
+  $a$select public.expire_stale_offers() >= 1$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id, valid_until)
+     values ('f2000000-0000-0000-0000-0000000000a2',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', now() + interval '1 hour');
+     update public.offers set valid_until = now() - interval '1 hour'
+     where id = 'f2000000-0000-0000-0000-0000000000a2'$s$,
+  p_verify => $v$select status = 'expired' and expired_at is not null
+                 from public.offers where id = 'f2000000-0000-0000-0000-0000000000a2'$v$);
+
+select pg_temp.check('OFR  and tells the carrier it went cold', 'fix',
+  null, 'service_role',
+  $a$select public.expire_stale_offers() >= 1$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id, valid_until)
+     values ('f2000000-0000-0000-0000-0000000000a3',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', now() + interval '1 hour');
+     update public.offers set valid_until = now() - interval '1 hour'
+     where id = 'f2000000-0000-0000-0000-0000000000a3'$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'offer_expired'
+                                  and dedupe_key = 'offer_expired:f2000000-0000-0000-0000-0000000000a3')$v$);
+
+select pg_temp.check('OFR  an offer still in date is left alone', 'fix',
+  null, 'service_role',
+  $a$select public.expire_stale_offers() = 0$a$, 'true');
+
+select pg_temp.check('OFR  the request needs no status change to wait again', 'fix',
+  null, 'service_role',
+  $a$select status = 'active' from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id, valid_until)
+     values ('f2000000-0000-0000-0000-0000000000a4',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', now() + interval '1 hour');
+     update public.offers set valid_until = now() - interval '1 hour'
+     where id = 'f2000000-0000-0000-0000-0000000000a4';
+     select public.expire_stale_offers()$s$);
+
+-- Reading them.
+select pg_temp.check('OFR  the request owner reads the offers on it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 1 from public.offers_for_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'true',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('OFR  somebody else does not', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) from public.offers_for_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked');
+
+select pg_temp.check('OFR  the carrier sees what it sent', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) >= 1 from public.my_offers('trimise')$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('OFR  and not what it did not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.my_offers('primite')$a$, 'true');
+
+select pg_temp.check('OFR  the client sees what it received', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 1 from public.my_offers('primite')$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('OFR  a visitor reads no offers at all', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.offers$a$, 'true');
+
+-- Settings.
+select pg_temp.check('OFR  anybody signed in reads the ceilings the form prints', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select max_price_ron > 0 from public.offer_settings$a$, 'true');
+
+select pg_temp.check('OFR  but nobody writes them through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.offer_settings set max_price_ron = 1 where id$a$, 'blocked',
+  p_verify => $v$select max_price_ron <> 1 from public.offer_settings$v$);
+
+select pg_temp.check('OFR  staff change them through the RPC, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_offer_settings(150000, 30000, 24, 7)).max_validity_days = 7$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'settings.offers_changed')$v$);
+
+select pg_temp.check('OFR  a non-staff user cannot', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_offer_settings(1, 1, 1, 1)$a$, 'blocked');
+
+-- =====================================================================
+-- MSK - the contacts stay hidden until the order is confirmed
+--
+-- This is the block that decides whether the business model holds. A
+-- free-text box between two strangers is the obvious way around „the
+-- contact is revealed once you commit", and everybody knows it — so the
+-- rule lives in a BEFORE INSERT trigger and the unmasked text is never
+-- written.
+--
+-- Every pattern below is one somebody actually tries, in the order they
+-- try them: the plain number, then the spaced one, then the one with
+-- dots, then the international form, then the e-mail, then the e-mail
+-- with " at ", then the digits spelled out.
+--
+-- `mask_contacts()` is tested directly as well as through the trigger:
+-- directly so a failure names the pattern, through the trigger so the
+-- path that matters is the one exercised.
+-- =====================================================================
+
+select pg_temp.check('MSK  a plain Romanian mobile', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('sună-mă la 0722123456') not like '%0722123456%'$a$, 'true');
+
+select pg_temp.check('MSK  spaced in threes', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('0722 123 456') !~ '[0-9]{3}'$a$, 'true');
+
+select pg_temp.check('MSK  spaced in twos, which is what people type next', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('07 22 33 44 55') !~ '[0-9]{2}'$a$, 'true');
+
+select pg_temp.check('MSK  with dots', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('0722.123.456') not like '%123%'$a$, 'true');
+
+select pg_temp.check('MSK  with dashes', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('0722-123-456') not like '%123%'$a$, 'true');
+
+select pg_temp.check('MSK  in brackets', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('(0722) 123 456') not like '%123%'$a$, 'true');
+
+select pg_temp.check('MSK  an e-mail with a digit in it, masked whole', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('ion7@example.ro') not like '%example%'$a$, 'true');
+
+select pg_temp.check('MSK  the international form', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('+40 722 123 456') not like '%722%'$a$, 'true');
+
+select pg_temp.check('MSK  and the 00 prefix', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('0040722123456') not like '%722%'$a$, 'true');
+
+select pg_temp.check('MSK  a foreign number too', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('+49 171 1234567') not like '%1234567%'$a$, 'true');
+
+select pg_temp.check('MSK  a plain e-mail', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('scrie la ion.popescu@gmail.com') not like '%@%'$a$, 'true');
+
+select pg_temp.check('MSK  an e-mail written with " at "', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('ion at gmail dot com') not like '%gmail%'$a$, 'true');
+
+select pg_temp.check('MSK  and with [at] [dot]', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('ion[at]gmail[dot]com') not like '%gmail%'$a$, 'true');
+
+select pg_temp.check('MSK  and the Romanian words for them', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('ion arond gmail punct com') not like '%gmail%'$a$, 'true');
+
+select pg_temp.check('MSK  digits spelled out in Romanian', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('zero șapte doi doi unu doi trei') not like '%șapte%'$a$, 'true');
+
+select pg_temp.check('MSK  and without diacritics, which is how people type', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('zero sapte doi doi unu doi trei') not like '%sapte%'$a$, 'true');
+
+-- What must NOT be masked: the interface is unusable if every number in
+-- a sentence about a transport disappears.
+select pg_temp.check('MSK  a price is not a telephone number', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('pot face 2400 lei') like '%2400 lei%'$a$, 'true');
+
+select pg_temp.check('MSK  nor is a date', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('încarc pe 12.03.2027') like '%12.03.2027%'$a$, 'true');
+
+select pg_temp.check('MSK  nor a weight', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('cântărește 1500 kg') like '%1500 kg%'$a$, 'true');
+
+select pg_temp.check('MSK  nor two numbers in one sentence', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('2400 lei, 3 zile') like '%2400%3 zile%'$a$, 'true');
+
+-- Through the trigger, which is the path that matters.
+select pg_temp.check('MSK  the trigger rewrites the row, not the render', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000b1', auth.uid(),
+             'sună-mă la 0722123456')$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b1',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000b1',
+             'f2000000-0000-0000-0000-0000000000b1',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select body not like '%0722123456%' and was_masked
+                 from public.messages
+                 where conversation_id = 'f3000000-0000-0000-0000-0000000000b1'$v$);
+
+select pg_temp.check('MSK  an ordinary message is left exactly as written', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000b2', auth.uid(),
+             'Puteți încărca marți dimineață?')$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b2',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000b2',
+             'f2000000-0000-0000-0000-0000000000b2',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select body = 'Puteți încărca marți dimineață?' and not was_masked
+                 from public.messages
+                 where conversation_id = 'f3000000-0000-0000-0000-0000000000b2'$v$);
+
+select pg_temp.check('MSK  an empty message is not a message', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000b3', auth.uid(), '   ')$a$, 'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b3',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000b3',
+             'f2000000-0000-0000-0000-0000000000b3',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('MSK  a message is a record: nobody edits one', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.messages set body = 'altceva'
+     where conversation_id = 'f3000000-0000-0000-0000-0000000000b4'$a$, 'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b4',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000b4',
+             'f2000000-0000-0000-0000-0000000000b4',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000b4',
+             'f0000000-0000-0000-0000-000000000006', 'întrebare')$s$,
+  p_verify => $v$select body = 'întrebare' from public.messages
+                 where conversation_id = 'f3000000-0000-0000-0000-0000000000b4'$v$);
+
+select pg_temp.check('MSK  staff hide a message, with a reason, audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_hide_message(
+       (select id from public.messages
+        where conversation_id = 'f3000000-0000-0000-0000-0000000000b5'),
+       'Date de contact în clar')).hidden_at is not null$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b5',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000b5',
+             'f2000000-0000-0000-0000-0000000000b5',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000b5',
+             'f0000000-0000-0000-0000-000000000006', 'ceva')$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                                where action = 'message.hidden')$v$);
+
+select pg_temp.check('MSK  and never without one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_hide_message(
+       '00000000-0000-0000-0000-000000000000', '  ')$a$, 'blocked');
+
+select pg_temp.check('MSK  a participant cannot hide anything', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.staff_hide_message(
+       '00000000-0000-0000-0000-000000000000', 'vreau')$a$, 'blocked');
+
+-- The thread itself.
+select pg_temp.check('MSK  opening a thread costs no contact reveal', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.open_offer_thread('f2000000-0000-0000-0000-0000000000b6')).offer_id
+       = 'f2000000-0000-0000-0000-0000000000b6'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b6',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select count(*) = 0 from public.contact_reveals
+                 where user_id = 'f0000000-0000-0000-0000-000000000006'
+                   and cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MSK  pressing it twice is one thread', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.open_offer_thread('f2000000-0000-0000-0000-0000000000b7')).id
+       = (public.open_offer_thread('f2000000-0000-0000-0000-0000000000b7')).id$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b7',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select count(*) = 1 from public.conversations
+                 where offer_id = 'f2000000-0000-0000-0000-0000000000b7'$v$);
+
+select pg_temp.check('MSK  a stranger cannot open one', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.open_offer_thread('f2000000-0000-0000-0000-0000000000b8')$a$, 'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000b8',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+-- =====================================================================
+-- ACC - what acceptance changes
+--
+-- `accept_offer()` itself is covered by P4 and ORD above and is not
+-- reproduced here. What is new in 20260922100000 is the consequence:
+-- the two parties stop paying to reach each other, and they can do it
+-- on a listing that is no longer active — which is the state a listing
+-- is in the moment its offer was accepted.
+-- =====================================================================
+
+select pg_temp.check('ACC  an order opens a contact on a listing that is already closed', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c1',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c1',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400);
+     update public.cargo_listings set status = 'assigned'
+     where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('ACC  and the reveal says why it was free', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c2',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c2',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$,
+  p_verify => $v$select reason = public.reveal_reason_order()
+                 from public.contact_reveals
+                 where user_id = 'f0000000-0000-0000-0000-000000000006'
+                   and cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('ACC  the carrier reads the client the same way', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c3',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c3',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  a free reveal does not spend the month''s allowance', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000003', null)$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c4',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     update public.plans set max_contact_reveals_month = 1;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c4',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400);
+     insert into public.contact_reveals (user_id, cargo_listing_id, reason)
+     values ('f0000000-0000-0000-0000-000000000006',
+             'f1000000-0000-0000-0000-000000000002',
+             public.reveal_reason_order());
+     insert into public.listing_contacts (cargo_listing_id, contact_name, contact_phone)
+     values ('f1000000-0000-0000-0000-000000000003', 'Pf', '+40711000006')$s$);
+
+select pg_temp.check('ACC  a stranger to the order still pays, and is refused at the limit', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'blocked',
+  p_setup => $s$update public.plans set max_contact_reveals_month = 0$s$);
+
+select pg_temp.check('ACC  and an order somebody else is party to buys nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select not public.has_agreed_order(auth.uid(),
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$insert into public.transports
+       (cargo_listing_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  a cancelled order opens nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select not public.has_agreed_order(auth.uid(),
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$insert into public.transports
+       (cargo_listing_id, shipper_user_id, carrier_company_id, agreed_price, status)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400, 'cancelled')$s$);
+
+select pg_temp.check('ACC  once there is an order, the thread stops masking', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000c5', auth.uid(),
+             'sună-mă la 0722123456')$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c5',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000c5',
+             'f2000000-0000-0000-0000-0000000000c5',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002');
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c5',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$,
+  p_verify => $v$select body like '%0722123456%' and not was_masked
+                 from public.messages
+                 where conversation_id = 'f3000000-0000-0000-0000-0000000000c5'$v$);
+
+-- Notifications.
+select pg_temp.check('ACC  a new offer tells the client, once per quarter hour', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001', auth.uid(), 2400,
+             'fe000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'offer_received'$v$);
+
+select pg_temp.check('ACC  four offers in one bucket are one e-mail', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000002', auth.uid(), 2600)$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox
+                 where template = 'offer_received'$v$);
+
+select pg_temp.check('ACC  withdrawing tells the client too', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.withdraw_offer('f2000000-0000-0000-0000-0000000000c6')).status
+       = 'withdrawn'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c6',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'offer_withdrawn')$v$);
+
+select pg_temp.check('ACC  rejecting tells the carrier', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.reject_offer('f2000000-0000-0000-0000-0000000000c7')).status
+       = 'rejected'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c7',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'offer_rejected')$v$);
+
+select pg_temp.check('ACC  a question tells the other party', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000c8', auth.uid(),
+             'Când puteți încărca?')$a$, 'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c8',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000c8',
+             'f2000000-0000-0000-0000-0000000000c8',
+             'f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002');
+     update public.profiles set is_test = false
+     where id in ('f0000000-0000-0000-0000-000000000002',
+                  'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+                                where template = 'offer_question')$v$);
+
+-- The staff list.
+select pg_temp.check('ACC  staff read every offer', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 0 from public.admin_offers()$a$, 'true');
+
+select pg_temp.check('ACC  a visitor does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.admin_offers()$a$, 'blocked');
+
+select pg_temp.check('ACC  and staff cannot rewrite one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.offers set price_amount = 1
+     where id = 'f2000000-0000-0000-0000-0000000000c9'$a$, 'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c9',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select price_amount = 2400 from public.offers
+                 where id = 'f2000000-0000-0000-0000-0000000000c9'$v$);
+
+-- The direction `reveal_contact()` never covered: the client reading the
+-- firm that is coming for the car. A listing holds the client's number
+-- and nobody's else, so this is the only way that number is reachable.
+select pg_temp.check('ACC  the client reads the carrier, not their own number', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.order_contacts('f2000000-0000-0000-0000-0000000000cb')).side
+       = 'transportator'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  and the carrier reads the client the other way', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.order_contacts('f2000000-0000-0000-0000-0000000000cb')).side
+       = 'client'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+-- A pending offer buys nobody a telephone number. If it did, the mask on
+-- the clarification thread would be theatre.
+select pg_temp.check('ACC  before the order there are no contacts', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cc')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000cc',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  a stranger to the order gets nothing from it', 'fix',
+  'f0000000-0000-0000-0000-000000000005', 'authenticated',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cb')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  anon gets nothing at all', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cb')$a$,
+  'blocked');
+
+-- The two screens the staff list is made of.
+select pg_temp.check('ACC  staff read one offer in full', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.admin_offer('f2000000-0000-0000-0000-0000000000ca')$a$,
+  'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000ca',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  a visitor reads none in full', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.admin_offer('f2000000-0000-0000-0000-0000000000ca')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000ca',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  staff read the company filter', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 0 from public.admin_offer_companies()$a$, 'true');
+
+select pg_temp.check('ACC  a visitor does not read the company filter', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.admin_offer_companies()$a$, 'blocked');
+
+select pg_temp.check('ACC  anon reads neither', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.admin_offer_companies()$a$, 'blocked');
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}

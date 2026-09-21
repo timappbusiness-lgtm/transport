@@ -227,6 +227,12 @@ export const requestsCopy = {
     reopenTo: 'Până la (opțional)',
     reopenSubmit: 'Republică cererea',
     view: 'Vezi anunțul',
+    /**
+     * The way in to the offers a request has received. The count is in
+     * the label because „Oferte primite" on a request with none is a
+     * click that ends in an empty box.
+     */
+    offers: (count: number) => (count === 0 ? 'Oferte primite' : `Oferte primite (${count})`),
     confirm: 'Da, continuă',
     back: 'Renunță',
     quotaTitle: 'Ai atins limita planului',
@@ -234,10 +240,14 @@ export const requestsCopy = {
   },
 
   /**
-   * The statuses a client sees. `offers_received`, `in_progress` and
-   * `disputed` are in the enum and nothing can reach them yet — no screen
-   * accepts an offer or opens a complaint — but a label costs nothing and a
-   * blank badge on somebody's dashboard costs trust.
+   * The statuses a client sees.
+   *
+   * `carrier_selected` became reachable with Faza 2: `accept_offer()`
+   * writes it. `offers_received`, `in_progress` and `disputed` are still
+   * in the enum with nothing writing them — the count of live offers is
+   * derived rather than stored, and no screen starts a transport or
+   * opens a dispute yet — but a label costs nothing and a blank badge on
+   * somebody's dashboard costs trust.
    */
   status: {
     draft: 'Ciornă',
