@@ -26,6 +26,7 @@ import {
   type OfferSort,
 } from '@/lib/offers';
 import type { OfferForRequest, ThreadMessage } from '@/lib/offers-source';
+import { VEHICLE_TYPE_LABELS } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 
 const EMPTY: OfferState = {};
@@ -229,8 +230,18 @@ function OfferCard({
         <Cell label={c.pickup} value={offer.estimated_pickup_date} />
         <Cell label={c.delivery} value={offer.estimated_delivery_date} />
         <div>
+          {/* The type, not the plate. What a client is choosing between
+              is „platformă închisă" and „platformă deschisă" — the
+              registration number tells them nothing at this point and
+              is operational detail. It appears on the order, where it
+              is what somebody at the loading point checks against. */}
           <dt className="text-xs text-muted">{c.vehicle}</dt>
-          <dd className="mt-0.5">{offer.vehicle_plate ?? '—'}</dd>
+          <dd className="mt-0.5">
+            {offer.vehicle_type === null
+              ? '—'
+              : (VEHICLE_TYPE_LABELS[offer.vehicle_type as keyof typeof VEHICLE_TYPE_LABELS] ??
+                offer.vehicle_type)}
+          </dd>
         </div>
       </dl>
 
