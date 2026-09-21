@@ -318,3 +318,38 @@ function first<T>(value: T | T[] | null): T | null {
   if (value === null) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
+
+/**
+ * Which of these requests belong to the caller's own side.
+ *
+ * Subcontracting is ordinary here — a carrier with a leg it cannot run
+ * posts the job rather than turning it down — so a firm's own request
+ * can and does come back among the requests matched to it. Offering it
+ * a „Trimite ofertă" button would be offering a button that always
+ * fails: `guard_offer_insert()` refuses an offer on your own listing.
+ *
+ * The same test the guard makes: posted by you, or by a colleague.
+ */
+export async function loadOwnListings(
+  listingIds: readonly string[],
+  userId: string,
+  companyIds: readonly string[],
+): Promise<string[]> {
+  if (!isSupabaseConfigured() || listingIds.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('cargo_listings')
+    .select('id, posted_by, company_id')
+    .in('id', [...listingIds]);
+
+  if (error) {
+    console.error('[oferte] ownership lookup failed', { message: error.message });
+    return [];
+  }
+
+  const mine = new Set(companyIds);
+  return ((data ?? []) as { id: string; posted_by: string; company_id: string | null }[])
+    .filter((row) => row.posted_by === userId || (row.company_id !== null && mine.has(row.company_id)))
+    .map((row) => row.id);
+}

@@ -16,6 +16,7 @@ import {
   loadMyPendingOffers,
   loadOfferQuota,
   loadOfferSettings,
+  loadOwnListings,
 } from '@/lib/offers-source';
 import { formatWindow } from '@/lib/departures';
 import { isOnBoard, type MyRequest } from '@/lib/my-requests';
@@ -74,7 +75,7 @@ async function Body({ context }: { context: AccountContext }) {
       context={context}
       data={dashboard}
       contactsLimit={plan?.limits.contactsPerMonth ?? null}
-      offering={FEATURES.offers ? await loadOffering(company, dashboard.matches) : null}
+      offering={FEATURES.offers ? await loadOffering(context, company, dashboard.matches) : null}
     />
   );
 }
@@ -84,18 +85,25 @@ async function Body({ context }: { context: AccountContext }) {
  * four reads for the whole page rather than four for each match.
  */
 async function loadOffering(
+  context: AccountContext,
   company: NonNullable<AccountContext['activeCompany']>,
   matches: readonly { id: string }[],
 ) {
-  const [vehicles, settings, quota, pending] = await Promise.all([
+  const ids = matches.map((match) => match.id);
+  const [vehicles, settings, quota, pending, own] = await Promise.all([
     company.company_type === 'expeditie'
       ? Promise.resolve([])
       : loadEligibleVehicles(company.id),
     loadOfferSettings(),
     loadOfferQuota(),
-    loadMyPendingOffers(matches.map((match) => match.id)),
+    loadMyPendingOffers(ids),
+    loadOwnListings(
+      ids,
+      context.user.id,
+      context.memberships.map((membership) => membership.company.id),
+    ),
   ]);
-  return { vehicles, settings, quota, pending: Object.fromEntries(pending) };
+  return { vehicles, settings, quota, pending: Object.fromEntries(pending), own };
 }
 
 /**

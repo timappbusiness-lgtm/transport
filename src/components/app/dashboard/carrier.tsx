@@ -53,6 +53,12 @@ export function CarrierHome({
     quota: OfferQuota | null;
     /** Request id → the live offer already on it. */
     pending: Record<string, string>;
+    /**
+     * Matches that are this firm's own requests. Subcontracting puts
+     * them here, and an offer on your own listing is refused, so they
+     * get no button rather than one that always fails.
+     */
+    own: readonly string[];
   } | null;
 }) {
   const verified = company.verification_status === 'verified';
@@ -153,7 +159,7 @@ export function CarrierHome({
                   reasons={data.matchReasons[request.id] ?? []}
                   detour={data.detours[request.id]}
                 />
-                {offering !== null ? (
+                {offering !== null && !offering.own.includes(request.id) ? (
                   <div className="mt-3">
                     <SendOffer
                       request={{ id: request.id, loading_from: request.loading_from }}
