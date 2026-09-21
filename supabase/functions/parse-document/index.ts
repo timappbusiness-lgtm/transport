@@ -12,6 +12,7 @@
 // POST { "document_id": "<uuid>" }
 // =====================================================================
 
+import { corsFor } from "../_shared/security.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { encodeBase64 } from "jsr:@std/encoding@^1/base64";
@@ -28,11 +29,6 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 // bottom of this file.
 const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-opus-5";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 // Strict JSON schema: every key is required and nullable, so Claude has a
 // way to say "not on this document" instead of inventing a value.
@@ -114,16 +110,21 @@ Reguli stricte:
 - confidence reflectă cât de lizibil este documentul, nu cât de sigur ești pe reguli.
 - Semnalează în issues orice suspiciune de document modificat digital.`;
 
-function jsonResponse(body: unknown, status = 200): Response {
+/**
+ * Antetele CORS depind acum de cererea care le-a cerut: originea se
+ * întoarce numai dacă este pe lista din `ALLOWED_ORIGIN`. Deci și
+ * răspunsul de eroare are nevoie de cerere.
+ */
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsFor(req), "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req) });
+  if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
@@ -134,7 +135,7 @@ Deno.serve(async (req: Request) => {
   try {
     const body = await req.json().catch(() => ({}));
     documentId = body.document_id;
-    if (!documentId) return jsonResponse({ error: "document_id is required" }, 400);
+    if (!documentId) return jsonResponse(req, { error: "document_id is required" }, 400);
 
     // --- Authorisation -------------------------------------------------
     // The caller must be a member of the company that owns the document.
@@ -150,8 +151,8 @@ Deno.serve(async (req: Request) => {
       .eq("id", documentId)
       .maybeSingle();
 
-    if (visibleError) return jsonResponse({ error: visibleError.message }, 500);
-    if (!visible) return jsonResponse({ error: "Document not found or not accessible" }, 403);
+    if (visibleError) return jsonResponse(req, { error: visibleError.message }, 500);
+    if (!visible) return jsonResponse(req, { error: "Document not found or not accessible" }, 403);
 
     // --- Load the row and the file -------------------------------------
     const { data: doc, error: docError } = await admin
@@ -160,9 +161,9 @@ Deno.serve(async (req: Request) => {
       .eq("id", documentId)
       .single();
 
-    if (docError || !doc) return jsonResponse({ error: "Document not found" }, 404);
+    if (docError || !doc) return jsonResponse(req, { error: "Document not found" }, 404);
     if (doc.status === "approved") {
-      return jsonResponse({ error: "Document already approved" }, 409);
+      return jsonResponse(req, { error: "Document already approved" }, 409);
     }
 
     await admin.from("documents").update({ status: "parsing" }).eq("id", documentId);
@@ -261,7 +262,7 @@ Deno.serve(async (req: Request) => {
 
     if (updateError) throw new Error(updateError.message);
 
-    return jsonResponse({
+    return jsonResponse(req, {
       ok: true,
       document_id: documentId,
       extracted,
@@ -282,7 +283,7 @@ Deno.serve(async (req: Request) => {
         .update({ status: "pending", extraction_error: message })
         .eq("id", documentId);
     }
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse(req, { error: message }, 500);
   }
 });
 

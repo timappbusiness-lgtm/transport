@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { securityHeaders } from './src/lib/security-headers';
 
 // Vercel sets this at build time. The release pipeline reads it back from
 // production to know when the deployment it asked for is the one serving.
@@ -15,8 +16,13 @@ const nextConfig: NextConfig = {
   // script and in CI.
   typescript: { ignoreBuildErrors: false },
   async headers() {
-    if (!commit) return [];
-    return [{ source: '/:path*', headers: [{ key: 'x-coridor-commit', value: commit }] }];
+    // Antetele de securitate merg pe tot, mereu. Auditul le-a găsit
+    // lipsă cu totul (R2): fără `frame-ancestors`, contul se pune
+    // într-un iframe străin; fără `Referrer-Policy`, id-urile din URL
+    // pleacă la fiecare navigare spre exterior.
+    const headers = [...securityHeaders(process.env.NEXT_PUBLIC_SUPABASE_URL)];
+    if (commit) headers.push({ key: 'x-coridor-commit', value: commit });
+    return [{ source: '/:path*', headers }];
   },
 };
 

@@ -14,6 +14,7 @@
 //   even called.
 // =====================================================================
 
+import { corsFor } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { authorizeCompanyWrite, normaliseCui } from "./authorize.ts";
 
@@ -25,29 +26,29 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANAF_ENDPOINT = Deno.env.get("ANAF_ENDPOINT") ??
   "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
-function jsonResponse(body: unknown, status = 200): Response {
+/**
+ * Antetele CORS depind acum de cererea care le-a cerut: originea se
+ * întoarce numai dacă este pe lista din `ALLOWED_ORIGIN`. Deci și
+ * răspunsul de eroare are nevoie de cerere.
+ */
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsFor(req), "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req) });
+  if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   try {
     const { cui, company_id } = await req.json().catch(() => ({}));
-    if (!cui) return jsonResponse({ error: "cui is required" }, 400);
+    if (!cui) return jsonResponse(req, { error: "cui is required" }, 400);
 
     const parsedCui = normaliseCui(String(cui));
-    if (parsedCui === null) return jsonResponse({ error: "CUI invalid" }, 400);
+    if (parsedCui === null) return jsonResponse(req, { error: "CUI invalid" }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
@@ -75,7 +76,7 @@ Deno.serve(async (req: Request) => {
         String(company_id),
         parsedCui,
       );
-      if (!decision.allowed) return jsonResponse({ error: decision.error }, decision.status);
+      if (!decision.allowed) return jsonResponse(req, { error: decision.error }, decision.status);
     }
 
     const today = new Date().toISOString().slice(0, 10);
@@ -91,6 +92,7 @@ Deno.serve(async (req: Request) => {
       // ANAF rate-limits aggressively (roughly 1 req/s). Surface it as 503
       // so the client can retry rather than treating the company as invalid.
       return jsonResponse(
+        req,
         { error: `ANAF indisponibil (HTTP ${anafResponse.status})`, retryable: true },
         503,
       );
@@ -100,7 +102,7 @@ Deno.serve(async (req: Request) => {
     const record = payload?.found?.[0];
 
     if (!record) {
-      return jsonResponse({ found: false, cui: parsedCui, message: "CUI negăsit la ANAF" }, 404);
+      return jsonResponse(req, { found: false, cui: parsedCui, message: "CUI negăsit la ANAF" }, 404);
     }
 
     const general = record.date_generale ?? {};
@@ -142,10 +144,10 @@ Deno.serve(async (req: Request) => {
       if (error) console.error("verify-cui-anaf: could not persist snapshot", error.message);
     }
 
-    return jsonResponse(result);
+    return jsonResponse(req, result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("verify-cui-anaf failed", message);
-    return jsonResponse({ error: message, retryable: true }, 500);
+    return jsonResponse(req, { error: message, retryable: true }, 500);
   }
 });

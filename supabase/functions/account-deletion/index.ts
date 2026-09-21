@@ -22,6 +22,7 @@
 // login with nothing behind it, which is not.
 // =====================================================================
 
+import { secretsMatch } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { chunk, groupByBucket, isAlreadyGone, type StorageFile } from "./deletion.ts";
 
@@ -117,7 +118,7 @@ Deno.serve(async (req: Request) => {
       missing: "CRON_SECRET",
     }, 503);
   }
-  if (req.headers.get("x-cron-secret") !== CRON_SECRET) {
+  if (!secretsMatch(req.headers.get("x-cron-secret"), CRON_SECRET)) {
     return json({ error: "Unauthorized" }, 401);
   }
 
