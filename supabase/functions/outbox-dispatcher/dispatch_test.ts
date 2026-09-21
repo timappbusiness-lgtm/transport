@@ -59,6 +59,8 @@ const SAMPLE: Record<string, string> = {
   outcome: "rezolvată",
   resolution: "Am sunat firma, au confirmat, iar anunțul a fost corectat.",
   listing_id: "5d2e9f31-0000-4000-8000-000000000003",
+  carrier_name: "Transport Ardeal SRL",
+  offer_id: "7b4a2c88-0000-4000-8000-000000000004",
 };
 
 interface QueueRow {
@@ -313,6 +315,12 @@ Deno.test("every template a queueing function names exists", () => {
     "saved_search_alert",
     "saved_search_digest",
     "report_closed",
+    "offer_received",
+    "offer_withdrawn",
+    "offer_accepted",
+    "offer_rejected",
+    "offer_expired",
+    "offer_question",
   ];
   for (const name of queuedByTheDatabase) {
     assert(TEMPLATES[name] !== undefined, `no template for ${name}`);

@@ -197,6 +197,80 @@ export const TEMPLATES: Record<string, Template> = {
     unsubscribable: false,
   },
 
+  // --- Oferte -----------------------------------------------------------
+  //
+  // Six events, three to each side. The one that needs care is
+  // `offer_received`: a request that attracts four offers in ten minutes
+  // must produce one e-mail, not four. The grouping is not done here —
+  // `queue_offer_notifications()` buckets the dedupe key by quarter hour
+  // — so this template never says how many, only that there is something
+  // to look at.
+  offer_received: {
+    subject: "Ofertă nouă pentru {{ title }}",
+    lines: [
+      "Bună ziua,",
+      "Ați primit cel puțin o ofertă pentru cererea {{ title }} ({{ from_city }} — {{ to_city }}).",
+      "Deschideți cererea ca să le vedeți pe toate, cu preț, date estimate și condiții, și ca să le comparați.",
+    ],
+    action: { label: "Vezi ofertele", href: "{{ site_url }}/cont/cereri/{{ request_id }}" },
+    unsubscribable: true,
+  },
+
+  offer_withdrawn: {
+    subject: "O ofertă pentru {{ title }} a fost retrasă",
+    lines: [
+      "Bună ziua,",
+      "{{ carrier_name }} și-a retras oferta pentru cererea {{ title }}.",
+      "Celelalte oferte rămân neschimbate.",
+    ],
+    action: { label: "Vezi cererea", href: "{{ site_url }}/cont/cereri/{{ request_id }}" },
+    unsubscribable: true,
+  },
+
+  offer_accepted: {
+    subject: "Oferta dumneavoastră a fost acceptată",
+    lines: [
+      "Bună ziua,",
+      "Oferta trimisă pentru {{ title }} ({{ from_city }} — {{ to_city }}) a fost acceptată.",
+      "Datele de contact ale clientului sunt acum vizibile în cont, fără să consume din abonament. Luați legătura cu el ca să stabiliți detaliile încărcării.",
+    ],
+    action: { label: "Vezi oferta", href: "{{ site_url }}/cont/oferte" },
+    unsubscribable: false,
+  },
+
+  offer_rejected: {
+    subject: "Oferta pentru {{ title }} nu a fost aleasă",
+    lines: [
+      "Bună ziua,",
+      "Clientul a ales altă ofertă pentru {{ title }} ({{ from_city }} — {{ to_city }}).",
+      "Nu înseamnă nimic despre firma dumneavoastră — de cele mai multe ori este vorba de preț sau de dată.",
+    ],
+    action: { label: "Vezi alte cereri", href: "{{ site_url }}/cereri" },
+    unsubscribable: true,
+  },
+
+  offer_expired: {
+    subject: "Oferta pentru {{ title }} a expirat",
+    lines: [
+      "Bună ziua,",
+      "Oferta trimisă pentru {{ title }} ({{ from_city }} — {{ to_city }}) a trecut de termenul de valabilitate și nu mai poate fi acceptată.",
+      "Dacă tot puteți face transportul, trimiteți una nouă: cererea este încă pe panou.",
+    ],
+    action: { label: "Vezi cererea", href: "{{ site_url }}/cereri" },
+    unsubscribable: true,
+  },
+
+  offer_question: {
+    subject: "Mesaj nou despre oferta pentru {{ title }}",
+    lines: [
+      "Bună ziua,",
+      "Aveți un mesaj nou în discuția despre oferta pentru {{ title }}.",
+      "Până la confirmarea comenzii, numerele de telefon și adresele de e-mail sunt ascunse automat în mesaje. După ce comanda este confirmată, vă vedeți datele de contact în cont.",
+    ],
+    action: { label: "Vezi discuția", href: "{{ site_url }}/cont/oferte" },
+    unsubscribable: true,
+  },
+
   // --- Rezervări --------------------------------------------------------
   reservation_created: {
     subject: "Rezervare nouă pe traseul {{ from_city }} — {{ to_city }}",

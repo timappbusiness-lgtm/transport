@@ -23,11 +23,20 @@ export interface FeatureMap {
   savedSearches: boolean;
   /** Carrier routes, and the bookings against them. */
   departures: boolean;
-  /** Offers on a request: `offers` + accept/withdraw/reject exist in SQL. */
+  /** Offers on a request, and the clarification thread on one. */
   offers: boolean;
-  /** `conversations` and `messages` exist in SQL. */
+  /**
+   * General messaging — a thread on any listing, an inbox, unread counts.
+   * Still false: Faza 2 built the thread on a single offer and nothing
+   * more, and a menu item called „Mesaje" that opens one offer would be
+   * a promise the product does not keep.
+   */
   messages: boolean;
-  /** `transports` — what the brief calls orders. Exists in SQL. */
+  /**
+   * Orders: execution, proof of delivery, the documents against them.
+   * `transports` rows are created by `accept_offer()` today and have a
+   * summary page; the screens that run one are the next phase.
+   */
   transports: boolean;
   /** `ratings` exists in SQL, with a post-delivery guard. */
   ratings: boolean;
@@ -47,7 +56,7 @@ export const FEATURES: FeatureMap = {
   requestBoard: true,
   savedSearches: true,
   departures: true,
-  offers: false,
+  offers: true,
   messages: false,
   transports: false,
   ratings: false,

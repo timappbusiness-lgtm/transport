@@ -7348,6 +7348,14 @@ select pg_temp.check('MSK  with dashes', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.mask_contacts('0722-123-456') not like '%123%'$a$, 'true');
 
+select pg_temp.check('MSK  in brackets', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('(0722) 123 456') not like '%123%'$a$, 'true');
+
+select pg_temp.check('MSK  an e-mail with a digit in it, masked whole', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mask_contacts('ion7@example.ro') not like '%example%'$a$, 'true');
+
 select pg_temp.check('MSK  the international form', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.mask_contacts('+40 722 123 456') not like '%722%'$a$, 'true');
