@@ -109,23 +109,47 @@ end to end.
 - Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
   email pentru cereri pe traseele tale”
 
-## Phase 5 — Offers
+## Phase 5 — Offers (done, September 2026)
 
 - Offer with price, **estimated pickup date**, **estimated delivery date**,
-  **transport conditions**, and a **link to the carrier profile**
-- Accept, reject, withdraw, and **request clarification** *— accept, reject,
-  withdraw done in the database in phase 0*
-- `offers_received` while at least one offer is pending; back to `active`
-  when every offer is withdrawn or rejected
+  **transport conditions**, and a **link to the carrier profile** *— done*
+- Accept, reject, withdraw, and **request clarification** *— done*
+- ~~`offers_received` while at least one offer is pending; back to `active`
+  when every offer is withdrawn or rejected~~ **Changed: the count is
+  derived, not stored.** Four paths would have to keep the status in step —
+  insert, withdraw, reject, expire — and the fourth is an hourly job, so a
+  stored status drifts from the offers it claims to describe the first time
+  one of them is missed. `requestStateLabel()` counts the live offers
+  instead. The enum value stays where it is; nothing writes it.
 - Messaging: conversations through the contact gate *(database done)*;
   **phone numbers and e-mails masked automatically** until the order is
-  confirmed; **report abusive message**; messages immutable *(database done)*;
-  staff hide a message with an audit entry
+  confirmed *— done, at insert, so the unmasked text never reaches a row*;
+  messages immutable *— done, the update policy is gone*; staff hide a
+  message with an audit entry *— done*
+- **Not built: report abusive message.** `reports` already carries the
+  table and the staff screen (`/admin/sesizari`, phase 1), but nothing on
+  a message opens one. It belongs with general messaging rather than with
+  offers.
+
+What this phase added beyond the list above, because the flow needed it:
+
+- An hourly job that expires an offer past its validity, tells the carrier
+  and leaves the request taking offers
+- A per-plan monthly offer quota (`plans.max_offers_month`, NULL everywhere
+  today, which means unlimited)
+- `order_contacts()`: after acceptance each side sees the other's contact,
+  recorded and never charged. `reveal_contact()` only ever answered with
+  the *listing's* contact, which is the client's — the client had no way
+  to reach the carrier at all.
+- `/admin/oferte`, read-only, with the clarification thread
 
 ## Phase 6 — Order
 
 - One internal function creates the order, from an accepted offer or a
   confirmed reservation *— done*
+- `/cont/transporturi/[id]` is a summary and the two contacts, put there by
+  phase 5 so the accepted offer has somewhere to lead. Everything below is
+  still to build.
 - Order statuses: `order_confirmed`, `pickup_scheduled`, `vehicle_picked_up`,
   `in_transit`, `delivery_scheduled`, `vehicle_delivered`, `order_completed`,
   each moved by the party allowed to move it, through an RPC

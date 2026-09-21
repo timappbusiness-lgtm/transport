@@ -13,6 +13,8 @@ să te bazezi pe vreun rând din tabele.
 > | Dispecerul de notificări și joburile programate (`20260918160000`) | §3, „niciun e-mail nu pleacă" |
 > | Ștergerea contului și a firmei, exportul datelor (`20260918180000`) | §5 GDPR, „nu există flux de ștergere a contului" |
 > | Deblocarea Fazei 1 (`20260920100000`) | §3 „matching și alerte", §5 „cota de contacte", și constatarea că nimic nu adună numerele criteriului de ieșire |
+> | Restul Fazei 1 în cod (`20260921100000`) | §3 alerte pe căutări salvate, ocolul folosit la potrivire, sesizări, jurnal, echipă |
+> | Fluxul ofertei (`20260922100000`) | „Nu există ofertă în platformă" — al doilea lucru care bloca un pilot |
 >
 > Două lucruri din document au fost între timp depășite de cod și se
 > citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge
