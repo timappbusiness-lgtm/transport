@@ -16,6 +16,7 @@ să te bazezi pe vreun rând din tabele.
 > | Restul Fazei 1 în cod (`20260921100000`) | §3 alerte pe căutări salvate, ocolul folosit la potrivire, sesizări, jurnal, echipă |
 > | Fluxul ofertei (`20260922100000`) | „Nu există ofertă în platformă" — al doilea lucru care bloca un pilot |
 > | Comanda, dovada de livrare și disputele (`20260923100100`) | §3 comandă și livrare, „regulile sunt în bază, dar nu au interfață" |
+> | Evaluările și reputația calculată (`20260924100000`) | §3 evaluări, „tabela există, ecranul nu"; și profilul care arăta o cifră fără nimic în spatele ei |
 >
 > Două lucruri din document au fost între timp depășite de cod și se
 > citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge
