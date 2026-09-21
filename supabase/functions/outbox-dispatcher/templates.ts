@@ -613,6 +613,33 @@ export const TEMPLATES: Record<string, Template> = {
     ],
     unsubscribable: false,
   },
+
+  // --- Înscriere asistată ----------------------------------------------
+
+  assisted_claim: {
+    subject: "Contul firmei {{ company_name }} vă așteaptă pe Coridor",
+    lines: [
+      "Bună ziua,",
+      "{{ full_name }}, am pregătit contul firmei {{ company_name }} pe Coridor, așa cum am vorbit. Datele firmei, documentele și mașinile sunt deja acolo.",
+      "Ce mai rămâne este să vă alegeți o parolă. Noi nu am ales una și nu avem cum să vedem ce alegeți dumneavoastră.",
+      "Linkul de mai jos funcționează o singură dată și expiră pe {{ expires_at }}. După ce îl folosiți, contul este al dumneavoastră și puteți schimba orice.",
+      "Dacă nu ați cerut asta, nu apăsați nimic și scrieți-ne — nu se întâmplă nimic până nu deschideți linkul.",
+    ],
+    action: { label: "Preiau contul", href: "{{ site_url }}{{ claim_path }}" },
+    unsubscribable: false,
+  },
+
+  assisted_unclaimed: {
+    subject: "{{ company_name }} nu și-a preluat contul de {{ days }} de zile",
+    lines: [
+      "Bună ziua,",
+      "{{ full_name }}, înscrierea pentru {{ company_name }} este gata de {{ days }} de zile și nimeni nu a deschis linkul.",
+      "Persoana de contact este {{ contact_name }}, la {{ contact_phone }}. Un telefon rezolvă de obicei mai repede decât încă un e-mail.",
+      "Dacă nu se întâmplă nimic până la 60 de zile, ștergem contul pregătit și fișierele încărcate.",
+    ],
+    action: { label: "Vezi înscrierile", href: "{{ site_url }}/admin/inscrieri" },
+    unsubscribable: false,
+  },
 };
 
 /**

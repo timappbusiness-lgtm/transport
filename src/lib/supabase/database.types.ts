@@ -26,6 +26,7 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
@@ -44,6 +45,7 @@ export type Database = {
           reason_blocked?: string | null
           requested_at?: string
           scheduled_for?: string | null
+          source?: string
           staff_reason?: string | null
           status?: Database["public"]["Enums"]["account_deletion_status"]
           updated_at?: string
@@ -62,6 +64,7 @@ export type Database = {
           reason_blocked?: string | null
           requested_at?: string
           scheduled_for?: string | null
+          source?: string
           staff_reason?: string | null
           status?: Database["public"]["Enums"]["account_deletion_status"]
           updated_at?: string
@@ -191,6 +194,112 @@ export type Database = {
           },
         ]
       }
+      assisted_onboardings: {
+        Row: {
+          alerted_at: string | null
+          claim_expires_at: string | null
+          claim_sent_at: string | null
+          claim_token_hash: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          company_id: string | null
+          consent_at: string
+          consent_channel: Database["public"]["Enums"]["consent_channel"]
+          consent_note: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          staff_user_id: string
+          status: Database["public"]["Enums"]["assisted_status"]
+          updated_at: string
+        }
+        Insert: {
+          alerted_at?: string | null
+          claim_expires_at?: string | null
+          claim_sent_at?: string | null
+          claim_token_hash?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          company_id?: string | null
+          consent_at: string
+          consent_channel: Database["public"]["Enums"]["consent_channel"]
+          consent_note?: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          staff_user_id: string
+          status?: Database["public"]["Enums"]["assisted_status"]
+          updated_at?: string
+        }
+        Update: {
+          alerted_at?: string | null
+          claim_expires_at?: string | null
+          claim_sent_at?: string | null
+          claim_token_hash?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          company_id?: string | null
+          consent_at?: string
+          consent_channel?: Database["public"]["Enums"]["consent_channel"]
+          consent_note?: string | null
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          staff_user_id?: string
+          status?: Database["public"]["Enums"]["assisted_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assisted_onboardings_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assisted_onboardings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assisted_onboardings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assisted_onboardings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "assisted_onboardings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "assisted_onboardings_staff_user_id_fkey"
+            columns: ["staff_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -202,6 +311,7 @@ export type Database = {
           entity: string
           entity_id: string | null
           id: number
+          on_behalf_of_company_id: string | null
           reason: string | null
         }
         Insert: {
@@ -214,6 +324,7 @@ export type Database = {
           entity: string
           entity_id?: string | null
           id?: never
+          on_behalf_of_company_id?: string | null
           reason?: string | null
         }
         Update: {
@@ -226,6 +337,7 @@ export type Database = {
           entity?: string
           entity_id?: string | null
           id?: never
+          on_behalf_of_company_id?: string | null
           reason?: string | null
         }
         Relationships: []
@@ -1458,9 +1570,11 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           scope: Database["public"]["Enums"]["document_scope"]
+          solo_review_note: string | null
           status: Database["public"]["Enums"]["document_status"]
           updated_at: string
           uploaded_by: string | null
+          uploaded_on_behalf: boolean
           valid_from: string | null
           valid_until: string | null
           vehicle_id: string | null
@@ -1483,9 +1597,11 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           scope: Database["public"]["Enums"]["document_scope"]
+          solo_review_note?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           updated_at?: string
           uploaded_by?: string | null
+          uploaded_on_behalf?: boolean
           valid_from?: string | null
           valid_until?: string | null
           vehicle_id?: string | null
@@ -1508,9 +1624,11 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           scope?: Database["public"]["Enums"]["document_scope"]
+          solo_review_note?: string | null
           status?: Database["public"]["Enums"]["document_status"]
           updated_at?: string
           uploaded_by?: string | null
+          uploaded_on_behalf?: boolean
           valid_from?: string | null
           valid_until?: string | null
           vehicle_id?: string | null
@@ -5355,6 +5473,35 @@ export type Database = {
           updated_at: string
         }
       }
+      admin_assisted_onboardings: {
+        Args: { p_status?: Database["public"]["Enums"]["assisted_status"] }
+        Returns: {
+          claim_expires_at: string
+          claim_sent_at: string
+          claimed_at: string
+          company_id: string
+          company_name: string
+          company_type: Database["public"]["Enums"]["company_type"]
+          consent_at: string
+          consent_channel: Database["public"]["Enums"]["consent_channel"]
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          days_open: number
+          documents_pending: number
+          id: string
+          solo_reviews: number
+          staff_name: string
+          staff_user_id: string
+          status: Database["public"]["Enums"]["assisted_status"]
+          step_company: boolean
+          step_documents: boolean
+          step_profile: boolean
+          step_vehicles: boolean
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+        }[]
+      }
       admin_conversations: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
@@ -5575,6 +5722,103 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      assisted_create_company: {
+        Args: {
+          p_city?: string
+          p_company_type: Database["public"]["Enums"]["company_type"]
+          p_contact_email?: string
+          p_contact_phone?: string
+          p_county?: string
+          p_cui: string
+          p_legal_name: string
+          p_onboarding_id: string
+        }
+        Returns: {
+          address: string | null
+          alerts_email: string | null
+          alerts_enabled: boolean
+          anaf_checked_at: string | null
+          anaf_is_inactive: boolean | null
+          anaf_payload: Json | null
+          anonymised_at: string | null
+          base_address_hidden: boolean
+          city: string | null
+          company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
+          contact_email: string | null
+          contact_phone: string | null
+          country: string
+          county: string | null
+          coverage_counties: string[]
+          coverage_countries: string[]
+          coverage_scope: Database["public"]["Enums"]["coverage_scope"]
+          created_at: string
+          created_by: string | null
+          cui: string
+          deletion_scheduled_at: string | null
+          display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
+          equipment: string[]
+          id: string
+          indicative_rate_note: string | null
+          indicative_rate_ron_per_km: number | null
+          is_suspended: boolean
+          is_test: boolean
+          legal_name: string
+          logo_path: string | null
+          profile_updated_at: string | null
+          public_description: string | null
+          public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
+          rating_avg: number | null
+          rating_communication: number | null
+          rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
+          reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
+          services: string[]
+          slug: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
+          trust_score: number
+          updated_at: string
+          vat_payer: boolean | null
+          vehicle_types_accepted: Database["public"]["Enums"]["cargo_category"][]
+          verification_note: string | null
+          verification_status: Database["public"]["Enums"]["company_verification_status"]
+          verified_at: string | null
+          website: string | null
+        }
+      }
+      assisted_handover_summary: {
+        Args: { p_company_id: string }
+        Returns: {
+          claimed_at: string
+          documents_count: number
+          has_coverage: boolean
+          staff_name: string
+          vehicles_count: number
+        }[]
+      }
+      assisted_onboarding_preview: {
+        Args: { p_token: string }
+        Returns: {
+          company_name: string
+          contact_name: string
+          documents_count: number
+          email_hint: string
+          expires_at: string
+          vehicles_count: number
+        }[]
+      }
       audit_entries: {
         Args: {
           p_action?: string
@@ -5663,6 +5907,7 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
@@ -5756,11 +6001,35 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
           user_id: string | null
         }[]
+      }
+      claim_assisted_onboarding: {
+        Args: { p_token: string }
+        Returns: {
+          alerted_at: string | null
+          claim_expires_at: string | null
+          claim_sent_at: string | null
+          claim_token_hash: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          company_id: string | null
+          consent_at: string
+          consent_channel: Database["public"]["Enums"]["consent_channel"]
+          consent_note: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          staff_user_id: string
+          status: Database["public"]["Enums"]["assisted_status"]
+          updated_at: string
+        }
       }
       claim_data_export: {
         Args: { p_id: string; p_token: string }
@@ -5890,6 +6159,7 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
@@ -6492,6 +6762,10 @@ export type Database = {
           status: string
         }
       }
+      is_assisted_company: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       is_blocked: {
         Args: { p_initiator: string; p_owner: string }
         Returns: boolean
@@ -6531,6 +6805,10 @@ export type Database = {
       is_transport_party: {
         Args: { p_transport_id: string }
         Returns: boolean
+      }
+      issue_assisted_claim: {
+        Args: { p_onboarding_id: string }
+        Returns: string
       }
       job_health: {
         Args: { p_now?: string }
@@ -7000,6 +7278,18 @@ export type Database = {
         Args: { p_user: string }
         Returns: boolean
       }
+      pilot_assisted: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          claimed: number
+          expired: number
+          median_hours_to_verified: number
+          sent: number
+          solo_reviews: number
+          started: number
+          verified: number
+        }[]
+      }
       pilot_overview: {
         Args: { p_from?: string; p_to?: string }
         Returns: {
@@ -7348,6 +7638,7 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
@@ -7568,9 +7859,47 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           scope: Database["public"]["Enums"]["document_scope"]
+          solo_review_note: string | null
           status: Database["public"]["Enums"]["document_status"]
           updated_at: string
           uploaded_by: string | null
+          uploaded_on_behalf: boolean
+          valid_from: string | null
+          valid_until: string | null
+          vehicle_id: string | null
+        }
+      }
+      review_document_assisted: {
+        Args: {
+          p_approve: boolean
+          p_document_id: string
+          p_rejection_reason: string
+          p_solo_note: string
+          p_valid_until: string
+        }
+        Returns: {
+          company_id: string
+          created_at: string
+          document_number: string | null
+          driver_id: string | null
+          extracted: Json | null
+          extraction_confidence: number | null
+          extraction_error: string | null
+          file_mime: string | null
+          file_path: string
+          file_size_bytes: number | null
+          id: string
+          issued_at: string | null
+          kind: Database["public"]["Enums"]["document_kind"]
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scope: Database["public"]["Enums"]["document_scope"]
+          solo_review_note: string | null
+          status: Database["public"]["Enums"]["document_status"]
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_on_behalf: boolean
           valid_from: string | null
           valid_until: string | null
           vehicle_id: string | null
@@ -8136,6 +8465,7 @@ export type Database = {
           reason_blocked: string | null
           requested_at: string
           scheduled_for: string | null
+          source: string
           staff_reason: string | null
           status: Database["public"]["Enums"]["account_deletion_status"]
           updated_at: string
@@ -8330,6 +8660,36 @@ export type Database = {
           was_masked: boolean
         }
       }
+      start_assisted_onboarding: {
+        Args: {
+          p_consent_at: string
+          p_consent_channel: Database["public"]["Enums"]["consent_channel"]
+          p_consent_note?: string
+          p_contact_email: string
+          p_contact_name: string
+          p_contact_phone: string
+        }
+        Returns: {
+          alerted_at: string | null
+          claim_expires_at: string | null
+          claim_sent_at: string | null
+          claim_token_hash: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          company_id: string | null
+          consent_at: string
+          consent_channel: Database["public"]["Enums"]["consent_channel"]
+          consent_note: string | null
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          staff_user_id: string
+          status: Database["public"]["Enums"]["assisted_status"]
+          updated_at: string
+        }
+      }
       submit_company_for_review: {
         Args: { p_company_id: string }
         Returns: {
@@ -8396,6 +8756,10 @@ export type Database = {
           verified_at: string | null
           website: string | null
         }
+      }
+      sweep_unclaimed_onboardings: {
+        Args: { p_now?: string }
+        Returns: number
       }
       sync_request_to_order: {
         Args: { p_order: Database["public"]["Tables"]["transports"]["Row"] }
@@ -8508,6 +8872,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      write_audit_for: {
+        Args: {
+          p_action: string
+          p_after: Json
+          p_before: Json
+          p_entity: string
+          p_entity_id: string
+          p_on_behalf_of: string
+          p_reason: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       account_deletion_kind: "user" | "company"
@@ -8515,6 +8891,7 @@ export type Database = {
         "requested" | "blocked" | "scheduled" | "completed" | "cancelled"
       account_type: "company" | "individual"
       alert_frequency: "immediate" | "daily"
+      assisted_status: "in_lucru" | "trimis" | "revendicat" | "expirat"
       cargo_category:
         | "autoturism"
         | "autoutilitara"
@@ -8534,6 +8911,7 @@ export type Database = {
       company_type: "expeditie" | "transport" | "both"
       company_verification_status:
         "draft" | "pending" | "verified" | "rejected" | "suspended"
+      consent_channel: "in_persoana" | "telefon" | "email"
       coverage_scope: "judetean" | "national" | "international"
       currency_code: "RON" | "EUR"
       document_kind:
@@ -8765,6 +9143,7 @@ export const Constants = {
       ],
       account_type: ["company", "individual"],
       alert_frequency: ["immediate", "daily"],
+      assisted_status: ["in_lucru", "trimis", "revendicat", "expirat"],
       cargo_category: [
         "autoturism",
         "autoutilitara",
@@ -8790,6 +9169,7 @@ export const Constants = {
         "rejected",
         "suspended",
       ],
+      consent_channel: ["in_persoana", "telefon", "email"],
       coverage_scope: ["judetean", "national", "international"],
       currency_code: ["RON", "EUR"],
       document_kind: [

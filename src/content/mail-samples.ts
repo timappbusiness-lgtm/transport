@@ -62,6 +62,8 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'listing_hidden', label: 'Anunț scos de pe panou' },
   { id: 'listing_restored', label: 'Anunț repus pe panou' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
+  { id: 'assisted_claim', label: 'Înscriere asistată: linkul de preluare' },
+  { id: 'assisted_unclaimed', label: 'Înscriere asistată: nepreluată de 30 de zile' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
   { id: 'reservation_confirmed', label: 'Rezervare confirmată' },
   { id: 'reservation_rejected', label: 'Rezervare respinsă' },
@@ -117,6 +119,14 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   plate: 'CJ 12 ABC',
   deadline: '5 octombrie 2026',
   context: 'cererea München — Cluj-Napoca',
+  full_name: 'Marian Popescu',
+  contact_name: 'Marian Popescu',
+  contact_phone: '+40722123456',
+  // Un token de exemplu, nu unul emis: e-mailul de test nu are voie să
+  // ducă pe cineva într-o preluare adevărată.
+  claim_path: '/revendica/' + '0'.repeat(64),
+  expires_at: '28.09.2026',
+  days: '30',
 };
 
 export function mailTemplateLabel(id: string): string {
