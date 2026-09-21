@@ -10058,7 +10058,7 @@ create table if not exists pg_temp.asi_ctx (company_id uuid, onboarding_id uuid)
 -- Readable by the roles the checks run as; without this a check is
 -- refused by the temp table rather than by the rule it is testing, and
 -- an „expected blocked" would pass on the wrong error.
-grant select on pg_temp.asi_ctx to authenticated, anon;
+grant select on pg_temp.asi_ctx to authenticated, anon, service_role;
 
 create or replace function pg_temp.assisted(
   p_email text default 'nou@exemplu.ro',
@@ -10648,6 +10648,605 @@ select pg_temp.check('ASI  staff can, and the solo reviews are counted there', '
 
 
 
+
+
+-- =====================================================================
+-- SER - serii de plecări
+--
+-- Generarea scrie plecări obișnuite, deci ce se verifică aici este că
+-- **chiar** trec prin gărzile obișnuite: o firmă neverificată nu
+-- capătă o bursă plină pentru că a deschis o serie, iar un vehicul cu
+-- ITP-ul expirat oprește seria în loc să publice.
+-- =====================================================================
+
+-- O serie a firmei A pe vehiculul ei, de azi până peste o lună.
+create or replace function pg_temp.series(
+  p_kind public.recurrence_kind default 'saptamanal',
+  p_weekdays smallint[] default array[1, 3]::smallint[],
+  p_every integer default null,
+  p_vehicle uuid default 'fe000000-0000-0000-0000-000000000001',
+  p_company uuid default 'fc000000-0000-0000-0000-000000000001',
+  p_starts date default current_date,
+  p_ends date default current_date + 30
+) returns uuid language plpgsql as $sr$
+declare
+  v_id uuid;
+begin
+  insert into public.route_series
+    (company_id, vehicle_id, created_by, direction,
+     from_country, from_city, to_country, to_city,
+     accepted_vehicle_types,
+     kind, weekdays, every_n_days, starts_on, ends_on)
+  values
+    (p_company, p_vehicle, 'f0000000-0000-0000-0000-000000000002', 'tur',
+     'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+     array['autoturism']::public.cargo_category[],
+     p_kind, coalesce(p_weekdays, '{}'), p_every, p_starts, p_ends)
+  returning id into v_id;
+  return v_id;
+end;
+$sr$;
+
+select pg_temp.check('SER  the rule expands to the weekdays it names', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select bool_and(extract(dow from d)::int in (1, 3))
+     from public.recurrence_dates('saptamanal', array[1,3]::smallint[], null,
+       current_date, current_date + 21, 100) as d$a$, 'true');
+
+select pg_temp.check('SER  and „every N days" keeps its step', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select bool_and((d - current_date) % 3 = 0)
+     from public.recurrence_dates('la_n_zile', '{}'::smallint[], 3,
+       current_date, current_date + 30, 100) as d$a$, 'true');
+
+select pg_temp.check('SER  a carrier opens a series on their own vehicle', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.create_route_series(
+       'fe000000-0000-0000-0000-000000000001', 'tur', 'RO', null, 'Cluj-Napoca',
+       'RO', null, 'Timișoara', 'saptamanal', array[2]::smallint[], null,
+       current_date, current_date + 30, null, '[]'::jsonb, 50, null,
+       '{}'::public.service_type[],
+       array['autoturism']::public.cargo_category[])).id is not null$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'route_series.created')$v$);
+
+select pg_temp.check('SER  but not on somebody else''s', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.create_route_series(
+       'fe000000-0000-0000-0000-000000000001', 'tur', 'RO', null, 'Cluj-Napoca',
+       'RO', null, 'Timișoara', 'saptamanal', array[2]::smallint[], null,
+       current_date, current_date + 30)$a$, 'blocked');
+
+select pg_temp.check('SER  a draft company cannot open one at all', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.create_route_series(
+       'fe000000-0000-0000-0000-000000000003', 'tur', 'RO', null, 'Cluj-Napoca',
+       'RO', null, 'Timișoara', 'saptamanal', array[2]::smallint[], null,
+       current_date, current_date + 30)$a$, 'blocked');
+
+select pg_temp.check('SER  and a series that ends in the past is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.create_route_series(
+       'fe000000-0000-0000-0000-000000000001', 'tur', 'RO', null, 'Cluj-Napoca',
+       'RO', null, 'Timișoara', 'saptamanal', array[2]::smallint[], null,
+       current_date - 30, current_date - 1)$a$, 'blocked');
+
+select pg_temp.check('SER  a rule has to be one shape or the other', 'fix',
+  null, 'service_role',
+  $a$insert into public.route_series
+     (company_id, vehicle_id, created_by, direction, from_city, to_city,
+      kind, weekdays, every_n_days, starts_on, ends_on)
+     values ('fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur', 'Cluj-Napoca',
+             'Timișoara', 'saptamanal', array[1]::smallint[], 3,
+             current_date, current_date + 30)$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Ce face jobul
+-- ---------------------------------------------------------------------
+select pg_temp.check('SER  the job writes ordinary departures', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() >= 1$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series()$s$,
+  p_verify => $v$select exists (select 1 from public.truck_listings
+     where series_id is not null and status = 'active')$v$);
+
+select pg_temp.check('SER  and does not write the same day twice', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() is not null$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series();
+                select public.generate_route_departures()$s$,
+  p_verify => $v$select not exists (
+     select 1 from public.truck_listings
+     where series_id is not null
+     group by series_id, available_from having count(*) > 1)$v$);
+
+select pg_temp.check('SER  a non-compliant vehicle stops the series', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() is not null$a$, 'true',
+  p_setup => $s$select pg_temp.series();
+                update public.vehicles set is_compliant = false
+                where id = 'fe000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select exists (select 1 from public.route_series
+       where is_paused and paused_reason like '%documentele valide%')
+     and not exists (select 1 from public.truck_listings where series_id is not null)$v$);
+
+select pg_temp.check('SER  and the carrier is told why', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() is not null$a$, 'true',
+  p_setup => $s$select pg_temp.series();
+                update public.vehicles set is_compliant = false
+                where id = 'fe000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+     where template = 'series_paused')$v$);
+
+select pg_temp.check('SER  a paused series generates nothing', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() = 0$a$, 'true',
+  p_setup => $s$select pg_temp.series();
+                update public.route_series set is_paused = true$s$);
+
+select pg_temp.check('SER  nor does an ended one', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() = 0$a$, 'true',
+  p_setup => $s$select pg_temp.series();
+                update public.route_series set ended_at = now()$s$);
+
+select pg_temp.check('SER  it never generates into the past', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() is not null$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series('saptamanal', array[1,3]::smallint[], null,
+                  'fe000000-0000-0000-0000-000000000001',
+                  'fc000000-0000-0000-0000-000000000001',
+                  current_date - 60, current_date + 30)$s$,
+  p_verify => $v$select not exists (select 1 from public.truck_listings
+     where series_id is not null and available_from < current_date)$v$);
+
+select pg_temp.check('SER  and resumes from where it stopped, not from the start', 'fix',
+  null, 'service_role',
+  $a$select public.generate_route_departures() is not null$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series();
+                update public.route_series
+                set generated_through = current_date + 20$s$,
+  p_verify => $v$select not exists (select 1 from public.truck_listings
+     where series_id is not null and available_from <= current_date + 20)$v$);
+
+select pg_temp.check('SER  a firm owner cannot run the job', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.generate_route_departures()$a$, 'blocked');
+
+-- ---------------------------------------------------------------------
+-- Pauză, reluare, editare
+-- ---------------------------------------------------------------------
+select pg_temp.check('SER  the carrier pauses and resumes their series', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.set_route_series_state(
+       (select id from public.route_series limit 1), 'pauza', 'Plec în concediu')).is_paused$a$,
+  'true',
+  p_setup => $s$select pg_temp.series()$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'route_series.pauza')$v$);
+
+select pg_temp.check('SER  somebody else cannot', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_route_series_state(
+       (select id from public.route_series limit 1), 'pauza', null)$a$, 'blocked',
+  p_setup => $s$select pg_temp.series()$s$);
+
+select pg_temp.check('SER  editing the template leaves published departures alone', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.update_route_series(
+       (select id from public.route_series limit 1), 'la_n_zile', '{}'::smallint[], 5,
+       current_date + 60, null, 999.00)).every_n_days = 5$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series();
+                select public.generate_route_departures()$s$,
+  -- The rows already on the board keep the price they were published
+  -- with. Somebody may have reserved a seat on one.
+  p_verify => $v$select not exists (select 1 from public.truck_listings
+     where series_id is not null and price_indicative = 999.00)$v$);
+
+select pg_temp.check('SER  and a reservation on one of them is untouched', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.update_route_series(
+       (select id from public.route_series limit 1), 'saptamanal',
+       array[5]::smallint[], null, current_date + 60)).id is not null$a$, 'true',
+  p_setup => $s$update public.vehicles set is_compliant = true
+                where id = 'fe000000-0000-0000-0000-000000000001';
+                select pg_temp.series();
+                select public.generate_route_departures()$s$,
+  p_verify => $v$select exists (select 1 from public.truck_listings
+     where series_id is not null and status = 'active')$v$);
+
+select pg_temp.check('SER  a series is readable only by its own firm', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.route_series$a$, 'true',
+  p_setup => $s$select pg_temp.series()$s$);
+
+select pg_temp.check('SER  and by its own firm it is', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.route_series$a$, 'true',
+  p_setup => $s$select pg_temp.series()$s$);
+
+select pg_temp.check('SER  nobody writes the table directly', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.route_series
+     (company_id, vehicle_id, created_by, direction, from_city, to_city,
+      kind, weekdays, starts_on, ends_on)
+     values ('fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001', auth.uid(), 'tur',
+             'Cluj-Napoca', 'Timișoara', 'saptamanal', array[1]::smallint[],
+             current_date, current_date + 10)$a$, 'blocked');
+
+select pg_temp.check('SER  only staff change how far ahead we generate', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_recurrence_settings(30, 20)$a$, 'blocked');
+
+select pg_temp.check('SER  staff can, and it is audited', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.set_recurrence_settings(21, 30)).horizon_days = 21$a$, 'true',
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'settings.recurrence_changed')$v$);
+
+
+-- =====================================================================
+-- PRV - cereri private
+--
+-- Firma B (casă de expediții) are cererea; firma A este transportator.
+-- Ce se verifică aici este singurul lucru care contează: cine nu a fost
+-- invitat nu vede **nimic** — nici cererea, nici ofertele de pe ea,
+-- nici pe panou, nici în alerte.
+--
+-- Verificările sunt scrise ca perechi. „Proprietarul vede" fără „cine
+-- nu e invitat nu vede" ar fi trecut și pe o implementare care nu
+-- ascunde nimic.
+-- =====================================================================
+
+-- O cerere privată a firmei B, activă, cu sau fără firma A invitată.
+create or replace function pg_temp.private_request(
+  p_invite_a boolean default false,
+  p_status public.listing_status default 'active'
+) returns uuid language plpgsql as $pr$
+declare
+  v_id uuid;
+begin
+  insert into public.cargo_listings
+    (company_id, posted_by, board, listing_kind, title,
+     loading_city, unloading_city, loading_from, weight_kg,
+     status, visibility)
+  values
+    ('fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004',
+     'curse', 'vehicul', 'Marfă discretă', 'Cluj-Napoca', 'Timișoara',
+     current_date + 4, 1200, 'draft', 'privata')
+  returning id into v_id;
+
+  insert into public.cargo_vehicle_details (cargo_listing_id, make, model, year)
+  values (v_id, 'Volkswagen', 'Golf', 2019);
+
+  -- Publicarea abia acum: `guard_cargo_details_present` cere rândul de
+  -- vehicul înainte ca cererea să ajungă activă, exact ca la o
+  -- publicare adevărată.
+  if p_status = 'active' then
+    update public.cargo_listings
+    set status = 'active', published_at = now() where id = v_id;
+  end if;
+
+  if p_invite_a then
+    insert into public.cargo_listing_invites (cargo_listing_id, company_id, invited_by)
+    values (v_id, 'fc000000-0000-0000-0000-000000000001',
+            'f0000000-0000-0000-0000-000000000004');
+  end if;
+
+  delete from pg_temp.asi_ctx;
+  insert into pg_temp.asi_ctx (company_id, onboarding_id) values (null, v_id);
+  return v_id;
+end;
+$pr$;
+
+-- ---------------------------------------------------------------------
+-- Cine vede cererea
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  the owner sees their own private request', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request()$s$);
+
+select pg_temp.check('PRV  an invited carrier sees it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  a carrier who was not invited does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  nor does an individual', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 0 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  and staff do, because somebody has to', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+-- ---------------------------------------------------------------------
+-- Panoul public, numerele și alertele
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  it is not on the public board', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.v_requests_public
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  nor on it for the invited carrier — the board is public', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.v_requests_public
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  a public request still is', 'fix',
+  null, 'anon',
+  $a$select count(*) = 1 from public.v_requests_public
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false);
+                update public.cargo_listings set visibility = 'publica'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  no match alert goes to a carrier who was not invited', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'allowed',
+  p_setup => $s$select pg_temp.private_request(false, 'draft');
+                update public.companies
+                set alerts_enabled = true, alerts_email = 'a@test.ro'
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox
+     where template = 'request_match_alert'
+       and recipient_company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('PRV  but the invited one is told, with its own template', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'active'
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'allowed',
+  p_setup => $s$select pg_temp.private_request(true, 'draft')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox
+     where template = 'private_request_invite'
+       and recipient_company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
+
+select pg_temp.check('PRV  and told once, however many times it is republished', 'fix',
+  null, 'service_role',
+  $a$update public.cargo_listings set status = 'cancelled'
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'allowed',
+  p_setup => $s$select pg_temp.private_request(true, 'draft');
+                update public.cargo_listings set status = 'active'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$,
+  p_after => $f$update public.cargo_listings set status = 'active'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$f$,
+  p_verify => $v$select (select count(*) from public.notification_outbox
+     where template = 'private_request_invite') = 1$v$);
+
+-- ---------------------------------------------------------------------
+-- Invitațiile
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  the owner sets the invited list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_listing_invites(
+       (select onboarding_id from pg_temp.asi_ctx),
+       array['fc000000-0000-0000-0000-000000000001']::uuid[]) = 1$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  a carrier cannot invite themselves', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_listing_invites(
+       (select onboarding_id from pg_temp.asi_ctx),
+       array['fc000000-0000-0000-0000-000000000001']::uuid[])$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  a public request takes no invitations', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_listing_invites(
+       (select onboarding_id from pg_temp.asi_ctx),
+       array['fc000000-0000-0000-0000-000000000001']::uuid[])$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false);
+                update public.cargo_listings set visibility = 'publica'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  and an unverified firm cannot be invited', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_listing_invites(
+       (select onboarding_id from pg_temp.asi_ctx),
+       array['fc000000-0000-0000-0000-000000000003']::uuid[])$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  an empty list is not an invitation', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_listing_invites(
+       (select onboarding_id from pg_temp.asi_ctx), '{}'::uuid[])$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  a carrier does not learn who else was invited', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.cargo_listing_invites$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true);
+                insert into public.cargo_listing_invites
+                  (cargo_listing_id, company_id, invited_by)
+                values ((select onboarding_id from pg_temp.asi_ctx),
+                        'fc000000-0000-0000-0000-000000000003',
+                        'f0000000-0000-0000-0000-000000000004')$s$);
+
+-- ---------------------------------------------------------------------
+-- Deschiderea pe bursă
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  the owner opens it to the board, and it is audited', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.open_listing_to_public(
+       (select onboarding_id from pg_temp.asi_ctx))).visibility = 'publica'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+     where action = 'request.opened_to_public')$v$);
+
+select pg_temp.check('PRV  and then everybody sees it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.cargo_listings
+     where id = (select onboarding_id from pg_temp.asi_ctx)$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false);
+                update public.cargo_listings
+                set visibility = 'publica', opened_to_public_at = now()
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  a carrier cannot open somebody else''s request', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.open_listing_to_public(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('PRV  and one already public cannot be opened twice', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.open_listing_to_public(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false);
+                update public.cargo_listings set visibility = 'publica'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  the invitations survive the conversion', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.open_listing_to_public(
+       (select onboarding_id from pg_temp.asi_ctx))).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$,
+  -- Cine a fost întrebat primul este parte din istoria cererii.
+  p_verify => $v$select exists (select 1 from public.cargo_listing_invites)$v$);
+
+
+-- =====================================================================
+-- FAV - transportatori favoriți
+--
+-- Lista este a firmei, iar transportatorul nu află că este pe ea. A
+-- doua parte este cea care se pierde ușor: cine lucrează cu cine este
+-- o informație comercială despre client, nu despre transportator.
+-- =====================================================================
+select pg_temp.check('FAV  an owner adds a carrier to the firm''s list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000001', 'Punctuali')).id is not null$a$, 'true');
+
+select pg_temp.check('FAV  a dispatcher can too', 'fix',
+  'f0000000-0000-0000-0000-000000000005', 'authenticated',
+  $a$select (public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000001')).id is not null$a$, 'true');
+
+select pg_temp.check('FAV  but not for a firm that is not yours', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000003')$a$, 'blocked');
+
+select pg_temp.check('FAV  a driver does not keep the commercial list', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000001',
+       'fc000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
+select pg_temp.check('FAV  an unverified carrier cannot be a favourite', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000003')$a$, 'blocked');
+
+select pg_temp.check('FAV  nor can a firm be its own', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000001',
+       'fc000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('FAV  adding twice keeps one row', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.add_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000001', 'A doua oară')).id is not null$a$, 'true',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select (select count(*) from public.favourite_carriers) = 1$v$);
+
+select pg_temp.check('FAV  the firm reads its own list', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from public.my_favourite_carriers(
+       'fc000000-0000-0000-0000-000000000002')$a$, 'true',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('FAV  the carrier never learns it is on it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.favourite_carriers$a$, 'true',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('FAV  nor through the reading function', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.my_favourite_carriers(
+       'fc000000-0000-0000-0000-000000000002')$a$, 'true',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('FAV  removing one takes only that one', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.remove_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select not exists (select 1 from public.favourite_carriers)$v$);
+
+select pg_temp.check('FAV  and somebody else cannot remove yours', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.remove_favourite_carrier(
+       'fc000000-0000-0000-0000-000000000002',
+       'fc000000-0000-0000-0000-000000000001')$a$, 'blocked',
+  p_setup => $s$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001',
+           'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('FAV  nobody writes the table directly', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.favourite_carriers
+     (company_id, carrier_company_id, added_by)
+   values ('fc000000-0000-0000-0000-000000000002',
+           'fc000000-0000-0000-0000-000000000001', auth.uid())$a$, 'blocked');
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}

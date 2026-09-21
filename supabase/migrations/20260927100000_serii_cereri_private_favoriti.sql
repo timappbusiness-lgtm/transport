@@ -122,7 +122,14 @@ create table public.route_series (
   max_detour_km integer not null default 50 check (max_detour_km >= 0),
   platform_slots_total integer,
   service_types public.service_type[] not null default '{}'::public.service_type[],
-  accepted_vehicle_types public.cargo_category[] not null default '{}'::public.cargo_category[],
+  -- Cel puțin unul: `truck_listings_accepted_types_ck` cere asta de la
+  -- fiecare plecare, iar o serie cu lista goală ar fi generat zero
+  -- plecări și s-ar fi oprit singură în prima noapte, cu numele unei
+  -- constrângeri drept motiv. Refuzul se dă aici, unde omul îl poate
+  -- încă repara.
+  accepted_vehicle_types public.cargo_category[] not null
+    default '{}'::public.cargo_category[]
+    check (coalesce(array_length(accepted_vehicle_types, 1), 0) >= 1),
   price_indicative numeric(10,2),
   notes text,
 
@@ -283,6 +290,9 @@ begin
   end if;
   if p_ends_on < current_date then
     raise exception 'Seria se termină în trecut' using errcode = '22023';
+  end if;
+  if coalesce(array_length(p_accepted_vehicle_types, 1), 0) = 0 then
+    raise exception 'Alege ce vehicule poate duce plecarea' using errcode = '22023';
   end if;
   if p_ends_on > current_date + interval '1 year' then
     raise exception 'O serie ține cel mult un an. Vei putea să o prelungești.'
