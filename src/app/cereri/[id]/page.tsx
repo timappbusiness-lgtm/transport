@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { StartConversation } from '@/components/messages/start-conversation';
 import { SendOffer } from '@/components/offers/send-offer';
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { RevealRequestContact } from '@/components/requests/reveal-request-contact';
@@ -193,6 +194,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
           <div className="rounded-card border border-border bg-surface p-5">
             <RevealRequestContact requestId={request.id} signedIn={context !== null} />
+            {/* Aceeași poartă ca la contact, și o spune înainte de apăsare:
+                o conversație este un contact, și se numără o singură dată
+                pe anunț. Vizitatorii neautentificați văd butonul de
+                contact de deasupra, care îi trimite la autentificare. */}
+            {context !== null && FEATURES.messages ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <StartConversation requestId={request.id} />
+              </div>
+            ) : null}
           </div>
           <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
             {requestsCopy.board.publish}

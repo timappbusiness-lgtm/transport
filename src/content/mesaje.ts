@@ -58,7 +58,8 @@ export const messagesCopy = {
     send: 'Trimite',
     sending: 'Se trimite…',
     attach: 'Adaugă imagini',
-    attachHint: 'Cel mult 5 imagini, JPG, PNG, WebP sau HEIC, maximum 10 MB fiecare.',
+    attachHint:
+      'Cel mult 5 imagini, JPG, PNG, WebP sau HEIC, maximum 10 MB fiecare. Scrie și câteva cuvinte alături de ele.',
     attachRemove: 'Scoate imaginea',
     offline: 'Pare că nu ai semnal. Mesajul rămâne scris până revine.',
   },

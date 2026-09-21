@@ -215,8 +215,12 @@ describe('ce se poate trimite', () => {
     expect(validateMessage('   ', 0)).toBeTruthy();
   });
 
-  it('dar o imagine fără text este', () => {
-    expect(validateMessage('', 1)).toBeNull();
+  it('și nici cu imagini, dar fără text', () => {
+    // Regula este a bazei, din faza 2, și are un test care o numește.
+    // Formularul o spune dinainte în loc să lase omul să afle dintr-un
+    // refuz după ce a încărcat cinci poze.
+    expect(validateMessage('', 1)).toBeTruthy();
+    expect(validateMessage('gata de încărcare', 1)).toBeNull();
   });
 
   it('textul are o limită', () => {

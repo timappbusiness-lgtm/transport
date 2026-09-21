@@ -26,10 +26,10 @@ export interface FeatureMap {
   /** Offers on a request, and the clarification thread on one. */
   offers: boolean;
   /**
-   * General messaging — a thread on any listing, an inbox, unread counts.
-   * Still false: Faza 2 built the thread on a single offer and nothing
-   * more, and a menu item called „Mesaje" that opens one offer would be
-   * a promise the product does not keep.
+   * General messaging: one inbox for every conversation — on a listing,
+   * on an offer, on an order — with unread counts, attachments and
+   * blocking. Live since the end of Faza 2; the menu item now opens all
+   * of them rather than one offer.
    */
   messages: boolean;
   /**
@@ -61,7 +61,7 @@ export const FEATURES: FeatureMap = {
   savedSearches: true,
   departures: true,
   offers: true,
-  messages: false,
+  messages: true,
   transports: true,
   ratings: true,
   notifications: false,

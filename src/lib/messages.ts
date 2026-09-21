@@ -153,9 +153,18 @@ export const MAX_ATTACHMENTS = 5;
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'] as const;
 
+/**
+ * Un mesaj are nevoie de text, chiar și când poartă imagini.
+ *
+ * Nu este o preferință a formularului: `guard_message_contacts()` refuză
+ * un corp gol din faza 2, iar regula are un test care o spune pe nume.
+ * Am încercat s-o slăbesc ca să meargă o poză fără legendă; regula a
+ * fost scrisă intenționat, așa că a rămas, și aici se spune omului
+ * dinainte în loc să afle dintr-un refuz al bazei.
+ */
 export function validateMessage(body: string, attachments: number): string | null {
   const trimmed = body.trim();
-  if (trimmed === '' && attachments === 0) return 'Scrie un mesaj.';
+  if (trimmed === '') return 'Scrie un mesaj, chiar și scurt, alături de imagini.';
   if (trimmed.length > MAX_BODY) return `Mesajul poate avea cel mult ${MAX_BODY} de caractere.`;
   if (attachments > MAX_ATTACHMENTS) return `Cel mult ${MAX_ATTACHMENTS} imagini pe mesaj.`;
   return null;
