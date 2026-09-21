@@ -293,6 +293,16 @@ describe('the status words themselves', () => {
 });
 
 describe('money, written the Romanian way', () => {
+  it('keeps the bani when there are any, and drops them when there are not', () => {
+    // numeric(10,2): a carrier may quote 2.400,50, and rounding it on
+    // the card the client accepts would show one price and create an
+    // order for another.
+    expect(formatMoney(2400, 'RON')).not.toMatch(/,/);
+    expect(formatMoney(2400.5, 'RON')).toBe('2.400,50 lei');
+    expect(formatMoney(499.99, 'EUR')).toBe('499,99 €');
+    expect(formatMoney(500, 'EUR')).toBe('500 €');
+  });
+
   it('groups thousands with a full stop', () => {
     expect(formatMoney(2400, 'RON')).toBe('2.400 lei');
     expect(formatMoney(480, 'EUR')).toBe('480 €');

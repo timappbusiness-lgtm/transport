@@ -40,8 +40,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { id } = await params;
   await requireAccountContext(`${ROUTES.accountRequests}/${id}`);
 
+  // Ownership is `can_edit_cargo_listing()`, which is what
+  // `offers_for_request()` asks before it answers. Asked here too
+  // because RLS lets any signed-in person read an *active* listing, so
+  // without it a carrier could open somebody else's request under the
+  // heading „Cererile mele" — no offers would show, but the page would
+  // still be a lie.
   const request = await loadRequest(id);
-  if (request === null) notFound();
+  if (request === null || !(await ownsRequest(id))) notFound();
 
   const offers = await loadOffersForRequest(id);
   const threads = new Map(
@@ -142,4 +148,17 @@ async function loadRequest(id: string): Promise<RequestRow | null> {
     loading_to: data.loading_to,
     category: details?.category ?? null,
   };
+}
+
+/** The same question `offers_for_request()` asks before it answers. */
+async function ownsRequest(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('can_edit_cargo_listing', { p_listing_id: id });
+  if (error) {
+    console.error('[cerere] ownership check failed', { message: error.message });
+    return false;
+  }
+  return data === true;
 }

@@ -176,7 +176,7 @@ export async function askOfferAction(
   _previous: OfferState,
   formData: FormData,
 ): Promise<OfferState> {
-  await requireAccountContext(ROUTES.accountOffers);
+  const context = await requireAccountContext(ROUTES.accountOffers);
 
   const offerId = text(formData, 'offer_id');
   const body = text(formData, 'body');
@@ -192,7 +192,6 @@ export async function askOfferAction(
   const conversationId = (thread as { id: string } | null)?.id;
   if (conversationId === undefined) return { error: 'Nu am putut deschide discuția.' };
 
-  const context = await requireAccountContext(ROUTES.accountOffers);
   const { error } = await supabase.from('messages').insert({
     conversation_id: conversationId,
     sender_user_id: context.user.id,

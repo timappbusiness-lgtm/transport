@@ -177,7 +177,16 @@ export function validateOffer(
 
 /** „2.400 lei" / „480 €", the way a price is written here. */
 export function formatMoney(amount: number, currency: Currency): string {
-  const n = new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(amount);
+  // Whole amounts are written whole — „2.400 lei", not „2.400,00 lei" —
+  // but the bani are never dropped. `price_amount` is numeric(10,2) and
+  // a carrier may well quote 2.400,50: rounding it on the card the
+  // client accepts would show one price and create an order for
+  // another.
+  const hasBani = Math.round(amount * 100) % 100 !== 0;
+  const n = new Intl.NumberFormat('ro-RO', {
+    minimumFractionDigits: hasBani ? 2 : 0,
+    maximumFractionDigits: hasBani ? 2 : 0,
+  }).format(amount);
   return currency === 'EUR' ? `${n} €` : `${n} lei`;
 }
 
