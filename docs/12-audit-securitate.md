@@ -396,6 +396,35 @@ A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
 pentru `anon` nu există — dar dreptul aștepta acolo. Retras în
 `20260930100000`.
 
+### Secțiunea 4, dusă până la capăt
+
+Auditul a numărat **116 funcții** apelabile de un cont autentificat care iau
+un `uuid` — acelea sunt cele pentru care „id-ul altcuiva" este o întrebare.
+Suita atingea 91. Din restul de 25, optsprezece sunt ajutători de politică
+(`is_company_member`, `can_see_listing`), verificați indirect de fiecare
+verificare de politică. **Șapte întorc date sau scriu**, și pentru ele
+citirea codului nu este o dovadă:
+
+`conversation_messages`, `offer_thread`, `order_evidence_list`,
+`order_timeline`, `order_crew_options`, `route_series_upcoming`,
+`mark_subscription_request_contacted`.
+
+Toate șapte s-au dovedit corecte. Au acum verificări cu id-ul altcuiva, ca a
+doua oară să nu mai fie nevoie de citit.
+
+> Prima scriere a verificării pe `route_series_upcoming` **trecea degeaba**:
+> lua id-ul cu un subselect pe `route_series`, iar sub RLS celălalt cont nu
+> vede seria deloc, deci subselectul dădea `null` și funcția întorcea
+> liniștită mulțimea goală. Id-ul trece acum prin `pg_temp.asi_ctx`. O
+> verificare care nu cere niciodată ce spune că cere este mai rea decât
+> niciuna.
+
+**Rămâne o nuanță, scăzută:** `route_series_upcoming` întoarce mulțimea goală
+pentru o serie inexistentă, dar ridică „Seria nu este a firmei tale" pentru
+una care există și nu este a ta — deci confirmă existența, exact ce spune
+regula 7 din secțiunea „Securitate" să nu faci. Id-urile fiind UUID-uri,
+riscul practic este nul; se corectează la următoarea atingere a funcției.
+
 `scripts/ci/smoke-deployment.sh` verifică antetele **pe răspunsul
 deployment-ului**, nu pe configurația noastră. Testul unitar și cel
 Playwright se uită la partea noastră de sârmă; un antet pierdut într-o
