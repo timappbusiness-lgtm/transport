@@ -252,3 +252,69 @@ export async function loadPendingOfferCounts(
   }
   return counts;
 }
+
+export interface OrderSummary {
+  id: string;
+  created_at: string;
+  status: string;
+  agreed_price: number;
+  currency: Currency;
+  payment_term_days: number | null;
+  offer_id: string | null;
+  cargo_listing_id: string | null;
+  from_city: string | null;
+  to_city: string | null;
+  loading_from: string | null;
+  vehicle_plate: string | null;
+}
+
+/**
+ * One order, for whichever of its two parties is looking.
+ *
+ * Read straight from `transports` under RLS: `transports_select_parties`
+ * already answers "is this yours" through `is_transport_party()`, so a
+ * row that is not the caller's simply does not come back and the page
+ * renders its 404. No RPC is added for something a policy already says.
+ */
+export async function loadOrder(id: string): Promise<OrderSummary | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('transports')
+    .select(
+      'id, created_at, status, agreed_price, currency, payment_term_days, offer_id, cargo_listing_id, cargo_listings(loading_city, unloading_city, loading_from), vehicles(plate_number)',
+    )
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error || data === null) {
+    if (error) console.error('[comenzi] order query failed', { message: error.message });
+    return null;
+  }
+
+  // PostgREST types an embedded one-to-many as an array even where the
+  // foreign key makes it one row, so both shapes are handled.
+  const listing = first(data.cargo_listings);
+  const vehicle = first(data.vehicles);
+
+  return {
+    id: data.id,
+    created_at: data.created_at,
+    status: data.status,
+    agreed_price: Number(data.agreed_price),
+    currency: data.currency,
+    payment_term_days: data.payment_term_days,
+    offer_id: data.offer_id,
+    cargo_listing_id: data.cargo_listing_id,
+    from_city: listing?.loading_city ?? null,
+    to_city: listing?.unloading_city ?? null,
+    loading_from: listing?.loading_from ?? null,
+    vehicle_plate: vehicle?.plate_number ?? null,
+  };
+}
+
+function first<T>(value: T | T[] | null): T | null {
+  if (value === null) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}

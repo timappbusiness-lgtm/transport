@@ -1708,6 +1708,110 @@ $fn$;
 
 grant execute on function public.admin_offer(uuid) to authenticated;
 
+/**
+ * The two telephone numbers, once there is an order.
+ *
+ * `reveal_contact()` only ever answers with a listing's contact, which
+ * is the client's. That is the whole of what a carrier needs and none
+ * of what a client needs: after accepting, the client has to reach the
+ * firm that is coming for the car, and no listing holds that.
+ *
+ * So this returns the *other* side, whichever side is asking. It is
+ * recorded and never charged: `consume_contact_access()` takes its free
+ * branch because `has_agreed_order()` is true for both of them, and
+ * writes the reveal with the reason "comandă confirmată" so „who saw my
+ * number and when" still has an answer.
+ *
+ * Refused before the order exists. An offer that is merely pending buys
+ * nobody a telephone number — that is the entire point of the mask on
+ * the clarification thread.
+ */
+create or replace function public.order_contacts(p_offer_id uuid)
+returns table (
+  side text,
+  display_name text,
+  contact_name text,
+  contact_phone text,
+  contact_email text,
+  transport_id uuid
+)
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_user uuid := auth.uid();
+  v_offer public.offers;
+  v_transport public.transports;
+  v_is_carrier boolean;
+  v_is_client boolean;
+begin
+  if v_user is null then
+    raise exception 'Autentificare necesară' using errcode = '42501';
+  end if;
+
+  select * into v_offer from public.offers where id = p_offer_id;
+  if v_offer.id is null then
+    raise exception 'Ofertă inexistentă' using errcode = 'P0002';
+  end if;
+  if v_offer.cargo_listing_id is null then
+    raise exception 'Oferta nu este pe o cerere de transport' using errcode = '22023';
+  end if;
+
+  select * into v_transport
+  from public.transports
+  where offer_id = p_offer_id and status <> 'cancelled'
+  limit 1;
+  if v_transport.id is null then
+    raise exception 'Datele de contact se deschid după ce comanda este confirmată'
+      using errcode = '42501';
+  end if;
+
+  v_is_carrier := v_offer.from_user_id = v_user
+    or (v_offer.from_company_id is not null and exists (
+          select 1 from public.company_members m
+          where m.company_id = v_offer.from_company_id and m.user_id = v_user));
+  v_is_client := public.owns_offer_listing(v_offer);
+
+  if not (v_is_carrier or v_is_client) then
+    raise exception 'Comanda nu îți aparține' using errcode = '42501';
+  end if;
+
+  perform public.consume_contact_access(v_user, v_offer.cargo_listing_id, null);
+
+  if v_is_carrier then
+    return query
+    select
+      'client'::text,
+      coalesce(c.display_name, c.legal_name, p.full_name),
+      lc.contact_name, lc.contact_phone, lc.contact_email,
+      v_transport.id
+    from public.cargo_listings l
+    left join public.companies c on c.id = l.company_id
+    left join public.profiles p on p.id = l.posted_by
+    left join public.listing_contacts lc on lc.cargo_listing_id = l.id
+    where l.id = v_offer.cargo_listing_id;
+  else
+    return query
+    select
+      'transportator'::text,
+      coalesce(c.display_name, c.legal_name, p.full_name),
+      p.full_name,
+      coalesce(c.contact_phone, p.phone),
+      coalesce(c.contact_email, p.email),
+      v_transport.id
+    from public.profiles p
+    left join public.companies c on c.id = v_offer.from_company_id
+    where p.id = v_offer.from_user_id;
+  end if;
+end;
+$fn$;
+
+comment on function public.order_contacts(uuid) is
+  'The other party of a confirmed order, for whichever party is asking. Recorded as a reveal with the reason "comandă confirmată" and never counted against the plan. Raises before a transport exists.';
+
+grant execute on function public.order_contacts(uuid) to authenticated;
+
 -- ---------------------------------------------------------------------
 -- 10. The eleventh scheduled job
 -- ---------------------------------------------------------------------

@@ -142,6 +142,42 @@ export const offersCopy = {
     open: 'Cere lămuriri',
   },
 
+  /**
+   * The order, as far as Faza 2 goes.
+   *
+   * A summary and the two telephone numbers, not an execution screen.
+   * Loading, proof of delivery and ratings are the phases after this
+   * one, and the page says so rather than showing empty boxes for them.
+   */
+  order: {
+    title: 'Comanda',
+    back: 'Înapoi la oferte',
+    notFound: 'Comanda nu există sau nu îți aparține.',
+    summary: 'Ce s-a stabilit',
+    route: 'Traseu',
+    price: 'Preț convenit',
+    paymentTerm: 'Termen de plată',
+    paymentTermValue: (days: number) => (days === 1 ? 'o zi' : `${days} de zile`),
+    agreedOn: 'Confirmată pe',
+    vehicle: 'Vehicul',
+    status: 'Stare',
+    statusLabels: {
+      agreed: 'Confirmată',
+      loading: 'La încărcare',
+      in_transit: 'În transport',
+      delivered: 'Livrată',
+      invoiced: 'Facturată',
+      closed: 'Închisă',
+      disputed: 'În dispută',
+      cancelled: 'Anulată',
+    } as Record<string, string>,
+    offer: 'Vezi oferta',
+    request: 'Vezi cererea',
+    soonTitle: 'Ce urmează pe platformă',
+    soonBody:
+      'Încărcarea, dovada livrării și evaluările se adaugă în etapa următoare. Până atunci, transportul se desfășoară între dumneavoastră, cu datele de contact de mai sus.',
+  },
+
   /** The staff screen, which reads and never writes. */
   admin: {
     eyebrow: 'Administrare',
@@ -205,6 +241,7 @@ export const offersCopy = {
 
   contact: {
     title: 'Date de contact',
+    open: 'Vezi datele de contact',
     free: 'Nu consumă din abonament: aveți o comandă confirmată.',
     name: 'Persoana de contact',
     phone: 'Telefon',

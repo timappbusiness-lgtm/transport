@@ -8,6 +8,7 @@ import {
   type OfferState,
 } from '@/app/cont/oferte/actions';
 import { OfferThread } from '@/components/offers/offer-thread';
+import { OrderContacts } from '@/components/offers/order-contacts';
 import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
 import { companyRoute } from '@/config/routes';
@@ -150,6 +151,10 @@ function AcceptedNote({ offer }: { offer: OfferForRequest }) {
       <p className="mt-2 text-sm">
         {offer.company_name} · {formatMoney(offer.price_amount, offer.currency)}
       </p>
+      <div className="mt-4 max-w-[26rem]">
+        <OrderContacts offerId={offer.id} />
+      </div>
+
       <p className="mt-4 text-sm font-medium">{offersCopy.accept.nextSteps}</p>
       <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5">
         {offersCopy.accept.steps.map((step) => (

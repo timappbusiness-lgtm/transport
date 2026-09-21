@@ -5600,6 +5600,17 @@ export type Database = {
           updated_at: string
         }
       }
+      order_contacts: {
+        Args: { p_offer_id: string }
+        Returns: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          display_name: string
+          side: string
+          transport_id: string
+        }[]
+      }
       outbox_backoff_minutes: {
         Args: { p_attempts: number }
         Returns: number

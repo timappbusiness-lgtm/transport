@@ -9,6 +9,7 @@ import {
   isLive,
   isUrgent,
   priceCeiling,
+  indicativeRange,
   requestStateLabel,
   sortOffers,
   timeLeft,
@@ -323,3 +324,111 @@ describe('the form and the database agree', () => {
     expect(migration).toContain('check (price_amount > 0)');
   });
 });
+
+describe('the indicative range beside the price field', () => {
+  const RATES = [
+    rate('hatchback', 4, 3, 0.5, 400, 100),
+    rate('sedan', 5, 4, 0.6, 500, 120),
+    rate('suv', 6, 5, 0.7, 600, 140),
+    rate('autoutilitara', 7, 6, 0.8, 700, 160),
+    rate('motocicleta', 3, 2, 0.4, 300, 80),
+  ];
+  const SETTINGS = {
+    not_running_surcharge_pct: 20,
+    express_surcharge_pct: 30,
+    road_distance_factor: 1.25,
+    range_spread_pct: 15,
+    valid_month: '2026-09-01',
+    is_published: true,
+  };
+  // Bucharest and Cluj, near enough for a national job.
+  const REQUEST = {
+    category: 'autoturism',
+    is_running: true,
+    service_type: 'pe_sens',
+    from_lat: 44.43,
+    from_lng: 26.1,
+    from_country: 'RO',
+    to_lat: 46.77,
+    to_lng: 23.59,
+    to_country: 'RO',
+  };
+
+  function rate(
+    vehicle_class: string,
+    local: number,
+    national: number,
+    international: number,
+    minimum_ron: number,
+    minimum_eur: number,
+  ) {
+    return {
+      vehicle_class,
+      weight_label: '',
+      local_ron_per_km: local,
+      national_ron_per_km: national,
+      international_eur_per_km: international,
+      minimum_ron,
+      minimum_eur,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  }
+
+  it('says nothing while the table is unpublished', () => {
+    expect(indicativeRange(REQUEST, RATES, { ...SETTINGS, is_published: false })).toBeNull();
+    expect(indicativeRange(REQUEST, RATES, null)).toBeNull();
+  });
+
+  it('says nothing for a category the price table does not price', () => {
+    expect(indicativeRange({ ...REQUEST, category: 'utilaj_agricol' }, RATES, SETTINGS)).toBeNull();
+    expect(indicativeRange({ ...REQUEST, category: 'camion' }, RATES, SETTINGS)).toBeNull();
+  });
+
+  it('says nothing when a city never resolved to a point', () => {
+    expect(indicativeRange({ ...REQUEST, from_lat: null }, RATES, SETTINGS)).toBeNull();
+    expect(indicativeRange({ ...REQUEST, to_lng: null }, RATES, SETTINGS)).toBeNull();
+  });
+
+  it('spans the three classes an „autoturism" can be, rather than picking one', () => {
+    const range = indicativeRange(REQUEST, RATES, SETTINGS);
+    expect(range).not.toBeNull();
+
+    // The low is the hatchback's low and the high is the SUV's, so the
+    // sentence covers the whole of what the category can mean.
+    const onlyHatchback = indicativeRange(REQUEST, [RATES[0]!], SETTINGS);
+    const onlySuv = indicativeRange(REQUEST, [RATES[2]!], SETTINGS);
+    expect(range?.low).toBe(onlyHatchback?.low);
+    expect(range?.high).toBe(onlySuv?.high);
+  });
+
+  it('prices a single-class category on its own row', () => {
+    const range = indicativeRange({ ...REQUEST, category: 'motocicleta' }, RATES, SETTINGS);
+    const alone = indicativeRange({ ...REQUEST, category: 'motocicleta' }, [RATES[4]!], SETTINGS);
+    expect(range).toEqual(alone);
+  });
+
+  it('charges the surcharges the calculator charges', () => {
+    const running = indicativeRange(REQUEST, RATES, SETTINGS);
+    const stopped = indicativeRange({ ...REQUEST, is_running: false }, RATES, SETTINGS);
+    const express = indicativeRange({ ...REQUEST, service_type: 'expres' }, RATES, SETTINGS);
+
+    expect(amount(stopped?.high)).toBeGreaterThan(amount(running?.high));
+    expect(amount(express?.high)).toBeGreaterThan(amount(running?.high));
+  });
+
+  it('writes lei for a domestic route and euro for a crossing', () => {
+    expect(indicativeRange(REQUEST, RATES, SETTINGS)?.high).toMatch(/lei$/);
+    // Munich: a different country, so the international rate and the euro.
+    const abroad = indicativeRange(
+      { ...REQUEST, to_lat: 48.14, to_lng: 11.58, to_country: 'DE' },
+      RATES,
+      SETTINGS,
+    );
+    expect(abroad?.high).toMatch(/€$/);
+  });
+});
+
+/** „1.200 lei" back to 1200, so two ranges can be compared. */
+function amount(text: string | undefined): number {
+  return Number((text ?? '0').replace(/[^0-9]/g, ''));
+}

@@ -203,3 +203,51 @@ export async function askOfferAction(
   revalidatePath(ROUTES.accountOffers);
   return {};
 }
+
+export interface ContactsState {
+  error?: string;
+  contacts?: {
+    side: string;
+    displayName: string | null;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    transportId: string | null;
+  };
+}
+
+/**
+ * The other party's telephone number, once there is an order.
+ *
+ * Nothing is decided here. `order_contacts()` checks that a transport
+ * exists and that the caller is one of its two parties, records the
+ * reveal with the reason „comandă confirmată" and charges nobody. Its
+ * refusals are written Romanian sentences and are shown as written.
+ */
+export async function orderContactsAction(
+  _previous: ContactsState,
+  formData: FormData,
+): Promise<ContactsState> {
+  await requireAccountContext(ROUTES.accountOffers);
+
+  const offerId = text(formData, 'offer_id');
+  if (offerId === '') return { error: 'Lipsește oferta.' };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('order_contacts', { p_offer_id: offerId });
+  if (error) return { error: toAppError(error, 'offers.contacts').message };
+
+  const row = Array.isArray(data) ? data[0] : null;
+  if (!row) return { error: 'Comanda nu are date de contact.' };
+
+  return {
+    contacts: {
+      side: row.side,
+      displayName: row.display_name ?? null,
+      name: row.contact_name ?? null,
+      phone: row.contact_phone ?? null,
+      email: row.contact_email ?? null,
+      transportId: row.transport_id ?? null,
+    },
+  };
+}

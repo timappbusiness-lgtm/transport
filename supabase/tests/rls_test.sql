@@ -7582,7 +7582,7 @@ select pg_temp.check('MSK  a stranger cannot open one', 'fix',
 -- is in the moment its offer was accepted.
 -- =====================================================================
 
-select pg_temp.check('ACC  after acceptance the client reads the carrier without paying', 'fix',
+select pg_temp.check('ACC  an order opens a contact on a listing that is already closed', 'fix',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select count(*) = 1 from public.reveal_contact(
        'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
@@ -7823,6 +7823,87 @@ select pg_temp.check('ACC  and staff cannot rewrite one', 'fix',
              'fe000000-0000-0000-0000-000000000001')$s$,
   p_verify => $v$select price_amount = 2400 from public.offers
                  where id = 'f2000000-0000-0000-0000-0000000000c9'$v$);
+
+-- The direction `reveal_contact()` never covered: the client reading the
+-- firm that is coming for the car. A listing holds the client's number
+-- and nobody's else, so this is the only way that number is reachable.
+select pg_temp.check('ACC  the client reads the carrier, not their own number', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.order_contacts('f2000000-0000-0000-0000-0000000000cb')).side
+       = 'transportator'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  and the carrier reads the client the other way', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.order_contacts('f2000000-0000-0000-0000-0000000000cb')).side
+       = 'client'$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     update public.plans set max_contact_reveals_month = 0;
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+-- A pending offer buys nobody a telephone number. If it did, the mask on
+-- the clarification thread would be theatre.
+select pg_temp.check('ACC  before the order there are no contacts', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cc')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000cc',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  a stranger to the order gets nothing from it', 'fix',
+  'f0000000-0000-0000-0000-000000000005', 'authenticated',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cb')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id,
+        status)
+     values ('f2000000-0000-0000-0000-0000000000cb',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001', 'accepted');
+     insert into public.transports
+       (cargo_listing_id, offer_id, shipper_user_id, carrier_company_id, agreed_price)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000cb',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400)$s$);
+
+select pg_temp.check('ACC  anon gets nothing at all', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.order_contacts('f2000000-0000-0000-0000-0000000000cb')$a$,
+  'blocked');
 
 -- The two screens the staff list is made of.
 select pg_temp.check('ACC  staff read one offer in full', 'fix',

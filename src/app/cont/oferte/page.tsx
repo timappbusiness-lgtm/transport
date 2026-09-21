@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { OfferThread } from '@/components/offers/offer-thread';
+import { OrderContacts } from '@/components/offers/order-contacts';
 import { WithdrawOffer } from '@/components/offers/withdraw-offer';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, StatusBadge } from '@/components/ui/primitives';
-import { ROUTES, requestRoute } from '@/config/routes';
+import { ROUTES, requestRoute, transportRoute } from '@/config/routes';
 import { offersCopy } from '@/content/oferte';
 import { requireAccountContext } from '@/lib/auth/account';
 import {
@@ -202,10 +203,13 @@ function Row({
         <div className="mt-4 rounded-card border border-success/45 bg-success/8 p-4">
           <p className="text-sm font-medium">{offersCopy.sent.accepted}</p>
           <p className="mt-1 max-w-[62ch] text-sm">{offersCopy.sent.acceptedBody}</p>
+          <div className="mt-3 max-w-[26rem]">
+            <OrderContacts offerId={offer.id} />
+          </div>
           {offer.transport_id !== null ? (
-            <p className="mt-2 text-sm">
+            <p className="mt-3 text-sm">
               <Link
-                href={`${ROUTES.accountTransports}/${offer.transport_id}`}
+                href={transportRoute(offer.transport_id)}
                 className="underline underline-offset-4"
               >
                 {offersCopy.sent.seeOrder}
