@@ -78,6 +78,7 @@ export const ROUTES = {
   adminDeletions: '/admin/stergeri',
   adminPilot: '/admin/pilot',
   adminOffers: '/admin/oferte',
+  adminOrders: '/admin/transporturi',
   adminReports: '/admin/sesizari',
   adminAuditLog: '/admin/jurnal',
   adminTeam: '/admin/echipa',
@@ -117,6 +118,11 @@ export function myRequestRoute(id: string): string {
 /** One confirmed order. */
 export function transportRoute(id: string): string {
   return `${ROUTES.accountTransports}/${id}`;
+}
+
+/** One order on the staff screen. */
+export function adminOrderRoute(id: string): string {
+  return `${ROUTES.adminOrders}/${id}`;
 }
 
 /** One offer on the staff screen. */
