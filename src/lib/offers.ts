@@ -1,4 +1,12 @@
 import type { Database } from './supabase/database.types';
+import {
+  estimate,
+  formatAmount,
+  type EstimateInput,
+  type PriceRate,
+  type PriceSettings,
+  type VehicleClass,
+} from './pricing';
 
 /**
  * An offer, as the screens read and validate it.
@@ -270,16 +278,89 @@ export const COMPARE_LIMIT = 5;
 /**
  * What the request's status line says.
  *
- * Derived from the listing status and the number of live offers rather
- * than stored: a status kept in step with a count is a status that will
- * one day disagree with it. See the migration's own note.
+ * `listing_status` does carry `offers_received` and `carrier_selected`
+ * — 20260917090000 added them — and `carrier_selected` is what
+ * `accept_offer()` has written since 20260917180000. `offers_received`
+ * is the one nothing has ever set, and this deliberately keeps it that
+ * way: the count is derived from live offers instead, so it cannot
+ * drift from them. Four paths would otherwise have to keep it in step
+ * — insert, withdraw, reject, expire — and the fourth is a job.
+ *
+ * A row that somehow arrives carrying `offers_received` still reads
+ * correctly, because the derivation is what decides the words.
  */
 export function requestStateLabel(status: string, pendingOffers: number): string {
-  if (status === 'assigned') return 'Transportator ales';
-  if (status === 'completed') return 'Încheiată';
+  // `assigned` is the pre-20260917180000 spelling; rows were migrated,
+  // but a dump restored from before that would still hold it.
+  if (status === 'carrier_selected' || status === 'assigned') return 'Transportator ales';
+  if (status === 'in_progress') return 'În curs';
+  if (status === 'delivered' || status === 'completed') return 'Livrată';
+  if (status === 'disputed') return 'În dispută';
   if (status === 'cancelled') return 'Anulată';
   if (status === 'expired') return 'Expirată';
-  if (status !== 'active') return 'Ciornă';
+  if (status === 'suspended') return 'Suspendată';
+  if (status !== 'active' && status !== 'offers_received') return 'Ciornă';
   if (pendingOffers === 0) return 'Așteaptă oferte';
   return pendingOffers === 1 ? 'O ofertă primită' : `${pendingOffers} oferte primite`;
 }
+
+/**
+ * The indicative range for a request, when the team has published one.
+ *
+ * The board files fourteen categories; the price table prices five
+ * classes. Only three categories map onto it at all, and `autoturism`
+ * maps onto three classes at once — a hatchback and a SUV are the same
+ * request and not the same job. Rather than pick one of the three and
+ * print a number nobody chose, the range spans them: the cheapest low
+ * and the dearest high. Every other category returns null, which the
+ * form renders as nothing.
+ *
+ * Coordinates are the city centroids the request was published with.
+ * Without both, there is no distance and therefore no estimate.
+ */
+export function indicativeRange(
+  request: {
+    category: string;
+    is_running: boolean;
+    service_type: string;
+    from_lat: number | null;
+    from_lng: number | null;
+    from_country: string;
+    to_lat: number | null;
+    to_lng: number | null;
+    to_country: string;
+  },
+  rates: readonly PriceRate[],
+  settings: PriceSettings | null,
+): { low: string; high: string } | null {
+  if (settings === null || !settings.is_published || rates.length === 0) return null;
+  if (request.from_lat === null || request.from_lng === null) return null;
+  if (request.to_lat === null || request.to_lng === null) return null;
+
+  const classes = CLASSES_FOR_CATEGORY[request.category];
+  if (classes === undefined) return null;
+
+  const usable = rates.filter((rate) => classes.includes(rate.vehicle_class));
+  if (usable.length === 0) return null;
+
+  const input: EstimateInput = {
+    from: { lat: request.from_lat, lng: request.from_lng, country: request.from_country },
+    to: { lat: request.to_lat, lng: request.to_lng, country: request.to_country },
+    vehicleClass: usable[0]!.vehicle_class,
+    isRunning: request.is_running,
+    express: request.service_type === 'expres',
+  };
+
+  const results = usable.map((rate) => estimate(input, rate, settings));
+  const first = results[0]!;
+  const low = Math.min(...results.map((result) => result.low));
+  const high = Math.max(...results.map((result) => result.high));
+  return { low: formatAmount(low, first.currency), high: formatAmount(high, first.currency) };
+}
+
+/** Which price classes a board category can be priced as, if any. */
+const CLASSES_FOR_CATEGORY: Record<string, readonly VehicleClass[]> = {
+  autoturism: ['hatchback', 'sedan', 'suv'],
+  autoutilitara: ['autoutilitara'],
+  motocicleta: ['motocicleta'],
+};

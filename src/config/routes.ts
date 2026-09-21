@@ -108,6 +108,21 @@ export function companyRoute(slug: string): string {
   return `${ROUTES.companies}/${slug}`;
 }
 
+/** One of your own requests, with the offers it has received. */
+export function myRequestRoute(id: string): string {
+  return `${ROUTES.accountRequests}/${id}`;
+}
+
+/** One confirmed order. */
+export function transportRoute(id: string): string {
+  return `${ROUTES.accountTransports}/${id}`;
+}
+
+/** One offer, opened in whichever box it belongs to. */
+export function offerRoute(id: string): string {
+  return `${ROUTES.accountOffers}?oferta=${encodeURIComponent(id)}`;
+}
+
 
 /**
  * Routes that still have only a "Pagină în lucru" placeholder. Kept in sync

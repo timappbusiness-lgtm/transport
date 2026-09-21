@@ -245,14 +245,28 @@ describe('what the status line says', () => {
     expect(requestStateLabel('active', 3)).toBe('3 oferte primite');
   });
 
-  it('says „Transportator ales" for the status the schema actually has', () => {
-    // There is no `carrier_selected` in `listing_status`; `assigned` is
-    // that state and has been since phase 0.
+  it('says „Transportator ales" for what accept_offer actually writes', () => {
+    // 20260917180000 rewrote accept_offer to set `carrier_selected`;
+    // `assigned` is the older spelling and still reads correctly, for a
+    // dump restored from before that migration.
+    expect(requestStateLabel('carrier_selected', 0)).toBe('Transportator ales');
     expect(requestStateLabel('assigned', 0)).toBe('Transportator ales');
   });
 
-  it('has a word for every other state a listing can be in', () => {
-    for (const status of ['completed', 'cancelled', 'expired', 'draft', 'suspended']) {
+  it('reads a row carrying offers_received from the count, not the column', () => {
+    // The value exists in the enum and nothing sets it. If one ever
+    // arrives — a hand-written row, an older dump — the words still
+    // come from the offers that are actually live.
+    expect(requestStateLabel('offers_received', 0)).toBe('Așteaptă oferte');
+    expect(requestStateLabel('offers_received', 2)).toBe('2 oferte primite');
+  });
+
+  it('has a word for every state the enum holds', () => {
+    for (const status of [
+      'draft', 'active', 'offers_received', 'carrier_selected', 'in_progress',
+      'delivered', 'assigned', 'completed', 'cancelled', 'expired', 'suspended',
+      'disputed',
+    ]) {
       expect(requestStateLabel(status, 0)).toBeTruthy();
     }
   });

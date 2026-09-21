@@ -234,7 +234,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Oferta trimisă pentru {{ title }} ({{ from_city }} — {{ to_city }}) a fost acceptată.",
       "Datele de contact ale clientului sunt acum vizibile în cont, fără să consume din abonament. Luați legătura cu el ca să stabiliți detaliile încărcării.",
     ],
-    action: { label: "Vezi oferta", href: "{{ site_url }}/cont/oferte" },
+    action: { label: "Vezi oferta", href: "{{ site_url }}/cont/oferte?oferta={{ offer_id }}" },
     unsubscribable: false,
   },
 
@@ -267,7 +267,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Aveți un mesaj nou în discuția despre oferta pentru {{ title }}.",
       "Până la confirmarea comenzii, numerele de telefon și adresele de e-mail sunt ascunse automat în mesaje. După ce comanda este confirmată, vă vedeți datele de contact în cont.",
     ],
-    action: { label: "Vezi discuția", href: "{{ site_url }}/cont/oferte" },
+    action: { label: "Vezi discuția", href: "{{ site_url }}/cont/oferte?oferta={{ offer_id }}" },
     unsubscribable: true,
   },
 

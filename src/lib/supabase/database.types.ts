@@ -917,6 +917,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          reason: string | null
           truck_listing_id: string | null
           user_id: string
         }
@@ -925,6 +926,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          reason?: string | null
           truck_listing_id?: string | null
           user_id: string
         }
@@ -933,6 +935,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          reason?: string | null
           truck_listing_id?: string | null
           user_id?: string
         }
@@ -1023,6 +1026,7 @@ export type Database = {
           id: string
           initiator_user_id: string
           last_message_at: string | null
+          offer_id: string | null
           owner_user_id: string
           truck_listing_id: string | null
           updated_at: string
@@ -1033,6 +1037,7 @@ export type Database = {
           id?: string
           initiator_user_id: string
           last_message_at?: string | null
+          offer_id?: string | null
           owner_user_id: string
           truck_listing_id?: string | null
           updated_at?: string
@@ -1043,6 +1048,7 @@ export type Database = {
           id?: string
           initiator_user_id?: string
           last_message_at?: string | null
+          offer_id?: string | null
           owner_user_id?: string
           truck_listing_id?: string | null
           updated_at?: string
@@ -1067,6 +1073,13 @@ export type Database = {
             columns: ["initiator_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
             referencedColumns: ["id"]
           },
           {
@@ -1875,27 +1888,39 @@ export type Database = {
           body: string
           conversation_id: string
           created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
           read_at: string | null
           sender_user_id: string
+          was_masked: boolean
         }
         Insert: {
           attachment_path?: string | null
           body: string
           conversation_id: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           read_at?: string | null
           sender_user_id: string
+          was_masked?: boolean
         }
         Update: {
           attachment_path?: string | null
           body?: string
           conversation_id?: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           read_at?: string | null
           sender_user_id?: string
+          was_masked?: boolean
         }
         Relationships: [
           {
@@ -1903,6 +1928,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2141,12 +2173,43 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_settings: {
+        Row: {
+          default_validity_hours: number
+          id: boolean
+          max_price_eur: number
+          max_price_ron: number
+          max_validity_days: number
+          updated_at: string
+        }
+        Insert: {
+          default_validity_hours?: number
+          id?: boolean
+          max_price_eur?: number
+          max_price_ron?: number
+          max_validity_days?: number
+          updated_at?: string
+        }
+        Update: {
+          default_validity_hours?: number
+          id?: boolean
+          max_price_eur?: number
+          max_price_ron?: number
+          max_validity_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       offers: {
         Row: {
           booking_cargo_listing_id: string | null
           cargo_listing_id: string | null
+          conditions: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string | null
+          estimated_pickup_date: string | null
+          expired_at: string | null
           from_company_id: string | null
           from_user_id: string
           id: string
@@ -2159,12 +2222,17 @@ export type Database = {
           truck_listing_id: string | null
           updated_at: string
           valid_until: string | null
+          vehicle_id: string | null
         }
         Insert: {
           booking_cargo_listing_id?: string | null
           cargo_listing_id?: string | null
+          conditions?: string | null
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date?: string | null
+          estimated_pickup_date?: string | null
+          expired_at?: string | null
           from_company_id?: string | null
           from_user_id: string
           id?: string
@@ -2177,12 +2245,17 @@ export type Database = {
           truck_listing_id?: string | null
           updated_at?: string
           valid_until?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           booking_cargo_listing_id?: string | null
           cargo_listing_id?: string | null
+          conditions?: string | null
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date?: string | null
+          estimated_pickup_date?: string | null
+          expired_at?: string | null
           from_company_id?: string | null
           from_user_id?: string
           id?: string
@@ -2195,6 +2268,7 @@ export type Database = {
           truck_listing_id?: string | null
           updated_at?: string
           valid_until?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -2288,6 +2362,20 @@ export type Database = {
             referencedRelation: "v_public_company_routes"
             referencedColumns: ["truck_listing_id"]
           },
+          {
+            foreignKeyName: "offers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "v_vehicle_missing_documents"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "offers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_billing_periods: {
@@ -2339,6 +2427,7 @@ export type Database = {
           max_active_cargo_listings: number | null
           max_active_truck_listings: number | null
           max_contact_reveals_month: number | null
+          max_offers_month: number | null
           max_saved_searches: number | null
           name: string
           price_ron_month: number
@@ -2362,6 +2451,7 @@ export type Database = {
           max_active_cargo_listings?: number | null
           max_active_truck_listings?: number | null
           max_contact_reveals_month?: number | null
+          max_offers_month?: number | null
           max_saved_searches?: number | null
           name: string
           price_ron_month?: number
@@ -2385,6 +2475,7 @@ export type Database = {
           max_active_cargo_listings?: number | null
           max_active_truck_listings?: number | null
           max_contact_reveals_month?: number | null
+          max_offers_month?: number | null
           max_saved_searches?: number | null
           name?: string
           price_ron_month?: number
@@ -4489,6 +4580,33 @@ export type Database = {
           updated_at: string
         }
       }
+      admin_offers: {
+        Args: {
+          p_company_id?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: Database["public"]["Enums"]["offer_status"]
+          p_to?: string
+        }
+        Returns: {
+          bidder_name: string
+          company_id: string
+          company_name: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          from_city: string
+          id: string
+          messages_count: number
+          price_amount: number
+          request_id: string
+          request_title: string
+          status: Database["public"]["Enums"]["offer_status"]
+          to_city: string
+          total_count: number
+          valid_until: string
+        }[]
+      }
       anonymise_company: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -4762,6 +4880,10 @@ export type Database = {
         }
         Returns: string
       }
+      contact_mask_text: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       count_matching_carriers: {
         Args: { p_listing_id: string }
         Returns: number
@@ -4937,6 +5059,7 @@ export type Database = {
           max_active_cargo_listings: number | null
           max_active_truck_listings: number | null
           max_contact_reveals_month: number | null
+          max_offers_month: number | null
           max_saved_searches: number | null
           name: string
           price_ron_month: number
@@ -5000,6 +5123,16 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      eligible_vehicles: {
+        Args: { p_company_id: string }
+        Returns: {
+          id: string
+          make: string
+          model: string
+          plate_number: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }[]
+      }
       email_is_confirmed: {
         Args: { p_user: string }
         Returns: boolean
@@ -5010,6 +5143,10 @@ export type Database = {
       }
       expire_stale_listings: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      expire_stale_offers: {
+        Args: { p_now?: string }
         Returns: number
       }
       expire_stale_push: {
@@ -5139,6 +5276,14 @@ export type Database = {
           transport_id: string | null
           updated_at: string
         }
+      }
+      has_agreed_order: {
+        Args: {
+          p_cargo_listing_id: string
+          p_truck_listing_id: string
+          p_user: string
+        }
+        Returns: boolean
       }
       hold_account_for_deletion: {
         Args: {
@@ -5289,6 +5434,10 @@ export type Database = {
           updated_at: string
         }
       }
+      mask_contacts: {
+        Args: { p_body: string }
+        Returns: string
+      }
       my_company_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -5316,6 +5465,31 @@ export type Database = {
           role: Database["public"]["Enums"]["company_member_role"]
         }[]
       }
+      my_offers: {
+        Args: {
+          p_box?: string
+          p_status?: Database["public"]["Enums"]["offer_status"]
+        }
+        Returns: {
+          conversation_id: string
+          counterparty: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string
+          estimated_pickup_date: string
+          from_city: string
+          id: string
+          loading_from: string
+          price_amount: number
+          request_id: string
+          request_title: string
+          status: Database["public"]["Enums"]["offer_status"]
+          to_city: string
+          transport_id: string
+          unread_messages: number
+          valid_until: string
+        }[]
+      }
       normalise_phone: {
         Args: { p_phone: string }
         Returns: string
@@ -5327,6 +5501,66 @@ export type Database = {
       notification_channel_enabled: {
         Args: { p_channel: string; p_type: string; p_user_id: string }
         Returns: boolean
+      }
+      offer_quota: {
+        Args: { p_user?: string }
+        Returns: {
+          allowed: number
+          plan_name: string
+          used: number
+        }[]
+      }
+      offer_thread: {
+        Args: { p_offer_id: string }
+        Returns: {
+          body: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          is_mine: boolean
+          sender_name: string
+          sender_user_id: string
+          was_masked: boolean
+        }[]
+      }
+      offers_for_request: {
+        Args: { p_listing_id: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          company_slug: string
+          company_verified: boolean
+          company_verified_at: string
+          conditions: string
+          conversation_id: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string
+          estimated_pickup_date: string
+          id: string
+          message: string
+          payment_term_days: number
+          price_amount: number
+          status: Database["public"]["Enums"]["offer_status"]
+          unread_messages: number
+          valid_until: string
+          vehicle_plate: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }[]
+      }
+      open_offer_thread: {
+        Args: { p_offer_id: string }
+        Returns: {
+          cargo_listing_id: string | null
+          created_at: string
+          id: string
+          initiator_user_id: string
+          last_message_at: string | null
+          offer_id: string | null
+          owner_user_id: string
+          truck_listing_id: string | null
+          updated_at: string
+        }
       }
       outbox_backoff_minutes: {
         Args: { p_attempts: number }
@@ -5482,8 +5716,12 @@ export type Database = {
         Returns: {
           booking_cargo_listing_id: string | null
           cargo_listing_id: string | null
+          conditions: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string | null
+          estimated_pickup_date: string | null
+          expired_at: string | null
           from_company_id: string | null
           from_user_id: string
           id: string
@@ -5496,6 +5734,7 @@ export type Database = {
           truck_listing_id: string | null
           updated_at: string
           valid_until: string | null
+          vehicle_id: string | null
         }
       }
       reject_subscription_request: {
@@ -5619,6 +5858,10 @@ export type Database = {
           contact_name: string
           contact_phone: string
         }[]
+      }
+      reveal_reason_order: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       review_company: {
         Args: { p_approve: boolean; p_company_id: string; p_reason?: string }
@@ -5946,6 +6189,22 @@ export type Database = {
           updated_at: string
         }
       }
+      set_offer_settings: {
+        Args: {
+          p_default_validity_hours: number
+          p_max_price_eur: number
+          p_max_price_ron: number
+          p_max_validity_days: number
+        }
+        Returns: {
+          default_validity_hours: number
+          id: boolean
+          max_price_eur: number
+          max_price_ron: number
+          max_validity_days: number
+          updated_at: string
+        }
+      }
       set_plan: {
         Args: {
           p_audience: Database["public"]["Enums"]["plan_audience"]
@@ -5970,6 +6229,7 @@ export type Database = {
           max_active_cargo_listings: number | null
           max_active_truck_listings: number | null
           max_contact_reveals_month: number | null
+          max_offers_month: number | null
           max_saved_searches: number | null
           name: string
           price_ron_month: number
@@ -6213,6 +6473,22 @@ export type Database = {
           updated_at: string
         }
       }
+      staff_hide_message: {
+        Args: { p_message_id: string; p_reason: string }
+        Returns: {
+          attachment_path: string | null
+          body: string
+          conversation_id: string
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          read_at: string | null
+          sender_user_id: string
+          was_masked: boolean
+        }
+      }
       staff_members: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -6329,8 +6605,12 @@ export type Database = {
         Returns: {
           booking_cargo_listing_id: string | null
           cargo_listing_id: string | null
+          conditions: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string | null
+          estimated_pickup_date: string | null
+          expired_at: string | null
           from_company_id: string | null
           from_user_id: string
           id: string
@@ -6343,6 +6623,7 @@ export type Database = {
           truck_listing_id: string | null
           updated_at: string
           valid_until: string | null
+          vehicle_id: string | null
         }
       }
       write_audit: {
