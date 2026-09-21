@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { SendOffer } from '@/components/offers/send-offer';
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { RevealRequestContact } from '@/components/requests/reveal-request-contact';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
+import { offersCopy } from '@/content/oferte';
 import { getAccountContext } from '@/lib/auth/account';
 import {
   CARGO_CATEGORY_LABELS,
@@ -14,6 +16,15 @@ import {
   SERVICE_TYPE_NOTES,
   formatWindow,
 } from '@/lib/departures';
+import { FEATURES } from '@/lib/features';
+import { indicativeRange } from '@/lib/offers';
+import {
+  loadEligibleVehicles,
+  loadMyPendingOffers,
+  loadOfferQuota,
+  loadOfferSettings,
+} from '@/lib/offers-source';
+import { loadPrices } from '@/lib/prices-source';
 import { formatKm, vehicleLine, type PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
@@ -69,6 +80,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   // knowing how much competition it has, and a rule only the page keeps
   // is not a rule.
   const carrierCount = context ? await countCarriers(supabase, id) : null;
+  const offering = FEATURES.offers ? await loadOfferPanel(context, id, request) : null;
   const c = requestsCopy.detail;
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
@@ -163,6 +175,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </section>
 
         <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+          {/* The offer comes first: a carrier who opened this page came to
+              bid, and the contact is what they buy when bidding is not
+              what they want. */}
+          {offering !== null ? (
+            <section aria-label={offersCopy.form.title}>
+              <SendOffer
+                request={{ id: request.id, loading_from: request.loading_from }}
+                context={context}
+                vehicles={offering.vehicles}
+                settings={offering.settings}
+                quota={offering.quota}
+                pendingOfferId={offering.pendingOfferId}
+                priceRange={offering.priceRange}
+              />
+            </section>
+          ) : null}
           <div className="rounded-card border border-border bg-surface p-5">
             <RevealRequestContact requestId={request.id} signedIn={context !== null} />
           </div>
@@ -223,4 +251,78 @@ async function countCarriers(
   const { data, error } = await supabase.rpc('count_matching_carriers', { p_listing_id: id });
   if (error || typeof data !== 'number') return null;
   return data;
+}
+
+/**
+ * Everything the „Trimite ofertă" panel needs, read in one place.
+ *
+ * Only for a signed-in visitor: a stranger gets the sentence that asks
+ * them to sign in, and none of these queries would answer anything for
+ * them anyway. The fleet is read only when the firm needs one — a
+ * forwarder subcontracts and offers no vehicle.
+ */
+async function loadOfferPanel(
+  context: Awaited<ReturnType<typeof getAccountContext>>,
+  listingId: string,
+  request: PublicRequest,
+): Promise<{
+  vehicles: Awaited<ReturnType<typeof loadEligibleVehicles>>;
+  settings: Awaited<ReturnType<typeof loadOfferSettings>>;
+  quota: Awaited<ReturnType<typeof loadOfferQuota>>;
+  pendingOfferId: string | null;
+  priceRange: { low: string; high: string } | undefined;
+} | null> {
+  if (context === null) {
+    return {
+      vehicles: [],
+      settings: await loadOfferSettings(),
+      quota: null,
+      pendingOfferId: null,
+      priceRange: undefined,
+    };
+  }
+
+  // Nobody bids on their own request, and the panel says so by not being
+  // there. `guard_offer_insert()` refuses it anyway; this keeps a client
+  // reading their own posting from being offered a form they cannot use.
+  if (await isOwnRequest(listingId, context)) return null;
+
+  const company = context.activeCompany;
+  const [vehicles, settings, quota, pending, prices] = await Promise.all([
+    company !== null && company.company_type !== 'expeditie'
+      ? loadEligibleVehicles(company.id)
+      : Promise.resolve([]),
+    loadOfferSettings(),
+    loadOfferQuota(),
+    loadMyPendingOffers([listingId]),
+    loadPrices(),
+  ]);
+
+  return {
+    vehicles,
+    settings,
+    quota,
+    pendingOfferId: pending.get(listingId) ?? null,
+    priceRange: indicativeRange(request, prices.rates, prices.settings) ?? undefined,
+  };
+}
+
+/** The same test `guard_offer_insert()` makes: poster, or a colleague of one. */
+async function isOwnRequest(
+  listingId: string,
+  context: NonNullable<Awaited<ReturnType<typeof getAccountContext>>>,
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('cargo_listings')
+    .select('posted_by, company_id')
+    .eq('id', listingId)
+    .maybeSingle();
+
+  if (!data) return false;
+  if (data.posted_by === context.user.id) return true;
+  return (
+    data.company_id !== null &&
+    context.memberships.some((membership) => membership.company.id === data.company_id)
+  );
 }

@@ -220,3 +220,35 @@ export async function loadMyPendingOffers(
   }
   return found;
 }
+
+/**
+ * How many live offers sit on each of these requests.
+ *
+ * For the request's own side. RLS shows the listing owner every offer on
+ * their listing and a bidder only their own, so the same query means
+ * „how many I received" to a client and „mine" to a carrier — which is
+ * why only the client's screens call it.
+ */
+export async function loadPendingOfferCounts(
+  listingIds: readonly string[],
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (!isSupabaseConfigured() || listingIds.length === 0) return counts;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('offers')
+    .select('cargo_listing_id')
+    .in('cargo_listing_id', [...listingIds])
+    .eq('status', 'pending');
+
+  if (error) {
+    console.error('[oferte] count query failed', { message: error.message });
+    return counts;
+  }
+  for (const row of (data ?? []) as { cargo_listing_id: string | null }[]) {
+    if (row.cargo_listing_id === null) continue;
+    counts.set(row.cargo_listing_id, (counts.get(row.cargo_listing_id) ?? 0) + 1);
+  }
+  return counts;
+}

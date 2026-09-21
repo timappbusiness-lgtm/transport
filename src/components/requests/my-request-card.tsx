@@ -12,7 +12,7 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
-import { requestRoute } from '@/config/routes';
+import { myRequestRoute, requestRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { CARGO_CATEGORY_LABELS, SERVICE_TYPE_LABELS, formatWindow } from '@/lib/departures';
 import {
@@ -45,6 +45,7 @@ export function MyRequestCard({
   request,
   today,
   carrierCount = null,
+  offerCount = null,
 }: {
   request: MyRequest;
   today: string;
@@ -54,6 +55,11 @@ export function MyRequestCard({
    * could not be read — neither is a zero.
    */
   carrierCount?: number | null;
+  /**
+   * Live offers on this request. Null while offers are switched off, and
+   * then the card is what it was before them.
+   */
+  offerCount?: number | null;
 }) {
   const [state, action, pending] = useActionState(
     async (previous: RequestActionState, formData: FormData) => {
@@ -171,6 +177,16 @@ export function MyRequestCard({
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
+            {/* The offers come first: on a request that has any, they are
+                the reason somebody opened this page. */}
+            {offerCount !== null && (offerCount > 0 || isOnBoard(request.status)) ? (
+              <Link
+                href={myRequestRoute(request.id)}
+                className={buttonClasses(offerCount > 0 ? 'primary' : 'secondary', 'sm')}
+              >
+                {c.offers(offerCount)}
+              </Link>
+            ) : null}
             {isOnBoard(request.status) ? (
               <Link href={requestRoute(request.id)} className={buttonClasses('secondary', 'sm')}>
                 {c.view}
