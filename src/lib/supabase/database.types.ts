@@ -2378,6 +2378,208 @@ export type Database = {
           },
         ]
       }
+      order_dispute_reasons: {
+        Row: {
+          code: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          code: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      order_events: {
+        Row: {
+          actor_name: string | null
+          actor_side: string
+          actor_user_id: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["transport_status"] | null
+          id: string
+          note: string | null
+          order_id: string
+          to_status: Database["public"]["Enums"]["transport_status"]
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_side: string
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["transport_status"] | null
+          id?: string
+          note?: string | null
+          order_id: string
+          to_status: Database["public"]["Enums"]["transport_status"]
+        }
+        Update: {
+          actor_name?: string | null
+          actor_side?: string
+          actor_user_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["transport_status"] | null
+          id?: string
+          note?: string | null
+          order_id?: string
+          to_status?: Database["public"]["Enums"]["transport_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "transports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_evidence: {
+        Row: {
+          captured_at: string
+          company_id: string | null
+          file_path: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          kind: Database["public"]["Enums"]["order_evidence_kind"]
+          lat: number | null
+          lng: number | null
+          note: string | null
+          order_id: string
+          payload: Json
+          uploaded_by: string | null
+        }
+        Insert: {
+          captured_at?: string
+          company_id?: string | null
+          file_path?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["order_evidence_kind"]
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          order_id: string
+          payload?: Json
+          uploaded_by?: string | null
+        }
+        Update: {
+          captured_at?: string
+          company_id?: string | null
+          file_path?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["order_evidence_kind"]
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          order_id?: string
+          payload?: Json
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "order_evidence_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "order_evidence_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_evidence_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "transports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_evidence_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_settings: {
+        Row: {
+          auto_complete_hours: number
+          dispute_window_hours: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auto_complete_hours?: number
+          dispute_window_hours?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auto_complete_hours?: number
+          dispute_window_hours?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_billing_periods: {
         Row: {
           created_at: string
@@ -3538,71 +3740,129 @@ export type Database = {
       transports: {
         Row: {
           agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           cargo_listing_id: string | null
           carrier_company_id: string
           closed_at: string | null
           cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
           departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
           driver_id: string | null
           id: string
           loaded_at: string | null
           offer_id: string | null
           payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
           shipper_company_id: string | null
           shipper_user_id: string | null
           status: Database["public"]["Enums"]["transport_status"]
           truck_listing_id: string | null
           updated_at: string
+          vehicle_flagged_at: string | null
           vehicle_id: string | null
         }
         Insert: {
           agreed_price: number
+          auto_completed?: boolean
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           cargo_listing_id?: string | null
           carrier_company_id: string
           closed_at?: string | null
           cmr_number?: string | null
+          confirmation_code?: string | null
+          confirmed_by_client_at?: string | null
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           delivered_at?: string | null
+          delivery_from?: string | null
+          delivery_to?: string | null
           departure_booking_id?: string | null
+          dispute_category?: string | null
+          dispute_reason?: string | null
+          dispute_resolution?: string | null
+          dispute_resolved_at?: string | null
+          disputed_at?: string | null
           driver_id?: string | null
           id?: string
           loaded_at?: string | null
           offer_id?: string | null
           payment_term_days?: number | null
+          picked_up_at?: string | null
+          pickup_from?: string | null
+          pickup_to?: string | null
           shipper_company_id?: string | null
           shipper_user_id?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
           truck_listing_id?: string | null
           updated_at?: string
+          vehicle_flagged_at?: string | null
           vehicle_id?: string | null
         }
         Update: {
           agreed_price?: number
+          auto_completed?: boolean
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           cargo_listing_id?: string | null
           carrier_company_id?: string
           closed_at?: string | null
           cmr_number?: string | null
+          confirmation_code?: string | null
+          confirmed_by_client_at?: string | null
           created_at?: string
           currency?: Database["public"]["Enums"]["currency_code"]
           delivered_at?: string | null
+          delivery_from?: string | null
+          delivery_to?: string | null
           departure_booking_id?: string | null
+          dispute_category?: string | null
+          dispute_reason?: string | null
+          dispute_resolution?: string | null
+          dispute_resolved_at?: string | null
+          disputed_at?: string | null
           driver_id?: string | null
           id?: string
           loaded_at?: string | null
           offer_id?: string | null
           payment_term_days?: number | null
+          picked_up_at?: string | null
+          pickup_from?: string | null
+          pickup_to?: string | null
           shipper_company_id?: string | null
           shipper_user_id?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
           truck_listing_id?: string | null
           updated_at?: string
+          vehicle_flagged_at?: string | null
           vehicle_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "transports_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transports_cargo_listing_id_fkey"
             columns: ["cargo_listing_id"]
@@ -4512,24 +4772,41 @@ export type Database = {
         Args: { p_offer_id: string }
         Returns: {
           agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           cargo_listing_id: string | null
           carrier_company_id: string
           closed_at: string | null
           cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
           departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
           driver_id: string | null
           id: string
           loaded_at: string | null
           offer_id: string | null
           payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
           shipper_company_id: string | null
           shipper_user_id: string | null
           status: Database["public"]["Enums"]["transport_status"]
           truck_listing_id: string | null
           updated_at: string
+          vehicle_flagged_at: string | null
           vehicle_id: string | null
         }
       }
@@ -4645,9 +4922,86 @@ export type Database = {
           valid_until: string
         }[]
       }
+      admin_order_companies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          company_id: string
+          company_name: string
+          orders_count: number
+        }[]
+      }
+      admin_orders: {
+        Args: {
+          p_company_id?: string
+          p_disputed_only?: boolean
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: Database["public"]["Enums"]["transport_status"]
+          p_to?: string
+        }
+        Returns: {
+          agreed_price: number
+          carrier_company_id: string
+          carrier_name: string
+          client_name: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          dispute_category: string
+          disputed_at: string
+          evidence_count: number
+          from_city: string
+          id: string
+          status: Database["public"]["Enums"]["transport_status"]
+          to_city: string
+          total_count: number
+        }[]
+      }
       anonymise_company: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      assign_order_crew: {
+        Args: { p_driver_id: string; p_order_id: string; p_vehicle_id: string }
+        Returns: {
+          agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cargo_listing_id: string | null
+          carrier_company_id: string
+          closed_at: string | null
+          cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
+          departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
+          driver_id: string | null
+          id: string
+          loaded_at: string | null
+          offer_id: string | null
+          payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
+          shipper_company_id: string | null
+          shipper_user_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          truck_listing_id: string | null
+          updated_at: string
+          vehicle_flagged_at: string | null
+          vehicle_id: string | null
+        }
       }
       audit_entries: {
         Args: {
@@ -4707,6 +5061,10 @@ export type Database = {
         Args: { p_listing_id: string }
         Returns: boolean
       }
+      can_see_order: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
       cancel_account_deletion: {
         Args: { p_id: string }
         Returns: {
@@ -4735,6 +5093,48 @@ export type Database = {
       cancel_cargo_request: {
         Args: { p_id: string; p_reason?: string }
         Returns: Database["public"]["Enums"]["listing_status"]
+      }
+      cancel_order: {
+        Args: { p_order_id: string; p_reason: string; p_relist?: boolean }
+        Returns: {
+          agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cargo_listing_id: string | null
+          carrier_company_id: string
+          closed_at: string | null
+          cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
+          departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
+          driver_id: string | null
+          id: string
+          loaded_at: string | null
+          offer_id: string | null
+          payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
+          shipper_company_id: string | null
+          shipper_user_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          truck_listing_id: string | null
+          updated_at: string
+          vehicle_flagged_at: string | null
+          vehicle_id: string | null
+        }
       }
       cargo_category_label: {
         Args: { p_category: Database["public"]["Enums"]["cargo_category"] }
@@ -4892,6 +5292,10 @@ export type Database = {
           updated_at: string
           user_id: string | null
         }
+      }
+      complete_stale_orders: {
+        Args: { p_now?: string }
+        Returns: number
       }
       confirm_departure_booking: {
         Args: { p_agreed_price?: number; p_booking_id: string }
@@ -5061,24 +5465,41 @@ export type Database = {
         }
         Returns: {
           agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           cargo_listing_id: string | null
           carrier_company_id: string
           closed_at: string | null
           cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
           departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
           driver_id: string | null
           id: string
           loaded_at: string | null
           offer_id: string | null
           payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
           shipper_company_id: string | null
           shipper_user_id: string | null
           status: Database["public"]["Enums"]["transport_status"]
           truck_listing_id: string | null
           updated_at: string
+          vehicle_flagged_at: string | null
           vehicle_id: string | null
         }
       }
@@ -5261,6 +5682,10 @@ export type Database = {
         Args: { p_email: string; p_reason: string }
         Returns: number
       }
+      flag_noncompliant_order_vehicles: {
+        Args: { p_now?: string }
+        Returns: number
+      }
       forget_data_export: {
         Args: { p_id: string }
         Returns: undefined
@@ -5387,11 +5812,19 @@ export type Database = {
           status: string
         }
       }
+      is_company_driver_only: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
       is_company_manager: {
         Args: { p_company_id: string }
         Returns: boolean
       }
       is_company_member: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
+      is_company_operator: {
         Args: { p_company_id: string }
         Returns: boolean
       }
@@ -5401,6 +5834,10 @@ export type Database = {
       }
       is_country_code_array: {
         Args: { p_codes: string[] }
+        Returns: boolean
+      }
+      is_order_driver: {
+        Args: { p_order_id: string }
         Returns: boolean
       }
       is_platform_admin: {
@@ -5528,6 +5965,31 @@ export type Database = {
           valid_until: string
         }[]
       }
+      my_orders: {
+        Args: { p_box?: string; p_role?: string }
+        Returns: {
+          agreed_price: number
+          carrier_company_id: string
+          carrier_name: string
+          client_name: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string
+          delivery_from: string
+          driver_name: string
+          evidence_count: number
+          from_city: string
+          id: string
+          my_side: string
+          needs_me: boolean
+          pickup_from: string
+          plate_number: string
+          request_id: string
+          status: Database["public"]["Enums"]["transport_status"]
+          to_city: string
+          vehicle_flagged: boolean
+        }[]
+      }
       normalise_phone: {
         Args: { p_phone: string }
         Returns: string
@@ -5600,6 +6062,52 @@ export type Database = {
           updated_at: string
         }
       }
+      open_order_dispute: {
+        Args: { p_category: string; p_order_id: string; p_reason: string }
+        Returns: {
+          agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cargo_listing_id: string | null
+          carrier_company_id: string
+          closed_at: string | null
+          cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
+          departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
+          driver_id: string | null
+          id: string
+          loaded_at: string | null
+          offer_id: string | null
+          payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
+          shipper_company_id: string | null
+          shipper_user_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          truck_listing_id: string | null
+          updated_at: string
+          vehicle_flagged_at: string | null
+          vehicle_id: string | null
+        }
+      }
+      order_actor_side: {
+        Args: { p_order: Database["public"]["Tables"]["transports"]["Row"] }
+        Returns: string
+      }
       order_contacts: {
         Args: { p_offer_id: string }
         Returns: {
@@ -5609,6 +6117,101 @@ export type Database = {
           display_name: string
           side: string
           transport_id: string
+        }[]
+      }
+      order_crew_options: {
+        Args: { p_order_id: string }
+        Returns: {
+          detail: string
+          id: string
+          kind: string
+          label: string
+        }[]
+      }
+      order_detail: {
+        Args: { p_order_id: string }
+        Returns: {
+          agreed_price: number
+          auto_complete_hours: number
+          auto_completed: boolean
+          cancel_reason: string
+          cancelled_at: string
+          carrier_company_id: string
+          carrier_name: string
+          carrier_slug: string
+          client_name: string
+          closed_at: string
+          confirmation_code: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string
+          delivery_from: string
+          delivery_to: string
+          dispute_category: string
+          dispute_reason: string
+          dispute_resolution: string
+          dispute_resolved_at: string
+          dispute_window_hours: number
+          disputed_at: string
+          driver_id: string
+          driver_name: string
+          driver_phone: string
+          from_city: string
+          id: string
+          loading_from: string
+          my_side: string
+          offer_id: string
+          payment_term_days: number
+          picked_up_at: string
+          pickup_from: string
+          pickup_to: string
+          plate_number: string
+          request_id: string
+          request_photos: string[]
+          request_title: string
+          status: Database["public"]["Enums"]["transport_status"]
+          to_city: string
+          vehicle_flagged: boolean
+          vehicle_id: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }[]
+      }
+      order_evidence_count: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["order_evidence_kind"]
+          p_order_id: string
+        }
+        Returns: number
+      }
+      order_evidence_list: {
+        Args: { p_order_id: string }
+        Returns: {
+          author_name: string
+          captured_at: string
+          file_path: string
+          id: string
+          is_hidden: boolean
+          kind: Database["public"]["Enums"]["order_evidence_kind"]
+          lat: number
+          lng: number
+          note: string
+          payload: Json
+        }[]
+      }
+      order_required_photos: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      order_timeline: {
+        Args: { p_order_id: string }
+        Returns: {
+          actor_name: string
+          actor_side: string
+          created_at: string
+          from_status: Database["public"]["Enums"]["transport_status"]
+          id: string
+          note: string
+          to_status: Database["public"]["Enums"]["transport_status"]
         }[]
       }
       outbox_backoff_minutes: {
@@ -5731,6 +6334,23 @@ export type Database = {
       queue_listing_expiry_reminders: {
         Args: { p_now?: string }
         Returns: number
+      }
+      queue_order_notification: {
+        Args: {
+          p_from: Database["public"]["Enums"]["transport_status"]
+          p_order: Database["public"]["Tables"]["transports"]["Row"]
+          p_to: Database["public"]["Enums"]["transport_status"]
+        }
+        Returns: undefined
+      }
+      queue_order_side_notification: {
+        Args: {
+          p_order: Database["public"]["Tables"]["transports"]["Row"]
+          p_reason?: string
+          p_side: string
+          p_template: string
+        }
+        Returns: undefined
       }
       queue_push: {
         Args: {
@@ -5872,6 +6492,52 @@ export type Database = {
           requested_by: string
           status: Database["public"]["Enums"]["subscription_request_status"]
           updated_at: string
+        }
+      }
+      resolve_order_dispute: {
+        Args: {
+          p_note: string
+          p_order_id: string
+          p_outcome: Database["public"]["Enums"]["transport_status"]
+        }
+        Returns: {
+          agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cargo_listing_id: string | null
+          carrier_company_id: string
+          closed_at: string | null
+          cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
+          departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
+          driver_id: string | null
+          id: string
+          loaded_at: string | null
+          offer_id: string | null
+          payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
+          shipper_company_id: string | null
+          shipper_user_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          truck_listing_id: string | null
+          updated_at: string
+          vehicle_flagged_at: string | null
+          vehicle_id: string | null
         }
       }
       retry_outbox_row: {
@@ -6254,6 +6920,16 @@ export type Database = {
           updated_at: string
         }
       }
+      set_order_settings: {
+        Args: { p_auto_complete_hours: number; p_dispute_window_hours: number }
+        Returns: {
+          auto_complete_hours: number
+          dispute_window_hours: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+      }
       set_plan: {
         Args: {
           p_audience: Database["public"]["Enums"]["plan_audience"]
@@ -6538,6 +7214,25 @@ export type Database = {
           was_masked: boolean
         }
       }
+      staff_hide_order_evidence: {
+        Args: { p_evidence_id: string; p_reason: string }
+        Returns: {
+          captured_at: string
+          company_id: string | null
+          file_path: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          kind: Database["public"]["Enums"]["order_evidence_kind"]
+          lat: number | null
+          lng: number | null
+          note: string | null
+          order_id: string
+          payload: Json
+          uploaded_by: string | null
+        }
+      }
       staff_members: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -6633,6 +7328,10 @@ export type Database = {
           website: string | null
         }
       }
+      sync_request_to_order: {
+        Args: { p_order: Database["public"]["Tables"]["transports"]["Row"] }
+        Returns: undefined
+      }
       tidy_codes: {
         Args: { p_codes: string[]; p_upper: boolean }
         Returns: string[]
@@ -6644,6 +7343,52 @@ export type Database = {
           p_reason?: string
         }
         Returns: undefined
+      }
+      transition_order: {
+        Args: {
+          p_order_id: string
+          p_payload?: Json
+          p_to: Database["public"]["Enums"]["transport_status"]
+        }
+        Returns: {
+          agreed_price: number
+          auto_completed: boolean
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cargo_listing_id: string | null
+          carrier_company_id: string
+          closed_at: string | null
+          cmr_number: string | null
+          confirmation_code: string | null
+          confirmed_by_client_at: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          delivered_at: string | null
+          delivery_from: string | null
+          delivery_to: string | null
+          departure_booking_id: string | null
+          dispute_category: string | null
+          dispute_reason: string | null
+          dispute_resolution: string | null
+          dispute_resolved_at: string | null
+          disputed_at: string | null
+          driver_id: string | null
+          id: string
+          loaded_at: string | null
+          offer_id: string | null
+          payment_term_days: number | null
+          picked_up_at: string | null
+          pickup_from: string | null
+          pickup_to: string | null
+          shipper_company_id: string | null
+          shipper_user_id: string | null
+          status: Database["public"]["Enums"]["transport_status"]
+          truck_listing_id: string | null
+          updated_at: string
+          vehicle_flagged_at: string | null
+          vehicle_id: string | null
+        }
       }
       verified_carriers_count: {
         Args: Record<PropertyKey, never>
@@ -6759,6 +7504,13 @@ export type Database = {
         | "disputed"
       offer_status:
         "pending" | "accepted" | "rejected" | "withdrawn" | "expired"
+      order_evidence_kind:
+        | "pickup_photo"
+        | "condition_report"
+        | "transport_document"
+        | "delivery_photo"
+        | "recipient_confirmation"
+        | "incident_note"
       plan_audience: "carrier" | "forwarder"
       price_type: "fixed" | "negotiable" | "auction"
       seo_page_type:
@@ -6771,8 +7523,14 @@ export type Database = {
         "trialing" | "active" | "past_due" | "cancelled" | "expired"
       transport_status:
         | "agreed"
+        | "order_confirmed"
+        | "pickup_scheduled"
+        | "vehicle_picked_up"
         | "loading"
         | "in_transit"
+        | "delivery_scheduled"
+        | "vehicle_delivered"
+        | "order_completed"
         | "delivered"
         | "invoiced"
         | "closed"
@@ -7004,6 +7762,14 @@ export const Constants = {
         "disputed",
       ],
       offer_status: ["pending", "accepted", "rejected", "withdrawn", "expired"],
+      order_evidence_kind: [
+        "pickup_photo",
+        "condition_report",
+        "transport_document",
+        "delivery_photo",
+        "recipient_confirmation",
+        "incident_note",
+      ],
       plan_audience: ["carrier", "forwarder"],
       price_type: ["fixed", "negotiable", "auction"],
       seo_page_type: [
@@ -7029,8 +7795,14 @@ export const Constants = {
       ],
       transport_status: [
         "agreed",
+        "order_confirmed",
+        "pickup_scheduled",
+        "vehicle_picked_up",
         "loading",
         "in_transit",
+        "delivery_scheduled",
+        "vehicle_delivered",
+        "order_completed",
         "delivered",
         "invoiced",
         "closed",

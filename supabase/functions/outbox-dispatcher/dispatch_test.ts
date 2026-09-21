@@ -61,6 +61,9 @@ const SAMPLE: Record<string, string> = {
   listing_id: "5d2e9f31-0000-4000-8000-000000000003",
   carrier_name: "Transport Ardeal SRL",
   offer_id: "7b4a2c88-0000-4000-8000-000000000004",
+  order_id: "c1d9e4a5-0000-4000-8000-000000000005",
+  deadline_hours: "48",
+  plate: "CJ 12 ABC",
 };
 
 interface QueueRow {
@@ -321,6 +324,18 @@ Deno.test("every template a queueing function names exists", () => {
     "offer_rejected",
     "offer_expired",
     "offer_question",
+    "order_pickup_scheduled",
+    "order_picked_up",
+    "order_in_transit",
+    "order_delivery_scheduled",
+    "order_delivered",
+    "order_completed",
+    "order_auto_completed",
+    "order_cancelled",
+    "order_dispute_opened",
+    "order_dispute_resolved",
+    "order_driver_assigned",
+    "order_vehicle_noncompliant",
   ];
   for (const name of queuedByTheDatabase) {
     assert(TEMPLATES[name] !== undefined, `no template for ${name}`);
