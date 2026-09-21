@@ -396,6 +396,12 @@ A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
 pentru `anon` nu există — dar dreptul aștepta acolo. Retras în
 `20260930100000`.
 
+`scripts/ci/smoke-deployment.sh` verifică antetele **pe răspunsul
+deployment-ului**, nu pe configurația noastră. Testul unitar și cel
+Playwright se uită la partea noastră de sârmă; un antet pierdut într-o
+setare de platformă, într-o regulă de CDN sau într-un merge prost ar trece
+de amândouă și ar lipsi din producție.
+
 `tests/unit/bundle-secrets.test.ts` face cealaltă jumătate: niciun fișier
 `'use client'` nu citește o variabilă care nu este `NEXT_PUBLIC_*`, și
 chunk-urile construite nu conțin nimic în formă de cheie.
