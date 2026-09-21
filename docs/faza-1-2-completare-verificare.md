@@ -2,7 +2,7 @@
 
 Ce urmează nu este o listă de lucruri care „ar trebui să meargă". Este exact
 ce trebuie apăsat, în ce ordine, și ce trebuie să apară după fiecare apăsare.
-Durează în jur de douăzeci și cinci de minute cu trei ferestre deschise.
+Durează în jur de treizeci de minute cu trei ferestre deschise.
 
 Cele cinci: **plecări care se repetă**, **returul de pe o comandă**, **cereri
 private**, **transportatori favoriți** și **ajutorul din cont**.
@@ -32,7 +32,7 @@ fără să aștepți" la final.
 | **Transportator A** | Firmă verificată și **cel puțin un vehicul cu ITP, RCA și copie conformă valabile**. Fără el nu există formular de plecare, deci nici serie. |
 | **Transportator B** | Firmă verificată, **fără nicio legătură** cu clientul. El este cel care nu trebuie să vadă cererea privată. |
 | **Client / expeditor** | Dreptul de a publica cereri. Pentru favoriți are nevoie de o firmă: lista este a firmei, nu a omului. |
-| **Staff** *(pasul 12)* | Un cont din `platform_staff`, pentru `/admin/jurnal`. |
+| **Staff** *(pasul 9)* | Un cont din `platform_staff`, pentru `/admin/jurnal`. |
 
 Folosește **conturile de test**. Ce fac ele nu intră în niciun număr public:
 `is_test` le scoate din statistici, din `/admin/pilot` și de pe panourile
@@ -151,7 +151,7 @@ la fel de privată.
 > sau dispecer) și refuză un membru obișnuit; lista se citește numai de
 > membrii firmei. Blocul **FAV**, 13 verificări.
 
-### 8. O cerere privată — 5 min *(client + transportator B)*
+### 8. O cerere privată — 7 min *(client + transportator B)*
 
 1. **Client** → `/cerere/noua` → completează până la ultimul pas.
 2. La **„Unde apare cererea"** alege **„Doar transportatorii pe care îi aleg"**.
@@ -170,12 +170,25 @@ la fel de privată.
      cererea există, ceea ce este exact ce ascundem.
 7. **Transportator B** → `/cont/alerte`. Dacă are o alertă pe ruta aceea:
    - **Nu trebuie să primească** nimic pentru cererea privată.
-8. Invitatul → `/cereri` → **trebuie să o vadă** și să poată trimite ofertă.
+8. **Transportator B** → încearcă să deschidă un fir de mesaje pe ea, dacă
+   ajungi la buton printr-un link direct.
+   - **Trebuie să fie refuzat**, cu „Anunț inexistent".
+   - **Nu trebuie să i se consume** niciun contact din abonament: verifică
+     în `/cont/abonament` înainte și după.
+9. Invitatul → `/cereri` → **trebuie să o vadă**, să poată deschide firul, să
+   vadă datele de contact și să trimită ofertă.
+10. Invitatul → deschide `/cereri/<id>` din **linkul e-mailului de
+    invitație**.
+    - **Trebuie să se deschidă**, nu 404. Cererea nu este pe panoul public,
+      deci pagina o ia pe alt drum; dacă drumul acela nu există, tocmai cel
+      invitat rămâne pe dinafară.
 
-> **Ce se verifică:** `can_see_listing()` decide pentru cerere, pentru ofertele
-> de pe ea și pentru conversațiile ei; `v_requests_public` o exclude de pe
-> panou, din numărători și din paginile de SEO; `queue_request_alerts()` nu
-> trimite alerte decât invitaților. Blocul **PRV**, 25 de verificări.
+> **Ce se verifică:** `can_see_listing()` decide pentru cerere, pentru
+> ofertele de pe ea, pentru firul de mesaje și pentru datele de contact —
+> patru uși în aceeași cameră, toate patru întrebând aceeași funcție.
+> `v_requests_public` o exclude de pe panou, din numărători și din paginile
+> de SEO; `queue_request_alerts()` nu trimite alerte decât invitaților.
+> Blocul **PRV**, 34 de verificări.
 
 ### 9. Deschiderea pe bursă — 2 min *(client)*
 
@@ -289,5 +302,6 @@ Ce a făcut se vede în `/admin/notificari` → sănătatea joburilor, rândul
 | Plecările apar de două ori | Nu ar trebui: generarea este idempotentă. Dacă totuși, verifică `truck_listings.series_id`. |
 | Cererea privată se vede pe panou | `cargo_listings.visibility` este `privata`? Dacă da, este o scurgere — oprește și scrie. |
 | Un neinvitat primește 403, nu 404 | Tot o scurgere: 403 confirmă că rândul există. |
+| Un neinvitat a deschis un fir sau a văzut contactul | Scurgere. Oprește pilotul pe cererile private și scrie: gărzile sunt în `guard_conversation_insert()` și în `reveal_contact()`. |
 | Favoriții nu se salvează | Rolul contului. Un membru obișnuit nu poate scrie în lista firmei. |
 | Ajutorul nu arată nimic | Tipul contului. Un cont fără firmă vede alt set de răspunsuri. |
