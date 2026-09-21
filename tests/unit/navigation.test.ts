@@ -196,6 +196,18 @@ describe('what a role may see', () => {
     ]);
   });
 
+  it('ratings reach a client and a carrier, but never a driver', () => {
+    // A rating is between the two firms. A driver has no counterparty to
+    // rate and nobody rates them, so the item would open a page whose
+    // three tabs are all empty for them, for ever.
+    expect(
+      hrefs(context({ accountType: 'individual', companyType: null, role: null })),
+    ).toContain(ROUTES.accountRatings);
+    expect(hrefs(context({ companyType: 'transport' }))).toContain(ROUTES.accountRatings);
+    expect(hrefs(context({ companyType: 'expeditie' }))).toContain(ROUTES.accountRatings);
+    expect(hrefs(context({ role: 'driver' }))).not.toContain(ROUTES.accountRatings);
+  });
+
   it('a driver gets the orders and nothing else', () => {
     // The whole of a driver's application, and the correct amount: the
     // work assigned to them, and the three things every account has.

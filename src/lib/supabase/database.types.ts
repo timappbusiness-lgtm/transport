@@ -607,6 +607,8 @@ export type Database = {
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
           contact_email: string | null
           contact_phone: string | null
           country: string
@@ -619,6 +621,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at: string | null
           display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
           equipment: string[]
           id: string
           indicative_rate_note: string | null
@@ -630,9 +634,19 @@ export type Database = {
           profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
           reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
           services: string[]
           slug: string | null
           suspended_at: string | null
@@ -657,6 +671,8 @@ export type Database = {
           base_address_hidden?: boolean
           city?: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier?: number
+          completed_as_client?: number
           contact_email?: string | null
           contact_phone?: string | null
           country?: string
@@ -669,6 +685,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at?: string | null
           display_name?: string | null
+          disputes_opened_12m?: number
+          disputes_resolved_12m?: number
           equipment?: string[]
           id?: string
           indicative_rate_note?: string | null
@@ -680,9 +698,19 @@ export type Database = {
           profile_updated_at?: string | null
           public_description?: string | null
           public_profile_enabled?: boolean
+          punctuality_pct?: number | null
+          punctuality_sample?: number
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
           reg_com?: string | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number
           services?: string[]
           slug?: string | null
           suspended_at?: string | null
@@ -707,6 +735,8 @@ export type Database = {
           base_address_hidden?: boolean
           city?: string | null
           company_type?: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier?: number
+          completed_as_client?: number
           contact_email?: string | null
           contact_phone?: string | null
           country?: string
@@ -719,6 +749,8 @@ export type Database = {
           cui?: string
           deletion_scheduled_at?: string | null
           display_name?: string | null
+          disputes_opened_12m?: number
+          disputes_resolved_12m?: number
           equipment?: string[]
           id?: string
           indicative_rate_note?: string | null
@@ -730,9 +762,19 @@ export type Database = {
           profile_updated_at?: string | null
           public_description?: string | null
           public_profile_enabled?: boolean
+          punctuality_pct?: number | null
+          punctuality_sample?: number
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
           reg_com?: string | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number
           services?: string[]
           slug?: string | null
           suspended_at?: string | null
@@ -3025,12 +3067,158 @@ export type Database = {
           },
         ]
       }
+      rating_replies: {
+        Row: {
+          author_user_id: string
+          body: string
+          company_id: string
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          rating_id: string
+          was_masked: boolean
+        }
+        Insert: {
+          author_user_id: string
+          body: string
+          company_id: string
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          rating_id: string
+          was_masked?: boolean
+        }
+        Update: {
+          author_user_id?: string
+          body?: string
+          company_id?: string
+          created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
+          id?: string
+          rating_id?: string
+          was_masked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_replies_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_replies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_replies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_replies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "rating_replies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "rating_replies_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rating_replies_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: true
+            referencedRelation: "ratings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rating_settings: {
+        Row: {
+          edit_hours: number
+          id: boolean
+          min_public_ratings: number
+          min_punctuality_orders: number
+          min_response_sample: number
+          punctuality_grace_days: number
+          response_lookback_days: number
+          response_window_hours: number
+          updated_at: string
+          updated_by: string | null
+          window_days: number
+        }
+        Insert: {
+          edit_hours?: number
+          id?: boolean
+          min_public_ratings?: number
+          min_punctuality_orders?: number
+          min_response_sample?: number
+          punctuality_grace_days?: number
+          response_lookback_days?: number
+          response_window_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_days?: number
+        }
+        Update: {
+          edit_hours?: number
+          id?: boolean
+          min_public_ratings?: number
+          min_punctuality_orders?: number
+          min_response_sample?: number
+          punctuality_grace_days?: number
+          response_lookback_days?: number
+          response_window_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ratings: {
         Row: {
+          after_dispute: boolean
           comment: string | null
           communication: number | null
           created_at: string
+          edited_at: string | null
+          handover_availability: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
+          info_accuracy: number | null
           payment: number | null
           punctuality: number | null
           rated_company_id: string
@@ -3038,12 +3226,21 @@ export type Database = {
           rater_user_id: string
           score: number
           transport_id: string
+          vehicle_care: number | null
+          was_masked: boolean
         }
         Insert: {
+          after_dispute?: boolean
           comment?: string | null
           communication?: number | null
           created_at?: string
+          edited_at?: string | null
+          handover_availability?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
+          info_accuracy?: number | null
           payment?: number | null
           punctuality?: number | null
           rated_company_id: string
@@ -3051,12 +3248,21 @@ export type Database = {
           rater_user_id: string
           score: number
           transport_id: string
+          vehicle_care?: number | null
+          was_masked?: boolean
         }
         Update: {
+          after_dispute?: boolean
           comment?: string | null
           communication?: number | null
           created_at?: string
+          edited_at?: string | null
+          handover_availability?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
+          info_accuracy?: number | null
           payment?: number | null
           punctuality?: number | null
           rated_company_id?: string
@@ -3064,8 +3270,17 @@ export type Database = {
           rater_user_id?: string
           score?: number
           transport_id?: string
+          vehicle_care?: number | null
+          was_masked?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "ratings_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ratings_rated_company_id_fkey"
             columns: ["rated_company_id"]
@@ -3149,6 +3364,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           kind: string
+          rating_id: string | null
           reason: string
           reported_company_id: string | null
           reported_user_id: string | null
@@ -3170,6 +3386,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           kind?: string
+          rating_id?: string | null
           reason: string
           reported_company_id?: string | null
           reported_user_id?: string | null
@@ -3191,6 +3408,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           kind?: string
+          rating_id?: string | null
           reason?: string
           reported_company_id?: string | null
           reported_user_id?: string | null
@@ -3229,6 +3447,13 @@ export type Database = {
             columns: ["handled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_rating_id_fkey"
+            columns: ["rating_id"]
+            isOneToOne: false
+            referencedRelation: "ratings"
             referencedColumns: ["id"]
           },
           {
@@ -4569,12 +4794,16 @@ export type Database = {
         Row: {
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier: number | null
+          completed_as_client: number | null
           compliant_vehicles: number | null
           county: string | null
           coverage_counties: string[] | null
           coverage_countries: string[] | null
           coverage_scope: Database["public"]["Enums"]["coverage_scope"] | null
           cui: string | null
+          disputes_opened_12m: number | null
+          disputes_resolved_12m: number | null
           equipment: string[] | null
           indicative_rate_note: string | null
           indicative_rate_ron_per_km: number | null
@@ -4583,8 +4812,18 @@ export type Database = {
           logo_path: string | null
           name: string | null
           public_description: string | null
+          punctuality_pct: number | null
+          punctuality_sample: number | null
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number | null
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number | null
           serves_international: boolean | null
           serves_national: boolean | null
           services: string[] | null
@@ -4598,12 +4837,16 @@ export type Database = {
         Insert: {
           city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier?: number | null
+          completed_as_client?: number | null
           compliant_vehicles?: never
           county?: string | null
           coverage_counties?: string[] | null
           coverage_countries?: string[] | null
           coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          disputes_opened_12m?: number | null
+          disputes_resolved_12m?: number | null
           equipment?: string[] | null
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
@@ -4612,8 +4855,18 @@ export type Database = {
           logo_path?: string | null
           name?: never
           public_description?: string | null
+          punctuality_pct?: number | null
+          punctuality_sample?: number | null
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number | null
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number | null
           serves_international?: never
           serves_national?: never
           services?: string[] | null
@@ -4627,12 +4880,16 @@ export type Database = {
         Update: {
           city?: never
           company_type?: Database["public"]["Enums"]["company_type"] | null
+          completed_as_carrier?: number | null
+          completed_as_client?: number | null
           compliant_vehicles?: never
           county?: string | null
           coverage_counties?: string[] | null
           coverage_countries?: string[] | null
           coverage_scope?: Database["public"]["Enums"]["coverage_scope"] | null
           cui?: string | null
+          disputes_opened_12m?: number | null
+          disputes_resolved_12m?: number | null
           equipment?: string[] | null
           indicative_rate_note?: string | null
           indicative_rate_ron_per_km?: number | null
@@ -4641,8 +4898,18 @@ export type Database = {
           logo_path?: string | null
           name?: never
           public_description?: string | null
+          punctuality_pct?: number | null
+          punctuality_sample?: number | null
           rating_avg?: number | null
+          rating_communication?: number | null
           rating_count?: number | null
+          rating_handover?: number | null
+          rating_info_accuracy?: number | null
+          rating_punctuality?: number | null
+          rating_vehicle_care?: number | null
+          reputation_computed_at?: string | null
+          response_pct?: number | null
+          response_sample?: number | null
           serves_international?: never
           serves_national?: never
           services?: string[] | null
@@ -4957,6 +5224,36 @@ export type Database = {
           total_count: number
         }[]
       }
+      admin_ratings: {
+        Args: {
+          p_after_dispute?: boolean
+          p_company_id?: string
+          p_hidden?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_score?: number
+        }
+        Returns: {
+          after_dispute: boolean
+          comment: string
+          created_at: string
+          edited_at: string
+          hidden_at: string
+          hidden_reason: string
+          id: string
+          order_id: string
+          rated_name: string
+          rated_slug: string
+          rater_name: string
+          reply_body: string
+          reply_hidden_at: string
+          reply_id: string
+          report_count: number
+          score: number
+          total_count: number
+          was_masked: boolean
+        }[]
+      }
       anonymise_company: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -5258,6 +5555,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      company_ratings: {
+        Args: { p_limit?: number; p_offset?: number; p_slug: string }
+        Returns: {
+          after_dispute: boolean
+          comment: string
+          communication: number
+          created_at: string
+          edited: boolean
+          handover_availability: number
+          id: string
+          info_accuracy: number
+          punctuality: number
+          rater_name: string
+          reply_at: string
+          reply_body: string
+          score: number
+          total_count: number
+          vehicle_care: number
+        }[]
+      }
       company_review_readiness: {
         Args: { p_company_id: string }
         Returns: {
@@ -5409,6 +5726,8 @@ export type Database = {
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
           contact_email: string | null
           contact_phone: string | null
           country: string
@@ -5421,6 +5740,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at: string | null
           display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
           equipment: string[]
           id: string
           indicative_rate_note: string | null
@@ -5432,9 +5753,19 @@ export type Database = {
           profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
           reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
           services: string[]
           slug: string | null
           suspended_at: string | null
@@ -5582,6 +5913,40 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      edit_rating: {
+        Args: {
+          p_comment?: string
+          p_communication?: number
+          p_handover_availability?: number
+          p_info_accuracy?: number
+          p_punctuality?: number
+          p_rating_id: string
+          p_score: number
+          p_vehicle_care?: number
+        }
+        Returns: {
+          after_dispute: boolean
+          comment: string | null
+          communication: number | null
+          created_at: string
+          edited_at: string | null
+          handover_availability: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          info_accuracy: number | null
+          payment: number | null
+          punctuality: number | null
+          rated_company_id: string
+          rater_company_id: string | null
+          rater_user_id: string
+          score: number
+          transport_id: string
+          vehicle_care: number | null
+          was_masked: boolean
+        }
+      }
       eligible_vehicles: {
         Args: { p_company_id: string }
         Returns: {
@@ -5686,6 +6051,10 @@ export type Database = {
         Args: { p_now?: string }
         Returns: number
       }
+      flag_suspicious_rating: {
+        Args: { p_rating: Database["public"]["Tables"]["ratings"]["Row"] }
+        Returns: undefined
+      }
       forget_data_export: {
         Args: { p_id: string }
         Returns: undefined
@@ -5728,6 +6097,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           kind: string
+          rating_id: string | null
           reason: string
           reported_company_id: string | null
           reported_user_id: string | null
@@ -5990,6 +6360,27 @@ export type Database = {
           vehicle_flagged: boolean
         }[]
       }
+      my_ratings: {
+        Args: { p_box?: string }
+        Returns: {
+          after_dispute: boolean
+          can_edit: boolean
+          can_reply: boolean
+          comment: string
+          counterparty_name: string
+          counterparty_slug: string
+          created_at: string
+          deadline: string
+          from_city: string
+          hidden: boolean
+          order_id: string
+          rater_name: string
+          rating_id: string
+          reply_body: string
+          score: number
+          to_city: string
+        }[]
+      }
       normalise_phone: {
         Args: { p_phone: string }
         Returns: string
@@ -6026,8 +6417,12 @@ export type Database = {
       offers_for_request: {
         Args: { p_listing_id: string }
         Returns: {
+          company_completed: number
           company_id: string
           company_name: string
+          company_punctuality: number
+          company_rating_avg: number
+          company_rating_count: number
           company_slug: string
           company_verified: boolean
           company_verified_at: string
@@ -6198,6 +6593,34 @@ export type Database = {
           payload: Json
         }[]
       }
+      order_rating_side: {
+        Args: {
+          p_order: Database["public"]["Tables"]["transports"]["Row"]
+          p_user: string
+        }
+        Returns: string
+      }
+      order_rating_state: {
+        Args: { p_order_id: string }
+        Returns: {
+          blocked_reason: string
+          can_edit: boolean
+          can_rate: boolean
+          comment: string
+          communication: number
+          deadline: string
+          edit_deadline: string
+          handover_availability: number
+          info_accuracy: number
+          punctuality: number
+          rated_company_name: string
+          rated_company_slug: string
+          rating_id: string
+          score: number
+          side: string
+          vehicle_care: number
+        }[]
+      }
       order_required_photos: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -6230,6 +6653,10 @@ export type Database = {
       owns_offer_listing: {
         Args: { p_offer: Database["public"]["Tables"]["offers"]["Row"] }
         Returns: boolean
+      }
+      pending_rating_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       phone_is_on_file: {
         Args: { p_user: string }
@@ -6264,6 +6691,40 @@ export type Database = {
       plan_features_valid: {
         Args: { p_features: Json }
         Returns: boolean
+      }
+      post_rating: {
+        Args: {
+          p_comment?: string
+          p_communication?: number
+          p_handover_availability?: number
+          p_info_accuracy?: number
+          p_order_id: string
+          p_punctuality?: number
+          p_score: number
+          p_vehicle_care?: number
+        }
+        Returns: {
+          after_dispute: boolean
+          comment: string | null
+          communication: number | null
+          created_at: string
+          edited_at: string | null
+          handover_availability: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          info_accuracy: number | null
+          payment: number | null
+          punctuality: number | null
+          rated_company_id: string
+          rater_company_id: string | null
+          rater_user_id: string
+          score: number
+          transport_id: string
+          vehicle_care: number | null
+          was_masked: boolean
+        }
       }
       preview_matching_carriers: {
         Args: {
@@ -6376,9 +6837,24 @@ export type Database = {
         }
         Returns: number
       }
+      queue_rating_notification: {
+        Args: {
+          p_kind: string
+          p_rating: Database["public"]["Tables"]["ratings"]["Row"]
+        }
+        Returns: undefined
+      }
       queue_saved_search_digests: {
         Args: { p_now?: string }
         Returns: number
+      }
+      recompute_all_reputations: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      recompute_company_reputation: {
+        Args: { p_company_id: string }
+        Returns: undefined
       }
       reject_offer: {
         Args: { p_offer_id: string }
@@ -6431,9 +6907,53 @@ export type Database = {
         }
         Returns: undefined
       }
+      remind_pending_ratings: {
+        Args: { p_now?: string }
+        Returns: number
+      }
       reopen_cargo_request: {
         Args: { p_id: string; p_loading_from: string; p_loading_to?: string }
         Returns: Database["public"]["Enums"]["listing_status"]
+      }
+      reply_to_rating: {
+        Args: { p_body: string; p_rating_id: string }
+        Returns: {
+          author_user_id: string
+          body: string
+          company_id: string
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          rating_id: string
+          was_masked: boolean
+        }
+      }
+      report_rating: {
+        Args: { p_rating_id: string; p_reason: string }
+        Returns: {
+          assigned_to: string | null
+          cargo_listing_id: string | null
+          created_at: string
+          details: string | null
+          evidence_path: string | null
+          handled_by: string | null
+          id: string
+          internal_notes: string | null
+          kind: string
+          rating_id: string | null
+          reason: string
+          reported_company_id: string | null
+          reported_user_id: string | null
+          reporter_notified_at: string | null
+          reporter_user_id: string
+          resolution: string | null
+          resolved_at: string | null
+          status: string
+          transport_id: string | null
+          updated_at: string
+        }
       }
       request_account_deletion: {
         Args: { p_company_id?: string; p_kind: string }
@@ -6591,6 +7111,8 @@ export type Database = {
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
           contact_email: string | null
           contact_phone: string | null
           country: string
@@ -6603,6 +7125,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at: string | null
           display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
           equipment: string[]
           id: string
           indicative_rate_note: string | null
@@ -6614,9 +7138,19 @@ export type Database = {
           profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
           reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
           services: string[]
           slug: string | null
           suspended_at: string | null
@@ -6761,6 +7295,8 @@ export type Database = {
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
           contact_email: string | null
           contact_phone: string | null
           country: string
@@ -6773,6 +7309,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at: string | null
           display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
           equipment: string[]
           id: string
           indicative_rate_note: string | null
@@ -6784,9 +7322,19 @@ export type Database = {
           profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
           reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
           services: string[]
           slug: string | null
           suspended_at: string | null
@@ -7065,6 +7613,31 @@ export type Database = {
           vat_label: string | null
         }
       }
+      set_rating_settings: {
+        Args: {
+          p_edit_hours?: number
+          p_min_public_ratings?: number
+          p_min_punctuality_orders?: number
+          p_min_response_sample?: number
+          p_punctuality_grace_days?: number
+          p_response_lookback_days?: number
+          p_response_window_hours?: number
+          p_window_days?: number
+        }
+        Returns: {
+          edit_hours: number
+          id: boolean
+          min_public_ratings: number
+          min_punctuality_orders: number
+          min_response_sample: number
+          punctuality_grace_days: number
+          response_lookback_days: number
+          response_window_hours: number
+          updated_at: string
+          updated_by: string | null
+          window_days: number
+        }
+      }
       set_seo_page: {
         Args: {
           p_faq?: Json
@@ -7233,6 +7806,46 @@ export type Database = {
           uploaded_by: string | null
         }
       }
+      staff_hide_rating: {
+        Args: { p_rating_id: string; p_reason: string }
+        Returns: {
+          after_dispute: boolean
+          comment: string | null
+          communication: number | null
+          created_at: string
+          edited_at: string | null
+          handover_availability: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          info_accuracy: number | null
+          payment: number | null
+          punctuality: number | null
+          rated_company_id: string
+          rater_company_id: string | null
+          rater_user_id: string
+          score: number
+          transport_id: string
+          vehicle_care: number | null
+          was_masked: boolean
+        }
+      }
+      staff_hide_rating_reply: {
+        Args: { p_reason: string; p_reply_id: string }
+        Returns: {
+          author_user_id: string
+          body: string
+          company_id: string
+          created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          rating_id: string
+          was_masked: boolean
+        }
+      }
       staff_members: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -7275,6 +7888,31 @@ export type Database = {
         Args: { p_company?: string; p_is_test?: boolean; p_user?: string }
         Returns: undefined
       }
+      staff_unhide_rating: {
+        Args: { p_rating_id: string; p_reason: string }
+        Returns: {
+          after_dispute: boolean
+          comment: string | null
+          communication: number | null
+          created_at: string
+          edited_at: string | null
+          handover_availability: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          info_accuracy: number | null
+          payment: number | null
+          punctuality: number | null
+          rated_company_id: string
+          rater_company_id: string | null
+          rater_user_id: string
+          score: number
+          transport_id: string
+          vehicle_care: number | null
+          was_masked: boolean
+        }
+      }
       submit_company_for_review: {
         Args: { p_company_id: string }
         Returns: {
@@ -7288,6 +7926,8 @@ export type Database = {
           base_address_hidden: boolean
           city: string | null
           company_type: Database["public"]["Enums"]["company_type"]
+          completed_as_carrier: number
+          completed_as_client: number
           contact_email: string | null
           contact_phone: string | null
           country: string
@@ -7300,6 +7940,8 @@ export type Database = {
           cui: string
           deletion_scheduled_at: string | null
           display_name: string | null
+          disputes_opened_12m: number
+          disputes_resolved_12m: number
           equipment: string[]
           id: string
           indicative_rate_note: string | null
@@ -7311,9 +7953,19 @@ export type Database = {
           profile_updated_at: string | null
           public_description: string | null
           public_profile_enabled: boolean
+          punctuality_pct: number | null
+          punctuality_sample: number
           rating_avg: number | null
+          rating_communication: number | null
           rating_count: number
+          rating_handover: number | null
+          rating_info_accuracy: number | null
+          rating_punctuality: number | null
+          rating_vehicle_care: number | null
           reg_com: string | null
+          reputation_computed_at: string | null
+          response_pct: number | null
+          response_sample: number
           services: string[]
           slug: string | null
           suspended_at: string | null

@@ -11,7 +11,10 @@ import { OfferThread } from '@/components/offers/offer-thread';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
+import { ReputationInline } from '@/components/ratings/reputation-block';
 import { companyRoute } from '@/config/routes';
+import { ratingsCopy } from '@/content/evaluari';
+import { DEFAULT_THRESHOLDS, publicAverage } from '@/lib/ratings';
 import { offersCopy } from '@/content/oferte';
 import {
   COMPARE_LIMIT,
@@ -31,6 +34,17 @@ import { cn } from '@/lib/utils';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.received;
+
+/**
+ * The publication threshold, as the card applies it.
+ *
+ * The real one is `rating_settings.min_public_ratings`, which this is a
+ * client component and cannot read. The default is the same number in
+ * both places and a unit test compares them; what this cannot do is
+ * follow a change made in the settings until the page is reloaded, which
+ * for a threshold that moves once a year is the right trade.
+ */
+const MIN_PUBLIC_RATINGS = DEFAULT_THRESHOLDS.minPublicRatings;
 
 /**
  * „Oferte primite", which replaces the placeholder that has sat on the
@@ -204,6 +218,17 @@ function OfferCard({
               </span>
             ) : null}
           </p>
+          <p className="mt-1">
+            <ReputationInline
+              rep={{
+                ratingAvg: offer.company_rating_avg,
+                ratingCount: offer.company_rating_count,
+                completedAsCarrier: offer.company_completed,
+                punctualityPct: offer.company_punctuality,
+              }}
+              minPublic={MIN_PUBLIC_RATINGS}
+            />
+          </p>
           {offer.company_slug !== null ? (
             <p className="mt-1.5 text-sm">
               <Link
@@ -360,6 +385,7 @@ function CompareTable({ offers }: { offers: readonly OfferForRequest[] }) {
           <tr>
             <th scope="col" className="py-1 pr-3 font-normal">Firmă</th>
             <th scope="col" className="py-1 pr-3 font-normal">Preț</th>
+            <th scope="col" className="py-1 pr-3 font-normal">Evaluare</th>
             <th scope="col" className="py-1 pr-3 font-normal">{c.pickup}</th>
             <th scope="col" className="py-1 pr-3 font-normal">{c.delivery}</th>
             <th scope="col" className="py-1 font-normal">{c.conditions}</th>
@@ -373,6 +399,15 @@ function CompareTable({ offers }: { offers: readonly OfferForRequest[] }) {
               </th>
               <td className="py-2 pr-3 tabular-nums">
                 {formatMoney(offer.price_amount, offer.currency)}
+              </td>
+              <td className="py-2 pr-3">
+                {publicAverage(
+                  {
+                    ratingAvg: offer.company_rating_avg,
+                    ratingCount: offer.company_rating_count,
+                  },
+                  MIN_PUBLIC_RATINGS,
+                ) ?? <span className="text-muted">{ratingsCopy.profile.tooFew}</span>}
               </td>
               <td className="py-2 pr-3">
                 {offer.estimated_pickup_date === null

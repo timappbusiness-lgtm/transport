@@ -35,11 +35,14 @@ export interface FeatureMap {
   /**
    * Orders: execution, proof of delivery, the evidence against them.
    * Live since Faza 2 — the seven steps, the photographs and the
-   * disputes. Ratings still are not: `ratings` has a table and a guard
-   * that waits for delivery, and nothing else.
+   * disputes.
    */
   transports: boolean;
-  /** `ratings` exists in SQL, with a post-delivery guard. */
+  /**
+   * Ratings and computed reputation. Live since Faza 2: the window, the
+   * one correction, the firm's single public reply, and the figures on
+   * the public profile — none of which anybody types.
+   */
   ratings: boolean;
   /** The in-app notifications centre. */
   notifications: boolean;
@@ -60,7 +63,7 @@ export const FEATURES: FeatureMap = {
   offers: true,
   messages: false,
   transports: true,
-  ratings: false,
+  ratings: true,
   notifications: false,
   settings: false,
   fleet: true,

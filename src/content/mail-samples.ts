@@ -55,6 +55,9 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'order_dispute_resolved', label: 'Comandă: dispută închisă' },
   { id: 'order_driver_assigned', label: 'Comandă: șofer alocat' },
   { id: 'order_vehicle_noncompliant', label: 'Comandă: vehiculul nu mai are actele în termen' },
+  { id: 'rating_received', label: 'Evaluare: ai primit una' },
+  { id: 'rating_reply', label: 'Evaluare: s-a răspuns la a ta' },
+  { id: 'rating_reminder', label: 'Evaluare: memento înainte de termen' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
   { id: 'reservation_confirmed', label: 'Rezervare confirmată' },
@@ -109,6 +112,7 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   order_id: '00000000-0000-4000-8000-000000000005',
   deadline_hours: '48',
   plate: 'CJ 12 ABC',
+  deadline: '5 octombrie 2026',
 };
 
 export function mailTemplateLabel(id: string): string {

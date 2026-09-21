@@ -206,6 +206,28 @@ describe('the order the cards come in', () => {
     ]);
   });
 
+  it('sorts by rating, best first', () => {
+    const rated: SortableOffer[] = [
+      { price_amount: 2900, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: 4.2, company_rating_count: 8 },
+      { price_amount: 2400, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: 4.9, company_rating_count: 5 },
+      { price_amount: 2600, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: 3.1, company_rating_count: 12 },
+    ];
+    expect(sortOffers(rated, 'evaluare').map((o) => o.company_rating_avg)).toEqual([4.9, 4.2, 3.1]);
+  });
+
+  it('a firm below the threshold goes to the bottom, not to either extreme', () => {
+    // Giving an unrated firm a zero would bury it for a reason that is
+    // not true, and a five would float it for one that is not true
+    // either. It sits after the rated ones, among its equals by price.
+    const mixed: SortableOffer[] = [
+      { price_amount: 2900, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: null, company_rating_count: 0 },
+      { price_amount: 2400, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: 3.0, company_rating_count: 4 },
+      // Two ratings: it has an average in the table, but not one we show.
+      { price_amount: 2100, currency: 'RON', estimated_pickup_date: null, estimated_delivery_date: null, company_rating_avg: 5.0, company_rating_count: 2 },
+    ];
+    expect(sortOffers(mixed, 'evaluare').map((o) => o.price_amount)).toEqual([2400, 2100, 2900]);
+  });
+
   it('never invents an exchange rate to compare two currencies', () => {
     // Sorting 480 € against 2400 lei needs a rate, and a rate we made up
     // is a number we cannot defend. RON first, then EUR, each by its own

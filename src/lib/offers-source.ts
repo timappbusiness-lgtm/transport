@@ -33,6 +33,11 @@ export interface OfferForRequest {
   vehicle_plate: string | null;
   conversation_id: string | null;
   unread_messages: number;
+  /** Reputația firmei care a trimis oferta (migrarea 20260924100000). */
+  company_rating_avg: number | null;
+  company_rating_count: number;
+  company_completed: number;
+  company_punctuality: number | null;
 }
 
 export async function loadOffersForRequest(listingId: string): Promise<OfferForRequest[]> {

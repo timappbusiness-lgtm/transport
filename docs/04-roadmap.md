@@ -206,13 +206,44 @@ Built with it, for the same reason:
 - Staff hide a piece of evidence with a reason, audited. The row and the
   file stay; only who may see it changes.
 
-## Phase 8 — Rating and reputation
+## Phase 8 — Rating and reputation (done, September 2026)
 
 - Ratings after delivery, one per side, companies only (individuals are not
-  rated in the MVP) *— database done in phase 0*
+  rated in the MVP) *— done. „After delivery" narrowed to „after the order
+  is finished": the phase 0 guard allowed `vehicle_delivered`, so a client
+  who had not yet confirmed could rate, and a note given before you say
+  whether you got the car is a note about something else*
 - Carrier profile with **completed transports**, **rating**, **punctuality**,
   **response rate**, **resolved complaints**, **last verification date**
-- No paid badge that can be confused with verification
+  *— done, every formula in `docs/02-data-model.md` and on the profile as
+  „Cum calculăm"*
+- No paid badge that can be confused with verification *— still none*
+
+What this phase added beyond the list above:
+
+- **The window and the one correction.** Fourteen days to rate, 48 hours
+  to correct it once. A note that can be rewritten at any time is a
+  negotiation, and the firm would be negotiating with whoever just rated
+  it.
+- **One public reply per rating**, and immutable once published — the
+  rating it answers is already immutable, and a reply that can be
+  rewritten makes the exchange asymmetric.
+- **`post_rating()` is the only door.** The INSERT policy on `ratings` is
+  gone; the guard trigger stays under the RPC, because a door can be
+  opened wrongly tomorrow.
+- **A rating on a disputed order waits** for staff to close it, and then
+  carries „după o dispută" on the profile: a low note after a dispute
+  means something different from one without.
+- **Sub-scores are per side.** A client is asked about the carrier's care
+  of the vehicle; a carrier about the client's information and
+  availability. The phase 0 column `payment` fits neither and is no
+  longer written.
+- **The staff screen** at `/admin/evaluari`: hide and unhide with a
+  reason, audited, and nothing that writes over what somebody wrote.
+- **`notification_types` brought up to date.** It had not been touched
+  since `20260918120000`, so the offer and order flows had templates but
+  no type rows — which meant `queue_push()` returned null for every one
+  of them and nobody could switch an order e-mail off.
 
 ## Phase 9 — Subscriptions and billing
 

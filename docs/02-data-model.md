@@ -149,6 +149,46 @@ migration, which is the right amount of friction.
 covers "loads within 100 km of Cluj". Bring PostGIS in when routing along real
 roads or corridor polygons is actually on the roadmap — not before.
 
+## Computed reputation
+
+Every figure on a company's public profile is derived by
+`recompute_company_reputation(company_id)`, in one pass, and written to
+`companies`. None of them can be entered: `guard_company_write()` refuses an
+update to any of the fourteen columns from an account, which matters because a
+Postgres UPDATE policy cannot restrict columns.
+
+Two rules apply to all of them, at computation rather than at display — an
+aggregate filtered correctly in one place leaks unfiltered from the second
+place that reads it:
+
+- a rating whose author is `profiles.is_test` counts for nothing;
+- a rating with `hidden_at` set counts for nothing.
+
+The thresholds are rows in `rating_settings`, not constants. The same names
+appear in `src/lib/ratings.ts` and in the „Cum calculăm" note on the profile,
+and `tests/unit/ratings.test.ts` reads this migration back to check the two
+have not drifted.
+
+| Column | Formula | Shown when |
+|---|---|---|
+| `rating_avg`, `rating_count` | mean and count of visible ratings whose author is not a test account | `rating_count >= min_public_ratings` (3). Below that the profile says **„Evaluări insuficiente"**, never a smaller number |
+| `rating_punctuality`, `rating_communication`, `rating_vehicle_care`, `rating_info_accuracy`, `rating_handover` | mean of each sub-score **over the rows that carry it**, not over all ratings — every sub-score is optional | with the average |
+| `completed_as_carrier` | orders in `order_completed`, `invoiced` or `closed` where the firm is `carrier_company_id` | always |
+| `completed_as_client` | the same, where the firm is `shipper_company_id` | when above zero |
+| `punctuality_pct`, `punctuality_sample` | of the completed orders that have an accepted offer carrying both estimated dates: the share where `picked_up_at::date <= estimated_pickup_date + punctuality_grace_days` **and** `delivered_at::date <= estimated_delivery_date + punctuality_grace_days` (grace 1 day). An order with no promised dates is not in the sample at all — a promise that was never made can be neither kept nor missed | `punctuality_sample >= min_punctuality_orders` (3) |
+| `response_pct`, `response_sample` | of the requests published in the last `response_lookback_days` (90) that `company_matches_request()` says the firm matches and whose poster is not a test account: the share the firm answered within `response_window_hours` (24) with an offer **or** a message on that offer's thread. A clarification counts — „ce fel de mașină este" is an answer | `response_sample >= min_response_sample` (5) |
+| `disputes_opened_12m`, `disputes_resolved_12m` | orders where the firm is either party and `disputed_at` is within twelve months, counted by `disputed_at` and by `dispute_resolved_at` | always |
+| `reputation_computed_at` | when the function last ran. Empty means „never", not „zero" | — |
+
+`verified_at` is not computed here; it has been on `companies` since
+`20260917140000` and the profile reads it directly.
+
+Recomputed on every rating written, edited, hidden or unhidden, and for every
+non-test company by `nightly-reputation` at 03:10. The nightly pass is not
+redundant: the response-rate window slides, disputes leave the twelve-month
+frame, and orders complete without anybody rating them. Without it a firm's
+response rate freezes on the day of its last rating.
+
 ## Generating TypeScript types
 
 ```bash

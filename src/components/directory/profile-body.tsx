@@ -12,7 +12,6 @@ import {
   DOCUMENT_STATE_LABELS,
   monogram,
   monthYear,
-  ratingLabel,
   scopeLabel,
   verifiedSinceLabel,
   type DocumentState,
@@ -22,11 +21,46 @@ import { companyLogoUrl, type CompanyProfile, type CompanyRoute } from '@/lib/di
 import { countryName } from '@/content/firma';
 import { countyName } from '@/lib/counties';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { RatingCard } from '@/components/ratings/rating-card';
+import { ReputationBlock } from '@/components/ratings/reputation-block';
+import { ratingsCopy } from '@/content/evaluari';
 import { formatDateRo } from '@/lib/format';
+import { DEFAULT_THRESHOLDS, type Reputation } from '@/lib/ratings';
+import type { PublicRating } from '@/lib/ratings-source';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
 const c = directoryCopy.profile;
+
+/**
+ * `PublicCompany` → `Reputation`.
+ *
+ * Două forme pentru aceleași numere, pentru că `PublicCompany` descrie o
+ * firmă din director și `Reputation` descrie doar reputația: blocul de
+ * reputație se folosește și pe un card de ofertă, unde nu există un
+ * profil întreg de unde să vină.
+ */
+function toReputation(company: PublicCompany): Reputation {
+  return {
+    ratingAvg: company.ratingAvg,
+    ratingCount: company.ratingCount,
+    punctuality: company.ratingPunctuality,
+    communication: company.ratingCommunication,
+    vehicleCare: company.ratingVehicleCare,
+    infoAccuracy: company.ratingInfoAccuracy,
+    handover: company.ratingHandover,
+    completedAsCarrier: company.completedAsCarrier,
+    completedAsClient: company.completedAsClient,
+    punctualityPct: company.punctualityPct,
+    punctualitySample: company.punctualitySample,
+    responsePct: company.responsePct,
+    responseSample: company.responseSample,
+    disputesOpened12m: company.disputesOpened12m,
+    disputesResolved12m: company.disputesResolved12m,
+    verifiedSince: company.verifiedSince,
+    computedAt: company.reputationComputedAt,
+  };
+}
 
 /**
  * The profile, given its data rather than fetching it — the same shape as
@@ -36,13 +70,22 @@ const c = directoryCopy.profile;
 export function CompanyProfileBody({
   profile,
   signedIn,
+  ratings = [],
+  ratingsPager = null,
+  minPublicRatings = DEFAULT_THRESHOLDS.minPublicRatings,
 }: {
   profile: CompanyProfile;
   signedIn: boolean;
+  /** Evaluările publice ale firmei, deja paginate de pagină. */
+  ratings?: readonly PublicRating[];
+  /** Butoanele de paginare, desenate de pagină pentru că ea știe URL-ul. */
+  ratingsPager?: React.ReactNode;
+  /** Pragul sub care nu se arată nicio medie, din `rating_settings`. */
+  minPublicRatings?: number;
 }) {
   const { company, documents, routes, equipment, services } = profile;
   const scope = scopeLabel(company);
-  const rating = ratingLabel(company);
+  const reputation = toReputation(company);
 
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -90,19 +133,25 @@ export function CompanyProfileBody({
 
       <Shield company={company} documents={documents} scope={scope} />
 
-      {rating ? (
-        <section aria-labelledby="evaluari" className="mt-10">
+      {/* Faza 2 a înlocuit cifra singură cu blocul întreg. Cifra spunea
+          „4,6" și atât, ceea ce este exact felul de număr pe care nu ai
+          cum să-l verifici; acum fiecare rând își arată eșantionul, iar
+          „Cum calculăm" este dedesubt. */}
+      <div className="mt-10">
+        <ReputationBlock rep={reputation} minPublic={minPublicRatings} />
+      </div>
+
+      {ratings.length > 0 ? (
+        <section aria-labelledby="evaluari" className="mt-8">
           <h2 id="evaluari" className="text-[1.125rem]">
-            {c.ratings.title}
+            {ratingsCopy.profile.latest}
           </h2>
-          <p className="mt-2 flex items-baseline gap-3">
-            <span className="font-display text-[2rem] leading-none font-light tabular-nums">
-              {rating}
-            </span>
-            <span className="text-[0.9375rem] text-muted">
-              {c.ratings.count(pluralRo(company.ratingCount, 'evaluare', 'evaluări'))}
-            </span>
-          </p>
+          <div className="mt-2">
+            {ratings.map((r) => (
+              <RatingCard key={r.id} rating={r} />
+            ))}
+          </div>
+          {ratingsPager}
         </section>
       ) : null}
 

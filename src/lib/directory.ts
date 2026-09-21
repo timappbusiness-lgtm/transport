@@ -50,6 +50,28 @@ export interface PublicCompany {
   website: string | null;
   /** Counted from the fleet, never claimed. */
   vehiclesTotal: number;
+
+  /**
+   * Reputația calculată (migrarea 20260924100000).
+   *
+   * Fiecare dintre ele este derivată de `recompute_company_reputation()`
+   * și niciuna nu poate fi scrisă din cont — `guard_company_write()` le
+   * refuză pe toate. Ce hotărăște fișierul ăsta este doar dacă se arată.
+   */
+  ratingPunctuality: number | null;
+  ratingCommunication: number | null;
+  ratingVehicleCare: number | null;
+  ratingInfoAccuracy: number | null;
+  ratingHandover: number | null;
+  completedAsCarrier: number;
+  completedAsClient: number;
+  punctualityPct: number | null;
+  punctualitySample: number;
+  responsePct: number | null;
+  responseSample: number;
+  disputesOpened12m: number;
+  disputesResolved12m: number;
+  reputationComputedAt: string | null;
 }
 
 export type CoverageScope = 'judetean' | 'national' | 'international';
@@ -366,7 +388,26 @@ export function toCompany(row: CompanyRow): PublicCompany | null {
     indicativeRateNote: row.indicative_rate_note,
     website: row.website,
     vehiclesTotal: Number(row.vehicles_total ?? 0),
+    ratingPunctuality: num(row.rating_punctuality),
+    ratingCommunication: num(row.rating_communication),
+    ratingVehicleCare: num(row.rating_vehicle_care),
+    ratingInfoAccuracy: num(row.rating_info_accuracy),
+    ratingHandover: num(row.rating_handover),
+    completedAsCarrier: Number(row.completed_as_carrier ?? 0),
+    completedAsClient: Number(row.completed_as_client ?? 0),
+    punctualityPct: num(row.punctuality_pct),
+    punctualitySample: Number(row.punctuality_sample ?? 0),
+    responsePct: num(row.response_pct),
+    responseSample: Number(row.response_sample ?? 0),
+    disputesOpened12m: Number(row.disputes_opened_12m ?? 0),
+    disputesResolved12m: Number(row.disputes_resolved_12m ?? 0),
+    reputationComputedAt: row.reputation_computed_at,
   };
+}
+
+/** `numeric` comes back as a string; a missing value stays missing, not zero. */
+function num(value: string | number | null): number | null {
+  return value === null || value === undefined ? null : Number(value);
 }
 
 /** The slug is how the row was found, so a profile does not select it back. */
