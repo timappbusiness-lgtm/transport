@@ -4513,19 +4513,18 @@ select pg_temp.check('PUSH an override wins over the default', 'fix',
 -- A type with no screen behind it is off on every channel whatever
 -- anybody set, because a push that opens a 404 spends the one tap a
 -- person gives you.
--- The stand-in for „a type with no screen" used to be `offer_received`.
--- Offers and orders got their screens, so 20260924100000 turned those on;
--- general messaging is the phase after this one and has none, which is
--- what `message_received` is doing here. The rule under test has not
--- changed, only the example that still satisfies it.
+-- The stand-in for „a type with no screen" has now run out of screens to
+-- be missing: 20260925100000 gave messaging its own, which was the last
+-- unavailable type. So the example becomes a code that is not in the
+-- catalogue at all. The rule is the same one — nothing is queued for a
+-- type the catalogue does not vouch for — and this version of it cannot
+-- be invalidated by building another screen.
 select pg_temp.check('PUSH a type with no screen is off on every channel', 'fix',
   null, 'service_role',
   $a$select not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'message_received', 'push')
+           'f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva', 'push')
        and not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'message_received', 'email')$a$, 'true',
-  p_setup => $s$insert into public.notification_preferences (user_id, type, push, email)
-                values ('f0000000-0000-0000-0000-000000000006', 'message_received', true, true)$s$);
+           'f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva', 'email')$a$, 'true');
 
 -- ---------------------------------------------------------------------
 -- When a push actually leaves
@@ -4547,7 +4546,7 @@ select pg_temp.check('PUSH nothing is queued for a channel that is off', 'fix',
 
 select pg_temp.check('PUSH nothing is queued for a type with no screen', 'fix',
   null, 'service_role',
-  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'message_received',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva',
                               'Titlu', 'Corp') is null$a$, 'true',
   p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
                 values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q2', 'k', 'a')$s$);
@@ -5339,7 +5338,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 15 from public.job_health()$a$, 'true');
+  $a$select count(*) = 16 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6227,7 +6226,8 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-compliance-sweep, '
+     'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
@@ -6285,7 +6285,8 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-compliance-sweep, '
+     'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
@@ -7553,9 +7554,17 @@ select pg_temp.check('MSK  staff hide a message, with a reason, audited', 'fix',
              'f2000000-0000-0000-0000-0000000000b5',
              'f0000000-0000-0000-0000-000000000006',
              'f0000000-0000-0000-0000-000000000002');
-     insert into public.messages (conversation_id, sender_user_id, body)
-     values ('f3000000-0000-0000-0000-0000000000b5',
-             'f0000000-0000-0000-0000-000000000006', 'ceva')$s$,
+     insert into public.messages (id, conversation_id, sender_user_id, body)
+     values ('f5000000-0000-0000-0000-0000000000b5',
+             'f3000000-0000-0000-0000-0000000000b5',
+             'f0000000-0000-0000-0000-000000000006', 'ceva');
+     -- 20260925100000 a îngustat ce poate citi echipa: nu orice
+     -- conversație, ci pe cele sesizate și pe cele de pe o comandă în
+     -- dispută. Sesizarea este și drumul real — echipa ajunge la mesaj
+     -- pentru că i s-a cerut, nu răsfoind.
+     insert into public.reports (reporter_user_id, message_id, kind, reason)
+     values ('f0000000-0000-0000-0000-000000000002',
+             'f5000000-0000-0000-0000-0000000000b5', 'mesaj', 'Date de contact')$s$,
   p_verify => $v$select exists (select 1 from public.audit_log
                                 where action = 'message.hidden')$v$);
 
@@ -9483,6 +9492,539 @@ select pg_temp.check('ERV  an individual rater is „Client", not a person''s na
                         'f8000000-0000-0000-0000-0000000000a1',
                         'f0000000-0000-0000-0000-000000000006',
                         'fc000000-0000-0000-0000-000000000001', 5)$s$);
+
+-- =====================================================================
+-- MSG - mesageria generală și moderarea anunțurilor
+--
+-- Cele trei forme de conversație sunt aceleași două tabele cu contexte
+-- diferite, deci verificările de aici se uită la ce le deosebește: cine
+-- poate deschide fiecare, cine o poate citi, și ce se maschează.
+--
+-- Conturile din fixturi: 002 owner la firma A (transportator), 003
+-- dispecer la A, 00e șofer la A, 004 owner la firma B (client), 006
+-- persoană fizică, 00a o firmă străină, 001 echipa.
+-- =====================================================================
+
+/**
+ * O comandă. Firul și-l face singură, prin triggerul de pe `transports`,
+ * și funcția întoarce id-ul lui — nu îl inserează, pentru că atunci ar
+ * fi două și indexul unic ar spune asta.
+ */
+create or replace function pg_temp.order_with_thread(
+  p_order uuid,
+  p_driver uuid default 'fd000000-0000-0000-0000-000000000001',
+  p_disputed boolean default false
+) returns uuid language plpgsql as $ot$
+declare
+  v_conversation uuid;
+begin
+  insert into public.transports
+    (id, cargo_listing_id, shipper_company_id, shipper_user_id, carrier_company_id,
+     agreed_price, currency, status, driver_id, vehicle_id, disputed_at)
+  values
+    (p_order, 'f1000000-0000-0000-0000-000000000002',
+     'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004',
+     'fc000000-0000-0000-0000-000000000001', 2400, 'RON', 'order_confirmed',
+     p_driver, 'fe000000-0000-0000-0000-000000000001',
+     case when p_disputed then now() end);
+
+  select id into v_conversation from public.conversations where transport_id = p_order;
+  return v_conversation;
+end $ot$;
+
+-- --- cine deschide ce -------------------------------------------------
+
+select pg_temp.check('MSG  a carrier opens a thread on a request, and it costs a contact', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f1000000-0000-0000-0000-000000000002', auth.uid(), auth.uid())$a$, 'allowed',
+  p_verify => $v$select count(*) = 1 from public.contact_reveals
+                 where user_id = 'f0000000-0000-0000-0000-000000000002'
+                   and cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+-- Aceeași poartă, a doua oară, pe același anunț: nu se mai numără. Prin
+-- `reveal_contact()`, care este ușa dată utilizatorilor —
+-- `consume_contact_access()` este internă și nu se poate apela de aici,
+-- ceea ce este în sine corect.
+select pg_temp.check('MSG  and reaching the same listing again costs nothing more', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.reveal_contact(
+       'f1000000-0000-0000-0000-000000000002', null)$a$, 'true',
+  p_setup => $s$update public.plans set max_contact_reveals_month = 1;
+     insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select count(*) = 1 from public.contact_reveals
+                 where user_id = 'f0000000-0000-0000-0000-000000000002'
+                   and cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MSG  nobody opens a thread on their own listing', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f1000000-0000-0000-0000-000000000002', auth.uid(), auth.uid())$a$, 'blocked');
+
+select pg_temp.check('MSG  the order thread is not something an account creates', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.conversations
+       (transport_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000001', auth.uid(), auth.uid())$a$, 'blocked');
+
+select pg_temp.check('MSG  an order comes with its thread, however it was created', 'fix',
+  null, 'service_role',
+  $a$insert into public.transports
+       (id, cargo_listing_id, offer_id, shipper_company_id, shipper_user_id,
+        carrier_company_id, agreed_price, currency, status)
+     values ('f3000000-0000-0000-0000-0000000000c0',
+             'f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c1',
+             'fc000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000004',
+             'fc000000-0000-0000-0000-000000000001', 2400, 'RON', 'order_confirmed')$a$,
+  'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c1',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select count(*) = 1 from public.conversations
+                 where transport_id = 'f3000000-0000-0000-0000-0000000000c0'$v$);
+
+select pg_temp.check('MSG  and it is linked to the offer thread that came before', 'fix',
+  null, 'service_role',
+  $a$insert into public.transports
+       (id, cargo_listing_id, offer_id, shipper_company_id, shipper_user_id,
+        carrier_company_id, agreed_price, currency, status)
+     values ('f3000000-0000-0000-0000-0000000000c3',
+             'f1000000-0000-0000-0000-000000000002',
+             'f2000000-0000-0000-0000-0000000000c2',
+             'fc000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000004',
+             'fc000000-0000-0000-0000-000000000001', 2400, 'RON', 'order_confirmed')$a$,
+  'allowed',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000c2',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001');
+     insert into public.conversations
+       (id, offer_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000c2',
+             'f2000000-0000-0000-0000-0000000000c2',
+             'f0000000-0000-0000-0000-000000000004',
+             'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select linked_conversation_id = 'f3000000-0000-0000-0000-0000000000c2'
+                 from public.conversations
+                 where transport_id = 'f3000000-0000-0000-0000-0000000000c3'$v$);
+
+-- --- cine citește ce --------------------------------------------------
+
+select pg_temp.check('MSG  both parties read the order thread', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
+
+select pg_temp.check('MSG  and the carrier''s dispatcher does too', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select count(*) = 1 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
+
+select pg_temp.check('MSG  the assigned driver reads the thread of their own order', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select count(*) = 1 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
+
+select pg_temp.check('MSG  and of no other order of the same firm', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select count(*) = 0 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000d2'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d2',
+                  p_driver => 'fd000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('MSG  a stranger reads no thread at all', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) = 0 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
+
+select pg_temp.check('MSG  and anon reads nothing anywhere near one', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.conversations$a$, 'true');
+
+-- --- masca, înainte și după comandă -----------------------------------
+
+select pg_temp.check('MSG  a number in an order thread is not masked', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     select id, auth.uid(), 'sună-mă la 0722123456'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000e0'$a$, 'allowed',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000e0')$s$,
+  p_verify => $v$select body like '%0722123456%' and not was_masked
+                 from public.messages m
+                 join public.conversations c on c.id = m.conversation_id
+                 where c.transport_id = 'f3000000-0000-0000-0000-0000000000e0'$v$);
+
+select pg_temp.check('MSG  what was masked before the order stays masked for ever', 'fix',
+  null, 'service_role',
+  $a$insert into public.transports
+       (id, cargo_listing_id, shipper_company_id, shipper_user_id,
+        carrier_company_id, agreed_price, currency, status)
+     values ('f3000000-0000-0000-0000-0000000000e2',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001', 2400, 'RON', 'order_confirmed')$a$,
+  'allowed',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-0000000000e1',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-0000000000e1',
+             'f0000000-0000-0000-0000-000000000002',
+             'sună-mă la 0722123456')$s$,
+  -- Istoricul nu se rescrie niciodată. Dacă s-ar demasca la crearea unei
+  -- comenzi, oricine ar putea deschide o comandă de un leu ca să
+  -- citească numerele din discuțiile vechi.
+  p_verify => $v$select body not like '%0722123456%' and was_masked
+                 from public.messages
+                 where conversation_id = 'f3000000-0000-0000-0000-0000000000e1'$v$);
+
+-- --- limite și duplicate ----------------------------------------------
+
+select pg_temp.check('MSG  the same message twice in a row is one message', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     select id, auth.uid(), 'Bună ziua'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000f0'$a$, 'blocked',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000f0');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     select id, 'f0000000-0000-0000-0000-000000000004', 'Bună ziua'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000f0'$s$,
+  p_verify => $v$select count(*) = 1 from public.messages m
+                 join public.conversations c on c.id = m.conversation_id
+                 where c.transport_id = 'f3000000-0000-0000-0000-0000000000f0'$v$);
+
+select pg_temp.check('MSG  and the rate limit is a setting, not a constant', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     select id, auth.uid(), 'al doilea'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000f2'$a$, 'blocked',
+  p_setup => $s$update public.messaging_settings set max_per_conversation_per_hour = 1;
+     select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000f2');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     select id, 'f0000000-0000-0000-0000-000000000004', 'primul'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000f2'$s$);
+
+-- --- atașamente -------------------------------------------------------
+
+select pg_temp.check('MSG  a party reads the attachments of their own thread', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'message-attachments'
+       and name like 'f3000000-0000-0000-0000-0000000000a1/%'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000a0');
+     update public.conversations set id = 'f3000000-0000-0000-0000-0000000000a1'
+     where transport_id = 'f3000000-0000-0000-0000-0000000000a0';
+     insert into storage.objects (bucket_id, name, owner)
+     values ('message-attachments', 'f3000000-0000-0000-0000-0000000000a1/x.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('MSG  and a stranger reads none of them', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'message-attachments'
+       and name like 'f3000000-0000-0000-0000-0000000000a1/%'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000a0');
+     update public.conversations set id = 'f3000000-0000-0000-0000-0000000000a1'
+     where transport_id = 'f3000000-0000-0000-0000-0000000000a0';
+     insert into storage.objects (bucket_id, name, owner)
+     values ('message-attachments', 'f3000000-0000-0000-0000-0000000000a1/x.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('MSG  nobody deletes a file once it is attached', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$delete from storage.objects
+     where name = 'f3000000-0000-0000-0000-0000000000a1/x.jpg'$a$, 'blocked',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000a0');
+     update public.conversations set id = 'f3000000-0000-0000-0000-0000000000a1'
+     where transport_id = 'f3000000-0000-0000-0000-0000000000a0';
+     insert into storage.objects (bucket_id, name, owner)
+     values ('message-attachments', 'f3000000-0000-0000-0000-0000000000a1/x.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select count(*) = 1 from storage.objects
+                 where name = 'f3000000-0000-0000-0000-0000000000a1/x.jpg'$v$);
+
+-- --- blocare ----------------------------------------------------------
+
+select pg_temp.check('MSG  a blocked sender cannot open a new listing thread', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f1000000-0000-0000-0000-000000000002', auth.uid(), auth.uid())$a$, 'blocked',
+  p_setup => $s$insert into public.message_blocks
+       (blocker_user_id, blocked_user_id)
+     values ('f0000000-0000-0000-0000-000000000006',
+             'f0000000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('MSG  blocking the whole firm blocks its people', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f1000000-0000-0000-0000-000000000002', auth.uid(), auth.uid())$a$, 'blocked',
+  p_setup => $s$insert into public.message_blocks
+       (blocker_user_id, blocked_company_id)
+     values ('f0000000-0000-0000-0000-000000000006',
+             'fc000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('MSG  but the order thread stays open: the transport still has to happen', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$insert into public.messages (conversation_id, sender_user_id, body)
+     select id, auth.uid(), 'Ajung la 14'
+     from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-0000000000b0'$a$, 'allowed',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000b0');
+     insert into public.message_blocks (blocker_user_id, blocked_user_id)
+     values ('f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('MSG  a block is reversible, and both ends are audited', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.unblock_sender(
+       (select id from public.message_blocks where blocker_user_id = auth.uid()))$a$, 'allowed',
+  p_setup => $s$insert into public.message_blocks (blocker_user_id, blocked_user_id)
+                values ('f0000000-0000-0000-0000-000000000006',
+                        'f0000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select count(*) = 0 from public.message_blocks
+                 where blocker_user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('MSG  and you cannot block yourself', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.block_sender(p_user_id => auth.uid())$a$, 'blocked');
+
+-- --- retenția ---------------------------------------------------------
+
+select pg_temp.check('MSG  a thread with no order is gone after two years', 'fix',
+  null, 'service_role',
+  $a$select public.purge_old_conversations(now() + interval '25 months') >= 1$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id, last_message_at)
+     values ('f3000000-0000-0000-0000-000000000091',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006', now())$s$,
+  p_verify => $v$select count(*) = 0 from public.conversations
+                 where id = 'f3000000-0000-0000-0000-000000000091'$v$);
+
+select pg_temp.check('MSG  but a thread on an order follows the transport, not this job', 'fix',
+  null, 'service_role',
+  $a$select public.purge_old_conversations(now() + interval '25 months') >= 0$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-000000000092')$s$,
+  p_verify => $v$select count(*) = 1 from public.conversations
+                 where transport_id = 'f3000000-0000-0000-0000-000000000092'$v$);
+
+select pg_temp.check('MSG  and a recent thread is not touched', 'fix',
+  null, 'service_role',
+  $a$select public.purge_old_conversations(now()) >= 0$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id, last_message_at)
+     values ('f3000000-0000-0000-0000-000000000093',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006', now())$s$,
+  p_verify => $v$select count(*) = 1 from public.conversations
+                 where id = 'f3000000-0000-0000-0000-000000000093'$v$);
+
+-- --- ce vede echipa ---------------------------------------------------
+
+select pg_temp.check('MSG  staff do not read an ordinary private thread', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 0 from public.conversations
+     where id = 'f3000000-0000-0000-0000-000000000094'$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000094',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('MSG  nor its messages', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 0 from public.messages
+     where conversation_id = 'f3000000-0000-0000-0000-000000000094'$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000094',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     insert into public.messages (conversation_id, sender_user_id, body)
+     values ('f3000000-0000-0000-0000-000000000094',
+             'f0000000-0000-0000-0000-000000000002', 'ceva privat')$s$);
+
+select pg_temp.check('MSG  but they do once somebody reports a message in it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.conversations
+     where id = 'f3000000-0000-0000-0000-000000000095'$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000095',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     insert into public.messages (id, conversation_id, sender_user_id, body)
+     values ('f5000000-0000-0000-0000-000000000095',
+             'f3000000-0000-0000-0000-000000000095',
+             'f0000000-0000-0000-0000-000000000002', 'ceva sesizat');
+     insert into public.reports (reporter_user_id, message_id, kind, reason)
+     values ('f0000000-0000-0000-0000-000000000006',
+             'f5000000-0000-0000-0000-000000000095', 'mesaj', 'Limbaj')$s$);
+
+select pg_temp.check('MSG  and on an order in dispute, without waiting for a report', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.conversations
+     where transport_id = 'f3000000-0000-0000-0000-000000000096'$a$, 'true',
+  p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-000000000096',
+                  p_disputed => true)$s$);
+
+select pg_temp.check('MSG  the staff list is exactly that set', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.admin_conversations()$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000097',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     select pg_temp.order_with_thread('f3000000-0000-0000-0000-000000000098',
+       p_disputed => true)$s$);
+
+select pg_temp.check('MSG  and a firm owner cannot open it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.admin_conversations()$a$, 'blocked');
+
+-- --- sesizarea unui mesaj ---------------------------------------------
+
+select pg_temp.check('MSG  a party reports a message, into the queue that exists', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.report_message('f5000000-0000-0000-0000-000000000099',
+       'Mi-a cerut plata în afara platformei')).id is not null$a$, 'true',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000099',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     insert into public.messages (id, conversation_id, sender_user_id, body)
+     values ('f5000000-0000-0000-0000-000000000099',
+             'f3000000-0000-0000-0000-000000000099',
+             'f0000000-0000-0000-0000-000000000002', 'plătește-mi direct')$s$,
+  p_verify => $v$select count(*) = 1 from public.reports
+                 where message_id = 'f5000000-0000-0000-0000-000000000099'
+                   and kind = 'mesaj' and status = 'open'$v$);
+
+select pg_temp.check('MSG  and not your own message', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.report_message('f5000000-0000-0000-0000-000000000099', 'x')$a$, 'blocked',
+  p_setup => $s$insert into public.conversations
+       (id, cargo_listing_id, initiator_user_id, owner_user_id)
+     values ('f3000000-0000-0000-0000-000000000099',
+             'f1000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000006');
+     insert into public.messages (id, conversation_id, sender_user_id, body)
+     values ('f5000000-0000-0000-0000-000000000099',
+             'f3000000-0000-0000-0000-000000000099',
+             'f0000000-0000-0000-0000-000000000002', 'al meu')$s$);
+
+-- --- moderarea anunțurilor --------------------------------------------
+
+select pg_temp.check('MSG  staff hide a listing, with a reason, in the log', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_hide_listing('f1000000-0000-0000-0000-000000000002', null,
+       'Fotografii care nu sunt ale vehiculului')$a$, 'allowed',
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'listing.hidden' and actor_role = 'staff'
+                   and entity_id = 'f1000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('MSG  and never without one', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_hide_listing('f1000000-0000-0000-0000-000000000002', null, '  ')$a$,
+  'blocked',
+  p_verify => $v$select hidden_at is null from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MSG  a hidden listing leaves the public board', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.v_requests_public
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+                set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('MSG  but its owner still sees it, with the reason', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select hidden_reason = 'Fotografii neconforme' from public.cargo_listings
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+                set hidden_at = now(), hidden_reason = 'Fotografii neconforme'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('MSG  the owner cannot unhide it themselves', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.cargo_listings set hidden_at = null
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$update public.cargo_listings
+                set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select hidden_at is not null from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MSG  staff put it back, also with a reason', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_restore_listing('f1000000-0000-0000-0000-000000000002', null,
+       'Sesizare neîntemeiată')$a$, 'allowed',
+  p_setup => $s$update public.cargo_listings
+                set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f1000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select hidden_at is null and hidden_reason is null
+                 from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MSG  a firm owner cannot hide somebody else''s listing', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.staff_hide_listing('f1000000-0000-0000-0000-000000000002', null, 'x')$a$,
+  'blocked');
+
+select pg_temp.check('MSG  nor open the moderation list', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.admin_listings()$a$, 'blocked');
+
+select pg_temp.check('MSG  nor export the moderation log', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.export_moderation_csv(current_date - 30, current_date)$a$, 'blocked');
+
+select pg_temp.check('MSG  staff can, and it has a header row', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.export_moderation_csv(current_date - 30, current_date)
+       like 'data,tip,ce,stare,motiv,detalii%'$a$, 'true');
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}

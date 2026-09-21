@@ -4,6 +4,7 @@ import {
   REPORT_STATUS_ORDER,
   isClosing,
   openCount,
+  reportTarget,
   reportedEntity,
   type ReportRow,
 } from '@/lib/reports';
@@ -34,6 +35,8 @@ function report(over: Partial<ReportRow> = {}): ReportRow {
     reported_company_name: null,
     reported_user_id: null,
     cargo_listing_id: null,
+    message_id: null,
+    rating_id: null,
     assigned_to: null,
     assigned_name: null,
     handled_by: null,
@@ -86,6 +89,23 @@ describe('what a report is about', () => {
 
   it('names a request when that is what was reported', () => {
     expect(reportedEntity(report({ cargo_listing_id: 'l1' }))).toBe('Cererea l1');
+  });
+
+  it('și fiecare fel cu ecran duce la ecranul lui', () => {
+    // O sesizare despre o firmă nu are ecran propriu: se rezolvă din
+    // sesizarea însăși, deci nu are nicio legătură de urmat.
+    expect(reportTarget(report({ kind: 'mesaj', message_id: 'm1' }))?.href).toBe(
+      '/admin/conversatii',
+    );
+    expect(reportTarget(report({ kind: 'anunt', cargo_listing_id: 'l1' }))?.href).toBe(
+      '/admin/anunturi',
+    );
+    expect(reportTarget(report({ kind: 'evaluare', rating_id: 'e1' }))?.href).toBe(
+      '/admin/evaluari',
+    );
+    expect(reportTarget(report({ kind: 'firma' }))).toBeNull();
+    // Felul potrivit dar fără id nu inventează o destinație.
+    expect(reportTarget(report({ kind: 'mesaj', message_id: null }))).toBeNull();
   });
 
   it('says nothing rather than „Firmă: —" when nothing was linked', () => {

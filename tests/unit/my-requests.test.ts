@@ -49,6 +49,8 @@ function request(over: Partial<MyRequest> = {}): MyRequest {
     serviceType: 'pe_sens',
     publishedAt: '2026-09-17T09:00:00Z',
     createdAt: '2026-09-17T09:00:00Z',
+    hiddenAt: null,
+    hiddenReason: null,
     ...over,
   };
 }

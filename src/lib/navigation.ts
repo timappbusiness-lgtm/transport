@@ -69,7 +69,17 @@ function driverNav(features: FeatureMap): NavItem[] {
     });
   }
   // A driver never rates and is never rated — a rating is between the two
-  // firms — so there is no item here.
+  // firms — so there is no item there. Messages are different: the
+  // dispatcher writes to them about the order they are on, and
+  // `my_conversations()` gives them only those threads.
+  if (features.messages) {
+    items.push({
+      href: ROUTES.accountMessages,
+      label: 'Mesaje',
+      group: 'principal',
+      priority: 85,
+    });
+  }
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
   items.push({
     href: ROUTES.accountNotificationSettings,

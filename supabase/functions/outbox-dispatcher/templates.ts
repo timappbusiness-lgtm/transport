@@ -413,6 +413,41 @@ export const TEMPLATES: Record<string, Template> = {
     unsubscribable: false,
   },
 
+  // --- Mesaje și moderare ------------------------------------------------
+
+  message_received: {
+    subject: "Aveți un mesaj nou pe Coridor",
+    lines: [
+      "Bună ziua,",
+      "Cineva v-a scris despre {{ context }}. Mesajul este în căsuța dumneavoastră de pe platformă.",
+      "Primiți cel mult un e-mail la 15 minute pentru aceeași conversație, indiferent câte mesaje vin — nu vă umplem inboxul.",
+    ],
+    action: { label: "Deschide mesajele", href: "{{ site_url }}/cont/mesaje" },
+    unsubscribable: true,
+  },
+
+  listing_hidden: {
+    subject: "Anunțul „{{ title }}” a fost scos de pe panou",
+    lines: [
+      "Bună ziua,",
+      "Am scos de pe panoul public anunțul „{{ title }}”. Motivul: {{ reason }}",
+      "Anunțul rămâne în contul dumneavoastră și îl puteți corecta. După ce îl modificați, scrieți-ne și îl punem la loc.",
+      "Dacă credeți că am greșit, spuneți-ne — ne uităm din nou.",
+    ],
+    action: { label: "Vezi anunțul", href: "{{ site_url }}/cont/cereri" },
+    unsubscribable: false,
+  },
+
+  listing_restored: {
+    subject: "Anunțul „{{ title }}” este din nou pe panou",
+    lines: [
+      "Bună ziua,",
+      "Anunțul „{{ title }}” a fost repus pe panoul public. Motivul: {{ reason }}",
+    ],
+    action: { label: "Vezi anunțul", href: "{{ site_url }}/cont/cereri" },
+    unsubscribable: true,
+  },
+
   // --- Evaluări ---------------------------------------------------------
   //
   // Niciunul dintre cele trei nu îi cere omului o notă bună. Un memento

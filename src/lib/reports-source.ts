@@ -16,7 +16,7 @@ const COLUMNS = `
   id, created_at, status, kind, reason, details, evidence_path,
   resolution, internal_notes, resolved_at, reporter_notified_at,
   reporter_user_id, reported_company_id, reported_user_id,
-  cargo_listing_id, assigned_to, handled_by,
+  cargo_listing_id, message_id, rating_id, assigned_to, handled_by,
   reporter:profiles!reports_reporter_user_id_fkey(full_name, email),
   assignee:profiles!reports_assigned_to_fkey(full_name),
   company:companies!reports_reported_company_id_fkey(legal_name, display_name)
@@ -75,6 +75,8 @@ export async function loadReports(filters: ReportFilters): Promise<ReportRow[]> 
       reported_company_name: company === null ? null : (company.display_name ?? company.legal_name),
       reported_user_id: (row.reported_user_id as string | null) ?? null,
       cargo_listing_id: (row.cargo_listing_id as string | null) ?? null,
+      message_id: (row.message_id as string | null) ?? null,
+      rating_id: (row.rating_id as string | null) ?? null,
       assigned_to: (row.assigned_to as string | null) ?? null,
       assigned_name: assignee?.full_name ?? null,
       handled_by: (row.handled_by as string | null) ?? null,

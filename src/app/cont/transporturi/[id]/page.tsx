@@ -17,9 +17,11 @@ import { ComparisonView, EvidenceGallery } from '@/components/orders/evidence-ga
 import { OrderTimeline } from '@/components/orders/order-timeline';
 import { PhotoCapture } from '@/components/orders/photo-capture';
 import { OrderRatingCard } from '@/components/ratings/order-rating-card';
+import { buttonClasses } from '@/components/ui/button';
 import { Card, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, companyRoute, myRequestRoute, offerRoute, requestRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
+import { messagesCopy } from '@/content/mesaje';
 import { requireAccountContext } from '@/lib/auth/account';
 import { formatMoney } from '@/lib/offers';
 import { formatMoment, formatWindow, isFinished, orderStatusLabel } from '@/lib/orders';
@@ -34,6 +36,7 @@ import {
   signRequestPhotos,
 } from '@/lib/orders-source';
 import { loadOrderRatingState } from '@/lib/ratings-source';
+import { loadOrderConversationId } from '@/lib/messages-source';
 
 export const metadata: Metadata = { title: ordersCopy.detail.title };
 export const dynamic = 'force-dynamic';
@@ -81,6 +84,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     // agree with the one inside the card.
     loadOrderRatingState(id),
   ]);
+
+  const conversationId = await loadOrderConversationId(id);
 
   const counts = countByKind(evidence);
   const paths = evidence.map((row) => row.file_path).filter((p): p is string => p !== null);
@@ -232,6 +237,19 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               />
             ) : null}
           </Card>
+
+          {/* Firul comenzii, care s-a creat odată cu ea. Contactele sunt
+              deja schimbate aici, deci nimic nu se maschează — spre
+              deosebire de discuțiile de dinainte, care rămân așa cum au
+              fost trimise. */}
+          {conversationId !== null ? (
+            <Link
+              href={`${ROUTES.accountMessages}/${conversationId}`}
+              className={`${buttonClasses('secondary', 'md')} w-full`}
+            >
+              {messagesCopy.entry.orderTab}
+            </Link>
+          ) : null}
 
           <Card className="p-5">
             <h2 className="text-[1.0625rem]">{c.parties}</h2>

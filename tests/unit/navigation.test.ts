@@ -72,11 +72,17 @@ function hrefs(ctx: NavContext, features: FeatureMap = FEATURES): string[] {
 
 describe('a menu item exists only if the feature does', () => {
   it('offers nothing that is not built', () => {
-    // Offers and orders both went live with Faza 2. General messaging
-    // has not: the tables exist, which is not the same thing, and a
-    // menu item called „Mesaje" that opens one offer thread would be a
-    // promise the product does not keep.
-    expect(hrefs(context())).not.toContain(ROUTES.accountMessages);
+    // Messaging used to be the example here: the tables existed, which
+    // is not the same as a screen. It shipped at the end of Faza 2, and
+    // with it the last false flag in the map — so the rule is stated
+    // against the map itself instead of against one feature. Turn
+    // anything off and its item goes with it.
+    expect(hrefs(context(), { ...ALL, messages: false })).not.toContain(ROUTES.accountMessages);
+    expect(hrefs(context(), { ...ALL, offers: false })).not.toContain(ROUTES.accountOffers);
+    expect(hrefs(context(), { ...ALL, transports: false })).not.toContain(
+      ROUTES.accountTransports,
+    );
+    expect(hrefs(context(), NONE)).not.toContain(ROUTES.accountMessages);
   });
 
   it('offers the ones that are', () => {
@@ -190,6 +196,7 @@ describe('what a role may see', () => {
     expect(items).toEqual([
       ROUTES.account,
       ROUTES.accountTransports,
+      ROUTES.accountMessages,
       ROUTES.accountProfile,
       ROUTES.accountNotificationSettings,
       ROUTES.accountPersonalData,
@@ -208,12 +215,26 @@ describe('what a role may see', () => {
     expect(hrefs(context({ role: 'driver' }))).not.toContain(ROUTES.accountRatings);
   });
 
+  it('messages reach everybody, drivers included', () => {
+    // A driver is written to about the order they are on, and
+    // `my_conversations()` gives them only those threads — so the item
+    // opens something real rather than an empty inbox.
+    expect(hrefs(context({ companyType: 'transport' }))).toContain(ROUTES.accountMessages);
+    expect(hrefs(context({ companyType: 'expeditie' }))).toContain(ROUTES.accountMessages);
+    expect(
+      hrefs(context({ accountType: 'individual', companyType: null, role: null })),
+    ).toContain(ROUTES.accountMessages);
+    expect(hrefs(context({ role: 'driver' }))).toContain(ROUTES.accountMessages);
+  });
+
   it('a driver gets the orders and nothing else', () => {
     // The whole of a driver's application, and the correct amount: the
     // work assigned to them, and the three things every account has.
     expect(hrefs(context({ role: 'driver' }))).toEqual([
       ROUTES.account,
       ROUTES.accountTransports,
+      // The dispatcher writes to a driver about the order they are on.
+      ROUTES.accountMessages,
       ROUTES.accountProfile,
       // A driver gets notifications like anybody else: their own documents
       // expire, and the account they work under can be suspended.
@@ -226,10 +247,21 @@ describe('what a role may see', () => {
 
 describe('the bottom bar on a phone', () => {
   it('keeps everything when it fits', () => {
-    const items = buildNav(context({ role: 'driver' }), ALL);
+    // A driver's menu reached six items when messaging shipped, which is
+    // one past the bar — so the example of „fits" is now an account with
+    // nothing switched on. The rule under test is unchanged.
+    const items = buildNav(context({ role: 'driver' }), NONE);
+    expect(items.length).toBeLessThanOrEqual(BOTTOM_NAV_MAX);
     const { bar, more } = bottomNav(items);
     expect(bar).toHaveLength(items.length);
     expect(more).toEqual([]);
+  });
+
+  it('and a driver now has one more than fits', () => {
+    const items = buildNav(context({ role: 'driver' }), ALL);
+    const { bar, more } = bottomNav(items);
+    expect(bar).toHaveLength(BOTTOM_NAV_MAX - 1);
+    expect(more.length).toBeGreaterThan(0);
   });
 
   it('leaves a slot for "Mai mult" once it does not', () => {

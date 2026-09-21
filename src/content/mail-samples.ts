@@ -58,6 +58,9 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'rating_received', label: 'Evaluare: ai primit una' },
   { id: 'rating_reply', label: 'Evaluare: s-a răspuns la a ta' },
   { id: 'rating_reminder', label: 'Evaluare: memento înainte de termen' },
+  { id: 'message_received', label: 'Mesaj nou' },
+  { id: 'listing_hidden', label: 'Anunț scos de pe panou' },
+  { id: 'listing_restored', label: 'Anunț repus pe panou' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
   { id: 'reservation_confirmed', label: 'Rezervare confirmată' },
@@ -113,6 +116,7 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   deadline_hours: '48',
   plate: 'CJ 12 ABC',
   deadline: '5 octombrie 2026',
+  context: 'cererea München — Cluj-Napoca',
 };
 
 export function mailTemplateLabel(id: string): string {

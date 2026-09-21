@@ -81,6 +81,8 @@ export const ROUTES = {
   adminOffers: '/admin/oferte',
   adminOrders: '/admin/transporturi',
   adminRatings: '/admin/evaluari',
+  adminListings: '/admin/anunturi',
+  adminConversations: '/admin/conversatii',
   adminReports: '/admin/sesizari',
   adminAuditLog: '/admin/jurnal',
   adminTeam: '/admin/echipa',

@@ -29,6 +29,13 @@ export interface MyRequest {
   serviceType: ServiceType;
   publishedAt: string | null;
   createdAt: string;
+  /**
+   * Set when the team took the listing off the public board. The row stays
+   * the owner's; `v_board_cargo` is what drops it. The reason is written
+   * for them, so it is shown to them.
+   */
+  hiddenAt: string | null;
+  hiddenReason: string | null;
 }
 
 /** On the board right now, which is what the list puts first. */
