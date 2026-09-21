@@ -205,6 +205,71 @@ $fn$;
 
 grant execute on function public.is_order_driver(uuid) to authenticated;
 
+/**
+ * A member whose only role is driving.
+ *
+ * `is_transport_party()` has always answered "is this person in the
+ * carrier company", which was right when the only company members who
+ * mattered were the ones running it. A driver is a member too, so
+ * without this a driver would see every order their firm has, including
+ * the ones on somebody else's lorry — a fleet's whole book, on a phone
+ * left on a seat.
+ */
+create or replace function public.is_company_driver_only(p_company_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select exists (
+    select 1 from public.company_members cm
+    where cm.company_id = p_company_id
+      and cm.user_id = auth.uid()
+      and cm.role = 'driver'
+  );
+$fn$;
+
+grant execute on function public.is_company_driver_only(uuid) to authenticated;
+
+/**
+ * Who may open this order at all.
+ *
+ * The client's side, the carrier's side except its drivers, the one
+ * driver it is assigned to, and staff. Used by the policies and by
+ * every read model, so there is one answer rather than four.
+ */
+create or replace function public.can_see_order(p_order_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $fn$
+  select public.is_platform_admin()
+     or public.is_order_driver(p_order_id)
+     or exists (
+       select 1 from public.transports t
+       where t.id = p_order_id
+         and (
+           t.shipper_user_id = auth.uid()
+           or (t.shipper_company_id is not null and public.is_company_member(t.shipper_company_id))
+           or (public.is_company_member(t.carrier_company_id)
+               and not public.is_company_driver_only(t.carrier_company_id))
+         )
+     );
+$fn$;
+
+grant execute on function public.can_see_order(uuid) to authenticated;
+
+-- The phase 0 policy asked `is_transport_party()`, which says yes to a
+-- driver because a driver is a member. Replaced rather than added to: two
+-- permissive select policies would be an OR, and the old one is the leak.
+drop policy if exists "transports_select_parties" on public.transports;
+create policy "transports_select_parties" on public.transports
+  for select to authenticated
+  using (public.can_see_order(id));
+
 create table public.order_settings (
   id boolean primary key default true check (id),
   /** How long a delivered order waits for the client before it closes itself. */
@@ -340,8 +405,7 @@ alter table public.order_events enable row level security;
 
 create policy "order_events_select_parties" on public.order_events
   for select to authenticated
-  using (public.is_transport_party(order_id) or public.is_order_driver(order_id)
-         or public.is_platform_admin());
+  using (public.can_see_order(order_id));
 
 create or replace function public.guard_order_events_append_only()
 returns trigger
@@ -424,8 +488,7 @@ alter table public.order_evidence enable row level security;
 
 create policy "order_evidence_select_parties" on public.order_evidence
   for select to authenticated
-  using (public.is_transport_party(order_id) or public.is_order_driver(order_id)
-         or public.is_platform_admin());
+  using (public.can_see_order(order_id));
 
 -- Inserted by the carrier's side only. The client's photographs of the
 -- vehicle live on their request, where they were taken before anybody
@@ -554,9 +617,7 @@ create policy "order_evidence_read_parties" on storage.objects
   using (
     bucket_id = 'order-evidence'
     and (
-      public.is_platform_admin()
-      or public.is_transport_party(public.safe_uuid((storage.foldername(name))[1]))
-      or public.is_order_driver(public.safe_uuid((storage.foldername(name))[1]))
+      public.can_see_order(public.safe_uuid((storage.foldername(name))[1]))
     )
   );
 
@@ -661,6 +722,9 @@ as $fn$
     when auth.uid() is null then 'system'
     when public.is_platform_admin() then 'staff'
     when public.is_order_driver(p_order.id) then 'driver'
+    -- A driver who is not on this order is not on this order, however
+    -- many of their firm's others they drive.
+    when public.is_company_driver_only(p_order.carrier_company_id) then null
     when public.is_company_member(p_order.carrier_company_id) then 'carrier'
     when p_order.shipper_user_id = auth.uid() then 'client'
     when p_order.shipper_company_id is not null
@@ -1614,7 +1678,7 @@ begin
   with mine as (
     select t.*, public.order_actor_side(t) as side
     from public.transports t
-    where public.is_transport_party(t.id) or public.is_order_driver(t.id)
+    where public.can_see_order(t.id)
   )
   select
     m.id, m.created_at, m.status, m.agreed_price, m.currency,
@@ -1718,7 +1782,9 @@ declare
   v_order public.transports;
   v_side text;
 begin
-  select * into v_order from public.transports where id = p_order_id;
+  -- `returns table (id uuid, ...)` declares an output variable called
+  -- `id`, which shadows every unqualified column of that name below.
+  select * into v_order from public.transports t where t.id = p_order_id;
   if v_order.id is null then
     raise exception 'Comandă inexistentă' using errcode = 'P0002';
   end if;
@@ -1777,8 +1843,7 @@ security definer
 set search_path = public
 as $fn$
 begin
-  if not (public.is_transport_party(p_order_id) or public.is_order_driver(p_order_id)
-          or public.is_platform_admin()) then
+  if not public.can_see_order(p_order_id) then
     raise exception 'Comanda nu îți aparține' using errcode = '42501';
   end if;
 
@@ -1811,8 +1876,7 @@ security definer
 set search_path = public
 as $fn$
 begin
-  if not (public.is_transport_party(p_order_id) or public.is_order_driver(p_order_id)
-          or public.is_platform_admin()) then
+  if not public.can_see_order(p_order_id) then
     raise exception 'Comanda nu îți aparține' using errcode = '42501';
   end if;
 
