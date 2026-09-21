@@ -5338,7 +5338,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 16 from public.job_health()$a$, 'true');
+  $a$select count(*) = 17 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6226,7 +6226,7 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, '
+     'nightly-assisted-sweep, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
@@ -6285,7 +6285,7 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, '
+     'nightly-assisted-sweep, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
