@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { DepartureForm, type EligibleVehicle } from '@/components/departures/departure-form';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill } from '@/components/ui/primitives';
+import { HelpLink } from '@/components/help/help-link';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -36,6 +37,9 @@ export default async function Page() {
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2">
+          <HelpLink topic="routeForm" />
+        </p>
       </div>
 
       {vehicles.length === 0 ? (

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { RequestForm } from '@/components/requests/request-form';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
+import { HelpLink } from '@/components/help/help-link';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { getAccountContext } from '@/lib/auth/account';
@@ -70,6 +71,9 @@ export default async function Page({
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <Headline as="h1" strong={c.title} className="mt-5" />
         <Lede className="mt-4">{c.lede}</Lede>
+        <p className="mt-3">
+          <HelpLink topic="requestForm" />
+        </p>
       </header>
 
       <section className="mt-8 rounded-card border border-border bg-surface p-5 sm:p-7">

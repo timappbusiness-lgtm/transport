@@ -128,7 +128,12 @@ export async function publishRequestAction(
       p_contact_email: draft.contactEmail.trim(),
       p_company_id: companyId,
       p_photo_paths: photoPaths,
-      p_publish: true,
+      // A private request is created as a draft on purpose. Published
+      // in one call, it would be public for the instant between the
+      // insert and the visibility update — and `queue_request_alerts`
+      // fires on that transition, so every matching carrier in the
+      // country would be e-mailed about a request they may not see.
+      p_publish: !draft.isPrivate,
       p_from_lat: from?.lat ?? null,
       p_from_lng: from?.lng ?? null,
       p_to_lat: to?.lat ?? null,
@@ -142,6 +147,36 @@ export async function publishRequestAction(
   const created = data?.[0];
   if (error || !created) {
     return { error: toAppError(error, 'requests.create').message };
+  }
+
+  // Private: make it private, invite, and only then publish. The
+  // alert trigger reads `visibility` at the moment of publication, so
+  // this order is what keeps a private request out of everybody's
+  // inbox.
+  if (draft.isPrivate) {
+    const { error: privateError } = await supabase.rpc('set_listing_private', {
+      p_cargo_listing_id: created.request_id,
+    });
+    if (privateError) {
+      return { error: toAppError(privateError, 'requests.private').message };
+    }
+
+    if (draft.invitedCarriers.length > 0) {
+      const { error: inviteError } = await supabase.rpc('set_listing_invites', {
+        p_cargo_listing_id: created.request_id,
+        p_company_ids: draft.invitedCarriers,
+      });
+      if (inviteError) {
+        return { error: toAppError(inviteError, 'requests.invites').message };
+      }
+    }
+
+    const { error: publishError } = await supabase.rpc('publish_cargo_request', {
+      p_id: created.request_id,
+    });
+    if (publishError) {
+      return { error: toAppError(publishError, 'requests.publish').message };
+    }
   }
 
   revalidatePath(ROUTES.requests);

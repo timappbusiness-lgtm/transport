@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LifeBuoy } from 'lucide-react';
 import { CompanySwitcher } from '@/components/app/company-switcher';
-import { BRAND_NAME, SUPPORT_EMAIL } from '@/config/brand';
+import { BRAND_NAME } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import type { AccountContext } from '@/lib/auth/account';
@@ -78,7 +78,7 @@ export function Sidebar({
 
       <p className="text-[0.8125rem]">
         <Link
-          href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : ROUTES.contact}
+          href={ROUTES.accountHelp}
           className="inline-flex items-center gap-2 text-muted hover:text-foreground"
         >
           <LifeBuoy size={14} aria-hidden="true" />

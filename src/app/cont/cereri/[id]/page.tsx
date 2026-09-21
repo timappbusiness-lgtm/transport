@@ -9,6 +9,8 @@ import { offersCopy } from '@/content/oferte';
 import { requireAccountContext } from '@/lib/auth/account';
 import { CARGO_CATEGORY_LABELS, type CargoCategory } from '@/lib/departures';
 import { formatDay, isLive, requestStateLabel } from '@/lib/offers';
+import { VisibilityPanel } from '@/components/requests/visibility-panel';
+import { loadFavourites } from '@/lib/favourites-source';
 import { loadOffersForRequest, loadOfferThread } from '@/lib/offers-source';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
@@ -20,6 +22,7 @@ interface RequestRow {
   id: string;
   title: string | null;
   status: string;
+  visibility: 'publica' | 'privata';
   loading_city: string;
   loading_country: string;
   unloading_city: string;
@@ -60,6 +63,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const pending = offers.filter((offer) => isLive(offer.status)).length;
 
+  // Favourites and the current invitations, but only for a private
+  // request — a public one has nothing to invite anybody to.
+  const context = await requireAccountContext(`${ROUTES.accountRequests}/${id}`);
+  const invitable =
+    request.visibility === 'privata' && context.activeCompany
+      ? await loadInvitable(id, context.activeCompany.id)
+      : [];
+
   return (
     <div className="flex flex-col gap-6">
       <TopBar
@@ -96,6 +107,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </p>
       </Card>
 
+      {request.visibility === 'privata' ? (
+        <VisibilityPanel requestId={id} carriers={invitable} />
+      ) : null}
+
       <section aria-labelledby="oferte" className="flex flex-col gap-4">
         <h2 id="oferte" className="text-[1.125rem]">
           {offersCopy.received.title}
@@ -118,7 +133,7 @@ async function loadRequest(id: string): Promise<RequestRow | null> {
   const { data, error } = await supabase
     .from('cargo_listings')
     .select(
-      'id, title, status, loading_city, loading_country, unloading_city, unloading_country, loading_from, loading_to, cargo_vehicle_details(category)',
+      'id, title, status, visibility, loading_city, loading_country, unloading_city, unloading_country, loading_from, loading_to, cargo_vehicle_details(category)',
     )
     .eq('id', id)
     .maybeSingle();
@@ -138,6 +153,7 @@ async function loadRequest(id: string): Promise<RequestRow | null> {
 
   return {
     id: data.id,
+    visibility: data.visibility,
     title: data.title,
     status: data.status,
     loading_city: data.loading_city,
@@ -161,4 +177,36 @@ async function ownsRequest(id: string): Promise<boolean> {
     return false;
   }
   return data === true;
+}
+
+/**
+ * Favoriții firmei, cu bifa pe cei deja invitați.
+ *
+ * Numai favoriții: o listă cu toate firmele verificate din țară ar fi
+ * un formular pe care nimeni nu îl parcurge. Cine vrea pe altcineva îl
+ * adaugă întâi la favoriți, de pe profilul lui.
+ */
+async function loadInvitable(
+  listingId: string,
+  companyId: string,
+): Promise<{ id: string; name: string; invited: boolean }[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const [favourites, invites] = await Promise.all([
+    loadFavourites(companyId),
+    (await createClient())
+      .from('cargo_listing_invites')
+      .select('company_id')
+      .eq('cargo_listing_id', listingId),
+  ]);
+
+  const invited = new Set(
+    ((invites.data ?? []) as { company_id: string }[]).map((row) => row.company_id),
+  );
+
+  return favourites.map((row) => ({
+    id: row.carrier_company_id,
+    name: row.name,
+    invited: invited.has(row.carrier_company_id),
+  }));
 }

@@ -59,6 +59,14 @@ export interface RequestDraft {
   contactName: string;
   contactPhone: string;
   contactEmail: string;
+  /**
+   * Privată înseamnă că o văd numai transportatorii invitați — regulă
+   * de RLS, nu un filtru pe ecran. Implicit fals: bursa este locul
+   * unde ajungi la cei mai mulți, iar cine vrea altfel alege anume.
+   */
+  isPrivate: boolean;
+  /** Firmele invitate, când este privată. */
+  invitedCarriers: string[];
 }
 
 export type RequestField = keyof RequestDraft;
@@ -112,6 +120,8 @@ export function emptyDraft(): RequestDraft {
     contactName: '',
     contactPhone: '',
     contactEmail: '',
+    isPrivate: false,
+    invitedCarriers: [],
   };
 }
 
@@ -200,6 +210,11 @@ export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   contact: [
     'serviceType',
     'durationDays',
+    // Unde apare cererea stă lângă cât timp stă: amândouă răspund la
+    // „unde ajunge asta și pentru cât timp", și amândouă se aleg în
+    // același pas.
+    'isPrivate',
+    'invitedCarriers',
     'description',
     'contactName',
     'contactPhone',

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { TopBar } from '@/components/app/top-bar';
+import { HelpLink } from '@/components/help/help-link';
+import { ReturnLeg } from '@/components/orders/return-leg';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import {
   AssignCrew,
@@ -112,6 +114,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         actions={[]}
       />
 
+      <p className="flex flex-wrap gap-x-4">
+        <HelpLink topic="order" />
+        <HelpLink topic="proof" label="Cum se face dovada livrării" />
+      </p>
+
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone={badgeTone(order.status)}>{orderStatusLabel(order.status)}</StatusBadge>
         {order.vehicle_flagged ? (
@@ -202,6 +209,25 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               needsCrew={order.driver_id === null || order.vehicle_id === null}
             />
           )}
+
+          {/* Din clipa în care livrarea este programată: atunci
+              transportatorul știe unde va fi și încă are timp să caute
+              marfă pentru drumul înapoi. Numai pentru el — clientul nu
+              are ce publica pe retur. */}
+          {side === 'carrier'
+            && (order.status === 'delivery_scheduled'
+              || order.status === 'vehicle_delivered'
+              || order.status === 'order_completed') ? (
+            <ReturnLeg
+              fromCity={order.from_city ?? '—'}
+              toCity={order.to_city ?? '—'}
+              vehicleId={order.vehicle_id}
+              deliveryDate={
+                (order.delivered_at ?? order.delivery_from)?.slice(0, 10) ?? null
+              }
+              today={now.slice(0, 10)}
+            />
+          ) : null}
 
           <OrderRatingCard orderId={order.id} state={rating} />
 

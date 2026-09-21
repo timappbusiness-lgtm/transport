@@ -43,7 +43,16 @@ describe('request copy rules', () => {
     // visitor reading /cereri is not being sold the account.
     // The status labels are exempt: a label for a state is not a promise,
     // and it is what keeps a badge from rendering blank.
-    const board = strings({ ...requestsCopy, mine: {}, status: {}, statusNote: {} }).join(' ');
+    // `visibility` is exempt for the same reason as `mine`: it is read
+    // on the publish form and on the owner's own request page, both
+    // behind an account. A visitor on /cereri never sees a word of it.
+    const board = strings({
+      ...requestsCopy,
+      mine: {},
+      status: {},
+      statusNote: {},
+      visibility: {},
+    }).join(' ');
     expect(board).not.toMatch(/ofert[ăaei]/i);
     expect(strings(requestsCopy.mine).join(' ')).toMatch(/Oferte primite/);
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useActionState, useId, useState } from 'react';
 import { createDepartureAction, type DepartureActionState } from '@/app/cont/trasee/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -11,6 +11,12 @@ import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_NOTES,
 } from '@/lib/departures';
+import {
+  MAX_EVERY_N,
+  WEEKDAY_LABELS,
+  WEEKDAY_SHORT,
+  type RecurrenceKind,
+} from '@/lib/recurrence';
 import { COUNTRY_OPTIONS, formatPlate } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +67,13 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
   const [state, action] = useActionState(createDepartureAction, EMPTY);
   const id = useId();
   const c = departuresCopy.form;
+  const r = departuresCopy.series;
+
+  // Bifa schimbă ce trimite formularul: o serie, nu o plecare. Ținută
+  // în stare pentru că regula nu are ce căuta pe ecran cât timp nimeni
+  // nu a bifat, iar cei mai mulți o lasă nebifată.
+  const [repeats, setRepeats] = useState(false);
+  const [kind, setKind] = useState<RecurrenceKind>('saptamanal');
 
   return (
     <form action={action} className="flex flex-col gap-6" noValidate>
@@ -212,6 +225,94 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
         ) : null}
       </fieldset>
 
+      <fieldset className="flex flex-col gap-3 rounded-card border border-border p-4">
+        <label className="flex items-start gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            name="repeats"
+            value="da"
+            checked={repeats}
+            onChange={(event) => setRepeats(event.target.checked)}
+            className="mt-0.5 size-4 accent-[#1C262B]"
+          />
+          <span>
+            <span className="font-medium">{r.repeat}</span>
+            <span className="block text-xs text-muted">{r.repeatHint}</span>
+          </span>
+        </label>
+
+        {repeats ? (
+          <div className="flex flex-col gap-4 border-t border-border pt-4">
+            <div className="flex flex-wrap gap-4">
+              {(
+                [
+                  ['saptamanal', r.kindWeekly],
+                  ['la_n_zile', r.kindEveryN],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="radio"
+                    name="recurrence_kind"
+                    value={value}
+                    checked={kind === value}
+                    onChange={() => setKind(value)}
+                    className="size-4 accent-[#1C262B]"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+
+            {kind === 'saptamanal' ? (
+              <fieldset className="flex flex-col gap-2">
+                <legend className="mb-1 text-sm font-medium">{r.weekdays}</legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {WEEKDAY_SHORT.map((short, day) => (
+                    <label
+                      key={short}
+                      className="cursor-pointer rounded-pill border border-border px-3 py-1 text-[0.8125rem]"
+                    >
+                      <input
+                        type="checkbox"
+                        name="weekdays"
+                        value={day}
+                        className="mr-1.5 size-3.5 accent-[#1C262B]"
+                      />
+                      <span aria-hidden>{short}</span>
+                      <span className="sr-only">{WEEKDAY_LABELS[day]}</span>
+                    </label>
+                  ))}
+                </div>
+                {state.fieldErrors?.weekdays ? (
+                  <p className="text-xs text-danger">{state.fieldErrors.weekdays}</p>
+                ) : null}
+              </fieldset>
+            ) : (
+              <Labelled
+                label={r.everyN}
+                htmlFor={`${id}-every-n`}
+                error={state.fieldErrors?.every_n_days}
+              >
+                <input
+                  id={`${id}-every-n`}
+                  name="every_n_days"
+                  type="number"
+                  min={1}
+                  max={MAX_EVERY_N}
+                  defaultValue="7"
+                  className={CONTROL}
+                />
+              </Labelled>
+            )}
+
+            <Labelled label={r.endsOn} htmlFor={`${id}-ends`} error={state.fieldErrors?.ends_on}>
+              <input id={`${id}-ends`} type="date" name="ends_on" className={CONTROL} />
+            </Labelled>
+          </div>
+        ) : null}
+      </fieldset>
+
       <Labelled
         label={c.price}
         htmlFor={`${id}-price`}
@@ -226,11 +327,16 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
 
       <div className="flex flex-wrap gap-3">
         <button type="submit" name="intent" value="publish" className={buttonClasses('primary', 'md')}>
-          {c.submit}
+          {repeats ? r.submit : c.submit}
         </button>
-        <button type="submit" name="intent" value="draft" className={buttonClasses('secondary', 'md')}>
-          {c.saveDraft}
-        </button>
+        {/* O serie nu are ciornă: ori se repetă de acum încolo, ori nu
+            există. O ciornă ar fi fost o serie care nu generează nimic,
+            adică un rând într-o listă care nu face ce scrie pe el. */}
+        {!repeats ? (
+          <button type="submit" name="intent" value="draft" className={buttonClasses('secondary', 'md')}>
+            {c.saveDraft}
+          </button>
+        ) : null}
       </div>
     </form>
   );

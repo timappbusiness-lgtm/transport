@@ -67,6 +67,8 @@ export interface MyOffer {
   to_city: string;
   loading_from: string;
   counterparty: string | null;
+  /** Null when the other side is a private person rather than a firm. */
+  counterparty_company_id: string | null;
   conversation_id: string | null;
   unread_messages: number;
   transport_id: string | null;

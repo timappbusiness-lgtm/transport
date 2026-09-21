@@ -197,6 +197,10 @@ describe('what a role may see', () => {
       ROUTES.account,
       ROUTES.accountTransports,
       ROUTES.accountMessages,
+      // A driver has their own help section — „Ce văd eu, ca șofer?" —
+      // and is the account type most likely to be handed a phone with
+      // no explanation attached.
+      ROUTES.accountHelp,
       ROUTES.accountProfile,
       ROUTES.accountNotificationSettings,
       ROUTES.accountPersonalData,
@@ -235,6 +239,7 @@ describe('what a role may see', () => {
       ROUTES.accountTransports,
       // The dispatcher writes to a driver about the order they are on.
       ROUTES.accountMessages,
+      ROUTES.accountHelp,
       ROUTES.accountProfile,
       // A driver gets notifications like anybody else: their own documents
       // expire, and the account they work under can be suspended.

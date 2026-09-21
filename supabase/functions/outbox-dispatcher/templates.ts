@@ -640,6 +640,32 @@ export const TEMPLATES: Record<string, Template> = {
     action: { label: "Vezi înscrierile", href: "{{ site_url }}/admin/inscrieri" },
     unsubscribable: false,
   },
+
+  // --- Serii și cereri private ------------------------------------------
+
+  series_paused: {
+    subject: "Seria {{ route }} s-a oprit",
+    lines: [
+      "Bună ziua,",
+      "{{ full_name }}, seria de plecări {{ route }} nu mai poate publica, iar motivul este: {{ reason }}",
+      "Vehiculul din serie este {{ plate }}.",
+      "Plecările deja publicate rămân pe bursă și nu sunt afectate. După ce rezolvați, porniți seria la loc din aceeași listă.",
+    ],
+    action: { label: "Vezi seriile", href: "{{ site_url }}/cont/trasee" },
+    unsubscribable: false,
+  },
+
+  private_request_invite: {
+    subject: "{{ client_name }} v-a trimis o cerere: {{ from_city }} — {{ to_city }}",
+    lines: [
+      "Bună ziua,",
+      "{{ company_name }}, ați primit o cerere trimisă direct către dumneavoastră și către alți câțiva transportatori aleși de client.",
+      "Ruta este {{ from_city }} — {{ to_city }}, cu încărcarea de la {{ loading_from }}.",
+      "Cererea nu este pe panoul public: o văd numai firmele invitate. Dacă vă interesează, trimiteți o ofertă din cont.",
+    ],
+    action: { label: "Vezi cererea", href: "{{ site_url }}/cereri/{{ request_id }}" },
+    unsubscribable: true,
+  },
 };
 
 /**

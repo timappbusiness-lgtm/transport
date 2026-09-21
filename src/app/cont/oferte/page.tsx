@@ -6,6 +6,9 @@ import { OrderContacts } from '@/components/offers/order-contacts';
 import { WithdrawOffer } from '@/components/offers/withdraw-offer';
 import { buttonClasses } from '@/components/ui/button';
 import { Card, StatusBadge } from '@/components/ui/primitives';
+import { HelpLink } from '@/components/help/help-link';
+import { favouritesCopy } from '@/content/favoriti';
+import { loadFavouriteIds } from '@/lib/favourites-source';
 import { ROUTES, requestRoute, transportRoute } from '@/config/routes';
 import { offersCopy } from '@/content/oferte';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -75,7 +78,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   // A deep link from an e-mail about one offer opens that offer, not a
   // list of twelve with it somewhere inside.
   const only = one(params, 'oferta');
-  const offers = only === null ? all : all.filter((offer) => offer.id === only);
+  const byDeepLink = only === null ? all : all.filter((offer) => offer.id === only);
+
+  // „Doar favoriți", on received offers. Compares company ids, not
+  // names: two firms share a name more often than anybody expects.
+  const onlyFavourites = one(params, 'favoriti') === 'da';
+  const favouriteIds =
+    onlyFavourites && company !== null ? await loadFavouriteIds(company.id) : null;
+  const offers =
+    favouriteIds === null
+      ? byDeepLink
+      : byDeepLink.filter(
+          (offer) =>
+            offer.counterparty_company_id !== null
+            && favouriteIds.has(offer.counterparty_company_id),
+        );
 
   // The threads of the live offers, fetched together: a list of six
   // would otherwise be six round trips opened one at a time.
@@ -92,6 +109,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   return (
     <div className="flex flex-col gap-6">
       <TopBar title={offersCopy.meta.title} actions={[]} />
+      <HelpLink topic="offers" />
 
       <nav aria-label="Cutii" className="flex flex-wrap gap-1.5">
         {canSend ? (
@@ -99,6 +117,23 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         ) : null}
         <Tab href={`${ROUTES.accountOffers}?cutie=primite`} label="Primite" active={box === 'primite'} />
       </nav>
+
+      {box === 'primite' && company !== null ? (
+        <nav aria-label="Favoriți" className="flex flex-wrap gap-1.5">
+          <Tab
+            href={`${ROUTES.accountOffers}?cutie=primite`}
+            label={favouritesCopy.filterAll}
+            active={!onlyFavourites}
+            small
+          />
+          <Tab
+            href={`${ROUTES.accountOffers}?cutie=primite&favoriti=da`}
+            label={favouritesCopy.filter}
+            active={onlyFavourites}
+            small
+          />
+        </nav>
+      ) : null}
 
       <nav aria-label="Stare" className="flex flex-wrap gap-1.5">
         <Tab href={`${ROUTES.accountOffers}?cutie=${box}`} label="Toate" active={status === null} small />
