@@ -128,9 +128,24 @@ begin
                         'delivered', 'invoiced', 'closed') then
     raise exception 'Evaluarea se face după livrare' using errcode = '42501';
   end if;
-  if v_t.shipper_company_id is null and new.rated_company_id is null then
-    raise exception 'Evaluarea persoanelor fizice nu este disponibilă' using errcode = '42501';
+
+  if exists (select 1 from public.company_members m
+             where m.company_id = v_t.carrier_company_id and m.user_id = new.rater_user_id) then
+    if v_t.shipper_company_id is null then
+      raise exception 'Evaluarea persoanelor fizice nu este disponibilă' using errcode = '42501';
+    end if;
+    new.rater_company_id := v_t.carrier_company_id;
+    new.rated_company_id := v_t.shipper_company_id;
+  elsif v_t.shipper_user_id = new.rater_user_id
+        or (v_t.shipper_company_id is not null and exists (
+              select 1 from public.company_members m
+              where m.company_id = v_t.shipper_company_id and m.user_id = new.rater_user_id)) then
+    new.rater_company_id := v_t.shipper_company_id;
+    new.rated_company_id := v_t.carrier_company_id;
+  else
+    raise exception 'Doar părțile transportului pot evalua' using errcode = '42501';
   end if;
+
   return new;
 end;
 $fn$;
@@ -331,6 +346,7 @@ create policy "order_events_select_parties" on public.order_events
 create or replace function public.guard_order_events_append_only()
 returns trigger
 language plpgsql
+set search_path = public
 as $fn$
 begin
   raise exception 'Istoricul comenzii nu se modifică' using errcode = '42501';

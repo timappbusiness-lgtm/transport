@@ -207,7 +207,11 @@ insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) value
 insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
   ('f0000000-0000-0000-0000-00000000000b', 'rls-invitee@test.ro', now(), '{"full_name":"Invitat","account_type":"company"}'),
   ('f0000000-0000-0000-0000-00000000000c', 'rls-pf-invited@test.ro', now(), '{"full_name":"PF Invitat","account_type":"individual"}'),
-  ('f0000000-0000-0000-0000-00000000000d', 'rls-admin-a@test.ro', now(), '{"full_name":"Admin A","account_type":"company"}');
+  ('f0000000-0000-0000-0000-00000000000d', 'rls-admin-a@test.ro', now(), '{"full_name":"Admin A","account_type":"company"}'),
+  -- A driver with a login. `drivers.profile_id` is nullable — a fleet may
+  -- hold drivers who never sign in — and the ORD block needs both kinds:
+  -- one who can open the application and one who cannot.
+  ('f0000000-0000-0000-0000-00000000000e', 'rls-driver-a@test.ro', now(), '{"full_name":"Șofer A","account_type":"company"}');
 
 update public.profiles set phone_verified = true, phone = '+40711000006'
 where id = 'f0000000-0000-0000-0000-000000000006';
@@ -233,7 +237,8 @@ insert into public.company_members (company_id, user_id, role) values
   ('fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'owner'),
   ('fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000005', 'dispatcher'),
   ('fc000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-00000000000a', 'owner'),
-  ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000d', 'admin');
+  ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000d', 'admin'),
+  ('fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-00000000000e', 'driver');
 
 insert into public.subscriptions (company_id, plan_code, status, current_period_end) values
   ('fc000000-0000-0000-0000-000000000001', 'carrier',   'active', now() + interval '30 days'),
@@ -244,8 +249,12 @@ insert into public.vehicles (id, company_id, plate_number, vehicle_type, max_wei
   ('fe000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000001', 'TM02RLS', 'platforma_auto', 3500),
   ('fe000000-0000-0000-0000-000000000003', 'fc000000-0000-0000-0000-000000000003', 'TM03RLS', 'platforma_auto', 3500);
 
-insert into public.drivers (id, company_id, full_name) values
-  ('fd000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'Șofer A');
+insert into public.drivers (id, company_id, full_name, profile_id) values
+  ('fd000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', 'Șofer A',
+   'f0000000-0000-0000-0000-00000000000e'),
+  -- The second one never signs in, which is what `profile_id` being
+  -- nullable is for.
+  ('fd000000-0000-0000-0000-000000000002', 'fc000000-0000-0000-0000-000000000001', 'Șofer B', null);
 
 insert into public.documents (id, company_id, vehicle_id, scope, kind, file_path, valid_until, status, uploaded_by) values
   ('fa000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000001', null, 'company', 'licenta_comunitara',           'fc000000-0000-0000-0000-000000000001/licenta.pdf', current_date + 400, 'approved', 'f0000000-0000-0000-0000-000000000002'),
@@ -642,7 +651,7 @@ select pg_temp.check('P4   accept_offer accepts, rejects the rest, assigns the l
                                   and carrier_company_id = 'fc000000-0000-0000-0000-000000000001'
                                   and shipper_company_id = 'fc000000-0000-0000-0000-000000000002'
                                   and vehicle_id = 'fe000000-0000-0000-0000-000000000001'
-                                  and agreed_price = 650 and status = 'agreed')
+                                  and agreed_price = 650 and status = 'order_confirmed')
                     and exists (select 1 from public.audit_log where action = 'offer.accepted'
                                 and entity_id = 'f2000000-0000-0000-0000-000000000001')$v$);
 
@@ -969,7 +978,7 @@ select pg_temp.check('ORD  confirming a reservation creates the order and serves
                                   and t.shipper_company_id is null
                                   and t.vehicle_id = 'fe000000-0000-0000-0000-000000000001'
                                   and t.cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'
-                                  and t.agreed_price = 640 and t.status = 'agreed'
+                                  and t.agreed_price = 640 and t.status = 'order_confirmed'
                                   and exists (select 1 from public.audit_log a
                                               where a.action = 'order.created' and a.entity_id = t.id))
                     and (select status from public.cargo_listings where id = 'f1000000-0000-0000-0000-000000000002') = 'carrier_selected'$v$);
@@ -5305,7 +5314,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 11 from public.job_health()$a$, 'true');
+  $a$select count(*) = 13 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6192,8 +6201,9 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   null, 'service_role',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
-     'hourly-offer-expiry, hourly-push-cleanup, nightly-compliance-sweep, '
-     'nightly-expiry-reminders, nightly-listing-expiry-reminders, '
+     'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
+     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from cron.job$a$, 'true');
 
@@ -6248,8 +6258,9 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
-     'hourly-offer-expiry, hourly-push-cleanup, nightly-compliance-sweep, '
-     'nightly-expiry-reminders, nightly-listing-expiry-reminders, '
+     'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
+     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
@@ -7941,6 +7952,291 @@ select pg_temp.check('ACC  a visitor does not read the company filter', 'fix',
 select pg_temp.check('ACC  anon reads neither', 'fix',
   null, 'anon',
   $a$select count(*) from public.admin_offer_companies()$a$, 'blocked');
+
+
+-- =====================================================================
+-- ORD - the order lifecycle
+--
+-- `transports` never moved before this phase, so every check here is a
+-- `fix`: it fails on the schema before 20260923100100 because the
+-- function it calls does not exist, and passes after.
+--
+-- `pg_temp.make_order()` builds one in whichever state a check needs.
+-- The confirmation code is fixed at 123456 so the delivery checks can
+-- give the right one and the wrong one.
+-- =====================================================================
+
+create or replace function pg_temp.make_order(
+  p_id uuid,
+  p_status public.transport_status default 'order_confirmed',
+  p_driver uuid default 'fd000000-0000-0000-0000-000000000001',
+  p_delivered_ago interval default interval '0'
+) returns void language plpgsql as $mk$
+begin
+  insert into public.transports
+    (id, cargo_listing_id, offer_id, shipper_user_id, carrier_company_id,
+     agreed_price, currency, status, driver_id, vehicle_id, confirmation_code,
+     picked_up_at, delivered_at)
+  values
+    (p_id, 'f1000000-0000-0000-0000-000000000002', null,
+     'f0000000-0000-0000-0000-000000000006', 'fc000000-0000-0000-0000-000000000001',
+     2400, 'RON', p_status, p_driver, 'fe000000-0000-0000-0000-000000000001', '123456',
+     case when p_status in ('vehicle_picked_up','in_transit','delivery_scheduled',
+                            'vehicle_delivered','order_completed','disputed')
+          then now() - interval '1 day' end,
+     case when p_status in ('vehicle_delivered','order_completed','disputed')
+          then now() - p_delivered_ago end);
+end $mk$;
+
+/** Photographs and a condition report, as many as a check needs. */
+create or replace function pg_temp.add_evidence(
+  p_order uuid,
+  p_kind public.order_evidence_kind,
+  p_count integer default 1,
+  p_note text default null,
+  p_file text default null
+) returns void language plpgsql as $ev$
+begin
+  insert into public.order_evidence (order_id, kind, file_path, note, uploaded_by, company_id)
+  select p_order, p_kind,
+         coalesce(p_file, p_order || '/' || gs || '.jpg'),
+         p_note,
+         'f0000000-0000-0000-0000-00000000000e',
+         'fc000000-0000-0000-0000-000000000001'
+  from generate_series(1, p_count) gs;
+end $ev$;
+
+-- --- scheduling -------------------------------------------------------
+select pg_temp.check('ORD  a dispatcher schedules the pickup', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000001', 'pickup_scheduled',
+       jsonb_build_object('pickup_from', (now() + interval '1 day')::text))).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select status = 'pickup_scheduled' and pickup_from is not null
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ORD  but not before a driver and a vehicle are chosen', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000002', 'pickup_scheduled',
+       jsonb_build_object('pickup_from', (now() + interval '1 day')::text))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000002', 'order_confirmed', null)$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('ORD  and not without a date', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000003', 'pickup_scheduled')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('ORD  the client does not schedule the carrier''s work', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000004', 'pickup_scheduled',
+       jsonb_build_object('pickup_from', (now() + interval '1 day')::text))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000004'$v$);
+
+select pg_temp.check('ORD  a driver drives; the dispatcher schedules', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000005', 'pickup_scheduled',
+       jsonb_build_object('pickup_from', (now() + interval '1 day')::text))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000005')$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000005'$v$);
+
+select pg_temp.check('ORD  a stranger cannot move somebody else''s order', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000006', 'pickup_scheduled',
+       jsonb_build_object('pickup_from', (now() + interval '1 day')::text))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000006'$v$);
+
+-- --- pickup, and the evidence it needs --------------------------------
+select pg_temp.check('ORD  the driver picks the vehicle up with four photos and a report', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000010', 'vehicle_picked_up')).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000010', 'pickup_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000010', 'pickup_photo', 4);
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000010', 'condition_report', 1, 'fără avarii')$s$,
+  p_verify => $v$select status = 'vehicle_picked_up' and picked_up_at is not null
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000010'$v$);
+
+select pg_temp.check('ORD  three photographs are not four', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000011', 'vehicle_picked_up')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000011', 'pickup_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000011', 'pickup_photo', 3);
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000011', 'condition_report', 1, 'ok')$s$,
+  p_verify => $v$select status = 'pickup_scheduled'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000011'$v$);
+
+select pg_temp.check('ORD  photographs without a condition report are not enough', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000012', 'vehicle_picked_up')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000012', 'pickup_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000012', 'pickup_photo', 6)$s$,
+  p_verify => $v$select status = 'pickup_scheduled'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000012'$v$);
+
+select pg_temp.check('ORD  a hidden photograph stops counting', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.order_evidence_count('f5000000-0000-0000-0000-000000000013', 'pickup_photo') = 3$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000013', 'pickup_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000013', 'pickup_photo', 4);
+     update public.order_evidence set hidden_at = now(), hidden_reason = 'test'
+     where order_id = 'f5000000-0000-0000-0000-000000000013'
+       and id = (select id from public.order_evidence
+                 where order_id = 'f5000000-0000-0000-0000-000000000013' limit 1)$s$);
+
+select pg_temp.check('ORD  a step cannot be skipped', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000014', 'in_transit')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000014')$s$,
+  p_verify => $v$select status = 'order_confirmed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000014'$v$);
+
+select pg_temp.check('ORD  picking up puts the request in progress', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000015', 'vehicle_picked_up')).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000015', 'pickup_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000015', 'pickup_photo', 4);
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000015', 'condition_report', 1, 'ok')$s$,
+  p_verify => $v$select status = 'in_progress' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+-- --- delivery ---------------------------------------------------------
+select pg_temp.check('ORD  delivery needs four photographs and a named recipient', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000020', 'vehicle_delivered',
+       jsonb_build_object('code', '123456'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000020', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000020', 'delivery_photo', 4)$s$,
+  p_verify => $v$select status = 'delivery_scheduled'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000020'$v$);
+
+select pg_temp.check('ORD  the right code delivers it', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000021', 'vehicle_delivered',
+       jsonb_build_object('code', '123456'))).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000021', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000021', 'delivery_photo', 4);
+     insert into public.order_evidence (order_id, kind, note, uploaded_by, company_id)
+     values ('f5000000-0000-0000-0000-000000000021', 'recipient_confirmation', 'Ion Popescu',
+             'f0000000-0000-0000-0000-00000000000e', 'fc000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select status = 'vehicle_delivered' and delivered_at is not null
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000021'$v$);
+
+select pg_temp.check('ORD  the wrong code does not', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000022', 'vehicle_delivered',
+       jsonb_build_object('code', '999999'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000022', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000022', 'delivery_photo', 4);
+     insert into public.order_evidence (order_id, kind, note, uploaded_by, company_id)
+     values ('f5000000-0000-0000-0000-000000000022', 'recipient_confirmation', 'Ion Popescu',
+             'f0000000-0000-0000-0000-00000000000e', 'fc000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select status = 'delivery_scheduled'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000022'$v$);
+
+select pg_temp.check('ORD  neither code nor signature is refused', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000023', 'vehicle_delivered')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000023', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000023', 'delivery_photo', 4);
+     insert into public.order_evidence (order_id, kind, note, uploaded_by, company_id)
+     values ('f5000000-0000-0000-0000-000000000023', 'recipient_confirmation', 'Ion Popescu',
+             'f0000000-0000-0000-0000-00000000000e', 'fc000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select status = 'delivery_scheduled'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000023'$v$);
+
+select pg_temp.check('ORD  a signature stands in for the code', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000024', 'vehicle_delivered')).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000024', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000024', 'delivery_photo', 4);
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000024', 'recipient_confirmation', 1,
+                                 'Ion Popescu', 'f5000000-0000-0000-0000-000000000024/sig.png')$s$,
+  p_verify => $v$select status = 'vehicle_delivered'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000024'$v$);
+
+select pg_temp.check('ORD  delivering marks the request delivered', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000025', 'vehicle_delivered',
+       jsonb_build_object('code', '123456'))).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000025', 'delivery_scheduled');
+     select pg_temp.add_evidence('f5000000-0000-0000-0000-000000000025', 'delivery_photo', 4);
+     insert into public.order_evidence (order_id, kind, note, uploaded_by, company_id)
+     values ('f5000000-0000-0000-0000-000000000025', 'recipient_confirmation', 'Ion',
+             'f0000000-0000-0000-0000-00000000000e', 'fc000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select status = 'delivered' from public.cargo_listings
+                 where id = 'f1000000-0000-0000-0000-000000000002'$v$);
+
+-- --- the client closes it ---------------------------------------------
+select pg_temp.check('ORD  the client confirms the delivery', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000030', 'order_completed')).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000030', 'vehicle_delivered')$s$,
+  p_verify => $v$select status = 'order_completed' and confirmed_by_client_at is not null
+                 and not auto_completed
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000030'$v$);
+
+select pg_temp.check('ORD  the carrier cannot confirm its own delivery', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000031', 'order_completed')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000031', 'vehicle_delivered')$s$,
+  p_verify => $v$select status = 'vehicle_delivered'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000031'$v$);
+
+select pg_temp.check('ORD  a completed order is closed for good', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.transition_order('f5000000-0000-0000-0000-000000000032', 'in_transit')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000032', 'order_completed')$s$,
+  p_verify => $v$select status = 'order_completed'
+                 from public.transports where id = 'f5000000-0000-0000-0000-000000000032'$v$);
+
+select pg_temp.check('ORD  every step leaves a line on the timeline, with who did it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.transition_order('f5000000-0000-0000-0000-000000000033', 'order_completed')).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000033', 'vehicle_delivered')$s$,
+  p_verify => $v$select count(*) = 1 from public.order_events
+                 where order_id = 'f5000000-0000-0000-0000-000000000033'
+                   and to_status = 'order_completed' and actor_side = 'client'$v$);
+
+select pg_temp.check('ORD  and the timeline cannot be rewritten', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.order_events set note = 'altceva'
+     where order_id = 'f5000000-0000-0000-0000-000000000034'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-000000000034', 'vehicle_delivered');
+     insert into public.order_events (order_id, to_status, actor_side, note)
+     values ('f5000000-0000-0000-0000-000000000034', 'vehicle_delivered', 'driver', 'livrat')$s$,
+  p_verify => $v$select note = 'livrat' from public.order_events
+                 where order_id = 'f5000000-0000-0000-0000-000000000034'$v$);
 
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
