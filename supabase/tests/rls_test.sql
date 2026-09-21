@@ -4513,19 +4513,18 @@ select pg_temp.check('PUSH an override wins over the default', 'fix',
 -- A type with no screen behind it is off on every channel whatever
 -- anybody set, because a push that opens a 404 spends the one tap a
 -- person gives you.
--- The stand-in for „a type with no screen" used to be `offer_received`.
--- Offers and orders got their screens, so 20260924100000 turned those on;
--- general messaging is the phase after this one and has none, which is
--- what `message_received` is doing here. The rule under test has not
--- changed, only the example that still satisfies it.
+-- The stand-in for „a type with no screen" has now run out of screens to
+-- be missing: 20260925100000 gave messaging its own, which was the last
+-- unavailable type. So the example becomes a code that is not in the
+-- catalogue at all. The rule is the same one — nothing is queued for a
+-- type the catalogue does not vouch for — and this version of it cannot
+-- be invalidated by building another screen.
 select pg_temp.check('PUSH a type with no screen is off on every channel', 'fix',
   null, 'service_role',
   $a$select not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'message_received', 'push')
+           'f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva', 'push')
        and not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'message_received', 'email')$a$, 'true',
-  p_setup => $s$insert into public.notification_preferences (user_id, type, push, email)
-                values ('f0000000-0000-0000-0000-000000000006', 'message_received', true, true)$s$);
+           'f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva', 'email')$a$, 'true');
 
 -- ---------------------------------------------------------------------
 -- When a push actually leaves
@@ -4547,7 +4546,7 @@ select pg_temp.check('PUSH nothing is queued for a channel that is off', 'fix',
 
 select pg_temp.check('PUSH nothing is queued for a type with no screen', 'fix',
   null, 'service_role',
-  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'message_received',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'nu_exista_asa_ceva',
                               'Titlu', 'Corp') is null$a$, 'true',
   p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
                 values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q2', 'k', 'a')$s$);
@@ -5339,7 +5338,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 15 from public.job_health()$a$, 'true');
+  $a$select count(*) = 16 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6227,7 +6226,8 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-compliance-sweep, '
+     'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
@@ -6285,7 +6285,8 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-compliance-sweep, nightly-expiry-reminders, '
+     'nightly-compliance-sweep, '
+     'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
@@ -7553,9 +7554,17 @@ select pg_temp.check('MSK  staff hide a message, with a reason, audited', 'fix',
              'f2000000-0000-0000-0000-0000000000b5',
              'f0000000-0000-0000-0000-000000000006',
              'f0000000-0000-0000-0000-000000000002');
-     insert into public.messages (conversation_id, sender_user_id, body)
-     values ('f3000000-0000-0000-0000-0000000000b5',
-             'f0000000-0000-0000-0000-000000000006', 'ceva')$s$,
+     insert into public.messages (id, conversation_id, sender_user_id, body)
+     values ('f5000000-0000-0000-0000-0000000000b5',
+             'f3000000-0000-0000-0000-0000000000b5',
+             'f0000000-0000-0000-0000-000000000006', 'ceva');
+     -- 20260925100000 a îngustat ce poate citi echipa: nu orice
+     -- conversație, ci pe cele sesizate și pe cele de pe o comandă în
+     -- dispută. Sesizarea este și drumul real — echipa ajunge la mesaj
+     -- pentru că i s-a cerut, nu răsfoind.
+     insert into public.reports (reporter_user_id, message_id, kind, reason)
+     values ('f0000000-0000-0000-0000-000000000002',
+             'f5000000-0000-0000-0000-0000000000b5', 'mesaj', 'Date de contact')$s$,
   p_verify => $v$select exists (select 1 from public.audit_log
                                 where action = 'message.hidden')$v$);
 

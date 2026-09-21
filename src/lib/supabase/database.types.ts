@@ -312,6 +312,9 @@ export type Database = {
           duration_days: number
           expires_at: string | null
           expiry_reminded_at: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
           is_promoted: boolean
           listing_kind: Database["public"]["Enums"]["listing_kind"]
@@ -358,6 +361,9 @@ export type Database = {
           duration_days?: number
           expires_at?: string | null
           expiry_reminded_at?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           is_promoted?: boolean
           listing_kind?: Database["public"]["Enums"]["listing_kind"]
@@ -404,6 +410,9 @@ export type Database = {
           duration_days?: number
           expires_at?: string | null
           expiry_reminded_at?: string | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           is_promoted?: boolean
           listing_kind?: Database["public"]["Enums"]["listing_kind"]
@@ -469,6 +478,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_company_missing_documents"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "cargo_listings_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cargo_listings_posted_by_fkey"
@@ -1068,8 +1084,10 @@ export type Database = {
           id: string
           initiator_user_id: string
           last_message_at: string | null
+          linked_conversation_id: string | null
           offer_id: string | null
           owner_user_id: string
+          transport_id: string | null
           truck_listing_id: string | null
           updated_at: string
         }
@@ -1079,8 +1097,10 @@ export type Database = {
           id?: string
           initiator_user_id: string
           last_message_at?: string | null
+          linked_conversation_id?: string | null
           offer_id?: string | null
           owner_user_id: string
+          transport_id?: string | null
           truck_listing_id?: string | null
           updated_at?: string
         }
@@ -1090,8 +1110,10 @@ export type Database = {
           id?: string
           initiator_user_id?: string
           last_message_at?: string | null
+          linked_conversation_id?: string | null
           offer_id?: string | null
           owner_user_id?: string
+          transport_id?: string | null
           truck_listing_id?: string | null
           updated_at?: string
         }
@@ -1118,6 +1140,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_linked_conversation_id_fkey"
+            columns: ["linked_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_offer_id_fkey"
             columns: ["offer_id"]
             isOneToOne: false
@@ -1129,6 +1158,13 @@ export type Database = {
             columns: ["owner_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_transport_id_fkey"
+            columns: ["transport_id"]
+            isOneToOne: false
+            referencedRelation: "transports"
             referencedColumns: ["id"]
           },
           {
@@ -1924,6 +1960,134 @@ export type Database = {
         }
         Relationships: []
       }
+      message_attachments: {
+        Row: {
+          bytes: number | null
+          conversation_id: string
+          created_at: string
+          file_path: string
+          height: number | null
+          id: string
+          message_id: string
+          uploaded_by: string
+          width: number | null
+        }
+        Insert: {
+          bytes?: number | null
+          conversation_id: string
+          created_at?: string
+          file_path: string
+          height?: number | null
+          id?: string
+          message_id: string
+          uploaded_by: string
+          width?: number | null
+        }
+        Update: {
+          bytes?: number | null
+          conversation_id?: string
+          created_at?: string
+          file_path?: string
+          height?: number | null
+          id?: string
+          message_id?: string
+          uploaded_by?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_blocks: {
+        Row: {
+          blocked_company_id: string | null
+          blocked_user_id: string | null
+          blocker_user_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_company_id?: string | null
+          blocked_user_id?: string | null
+          blocker_user_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_company_id?: string | null
+          blocked_user_id?: string | null
+          blocker_user_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_blocks_blocked_company_id_fkey"
+            columns: ["blocked_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_blocks_blocked_company_id_fkey"
+            columns: ["blocked_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_blocks_blocked_company_id_fkey"
+            columns: ["blocked_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "message_blocks_blocked_company_id_fkey"
+            columns: ["blocked_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "message_blocks_blocked_user_id_fkey"
+            columns: ["blocked_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_blocks_blocker_user_id_fkey"
+            columns: ["blocker_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_path: string | null
@@ -1982,6 +2146,47 @@ export type Database = {
           {
             foreignKeyName: "messages_sender_user_id_fkey"
             columns: ["sender_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_settings: {
+        Row: {
+          digest_minutes: number
+          id: boolean
+          max_attachments: number
+          max_messages_per_hour: number
+          max_per_conversation_per_hour: number
+          retention_months: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          digest_minutes?: number
+          id?: boolean
+          max_attachments?: number
+          max_messages_per_hour?: number
+          max_per_conversation_per_hour?: number
+          retention_months?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          digest_minutes?: number
+          id?: boolean
+          max_attachments?: number
+          max_messages_per_hour?: number
+          max_per_conversation_per_hour?: number
+          retention_months?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_settings_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3364,6 +3569,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           kind: string
+          message_id: string | null
           rating_id: string | null
           reason: string
           reported_company_id: string | null
@@ -3386,6 +3592,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           kind?: string
+          message_id?: string | null
           rating_id?: string | null
           reason: string
           reported_company_id?: string | null
@@ -3408,6 +3615,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           kind?: string
+          message_id?: string | null
           rating_id?: string | null
           reason?: string
           reported_company_id?: string | null
@@ -3447,6 +3655,13 @@ export type Database = {
             columns: ["handled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
@@ -4251,6 +4466,9 @@ export type Database = {
           from_county: string | null
           from_lat: number | null
           from_lng: number | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
           id: string
           is_promoted: boolean
           max_detour_km: number
@@ -4294,6 +4512,9 @@ export type Database = {
           from_county?: string | null
           from_lat?: number | null
           from_lng?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           is_promoted?: boolean
           max_detour_km?: number
@@ -4337,6 +4558,9 @@ export type Database = {
           from_county?: string | null
           from_lat?: number | null
           from_lng?: number | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          hidden_reason?: string | null
           id?: string
           is_promoted?: boolean
           max_detour_km?: number
@@ -4388,6 +4612,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_company_missing_documents"
             referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "truck_listings_hidden_by_fkey"
+            columns: ["hidden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "truck_listings_posted_by_fkey"
@@ -5124,6 +5355,50 @@ export type Database = {
           updated_at: string
         }
       }
+      admin_conversations: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          created_at: string
+          disputed: boolean
+          id: string
+          kind: string
+          last_message_at: string
+          message_count: number
+          order_id: string
+          participants: string
+          report_count: number
+          total_count: number
+        }[]
+      }
+      admin_listings: {
+        Args: {
+          p_company_id?: string
+          p_from?: string
+          p_hidden?: boolean
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_reported?: boolean
+          p_status?: string
+          p_to?: string
+        }
+        Returns: {
+          company_id: string
+          company_name: string
+          created_at: string
+          from_city: string
+          hidden_at: string
+          hidden_reason: string
+          id: string
+          owner_name: string
+          photo_count: number
+          report_count: number
+          status: string
+          title: string
+          to_city: string
+          total_count: number
+        }[]
+      }
       admin_offer: {
         Args: { p_offer_id: string }
         Returns: {
@@ -5349,6 +5624,17 @@ export type Database = {
           truck_listing_id: string
           within: boolean
         }[]
+      }
+      block_sender: {
+        Args: { p_company_id?: string; p_reason?: string; p_user_id?: string }
+        Returns: {
+          blocked_company_id: string | null
+          blocked_user_id: string | null
+          blocker_user_id: string
+          created_at: string
+          id: string
+          reason: string | null
+        }
       }
       can_edit_cargo_listing: {
         Args: { p_listing_id: string }
@@ -5642,6 +5928,25 @@ export type Database = {
       contact_mask_text: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      conversation_kind: {
+        Args: { c: Database["public"]["Tables"]["conversations"]["Row"] }
+        Returns: string
+      }
+      conversation_messages: {
+        Args: { p_conversation_id: string }
+        Returns: {
+          attachments: string[]
+          body: string
+          created_at: string
+          hidden_at: string
+          id: string
+          mine: boolean
+          read_at: string
+          sender_name: string
+          sender_user_id: string
+          was_masked: boolean
+        }[]
       }
       count_matching_carriers: {
         Args: { p_listing_id: string }
@@ -5984,6 +6289,10 @@ export type Database = {
           id: string
         }[]
       }
+      export_moderation_csv: {
+        Args: { p_from: string; p_to: string }
+        Returns: string
+      }
       find_account_by_email: {
         Args: { p_email: string }
         Returns: {
@@ -6097,6 +6406,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           kind: string
+          message_id: string | null
           rating_id: string | null
           reason: string
           reported_company_id: string | null
@@ -6181,6 +6491,10 @@ export type Database = {
           role: Database["public"]["Enums"]["company_member_role"]
           status: string
         }
+      }
+      is_blocked: {
+        Args: { p_initiator: string; p_owner: string }
+        Returns: boolean
       }
       is_company_driver_only: {
         Args: { p_company_id: string }
@@ -6290,6 +6604,28 @@ export type Database = {
       my_confirmed_email: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      my_conversations: {
+        Args: { p_box?: string; p_search?: string }
+        Returns: {
+          context_id: string
+          counterparty_company_id: string
+          counterparty_name: string
+          counterparty_user_id: string
+          from_city: string
+          id: string
+          kind: string
+          last_message_at: string
+          last_message_body: string
+          last_message_mine: boolean
+          linked_conversation_id: string
+          offer_id: string
+          order_id: string
+          request_id: string
+          route_id: string
+          to_city: string
+          unread: number
+        }[]
       }
       my_data_export: {
         Args: Record<PropertyKey, never>
@@ -6451,8 +6787,10 @@ export type Database = {
           id: string
           initiator_user_id: string
           last_message_at: string | null
+          linked_conversation_id: string | null
           offer_id: string | null
           owner_user_id: string
+          transport_id: string | null
           truck_listing_id: string | null
           updated_at: string
         }
@@ -6759,6 +7097,10 @@ export type Database = {
         Args: { p_now?: string }
         Returns: number
       }
+      purge_old_conversations: {
+        Args: { p_now?: string }
+        Returns: number
+      }
       push_send_after: {
         Args: { p_now?: string; p_type: string; p_user_id: string }
         Returns: string
@@ -6795,6 +7137,15 @@ export type Database = {
       queue_listing_expiry_reminders: {
         Args: { p_now?: string }
         Returns: number
+      }
+      queue_listing_moderation_notification: {
+        Args: {
+          p_hidden: boolean
+          p_owner: string
+          p_reason: string
+          p_title: string
+        }
+        Returns: undefined
       }
       queue_order_notification: {
         Args: {
@@ -6930,6 +7281,32 @@ export type Database = {
           was_masked: boolean
         }
       }
+      report_message: {
+        Args: { p_message_id: string; p_reason: string }
+        Returns: {
+          assigned_to: string | null
+          cargo_listing_id: string | null
+          created_at: string
+          details: string | null
+          evidence_path: string | null
+          handled_by: string | null
+          id: string
+          internal_notes: string | null
+          kind: string
+          message_id: string | null
+          rating_id: string | null
+          reason: string
+          reported_company_id: string | null
+          reported_user_id: string | null
+          reporter_notified_at: string | null
+          reporter_user_id: string
+          resolution: string | null
+          resolved_at: string | null
+          status: string
+          transport_id: string | null
+          updated_at: string
+        }
+      }
       report_rating: {
         Args: { p_rating_id: string; p_reason: string }
         Returns: {
@@ -6942,6 +7319,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           kind: string
+          message_id: string | null
           rating_id: string | null
           reason: string
           reported_company_id: string | null
@@ -7452,6 +7830,25 @@ export type Database = {
           updated_at: string
         }
       }
+      set_messaging_settings: {
+        Args: {
+          p_digest_minutes?: number
+          p_max_attachments?: number
+          p_max_messages_per_hour?: number
+          p_max_per_conversation_per_hour?: number
+          p_retention_months?: number
+        }
+        Returns: {
+          digest_minutes: number
+          id: boolean
+          max_attachments: number
+          max_messages_per_hour: number
+          max_per_conversation_per_hour: number
+          retention_months: number
+          updated_at: string
+          updated_by: string | null
+        }
+      }
       set_offer_settings: {
         Args: {
           p_default_validity_hours: number
@@ -7771,6 +8168,14 @@ export type Database = {
           updated_at: string
         }
       }
+      staff_hide_listing: {
+        Args: {
+          p_cargo_listing_id: string
+          p_reason: string
+          p_truck_listing_id: string
+        }
+        Returns: undefined
+      }
       staff_hide_message: {
         Args: { p_message_id: string; p_reason: string }
         Returns: {
@@ -7846,6 +8251,10 @@ export type Database = {
           was_masked: boolean
         }
       }
+      staff_may_read_conversation: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       staff_members: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -7857,6 +8266,14 @@ export type Database = {
           role: Database["public"]["Enums"]["staff_role"]
           user_id: string
         }[]
+      }
+      staff_restore_listing: {
+        Args: {
+          p_cargo_listing_id: string
+          p_reason: string
+          p_truck_listing_id: string
+        }
+        Returns: undefined
       }
       staff_set_phone_verified: {
         Args: { p_note: string; p_user: string; p_verified: boolean }
@@ -8041,6 +8458,14 @@ export type Database = {
           vehicle_flagged_at: string | null
           vehicle_id: string | null
         }
+      }
+      unblock_sender: {
+        Args: { p_block_id: string }
+        Returns: undefined
+      }
+      unread_message_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       verified_carriers_count: {
         Args: Record<PropertyKey, never>
