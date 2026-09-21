@@ -33,9 +33,10 @@ export interface FeatureMap {
    */
   messages: boolean;
   /**
-   * Orders: execution, proof of delivery, the documents against them.
-   * `transports` rows are created by `accept_offer()` today and have a
-   * summary page; the screens that run one are the next phase.
+   * Orders: execution, proof of delivery, the evidence against them.
+   * Live since Faza 2 — the seven steps, the photographs and the
+   * disputes. Ratings still are not: `ratings` has a table and a guard
+   * that waits for delivery, and nothing else.
    */
   transports: boolean;
   /** `ratings` exists in SQL, with a post-delivery guard. */
@@ -58,7 +59,7 @@ export const FEATURES: FeatureMap = {
   departures: true,
   offers: true,
   messages: false,
-  transports: false,
+  transports: true,
   ratings: false,
   notifications: false,
   settings: false,

@@ -272,6 +272,147 @@ export const TEMPLATES: Record<string, Template> = {
   },
 
   // --- Rezervări --------------------------------------------------------
+  // --- Comanda, de la confirmare la închidere ---------------------------
+  //
+  // Șapte pași și cinci excepții. Clientul aude fiecare pas, pentru că
+  // mașina lui este pe drum și nu are altă fereastră spre ea;
+  // transportatorul aude numai ce nu poate vedea venind.
+  order_pickup_scheduled: {
+    subject: "Ridicarea a fost programată",
+    lines: [
+      "Bună ziua,",
+      "{{ carrier_name }} a programat ridicarea vehiculului pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Intervalul ales este în pagina comenzii, împreună cu șoferul și vehiculul alocate. Dacă nu vă convine, sunați transportatorul.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_picked_up: {
+    subject: "Vehiculul a fost ridicat",
+    lines: [
+      "Bună ziua,",
+      "Vehiculul pentru transportul {{ from_city }} — {{ to_city }} a fost ridicat de {{ carrier_name }}.",
+      "În pagina comenzii găsiți fotografiile făcute la ridicare și fișa de stare completată de șofer. Verificați-le acum: sunt referința dacă apare o discuție la livrare.",
+    ],
+    action: { label: "Vezi fotografiile", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_in_transit: {
+    subject: "Vehiculul este pe drum",
+    lines: [
+      "Bună ziua,",
+      "Transportul {{ from_city }} — {{ to_city }} a pornit.",
+      "Vă anunțăm din nou când transportatorul programează livrarea.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_delivery_scheduled: {
+    subject: "Livrarea a fost programată",
+    lines: [
+      "Bună ziua,",
+      "{{ carrier_name }} a programat livrarea pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Pregătiți codul de confirmare din pagina comenzii. Șoferul îl cere la predare, ca să știe că preda mașina cui trebuie.",
+    ],
+    action: { label: "Vezi codul", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_delivered: {
+    subject: "Vehiculul a fost livrat — confirmați, vă rugăm",
+    lines: [
+      "Bună ziua,",
+      "Transportul {{ from_city }} — {{ to_city }} a fost livrat. În pagina comenzii sunt fotografiile de la livrare, alături de cele de la ridicare, și confirmarea persoanei care a primit vehiculul.",
+      "Uitați-vă peste ele și confirmați livrarea. Dacă ceva nu este în regulă, deschideți o dispută de pe aceeași pagină.",
+      "Dacă nu ne spuneți nimic în {{ deadline_hours }} de ore, comanda se închide singură.",
+    ],
+    action: { label: "Confirmă livrarea", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
+  order_completed: {
+    subject: "Clientul a confirmat livrarea",
+    lines: [
+      "Bună ziua,",
+      "Clientul a confirmat livrarea pentru transportul {{ from_city }} — {{ to_city }}. Comanda este închisă.",
+      "Factura o emiteți direct către client, după termenul de plată din ofertă. Platforma nu încasează și nu ține banii nimănui.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_auto_completed: {
+    subject: "Comanda s-a închis automat",
+    lines: [
+      "Bună ziua,",
+      "Transportul {{ from_city }} — {{ to_city }} a fost livrat acum {{ deadline_hours }} de ore și nimeni nu a semnalat vreo problemă, așa că am închis comanda.",
+      "Fotografiile și fișele rămân în pagina comenzii. Dacă între timp a apărut ceva, scrieți-ne.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: true,
+  },
+
+  order_cancelled: {
+    subject: "Comanda {{ from_city }} — {{ to_city }} a fost anulată",
+    lines: [
+      "Bună ziua,",
+      "Comanda pentru transportul {{ from_city }} — {{ to_city }} a fost anulată.",
+      "Motivul dat: {{ reason }}",
+      "Dacă anularea v-a lăsat cu o cursă de acoperit, cererea este din nou pe panou atât timp cât intervalul de încărcare nu a trecut.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
+  order_dispute_opened: {
+    subject: "Clientul a deschis o dispută",
+    lines: [
+      "Bună ziua,",
+      "Clientul a deschis o dispută pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Ce a scris: {{ reason }}",
+      "Comanda este blocată până când ne uităm peste ea. Nu trebuie să faceți nimic acum — vă căutăm noi dacă avem nevoie de lămuriri, iar fotografiile de la ridicare și livrare sunt deja la dosar.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
+  order_dispute_resolved: {
+    subject: "Disputa a fost închisă",
+    lines: [
+      "Bună ziua,",
+      "Am închis disputa pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Decizia: {{ reason }}",
+      "Dacă nu sunteți de acord, răspundeți la acest e-mail. Nu decidem despre bani: platforma nu încasează și nu ține plăți, iar ce vă datorați rămâne între dumneavoastră.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
+  order_driver_assigned: {
+    subject: "Ați fost alocat pe un transport",
+    lines: [
+      "Bună ziua,",
+      "Ați fost alocat pe un transport, cu vehiculul {{ plate }}.",
+      "Deschideți comanda de pe telefon: acolo sunt pașii, iar fotografiile se fac direct din pagină.",
+    ],
+    action: { label: "Deschide comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
+  order_vehicle_noncompliant: {
+    subject: "Vehiculul de pe o comandă nu mai are actele în termen",
+    lines: [
+      "Bună ziua,",
+      "Vehiculul alocat pe transportul {{ from_city }} — {{ to_city }} nu mai are toate actele valabile, iar ridicarea nu a avut loc încă.",
+      "Nu am anulat nimic. Reînnoiți documentul sau alocați alt vehicul din pagina comenzii, înainte de ridicare.",
+    ],
+    action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
+    unsubscribable: false,
+  },
+
   reservation_created: {
     subject: "Rezervare nouă pe traseul {{ from_city }} — {{ to_city }}",
     lines: [

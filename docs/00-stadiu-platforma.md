@@ -15,6 +15,7 @@ să te bazezi pe vreun rând din tabele.
 > | Deblocarea Fazei 1 (`20260920100000`) | §3 „matching și alerte", §5 „cota de contacte", și constatarea că nimic nu adună numerele criteriului de ieșire |
 > | Restul Fazei 1 în cod (`20260921100000`) | §3 alerte pe căutări salvate, ocolul folosit la potrivire, sesizări, jurnal, echipă |
 > | Fluxul ofertei (`20260922100000`) | „Nu există ofertă în platformă" — al doilea lucru care bloca un pilot |
+> | Comanda, dovada de livrare și disputele (`20260923100100`) | §3 comandă și livrare, „regulile sunt în bază, dar nu au interfață" |
 >
 > Două lucruri din document au fost între timp depășite de cod și se
 > citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge

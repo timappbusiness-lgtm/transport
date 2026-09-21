@@ -43,6 +43,18 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'offer_rejected', label: 'Ofertă refuzată' },
   { id: 'offer_expired', label: 'Ofertă expirată' },
   { id: 'offer_question', label: 'Mesaj în discuția despre ofertă' },
+  { id: 'order_pickup_scheduled', label: 'Comandă: ridicarea a fost programată' },
+  { id: 'order_picked_up', label: 'Comandă: vehiculul a fost ridicat' },
+  { id: 'order_in_transit', label: 'Comandă: vehiculul este pe drum' },
+  { id: 'order_delivery_scheduled', label: 'Comandă: livrarea a fost programată' },
+  { id: 'order_delivered', label: 'Comandă: livrat, se așteaptă confirmarea' },
+  { id: 'order_completed', label: 'Comandă: clientul a confirmat' },
+  { id: 'order_auto_completed', label: 'Comandă: închisă automat' },
+  { id: 'order_cancelled', label: 'Comandă anulată' },
+  { id: 'order_dispute_opened', label: 'Comandă: dispută deschisă' },
+  { id: 'order_dispute_resolved', label: 'Comandă: dispută închisă' },
+  { id: 'order_driver_assigned', label: 'Comandă: șofer alocat' },
+  { id: 'order_vehicle_noncompliant', label: 'Comandă: vehiculul nu mai are actele în termen' },
   { id: 'listing_expiring_soon', label: 'Cererea iese curând de pe panou' },
   { id: 'reservation_created', label: 'Rezervare nouă pe traseu' },
   { id: 'reservation_confirmed', label: 'Rezervare confirmată' },
@@ -94,6 +106,9 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   listings: '· Volkswagen Golf 2015 (München — Cluj-Napoca)',
   outcome: 'rezolvată',
   resolution: 'Exemplu: am sunat firma, au confirmat, iar anunțul a fost corectat.',
+  order_id: '00000000-0000-4000-8000-000000000005',
+  deadline_hours: '48',
+  plate: 'CJ 12 ABC',
 };
 
 export function mailTemplateLabel(id: string): string {

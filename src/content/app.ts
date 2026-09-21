@@ -113,6 +113,16 @@ export const appCopy = {
           ? `Ocol de ${km} km față de traseele tale (toleranță ${tolerance} km).`
           : `Ocol de ${km} km față de traseul ${from} — ${to} (toleranță ${tolerance} km).`,
     },
+    orders: {
+      title: 'Transporturi',
+      nextPickup: 'Următoarea ridicare',
+      awaiting: (n: number) =>
+        n === 1 ? 'O comandă așteaptă un pas de la tine' : `${n} comenzi așteaptă un pas de la tine`,
+      disputes: (n: number) => (n === 1 ? 'O comandă în dispută' : `${n} comenzi în dispută`),
+      action: 'Vezi transporturile',
+      none: 'Niciun transport în lucru.',
+    },
+
     activity: {
       routes: 'Trasee active',
       seats: 'Locuri ocupate',
@@ -124,6 +134,16 @@ export const appCopy = {
       vehicle: 'Adaugă un vehicul',
       document: 'Încarcă un document',
     },
+  },
+
+  /** The same widget for a client, who reads it from the other side. */
+  clientOrders: {
+    title: 'Transporturi',
+    awaiting: 'O comandă așteaptă confirmarea ta',
+    awaitingMany: (n: number) => `${n} comenzi așteaptă confirmarea ta`,
+    inFlight: (n: number) =>
+      n === 1 ? 'Un vehicul este pe drum' : `${n} vehicule sunt pe drum`,
+    action: 'Vezi transporturile',
   },
 
   individual: {

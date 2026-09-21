@@ -72,12 +72,11 @@ function hrefs(ctx: NavContext, features: FeatureMap = FEATURES): string[] {
 
 describe('a menu item exists only if the feature does', () => {
   it('offers nothing that is not built', () => {
-    // Offers went live with Faza 2 and are no longer on this list.
-    // General messaging and the order screens are not built: the tables
-    // exist, which is not the same thing.
-    const items = hrefs(context());
-    expect(items).not.toContain(ROUTES.accountMessages);
-    expect(items).not.toContain(ROUTES.accountTransports);
+    // Offers and orders both went live with Faza 2. General messaging
+    // has not: the tables exist, which is not the same thing, and a
+    // menu item called „Mesaje" that opens one offer thread would be a
+    // promise the product does not keep.
+    expect(hrefs(context())).not.toContain(ROUTES.accountMessages);
   });
 
   it('offers the ones that are', () => {
@@ -95,6 +94,16 @@ describe('a menu item exists only if the feature does', () => {
     expect(items).toContain(ROUTES.accountOffers);
     expect(items).toContain(ROUTES.accountMessages);
     expect(items).toContain(ROUTES.accountTransports);
+  });
+
+  it('gives every side of an order its way in', () => {
+    // A client, a forwarder and a carrier all have orders now; so does
+    // a driver, who is tested on their own above.
+    expect(hrefs(context())).toContain(ROUTES.accountTransports);
+    expect(hrefs(context({ companyType: 'expeditie' }))).toContain(ROUTES.accountTransports);
+    expect(
+      hrefs(context({ accountType: 'individual', companyType: null, role: null })),
+    ).toContain(ROUTES.accountTransports);
   });
 
   it('never leaves somebody with nowhere to go', () => {
@@ -187,9 +196,12 @@ describe('what a role may see', () => {
     ]);
   });
 
-  it('a driver keeps a home even before orders are built', () => {
+  it('a driver gets the orders and nothing else', () => {
+    // The whole of a driver's application, and the correct amount: the
+    // work assigned to them, and the three things every account has.
     expect(hrefs(context({ role: 'driver' }))).toEqual([
       ROUTES.account,
+      ROUTES.accountTransports,
       ROUTES.accountProfile,
       // A driver gets notifications like anybody else: their own documents
       // expire, and the account they work under can be suspended.

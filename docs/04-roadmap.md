@@ -143,25 +143,68 @@ What this phase added beyond the list above, because the flow needed it:
   to reach the carrier at all.
 - `/admin/oferte`, read-only, with the clarification thread
 
-## Phase 6 — Order
+## Phase 6 — Order (done, September 2026)
 
 - One internal function creates the order, from an accepted offer or a
   confirmed reservation *— done*
 - `/cont/transporturi/[id]` is a summary and the two contacts, put there by
-  phase 5 so the accepted offer has somewhere to lead. Everything below is
-  still to build.
+  phase 5 so the accepted offer has somewhere to lead *— now the whole
+  order: timeline, evidence, and the button for whoever may act next*
 - Order statuses: `order_confirmed`, `pickup_scheduled`, `vehicle_picked_up`,
   `in_transit`, `delivery_scheduled`, `vehicle_delivered`, `order_completed`,
-  each moved by the party allowed to move it, through an RPC
+  each moved by the party allowed to move it, through an RPC *— done,
+  one RPC (`transition_order`) that checks from→to, the actor and the
+  evidence the step needs; no user writes `transports.status`*
 - The listing follows the order: `carrier_selected` → `in_progress` →
-  `delivered`
-- Cancellation, and complaints that put the order in `disputed`
+  `delivered` *— done, from the transition itself rather than from the
+  frontend*
+- Cancellation, and complaints that put the order in `disputed` *— done*
 
-## Phase 7 — Proof of delivery
+What this phase added beyond the list above, because the flow needed it:
+
+- **The four old spellings stay for ever.** `agreed`, `loading`,
+  `delivered` and `invoiced`/`closed` were already in `transport_status`
+  and already in rows. The six new values were added beside them and the
+  rows migrated; nothing renames an enum value, so the old names remain
+  readable synonyms in `ORDER_STATUS_LABELS`.
+- **Auto-completion**, hourly: an order sitting in `vehicle_delivered`
+  past `order_settings.auto_complete_hours` (48) with no word from the
+  client closes itself, tells both sides, and is audited as `system`.
+- **The confirmation code.** A six-digit code on the order, readable by
+  the client alone — not by the carrier, not by the driver, and the RLS
+  suite checks all three. Delivery takes either that code or a drawn
+  signature, never neither.
+- **Driver isolation.** `is_transport_party()` says yes to any member of
+  the carrier company, which would have handed a driver their firm's
+  whole book. `can_see_order()` narrows it: a member whose only role is
+  `driver` sees the orders assigned to them and no others.
+- **A nightly check** flags an order whose assigned vehicle lost its ITP,
+  RCA or copie conformă before pickup. It flags; it never cancels.
+- `/admin/transporturi`, with the dispute decision and the evidence
+  behind it
+
+## Phase 7 — Proof of delivery (done, September 2026)
 
 - Uploads on the order: **pickup photos**, **vehicle condition report**,
   **transport documents**, **delivery photos**, **recipient signature or
   confirmation**, **incident notes** — timestamped, attributed, immutable
+  *— done, `order_evidence`, in a private bucket, with `captured_at` from
+  the server clock and a trigger that refuses every update and every
+  delete except the anonymisation job's*
+
+Built with it, for the same reason:
+
+- **Four photographs at each end**, prompted in order, and a nine-line
+  condition report; the transition is refused without them, in Postgres,
+  with the count read from `order_required_photos()`.
+- **Location is a choice, not a by-product.** EXIF is stripped from every
+  photograph on the server, unconditionally. Coordinates reach `lat`/`lng`
+  only when the person taking the photograph allowed it for that capture.
+- **The comparison view**: pickup photos beside the client's own photos
+  of the car, delivery photos beside the pickup ones, each with its
+  timestamp and author.
+- Staff hide a piece of evidence with a reason, audited. The row and the
+  file stay; only who may see it changes.
 
 ## Phase 8 — Rating and reputation
 

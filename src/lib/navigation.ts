@@ -103,6 +103,16 @@ function individualNav(features: FeatureMap): NavItem[] {
   if (features.offers) {
     items.push({ href: ROUTES.accountOffers, label: 'Oferte', group: 'principal', priority: 80 });
   }
+  // An individual who accepts an offer has an order like anybody else,
+  // and until Faza 2 had no way to reach it from the menu.
+  if (features.transports) {
+    items.push({
+      href: ROUTES.accountTransports,
+      label: 'Transporturi',
+      group: 'principal',
+      priority: 78,
+    });
+  }
   if (features.messages) {
     items.push({ href: ROUTES.accountMessages, label: 'Mesaje', group: 'principal', priority: 70 });
   }
@@ -161,7 +171,12 @@ function carrierItems(features: FeatureMap, role: MemberRole | null): NavItem[] 
     });
   }
   if (features.transports) {
-    items.push({ href: ROUTES.accountTransports, label: 'Comenzi', group: 'transport', priority: 65 });
+    items.push({
+      href: ROUTES.accountTransports,
+      label: 'Transporturi',
+      group: 'transport',
+      priority: 78,
+    });
   }
   if (features.fleet) {
     // A dispatcher reads the fleet but does not change it, which is a rule
@@ -195,9 +210,9 @@ function forwarderItems(features: FeatureMap): NavItem[] {
   if (features.transports) {
     items.push({
       href: ROUTES.accountTransports,
-      label: 'Comenzi',
+      label: 'Transporturi',
       group: 'expeditii',
-      priority: 65,
+      priority: 78,
     });
   }
   items.push({
