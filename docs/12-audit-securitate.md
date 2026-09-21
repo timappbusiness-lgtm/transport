@@ -25,6 +25,37 @@ Nimic din ce urmează nu cere un cont de staff, un token furat sau o parolă
 ghicită. Tot ce e marcat **critic** sau **ridicat** se face cu cheia `anon`
 sau cu un cont obișnuit, nou-făcut.
 
+### Ce s-a reparat, și unde
+
+| | Constatare | PR | Cum a fost dovedită |
+|---|---|---|---|
+| C1 | pozele publice și enumerabile | #43 | 4 verificări SEC, 3 roșii înainte |
+| R1 | directorul de firme la `anon` | #43 | 3 verificări SEC, 2 roșii înainte |
+| R2 | niciun antet de securitate | #44 | 11 unitare + 10 Playwright |
+| R3 | jurnalul fără retenție și fără ștergere | #45 | 6 verificări SEC, toate 6 roșii înainte |
+| R4 | dovezile comenzii, care nu se puteau șterge | #43 | 2 verificări SEC, 1 roșie înainte |
+| M1, M2 | cele două gărzi moarte | #43 | 3 verificări SEC, toate 3 roșii înainte |
+| M3 | CORS `*` | #44 | 5 teste Deno |
+| M4 | granturi `anon` fără politică (citire) | #43 | garda 5 și 6 din `security_test.sql` |
+| M4b | granturi `anon` fără politică (scriere) | #46 | găsită **de garda nouă**, la prima rulare |
+| M6 | pragurile de abuz publice | #43 | 2 verificări, una nouă |
+| S1 | secret comparat în timp variabil | #44 | 3 teste Deno |
+
+**Rămân nereparate, cu motiv:**
+
+- **M5** (publicația realtime trimite corpul mesajului) — depinde de o
+  setare a proiectului, nu de repozitoriu. Vezi §6.1. Riscul real este mic:
+  clientul tratează evenimentul ca pe un semnal și recitește prin
+  `conversation_messages()`, care verifică din nou cine întreabă.
+- **M7** (acceptarea de advisor pe o premisă falsă) — premisa a dispărut
+  odată cu R1; rândul din `docs/DEPLOYMENT.md` rămâne de rescris la
+  următoarea atingere a fișierului aceluia.
+- **S2** (e-mailul de facturare al operatorului, public) — adresă de firmă,
+  nu de persoană. Se închide când se completează datele operatorului.
+- **S3** (`pgcrypto` în `public`) — mutarea unei extensii pe un proiect viu
+  cere o fereastră de mentenanță și nu are ce căuta în același PR cu o
+  reparație de scurgere.
+
 ---
 
 ## 1. Critic
