@@ -26,6 +26,7 @@
 // thing about a source that survives step 6 is its hostname.
 // =====================================================================
 
+import { corsFor } from "../_shared/security.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -71,11 +72,6 @@ const MAX_PAGE_BYTES = 512 * 1024;
 const MAX_REDIRECTS = 3;
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 // ---------------------------------------------------------------------
 // The schema
@@ -150,10 +146,15 @@ Reguli stricte, în ordinea importanței:
 - from_city este locul unde se află vehiculul, nu adresa dealerului dacă sunt diferite și se vede asta.
 - Prețul, telefonul și numele vânzătorului NU te interesează. Nu le returna nicăieri.`;
 
-function jsonResponse(body: unknown, status = 200): Response {
+/**
+ * Antetele CORS depind acum de cererea care le-a cerut: originea se
+ * întoarce numai dacă este pe lista din `ALLOWED_ORIGIN`. Deci și
+ * răspunsul de eroare are nevoie de cerere.
+ */
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...corsFor(req), "Content-Type": "application/json" },
   });
 }
 
@@ -335,8 +336,8 @@ async function askModel(
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_HEADERS });
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req) });
+  if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
   const started = Date.now();
@@ -352,7 +353,7 @@ Deno.serve(async (req: Request) => {
     };
 
     const source = body.source === "photo" ? "photo" : body.source === "link" ? "link" : null;
-    if (source === null) return jsonResponse({ ok: false, reason: "bad_request" }, 400);
+    if (source === null) return jsonResponse(req, { ok: false, reason: "bad_request" }, 400);
 
     // --- Who is asking ------------------------------------------------
     // The JWT is read rather than trusted from the body: an account id a
@@ -374,7 +375,7 @@ Deno.serve(async (req: Request) => {
       if (ipHash === null) {
         // Either no salt is configured or we cannot see an address.
         // Counting is not optional, so the answer is no.
-        return jsonResponse({ ok: false, reason: "anonymous_unavailable" }, 503);
+        return jsonResponse(req, { ok: false, reason: "anonymous_unavailable" }, 503);
       }
     }
 
@@ -389,10 +390,10 @@ Deno.serve(async (req: Request) => {
 
     if (claimError) {
       console.error("claim_import_slot failed", { message: claimError.message });
-      return jsonResponse({ ok: false, reason: "unknown" }, 500);
+      return jsonResponse(req, { ok: false, reason: "unknown" }, 500);
     }
     if (!claim?.allowed) {
-      return jsonResponse({ ok: false, reason: claim?.reason ?? "unknown" }, 429);
+      return jsonResponse(req, { ok: false, reason: claim?.reason ?? "unknown" }, 429);
     }
     extractionId = claim.extraction_id;
 
@@ -462,7 +463,7 @@ Deno.serve(async (req: Request) => {
       p_fields_kept: kept,
     });
 
-    return jsonResponse({
+    return jsonResponse(req, {
       ok: true,
       fields,
       dropped,
@@ -490,7 +491,7 @@ Deno.serve(async (req: Request) => {
       }).then(() => {}, () => {});
     }
 
-    return jsonResponse({ ok: false, reason }, reason === "bad_request" ? 400 : 502);
+    return jsonResponse(req, { ok: false, reason }, reason === "bad_request" ? 400 : 502);
   }
 });
 

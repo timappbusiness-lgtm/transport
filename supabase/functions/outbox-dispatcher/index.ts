@@ -23,6 +23,7 @@
 // rather than both taking them.
 // =====================================================================
 
+import { secretsMatch } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { MissingVariable, render } from "./render.ts";
 import { renderValues, type SendResult, sendEmail } from "./send.ts";
@@ -102,7 +103,7 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
 
-  if (req.headers.get("x-cron-secret") !== CRON_SECRET) {
+  if (!secretsMatch(req.headers.get("x-cron-secret"), CRON_SECRET)) {
     return json({ error: "Unauthorized" }, 401);
   }
 

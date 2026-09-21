@@ -112,6 +112,35 @@ adresă reală pe care o poți deschide. E-mailul de confirmare trebuie să
 ajungă în mai puțin de un minut și să vină de la adresa noastră, nu de la
 una `@supabase.io`.
 
+## 3b. `ALLOWED_ORIGIN` pentru funcțiile edge
+
+**Ce:** trei funcții sunt chemate din browser — `extract-vehicle-listing`,
+`parse-document`, `verify-cui-anaf`. Până la auditul de securitate rulau cu
+`Access-Control-Allow-Origin: *`, pentru că variabila nu era pusă nicăieri și
+codul cădea înapoi pe `*`. Acum **nu mai cade înapoi pe nimic**: fără
+variabilă, funcțiile nu întorc nicio origine și browserul oprește răspunsul.
+
+O funcție care refuză vizibil se repară; un `*` nu se observă niciodată.
+
+**Unde exact:** Edge Functions → Secrets:
+
+```
+ALLOWED_ORIGIN = https://transport-seven-sandy.vercel.app
+```
+
+Mai multe origini se separă prin virgulă — util cât timp există și un domeniu
+propriu pe lângă cel de pe Vercel:
+
+```
+ALLOWED_ORIGIN = https://coridor.ro,https://www.coridor.ro
+```
+
+Dacă `ALLOWED_ORIGIN` lipsește, se folosește `SITE_URL`, dacă acela există.
+
+**Cum verifici:** din consola browserului, pe site-ul nostru, o cerere către
+o funcție trebuie să meargă; aceeași cerere de pe alt domeniu trebuie oprită
+de browser cu o eroare de CORS.
+
 ## 4. `CRON_SECRET` și secretele din Vault
 
 **Ce:** joburile programate în baza de date cheamă funcțiile edge prin

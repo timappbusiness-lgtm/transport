@@ -23,6 +23,7 @@
 // and set them with `supabase secrets set`. Never commit them.
 // =====================================================================
 
+import { secretsMatch } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { backoffSeconds, sendPush, type VapidKeys } from "./webpush.ts";
 
@@ -71,7 +72,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
-  if (req.headers.get("x-cron-secret") !== CRON_SECRET) {
+  if (!secretsMatch(req.headers.get("x-cron-secret"), CRON_SECRET)) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
