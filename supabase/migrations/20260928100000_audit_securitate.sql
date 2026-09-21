@@ -351,3 +351,66 @@ $fn$;
 
 revoke all on function public.edit_rating(uuid, integer, integer, integer, integer, integer, integer, text) from public, anon;
 grant execute on function public.edit_rating(uuid, integer, integer, integer, integer, integer, integer, text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- M4. `anon` nu mai are SELECT pe tabelele care nu au politică pentru el
+--
+-- Implicitul Supabase dă `select` pe tot lui `anon` și `authenticated`.
+-- Astăzi nu curge nimic: RLS întoarce zero rânduri pe `documents`,
+-- `profiles`, `messages`, `contact_reveals`, `audit_log` și pe încă
+-- treizeci și ceva. Dar ține de un singur lucru. Dacă RLS se oprește
+-- vreodată pe una dintre ele — o migrare, un `disable row level
+-- security` într-o depanare — `anon` citește tot, instantaneu.
+--
+-- Două lucruri trebuie să meargă prost, nu unul.
+--
+-- Condus din catalog, nu dintr-o listă scrisă de mână: o listă de
+-- patruzeci de nume se învechește la prima tabelă nouă, iar asta se
+-- recalculează corect ori de câte ori rulează. Vederile care citesc pe
+-- lângă RLS (`security_invoker = off`) nu sunt afectate — ele rulează
+-- ca proprietarul lor, nu ca apelantul, deci panoul public rămâne
+-- public.
+--
+-- Garda care ține regula de acum încolo este în `supabase/tests/`.
+-- ---------------------------------------------------------------------
+do $revoke_anon$
+declare
+  r record;
+begin
+  for r in
+    select c.relname
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relkind = 'r'
+      and has_table_privilege('anon', c.oid, 'SELECT')
+      and not exists (
+        select 1 from pg_policy p
+        where p.polrelid = c.oid
+          and 'anon' = any(array(
+            select ro.rolname from pg_roles ro where ro.oid = any(p.polroles)))
+      )
+    order by c.relname
+  loop
+    execute format('revoke select on public.%I from anon', r.relname);
+  end loop;
+end
+$revoke_anon$;
+
+-- ---------------------------------------------------------------------
+-- M6. Pragurile de abuz nu mai sunt publice
+--
+-- `import_settings` era citibilă de `anon` cu `using (true)` și ține
+-- `daily_limit_per_user`, `daily_limit_per_ip`, `monthly_budget_usd` și
+-- `alert_at_pct`. Cine voia să ne consume bugetul de extragere citea
+-- întâi exact cât are voie și de la ce prag sunăm.
+--
+-- Un singur ecran o citește, `/admin/import`, și acolo există o sesiune.
+-- Funcțiile care chiar aplică limitele — `claim_import_slot`,
+-- `import_quota` — sunt SECURITY DEFINER și citesc pe lângă RLS, deci
+-- nu le atinge.
+-- ---------------------------------------------------------------------
+drop policy if exists "import_settings_select_all" on public.import_settings;
+create policy "import_settings_select_signed_in" on public.import_settings
+  for select to authenticated using (true);
+
+revoke select on public.import_settings from anon;

@@ -4855,8 +4855,16 @@ end $$;
 -- record, it claims one itself.
 -- =====================================================================
 
-select pg_temp.check('IMP the limits are readable by anyone, logged out included', 'fix',
+-- Erau citibile de oricine, inclusiv delogat. Auditul a spus de ce nu
+-- e bine: `daily_limit_per_ip` și `monthly_budget_usd` sunt exact ce
+-- vrea să afle cineva care se pregătește să ne consume bugetul. Un
+-- singur ecran le citește, și acolo există o sesiune.
+select pg_temp.check('IMP the limits are not public any more', 'fix',
   null, 'anon',
+  $a$select count(*) from public.import_settings$a$, 'blocked');
+
+select pg_temp.check('IMP but a signed-in user still reads them', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select count(*) = 1 from public.import_settings$a$, 'true');
 
 select pg_temp.check('IMP a user cannot raise their own daily limit', 'fix',
@@ -7324,9 +7332,13 @@ select pg_temp.check('OFR  the client sees what it received', 'fix',
              'f0000000-0000-0000-0000-000000000002', 2400,
              'fe000000-0000-0000-0000-000000000001')$s$);
 
-select pg_temp.check('OFR  a visitor reads no offers at all', 'fix',
+-- Era „întreabă și primește zero rânduri". Acum nici nu poate întreba:
+-- grantul de `select` pentru `anon` a fost retras de pe tabelele care
+-- nu au politică pentru el, ca RLS să nu mai fie singurul lucru care
+-- stă între un vizitator și datele astea.
+select pg_temp.check('OFR  a visitor cannot even ask for the offers', 'fix',
   null, 'anon',
-  $a$select count(*) = 0 from public.offers$a$, 'true');
+  $a$select count(*) from public.offers$a$, 'blocked');
 
 -- Settings.
 select pg_temp.check('OFR  anybody signed in reads the ceilings the form prints', 'fix',
@@ -9662,9 +9674,9 @@ select pg_temp.check('MSG  a stranger reads no thread at all', 'fix',
      where transport_id = 'f3000000-0000-0000-0000-0000000000d0'$a$, 'true',
   p_setup => $s$select pg_temp.order_with_thread('f3000000-0000-0000-0000-0000000000d0')$s$);
 
-select pg_temp.check('MSG  and anon reads nothing anywhere near one', 'fix',
+select pg_temp.check('MSG  and anon cannot even ask for a conversation', 'fix',
   null, 'anon',
-  $a$select count(*) = 0 from public.conversations$a$, 'true');
+  $a$select count(*) from public.conversations$a$, 'blocked');
 
 -- --- masca, înainte și după comandă -----------------------------------
 
