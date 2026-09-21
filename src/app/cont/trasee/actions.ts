@@ -9,6 +9,14 @@ import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
 import { FILTERABLE_CATEGORIES, type CargoCategory, type ServiceType } from '@/lib/departures';
+import {
+  MAX_EVERY_N,
+  ruleHasErrors,
+  toIso,
+  validateRule,
+  type RecurrenceKind,
+  type RecurrenceRule,
+} from '@/lib/recurrence';
 
 /**
  * The carrier's own departures.
@@ -71,6 +79,38 @@ function isoDate(value: string | null): string | null {
   return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+/**
+ * Regula de repetare, citită din formular.
+ *
+ * Zilele vin ca `0`…`6`, ca `extract(dow)` în Postgres. Orice altceva
+ * cade aici, nu în bază: un `weekdays` cu un `9` în el ar trece de
+ * `route_series_rule_ck` și ar genera zero plecări, tăcut.
+ */
+function readRule(formData: FormData, startsOn: string): RecurrenceRule {
+  const kind: RecurrenceKind =
+    formData.get('recurrence_kind') === 'la_n_zile' ? 'la_n_zile' : 'saptamanal';
+
+  const weekdays = [
+    ...new Set(
+      formData
+        .getAll('weekdays')
+        .map((value) => Number(String(value)))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+    ),
+  ].sort((a, b) => a - b);
+
+  const rawN = text(formData, 'every_n_days');
+  const everyNDays = rawN === null ? null : Number(rawN);
+
+  return {
+    kind,
+    weekdays,
+    everyNDays: kind === 'la_n_zile' ? everyNDays : null,
+    startsOn,
+    endsOn: isoDate(text(formData, 'ends_on')) ?? '',
+  };
+}
+
 export async function createDepartureAction(
   _prev: DepartureActionState,
   formData: FormData,
@@ -120,8 +160,59 @@ export async function createDepartureAction(
 
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
-  const publish = formData.get('intent') === 'publish';
+  // „Se repetă" bifat înseamnă altceva: nu o plecare, ci o serie care
+  // le publică singură. Regula se verifică aici doar cât să spună o
+  // propoziție citibilă; `create_route_series()` o verifică din nou,
+  // împreună cu firma și vehiculul, și acolo este regula.
+  const repeats = formData.get('repeats') === 'da';
   const supabase = await createClient();
+
+  if (repeats) {
+    const rule = readRule(formData, availableFrom as string);
+    if (rule.endsOn === '') {
+      return { fieldErrors: { ends_on: 'Alege până când se repetă.' } };
+    }
+
+    const ruleErrors = validateRule(rule, toIso(Date.now()));
+    if (ruleHasErrors(ruleErrors)) {
+      const asFields: Record<string, string> = {};
+      if (ruleErrors.weekdays) asFields.weekdays = ruleErrors.weekdays;
+      if (ruleErrors.everyNDays) asFields.every_n_days = ruleErrors.everyNDays;
+      if (ruleErrors.endsOn) asFields.ends_on = ruleErrors.endsOn;
+      return { fieldErrors: asFields };
+    }
+
+    const { error: seriesError } = await supabase.rpc('create_route_series', {
+      p_vehicle_id: vehicleId as string,
+      p_direction: direction,
+      p_from_country: text(formData, 'from_country') ?? 'RO',
+      p_from_county: text(formData, 'from_county'),
+      p_from_city: fromCity as string,
+      p_to_country: text(formData, 'to_country') ?? 'RO',
+      p_to_county: text(formData, 'to_county'),
+      p_to_city: toCity as string,
+      p_kind: rule.kind,
+      p_weekdays: rule.weekdays,
+      p_every_n_days: rule.everyNDays === null ? null : Math.min(rule.everyNDays, MAX_EVERY_N),
+      p_starts_on: rule.startsOn,
+      p_ends_on: rule.endsOn,
+      p_waypoints: readWaypointsField(text(formData, 'waypoints')),
+      p_max_detour_km: detour,
+      p_platform_slots_total: slots,
+      p_service_types: services,
+      p_accepted_vehicle_types: categories,
+      p_price_indicative: price,
+      p_notes: text(formData, 'notes'),
+    });
+
+    if (seriesError) return { error: toAppError(seriesError, 'series.create').message };
+
+    revalidatePath(ROUTES.accountDepartures);
+    revalidatePath(ROUTES.routes);
+    redirect(ROUTES.accountDepartures);
+  }
+
+  const publish = formData.get('intent') === 'publish';
   const { data, error } = await supabase
     .from('truck_listings')
     .insert({

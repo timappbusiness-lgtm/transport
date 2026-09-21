@@ -94,6 +94,7 @@ export const departuresCopy = {
     /** În formularul de plecare. */
     repeat: 'Se repetă',
     repeatHint: 'Publică singură plecarea, în zilele alese, până la data pe care o pui.',
+    submit: 'Publică seria',
     kindWeekly: 'În zilele săptămânii',
     kindEveryN: 'La fiecare N zile',
     weekdays: 'În ce zile',
