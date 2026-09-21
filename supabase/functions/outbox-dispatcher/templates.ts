@@ -413,6 +413,47 @@ export const TEMPLATES: Record<string, Template> = {
     unsubscribable: false,
   },
 
+  // --- Evaluări ---------------------------------------------------------
+  //
+  // Niciunul dintre cele trei nu îi cere omului o notă bună. Un memento
+  // care sugerează ce să scrii nu mai măsoară nimic, iar un profil pe care
+  // scrie „4,9" pentru că așa am cerut noi nu ajută pe nimeni să aleagă.
+
+  rating_received: {
+    subject: "Ați primit o evaluare după un transport",
+    lines: [
+      "Bună ziua,",
+      "Cineva a evaluat firma {{ company_name }} după un transport încheiat. Evaluarea este publică pe profilul firmei.",
+      "Puteți răspunde o singură dată, public, sub evaluare. Răspunsul rămâne așa cum îl scrieți — nu se mai poate schimba după publicare, la fel ca evaluarea la care răspunde.",
+      "Dacă evaluarea încalcă regulile platformei, o puteți sesiza din aceeași pagină. Nu ștergem evaluări pentru că sunt mici.",
+    ],
+    action: { label: "Vezi evaluarea", href: "{{ site_url }}/cont/evaluari?cutie=primite" },
+    unsubscribable: true,
+  },
+
+  rating_reply: {
+    subject: "S-a răspuns la evaluarea dumneavoastră",
+    lines: [
+      "Bună ziua,",
+      "Firma {{ company_name }} a răspuns public la evaluarea pe care ați lăsat-o după transport.",
+      "Răspunsul apare sub evaluare, pe profilul firmei. Evaluarea dumneavoastră rămâne neschimbată.",
+    ],
+    action: { label: "Vezi răspunsul", href: "{{ site_url }}/cont/evaluari?cutie=date" },
+    unsubscribable: true,
+  },
+
+  rating_reminder: {
+    subject: "Mai puteți evalua transportul {{ from_city }} — {{ to_city }}",
+    lines: [
+      "Bună ziua,",
+      "Transportul {{ from_city }} — {{ to_city }} s-a încheiat, iar perioada în care îl puteți evalua se închide pe {{ deadline }}.",
+      "Durează un minut: o notă de la 1 la 5 și, dacă vreți, câteva cuvinte. Evaluarea este publică și ajută pe cine caută un transportator după aceea.",
+      "Dacă nu vreți să evaluați, nu trebuie. Mesajul acesta este singurul pe care îl primiți despre transportul acesta.",
+    ],
+    action: { label: "Evaluează transportul", href: "{{ site_url }}/cont/evaluari" },
+    unsubscribable: true,
+  },
+
   reservation_created: {
     subject: "Rezervare nouă pe traseul {{ from_city }} — {{ to_city }}",
     lines: [
