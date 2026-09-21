@@ -11423,6 +11423,48 @@ select pg_temp.check('SEC  and the bucket is not public', 'fix',
   null, 'anon',
   $a$select not public from storage.buckets where id = 'listing-photos'$a$, 'true');
 
+-- Cealaltă jumătate, și cea care se putea strica în tăcere: poza unei
+-- cereri **publice** trebuie să se vadă în continuare fără cont, altfel
+-- reparația a rupt panoul în loc să îl apere. O politică prea strânsă
+-- nu dă eroare — dă o pagină cu imagini lipsă.
+select pg_temp.check('SEC  a photo on a public request is still visible without an account', 'fix',
+  null, 'anon',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000006/publica.jpg'$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000006/publica.jpg']
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000006/publica.jpg',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('SEC  but not one on a private request', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000004/privata.jpg'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false);
+     update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000004/privata.jpg']
+       where id = (select onboarding_id from pg_temp.asi_ctx);
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000004/privata.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('SEC  and the invited carrier does see that one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000004/privata.jpg'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true);
+     update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000004/privata.jpg']
+       where id = (select onboarding_id from pg_temp.asi_ctx);
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000004/privata.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
 -- --- R1: directorul de firme -----------------------------------------
 --
 -- `v_companies_public` era dată lui anon, deși comentariul ei spune
