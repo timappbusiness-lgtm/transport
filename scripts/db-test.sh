@@ -33,7 +33,7 @@ for f in "${migrations[@]}"; do
 done
 echo "Applied ${#migrations[@]} migrations to $db"
 
-suites=("${DB_TEST_SUITES:-smoke rls}")
+suites=("${DB_TEST_SUITES:-smoke rls security}")
 status=0
 for suite in ${suites[@]}; do
   echo

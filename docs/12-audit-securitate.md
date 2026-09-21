@@ -18,7 +18,7 @@ dacă aplicația le folosește sau nu.
 |---|---|---|
 | **Critic** | 1 | Pozele anunțurilor sunt publice și enumerabile de oricine |
 | **Ridicat** | 4 | Directorul de firme servit lui `anon`; lipsa antetelor de securitate; jurnalul de audit fără retenție și fără ștergere la anonimizare; dovezile comenzii nu pot fi șterse niciodată |
-| **Mediu** | 7 | Două gărzi moarte, CORS `*`, `SELECT` acordat lui `anon` pe tabele private, publicația realtime trimite corpul mesajului, praguri de abuz publice, acceptare de advisor pe o premisă falsă |
+| **Mediu** | 8 | Două gărzi moarte, CORS `*`, `SELECT` **și drept de scriere** acordate lui `anon` pe tabele private (a doua jumătate găsită de garda nouă), publicația realtime trimite corpul mesajului, praguri de abuz publice, acceptare de advisor pe o premisă falsă |
 | **Scăzut** | 3 | Comparație de secret în timp variabil, e-mail de operator public, `pgcrypto` în `public` |
 
 Nimic din ce urmează nu cere un cont de staff, un token furat sau o parolă
@@ -341,6 +341,36 @@ Astea nu se repară cu un commit:
 5. **Verifică limitele de rată ale Auth** (înregistrare, autentificare,
    resetare parolă). Sunt ale GoTrue, cu valorile implicite — noi nu avem
    nimic deasupra lor.
+
+---
+
+## 7. Gărzile care le țin să nu se întoarcă
+
+`supabase/tests/security_test.sql` rulează la fiecare `pnpm db:test` și în
+CI. Nu verifică reguli de business, verifică **forma** schemei — șapte gărzi,
+una pentru fiecare clasă de bug de mai sus:
+
+| Garda | Ce oprește |
+|---|---|
+| RLS pe fiecare tabelă publică | o tabelă nouă fără RLS |
+| cel puțin o politică pe fiecare | o tabelă care refuză tot din scăpare, nu din intenție |
+| `search_path` fixat pe fiecare `SECURITY DEFINER` | deturnarea unui apel din interiorul funcției |
+| `current_user` interzis în `SECURITY DEFINER` | clasa de bug găsită de cinci ori |
+| listă de funcții executabile de `anon` | un `grant ... to anon` din reflex |
+| `anon` fără `SELECT` fără politică | RLS ca singură linie de apărare |
+| `anon` fără drept de scriere nicăieri | aceeași, pentru scriere |
+
+A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
+`delete` pe patruzeci de tabele. Nimic nu curgea — nicio politică de scriere
+pentru `anon` nu există — dar dreptul aștepta acolo. Retras în
+`20260930100000`.
+
+`tests/unit/bundle-secrets.test.ts` face cealaltă jumătate: niciun fișier
+`'use client'` nu citește o variabilă care nu este `NEXT_PUBLIC_*`, și
+chunk-urile construite nu conțin nimic în formă de cheie.
+
+Regulile în cuvinte sunt în secțiunea **Securitate** din `CLAUDE.md`, cu
+bug-ul din care vine fiecare.
 
 ---
 
