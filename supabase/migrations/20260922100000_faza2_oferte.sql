@@ -1607,6 +1607,107 @@ grant execute on function public.admin_offers(
   public.offer_status, uuid, timestamptz, timestamptz, integer, integer
 ) to authenticated;
 
+/**
+ * The firms the company filter can offer, with how many offers each
+ * has sent.
+ *
+ * A text box asking for a uuid is a filter nobody uses. This is small —
+ * one row per firm that has ever bid — and it is the only way the list
+ * can be narrowed to a firm whose offers are not on the page in front
+ * of you.
+ */
+create or replace function public.admin_offer_companies()
+returns table (company_id uuid, company_name text, offers_count bigint)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Doar echipa platformei poate vedea toate ofertele' using errcode = '42501';
+  end if;
+
+  return query
+  select c.id, coalesce(c.display_name, c.legal_name), count(*)
+  from public.offers o
+  join public.companies c on c.id = o.from_company_id
+  group by c.id, coalesce(c.display_name, c.legal_name)
+  order by count(*) desc, coalesce(c.display_name, c.legal_name);
+end;
+$fn$;
+
+grant execute on function public.admin_offer_companies() to authenticated;
+
+/**
+ * One offer, for the staff detail screen.
+ *
+ * Everything the list has plus the terms and both sides of the deal.
+ * Still read-only: nothing here writes, and `offers` has no update
+ * policy for staff to write through. The clarification thread comes
+ * from `offer_thread()`, which already lets staff read one.
+ */
+create or replace function public.admin_offer(p_offer_id uuid)
+returns table (
+  id uuid,
+  created_at timestamptz,
+  status public.offer_status,
+  price_amount numeric,
+  currency public.currency_code,
+  estimated_pickup_date date,
+  estimated_delivery_date date,
+  conditions text,
+  payment_term_days integer,
+  message text,
+  valid_until timestamptz,
+  expired_at timestamptz,
+  company_id uuid,
+  company_name text,
+  bidder_name text,
+  vehicle_plate text,
+  request_id uuid,
+  request_title text,
+  from_city text,
+  to_city text,
+  loading_from date,
+  request_status public.listing_status,
+  client_name text,
+  client_company text,
+  transport_id uuid
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Doar echipa platformei poate vedea toate ofertele' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    o.id, o.created_at, o.status, o.price_amount, o.currency,
+    o.estimated_pickup_date, o.estimated_delivery_date, o.conditions,
+    o.payment_term_days, o.message, o.valid_until, o.expired_at,
+    c.id, coalesce(c.display_name, c.legal_name), bidder.full_name,
+    v.plate_number,
+    l.id, l.title, l.loading_city, l.unloading_city, l.loading_from, l.status,
+    client.full_name, coalesce(lc.display_name, lc.legal_name),
+    (select t.id from public.transports t where t.offer_id = o.id limit 1)
+  from public.offers o
+  join public.profiles bidder on bidder.id = o.from_user_id
+  left join public.companies c on c.id = o.from_company_id
+  left join public.vehicles v on v.id = o.vehicle_id
+  left join public.cargo_listings l on l.id = o.cargo_listing_id
+  left join public.profiles client on client.id = l.posted_by
+  left join public.companies lc on lc.id = l.company_id
+  where o.id = p_offer_id;
+end;
+$fn$;
+
+grant execute on function public.admin_offer(uuid) to authenticated;
+
 -- ---------------------------------------------------------------------
 -- 10. The eleventh scheduled job
 -- ---------------------------------------------------------------------

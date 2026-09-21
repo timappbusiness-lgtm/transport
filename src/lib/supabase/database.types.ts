@@ -4580,6 +4580,44 @@ export type Database = {
           updated_at: string
         }
       }
+      admin_offer: {
+        Args: { p_offer_id: string }
+        Returns: {
+          bidder_name: string
+          client_company: string
+          client_name: string
+          company_id: string
+          company_name: string
+          conditions: string
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          estimated_delivery_date: string
+          estimated_pickup_date: string
+          expired_at: string
+          from_city: string
+          id: string
+          loading_from: string
+          message: string
+          payment_term_days: number
+          price_amount: number
+          request_id: string
+          request_status: Database["public"]["Enums"]["listing_status"]
+          request_title: string
+          status: Database["public"]["Enums"]["offer_status"]
+          to_city: string
+          transport_id: string
+          valid_until: string
+          vehicle_plate: string
+        }[]
+      }
+      admin_offer_companies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          company_id: string
+          company_name: string
+          offers_count: number
+        }[]
+      }
       admin_offers: {
         Args: {
           p_company_id?: string

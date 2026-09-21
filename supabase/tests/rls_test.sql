@@ -7824,6 +7824,43 @@ select pg_temp.check('ACC  and staff cannot rewrite one', 'fix',
   p_verify => $v$select price_amount = 2400 from public.offers
                  where id = 'f2000000-0000-0000-0000-0000000000c9'$v$);
 
+-- The two screens the staff list is made of.
+select pg_temp.check('ACC  staff read one offer in full', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) = 1 from public.admin_offer('f2000000-0000-0000-0000-0000000000ca')$a$,
+  'true',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000ca',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  a visitor reads none in full', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.admin_offer('f2000000-0000-0000-0000-0000000000ca')$a$,
+  'blocked',
+  p_setup => $s$insert into public.offers
+       (id, cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f2000000-0000-0000-0000-0000000000ca',
+             'f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('ACC  staff read the company filter', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 0 from public.admin_offer_companies()$a$, 'true');
+
+select pg_temp.check('ACC  a visitor does not read the company filter', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.admin_offer_companies()$a$, 'blocked');
+
+select pg_temp.check('ACC  anon reads neither', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.admin_offer_companies()$a$, 'blocked');
+
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
 select format('%s  %-5s  %s%s',
