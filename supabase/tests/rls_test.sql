@@ -8745,6 +8745,736 @@ select pg_temp.check('ORD  and nobody deletes a file once it is evidence', 'fix'
   p_verify => $v$select count(*) = 1 from storage.objects
                  where name = 'f5000000-0000-0000-0000-0000000000a4/x.jpg'$v$);
 
+-- =====================================================================
+-- ERV - evaluările și reputația
+--
+-- Comenzile de aici sunt create de `pg_temp.rated_order`, care le pune
+-- direct în `order_completed` cu un `closed_at` la alegere: fereastra de
+-- evaluare se măsoară din el, deci fiecare verificare care are de-a face
+-- cu timpul îl mută în loc să aștepte.
+--
+-- Cele două părți din fixturi sunt firma A (transportator,
+-- `fc...001`, cu utilizatorii 002 owner și 003 dispecer) și firma B
+-- (client, `fc...002`, cu 004 owner și 005 dispecer). Utilizatorul 006
+-- este persoana fizică, iar 001 este echipa platformei.
+-- =====================================================================
+
+/**
+ * O comandă încheiată, cu clientul ales și cu ora închiderii.
+ *
+ * `p_client_company` null înseamnă persoană fizică — cazul în care
+ * transportatorul nu are pe cine evalua.
+ */
+create or replace function pg_temp.rated_order(
+  p_id uuid,
+  p_closed_ago interval default interval '1 day',
+  p_client_company uuid default 'fc000000-0000-0000-0000-000000000002',
+  p_client_user uuid default 'f0000000-0000-0000-0000-000000000004',
+  p_status public.transport_status default 'order_completed',
+  p_disputed boolean default false
+) returns void language plpgsql as $ro$
+begin
+  insert into public.transports
+    (id, cargo_listing_id, shipper_company_id, shipper_user_id, carrier_company_id,
+     agreed_price, currency, status, closed_at, picked_up_at, delivered_at,
+     disputed_at, dispute_resolved_at)
+  values
+    (p_id, 'f1000000-0000-0000-0000-000000000002', p_client_company, p_client_user,
+     'fc000000-0000-0000-0000-000000000001', 2400, 'RON', p_status,
+     case when p_status in ('order_completed', 'invoiced', 'closed')
+          then now() - p_closed_ago end,
+     now() - p_closed_ago - interval '2 days',
+     now() - p_closed_ago - interval '1 day',
+     case when p_disputed then now() - p_closed_ago - interval '1 hour' end,
+     case when p_disputed then now() - p_closed_ago end);
+end $ro$;
+
+-- --- cine poate evalua, și când --------------------------------------
+
+select pg_temp.check('ERV  the client rates the carrier after the order is finished', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000001', 5, 5, 4, 5)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select score = 5 and punctuality = 5 and communication = 4 and vehicle_care = 5
+                   and rated_company_id = 'fc000000-0000-0000-0000-000000000001'
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  and the carrier rates the client company back', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000002', 4,
+       p_info_accuracy => 3, p_handover_availability => 5)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000002')$s$,
+  p_verify => $v$select info_accuracy = 3 and handover_availability = 5
+                   and rated_company_id = 'fc000000-0000-0000-0000-000000000002'
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('ERV  a sub-score from the wrong side is dropped, not refused', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000003', 5,
+       p_vehicle_care => 5, p_info_accuracy => 1)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select vehicle_care = 5 and info_accuracy is null
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('ERV  not before the client has confirmed the delivery', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.post_rating('f8000000-0000-0000-0000-000000000004', 5)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000004',
+                  p_status => 'vehicle_delivered')$s$,
+  p_verify => $v$select not exists (select 1 from public.ratings
+                 where transport_id = 'f8000000-0000-0000-0000-000000000004')$v$);
+
+select pg_temp.check('ERV  an auto-completed order is finished too', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000005', 3)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000005');
+                update public.transports set auto_completed = true
+                where id = 'f8000000-0000-0000-0000-000000000005'$s$);
+
+select pg_temp.check('ERV  a stranger cannot rate somebody else''s order', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.post_rating('f8000000-0000-0000-0000-000000000006', 1)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select not exists (select 1 from public.ratings
+                 where transport_id = 'f8000000-0000-0000-0000-000000000006')$v$);
+
+select pg_temp.check('ERV  an individual client is not rated', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.post_rating('f8000000-0000-0000-0000-000000000007', 5)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000007',
+                  p_client_company => null,
+                  p_client_user => 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select not exists (select 1 from public.ratings
+                 where transport_id = 'f8000000-0000-0000-0000-000000000007')$v$);
+
+select pg_temp.check('ERV  but an individual client still rates the carrier', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000008', 4)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000008',
+                  p_client_company => null,
+                  p_client_user => 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select rated_company_id = 'fc000000-0000-0000-0000-000000000001'
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-000000000008'$v$);
+
+-- --- fereastra -------------------------------------------------------
+
+select pg_temp.check('ERV  the window closes after fourteen days', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.post_rating('f8000000-0000-0000-0000-000000000009', 5)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000009',
+                  p_closed_ago => interval '15 days')$s$,
+  p_verify => $v$select not exists (select 1 from public.ratings
+                 where transport_id = 'f8000000-0000-0000-0000-000000000009')$v$);
+
+select pg_temp.check('ERV  and on the last day it is still open', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-00000000000a', 5)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-00000000000a',
+                  p_closed_ago => interval '13 days 23 hours')$s$);
+
+select pg_temp.check('ERV  the window follows the setting, not a constant', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-00000000000b', 5)).id is not null$a$,
+  'true',
+  p_setup => $s$update public.rating_settings set window_days = 30 where id;
+                select pg_temp.rated_order('f8000000-0000-0000-0000-00000000000b',
+                  p_closed_ago => interval '20 days')$s$);
+
+-- --- disputele -------------------------------------------------------
+
+select pg_temp.check('ERV  an order still in dispute cannot be rated', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.post_rating('f8000000-0000-0000-0000-00000000000c', 1)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-00000000000c',
+                  p_status => 'disputed', p_disputed => true)$s$,
+  p_verify => $v$select not exists (select 1 from public.ratings
+                 where transport_id = 'f8000000-0000-0000-0000-00000000000c')$v$);
+
+select pg_temp.check('ERV  once staff close it, the rating is allowed and marked', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-00000000000d', 2)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-00000000000d',
+                  p_disputed => true)$s$,
+  p_verify => $v$select after_dispute
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-00000000000d'$v$);
+
+select pg_temp.check('ERV  an order that never disputed is not marked', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-00000000000e', 5)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-00000000000e')$s$,
+  p_verify => $v$select not after_dispute
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-00000000000e'$v$);
+
+-- --- corectura, o dată, în fereastră ----------------------------------
+
+/** O evaluare gata făcută, cu vârsta ei, ca să nu o scrie fiecare check. */
+create or replace function pg_temp.rated(
+  p_order uuid,
+  p_rating uuid,
+  p_rater uuid default 'f0000000-0000-0000-0000-000000000004',
+  p_age interval default interval '1 hour',
+  p_score integer default 4
+) returns void language plpgsql as $rt$
+begin
+  perform pg_temp.rated_order(p_order);
+  insert into public.ratings
+    (id, transport_id, rater_user_id, rated_company_id, score, comment, created_at)
+  values (p_rating, p_order, p_rater, 'fc000000-0000-0000-0000-000000000001',
+          p_score, 'A mers bine.', now() - p_age);
+end $rt$;
+
+select pg_temp.check('ERV  the author corrects their rating once, inside the window', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.edit_rating('f9000000-0000-0000-0000-000000000001', 2)).id is not null$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000011',
+                  'f9000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select score = 2 and edited_at is not null
+                 from public.ratings where id = 'f9000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  and never a second time', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.edit_rating('f9000000-0000-0000-0000-000000000002', 1)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000012',
+                  'f9000000-0000-0000-0000-000000000002');
+                update public.ratings set edited_at = now()
+                where id = 'f9000000-0000-0000-0000-000000000002'$s$,
+  p_verify => $v$select score = 4 from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('ERV  after forty-eight hours it is set in stone', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.edit_rating('f9000000-0000-0000-0000-000000000003', 1)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000013',
+                  'f9000000-0000-0000-0000-000000000003',
+                  p_age => interval '49 hours')$s$,
+  p_verify => $v$select score = 4 from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('ERV  somebody else''s rating is not yours to correct', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.edit_rating('f9000000-0000-0000-0000-000000000004', 1)$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000014',
+                  'f9000000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select score = 4 from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000004'$v$);
+
+select pg_temp.check('ERV  nor is the table itself, at any age', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.ratings set score = 1
+     where id = 'f9000000-0000-0000-0000-000000000005'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000015',
+                  'f9000000-0000-0000-0000-000000000005')$s$,
+  p_verify => $v$select score = 4 from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000005'$v$);
+
+select pg_temp.check('ERV  and a party cannot delete one', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$delete from public.ratings where id = 'f9000000-0000-0000-0000-000000000006'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000016',
+                  'f9000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select count(*) = 1 from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000006'$v$);
+
+-- --- răspunsul firmei evaluate ---------------------------------------
+
+select pg_temp.check('ERV  the rated firm replies once, in public', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.reply_to_rating('f9000000-0000-0000-0000-000000000021',
+       'Ne pare rău, am pierdut o zi în vamă.')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000021',
+                  'f9000000-0000-0000-0000-000000000021')$s$,
+  p_verify => $v$select count(*) = 1 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000021'$v$);
+
+select pg_temp.check('ERV  and not twice', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.reply_to_rating('f9000000-0000-0000-0000-000000000022', 'Și încă ceva.')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000022',
+                  'f9000000-0000-0000-0000-000000000022');
+                insert into public.rating_replies (rating_id, company_id, author_user_id, body)
+                values ('f9000000-0000-0000-0000-000000000022',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'Primul răspuns.')$s$,
+  p_verify => $v$select count(*) = 1 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000022'$v$);
+
+select pg_temp.check('ERV  a firm does not reply on somebody else''s behalf', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.reply_to_rating('f9000000-0000-0000-0000-000000000023', 'Mulțumim!')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000023',
+                  'f9000000-0000-0000-0000-000000000023')$s$,
+  p_verify => $v$select not exists (select 1 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000023')$v$);
+
+select pg_temp.check('ERV  a driver is not the firm''s voice either', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.reply_to_rating('f9000000-0000-0000-0000-000000000024', 'Eu am condus.')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000024',
+                  'f9000000-0000-0000-0000-000000000024')$s$,
+  p_verify => $v$select not exists (select 1 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000024')$v$);
+
+select pg_temp.check('ERV  a published reply is not rewritten', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.rating_replies set body = 'Altceva'
+     where rating_id = 'f9000000-0000-0000-0000-000000000025'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000025',
+                  'f9000000-0000-0000-0000-000000000025');
+                insert into public.rating_replies (rating_id, company_id, author_user_id, body)
+                values ('f9000000-0000-0000-0000-000000000025',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'Răspunsul nostru.')$s$,
+  p_verify => $v$select body = 'Răspunsul nostru.' from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000025'$v$);
+
+select pg_temp.check('ERV  nor deleted', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$delete from public.rating_replies
+     where rating_id = 'f9000000-0000-0000-0000-000000000026'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000026',
+                  'f9000000-0000-0000-0000-000000000026');
+                insert into public.rating_replies (rating_id, company_id, author_user_id, body)
+                values ('f9000000-0000-0000-0000-000000000026',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'Rămâne.')$s$,
+  p_verify => $v$select count(*) = 1 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000026'$v$);
+
+-- --- masca pe comentarii ---------------------------------------------
+
+select pg_temp.check('ERV  a telephone number in a comment is masked on the way in', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.post_rating('f8000000-0000-0000-0000-000000000031', 5,
+       p_comment => 'Sunați-mă la 0722123456 pentru detalii')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000031')$s$,
+  p_verify => $v$select comment not like '%0722123456%' and was_masked
+                 from public.ratings where transport_id = 'f8000000-0000-0000-0000-000000000031'$v$);
+
+select pg_temp.check('ERV  and so is one in a reply', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.reply_to_rating('f9000000-0000-0000-0000-000000000032',
+       'Scrieți-ne pe office@firma.ro')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000032',
+                  'f9000000-0000-0000-0000-000000000032')$s$,
+  p_verify => $v$select body not like '%office@firma.ro%' and was_masked
+                 from public.rating_replies
+                 where rating_id = 'f9000000-0000-0000-0000-000000000032'$v$);
+
+-- --- moderarea -------------------------------------------------------
+
+select pg_temp.check('ERV  staff hide a rating, with a reason, in the log', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_hide_rating('f9000000-0000-0000-0000-000000000041',
+       'Limbaj injurios')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000041',
+                  'f9000000-0000-0000-0000-000000000041')$s$,
+  p_verify => $v$select exists (select 1 from public.audit_log
+                 where action = 'rating.hidden' and actor_role = 'staff'
+                   and entity_id = 'f9000000-0000-0000-0000-000000000041'
+                   and reason = 'Limbaj injurios')$v$);
+
+select pg_temp.check('ERV  and a reason is not optional', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.staff_hide_rating('f9000000-0000-0000-0000-000000000042', '   ')$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000042',
+                  'f9000000-0000-0000-0000-000000000042')$s$,
+  p_verify => $v$select hidden_at is null from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000042'$v$);
+
+select pg_temp.check('ERV  the rated firm cannot hide what was said about it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.staff_hide_rating('f9000000-0000-0000-0000-000000000043', 'Nu ne convine')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000043',
+                  'f9000000-0000-0000-0000-000000000043')$s$,
+  p_verify => $v$select hidden_at is null from public.ratings
+                 where id = 'f9000000-0000-0000-0000-000000000043'$v$);
+
+select pg_temp.check('ERV  staff never rewrite a rating, only hide it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.ratings set score = 5, comment = 'Altceva'
+     where id = 'f9000000-0000-0000-0000-000000000044'$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000044',
+                  'f9000000-0000-0000-0000-000000000044')$s$,
+  p_verify => $v$select score = 4 and comment = 'A mers bine.'
+                 from public.ratings where id = 'f9000000-0000-0000-0000-000000000044'$v$);
+
+select pg_temp.check('ERV  a hidden rating is gone for everybody but its author and staff', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.ratings
+     where id = 'f9000000-0000-0000-0000-000000000045'$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000045',
+                  'f9000000-0000-0000-0000-000000000045');
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f9000000-0000-0000-0000-000000000045'$s$);
+
+select pg_temp.check('ERV  its author still sees it, so the silence is explainable', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 1 from public.ratings
+     where id = 'f9000000-0000-0000-0000-000000000046'$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000046',
+                  'f9000000-0000-0000-0000-000000000046');
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f9000000-0000-0000-0000-000000000046'$s$);
+
+select pg_temp.check('ERV  staff put one back, also with a reason', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_unhide_rating('f9000000-0000-0000-0000-000000000047',
+       'Sesizare neîntemeiată')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000047',
+                  'f9000000-0000-0000-0000-000000000047');
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f9000000-0000-0000-0000-000000000047'$s$,
+  p_verify => $v$select hidden_at is null and hidden_reason is null
+                 from public.ratings where id = 'f9000000-0000-0000-0000-000000000047'$v$);
+
+-- --- agregatele ------------------------------------------------------
+
+-- Firm A starts with one rating: the fixture row f7...001, five stars,
+-- written by user 004. Every check below is stated against that baseline,
+-- because a check that asserts „count = 1" without saying where the one
+-- came from is a check that passes for the wrong reason later.
+
+select pg_temp.check('ERV  a rating from one of our own accounts reaches no average', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000051',
+                  'f9000000-0000-0000-0000-000000000051', p_score => 1);
+                update public.profiles set is_test = true
+                where id = 'f0000000-0000-0000-0000-000000000004'$s$,
+  p_verify => $v$select rating_count = 0 and rating_avg is null
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  a rating from a real account does', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000052',
+                  'f9000000-0000-0000-0000-000000000052', p_score => 1)$s$,
+  p_verify => $v$select rating_count = 2 and rating_avg = 3.00
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  and hiding it takes it straight back out', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_hide_rating('f9000000-0000-0000-0000-000000000053', 'Sesizată')).id
+     is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000053',
+                  'f9000000-0000-0000-0000-000000000053', p_score => 1)$s$,
+  p_verify => $v$select rating_count = 1 and rating_avg = 5.00
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  putting it back brings it into the average again', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_unhide_rating('f9000000-0000-0000-0000-000000000054', 'Greșeală')).id
+     is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000054',
+                  'f9000000-0000-0000-0000-000000000054', p_score => 1);
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f9000000-0000-0000-0000-000000000054'$s$,
+  p_verify => $v$select rating_count = 2 and rating_avg = 3.00
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  the sub-score averages are computed over the rows that have them', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000055');
+                insert into public.ratings
+                  (transport_id, rater_user_id, rated_company_id, score, punctuality, vehicle_care)
+                values ('f8000000-0000-0000-0000-000000000055',
+                        'f0000000-0000-0000-0000-000000000004',
+                        'fc000000-0000-0000-0000-000000000001', 4, 5, 3)$s$,
+  p_verify => $v$select rating_avg = 4.50 and rating_punctuality = 5.00
+                   and rating_vehicle_care = 3.00
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  completed orders are counted on each side separately', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-000000000056');
+                select pg_temp.rated_order('f8000000-0000-0000-0000-000000000057')$s$,
+  p_verify => $v$select completed_as_carrier >= 2 and completed_as_client = 0
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- --- reputația calculată nu se tastează ------------------------------
+
+select pg_temp.check('ERV  an owner cannot type their own completed count', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set completed_as_carrier = 999
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select completed_as_carrier <> 999
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  nor their punctuality', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set punctuality_pct = 100
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select punctuality_pct is distinct from 100
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  nor their rating', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set rating_avg = 5.00, rating_count = 99
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$, 'blocked',
+  p_verify => $v$select rating_count <> 99
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- --- sesizarea unei evaluări -----------------------------------------
+
+select pg_temp.check('ERV  a reader reports a rating, into the queue that exists', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.report_rating('f9000000-0000-0000-0000-000000000061',
+       'Evaluarea descrie alt transport')).id is not null$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000061',
+                  'f9000000-0000-0000-0000-000000000061')$s$,
+  p_verify => $v$select count(*) = 1 from public.reports
+                 where rating_id = 'f9000000-0000-0000-0000-000000000061'
+                   and kind = 'evaluare' and status = 'open'$v$);
+
+select pg_temp.check('ERV  and not twice for the same one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.report_rating('f9000000-0000-0000-0000-000000000062', 'Iar')$a$, 'blocked',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000062',
+                  'f9000000-0000-0000-0000-000000000062');
+                insert into public.reports
+                  (reporter_user_id, rating_id, kind, reason)
+                values ('f0000000-0000-0000-0000-000000000002',
+                        'f9000000-0000-0000-0000-000000000062', 'evaluare', 'Prima')$s$,
+  p_verify => $v$select count(*) = 1 from public.reports
+                 where rating_id = 'f9000000-0000-0000-0000-000000000062'$v$);
+
+-- --- ecranul echipei --------------------------------------------------
+
+select pg_temp.check('ERV  staff read every rating, hidden ones included', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select count(*) >= 1 from public.admin_ratings()$a$, 'true',
+  p_setup => $s$select pg_temp.rated('f8000000-0000-0000-0000-000000000071',
+                  'f9000000-0000-0000-0000-000000000071');
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'
+                where id = 'f9000000-0000-0000-0000-000000000071'$s$);
+
+select pg_temp.check('ERV  a firm owner cannot open the staff list', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.admin_ratings()$a$, 'blocked');
+
+select pg_temp.check('ERV  nor can a visitor', 'fix',
+  null, 'anon',
+  $a$select public.admin_ratings()$a$, 'blocked');
+
+-- --- punctualitatea ---------------------------------------------------
+--
+-- Comparația este între ce a promis oferta acceptată și ce s-a întâmplat,
+-- cu toleranța din setări. O comandă fără ofertă cu date estimate nu
+-- intră în numărătoare deloc: o promisiune care nu a fost făcută nu poate
+-- fi nici ținută, nici ratată.
+
+/** O comandă încheiată cu promisiune și cu realitate, amândouă la alegere. */
+create or replace function pg_temp.timed_order(
+  p_id uuid,
+  p_offer uuid,
+  p_promised_pickup date,
+  p_promised_delivery date,
+  p_actual_pickup timestamptz,
+  p_actual_delivery timestamptz
+) returns void language plpgsql as $to$
+begin
+  -- guard_offer_terms() wants the vehicle that will do the job, and the
+  -- promised pickup inside the request's loading window. Both are the
+  -- offer flow's rules, not this one's; they are satisfied here so the
+  -- punctuality arithmetic is what the check is actually measuring.
+  insert into public.offers
+    (id, cargo_listing_id, from_company_id, from_user_id, price_amount, currency,
+     vehicle_id, estimated_pickup_date, estimated_delivery_date, status)
+  values (p_offer, 'f1000000-0000-0000-0000-000000000002',
+          'fc000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002',
+          2400, 'RON', 'fe000000-0000-0000-0000-000000000001',
+          p_promised_pickup, p_promised_delivery,
+          -- Accepted, not pending: an order has an accepted offer behind it,
+          -- and only one offer per firm per request may be pending at once.
+          'accepted');
+  insert into public.transports
+    (id, cargo_listing_id, offer_id, shipper_company_id, shipper_user_id,
+     carrier_company_id, agreed_price, currency, status, closed_at,
+     picked_up_at, delivered_at)
+  values (p_id, 'f1000000-0000-0000-0000-000000000002', p_offer,
+          'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004',
+          'fc000000-0000-0000-0000-000000000001', 2400, 'RON', 'order_completed',
+          now() - interval '1 day', p_actual_pickup, p_actual_delivery);
+end $to$;
+
+select pg_temp.check('ERV  three orders on time read as a hundred per cent', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.timed_order('f8000000-0000-0000-0000-000000000081',
+                  'f2000000-0000-0000-0000-000000000081',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000082',
+                  'f2000000-0000-0000-0000-000000000082',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000083',
+                  'f2000000-0000-0000-0000-000000000083',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz)$s$,
+  p_verify => $v$select punctuality_pct = 100 and punctuality_sample = 3
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  one late delivery out of four is seventy-five', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.timed_order('f8000000-0000-0000-0000-000000000084',
+                  'f2000000-0000-0000-0000-000000000084',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000085',
+                  'f2000000-0000-0000-0000-000000000085',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000086',
+                  'f2000000-0000-0000-0000-000000000086',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000087',
+                  'f2000000-0000-0000-0000-000000000087',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 10)::timestamptz)$s$,
+  p_verify => $v$select punctuality_pct = 75 and punctuality_sample = 4
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  a day late is inside the grace and still on time', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.timed_order('f8000000-0000-0000-0000-000000000088',
+                  'f2000000-0000-0000-0000-000000000088',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 7)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000089',
+                  'f2000000-0000-0000-0000-000000000089',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-00000000008a',
+                  'f2000000-0000-0000-0000-00000000008a',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz)$s$,
+  p_verify => $v$select punctuality_pct = 100
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  two orders are too few to say anything', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.timed_order('f8000000-0000-0000-0000-00000000008b',
+                  'f2000000-0000-0000-0000-00000000008b',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-00000000008c',
+                  'f2000000-0000-0000-0000-00000000008c',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz)$s$,
+  p_verify => $v$select punctuality_pct is null and punctuality_sample = 2
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  an order with no promised dates is not counted at all', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.rated_order('f8000000-0000-0000-0000-00000000008d');
+                select pg_temp.rated_order('f8000000-0000-0000-0000-00000000008e');
+                select pg_temp.rated_order('f8000000-0000-0000-0000-00000000008f')$s$,
+  p_verify => $v$select punctuality_sample = 0 and punctuality_pct is null
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('ERV  the grace period follows the setting', 'fix',
+  null, 'service_role',
+  $a$select public.recompute_company_reputation('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$update public.rating_settings set punctuality_grace_days = 0 where id;
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000091',
+                  'f2000000-0000-0000-0000-000000000091',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 7)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000092',
+                  'f2000000-0000-0000-0000-000000000092',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz);
+                select pg_temp.timed_order('f8000000-0000-0000-0000-000000000093',
+                  'f2000000-0000-0000-0000-000000000093',
+                  current_date + 4, current_date + 6,
+                  (current_date + 4)::timestamptz, (current_date + 6)::timestamptz)$s$,
+  p_verify => $v$select punctuality_pct = 67
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- --- ce vede profilul public -----------------------------------------
+
+select pg_temp.check('ERV  a visitor reads the ratings of a public profile', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 1 from public.company_ratings('firma-a')$a$, 'true',
+  p_setup => $s$update public.companies
+                  set public_profile_enabled = true, slug = 'firma-a'
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('ERV  but never a hidden one', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.company_ratings('firma-a')$a$, 'true',
+  p_setup => $s$update public.companies
+                  set public_profile_enabled = true, slug = 'firma-a'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                update public.ratings set hidden_at = now(), hidden_reason = 'x'$s$);
+
+select pg_temp.check('ERV  nor a hidden reply under a visible rating', 'fix',
+  null, 'anon',
+  $a$select bool_and(reply_body is null) from public.company_ratings('firma-a')$a$, 'true',
+  p_setup => $s$update public.companies
+                  set public_profile_enabled = true, slug = 'firma-a'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                insert into public.rating_replies
+                  (rating_id, company_id, author_user_id, body, hidden_at, hidden_reason)
+                values ('f7000000-0000-0000-0000-000000000001',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'Ascuns', now(), 'x')$s$);
+
+select pg_temp.check('ERV  a firm that opted out of a public profile shows nothing', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.company_ratings('firma-a')$a$, 'true',
+  p_setup => $s$update public.companies
+                  set public_profile_enabled = false, slug = 'firma-a'
+                where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('ERV  an individual rater is „Client", not a person''s name', 'fix',
+  null, 'anon',
+  $a$select rater_name = 'Client' from public.company_ratings('firma-a')
+     where id = 'f9000000-0000-0000-0000-0000000000a1'$a$, 'true',
+  p_setup => $s$update public.companies
+                  set public_profile_enabled = true, slug = 'firma-a'
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                select pg_temp.rated_order('f8000000-0000-0000-0000-0000000000a1',
+                  p_client_company => null,
+                  p_client_user => 'f0000000-0000-0000-0000-000000000006');
+                insert into public.ratings
+                  (id, transport_id, rater_user_id, rated_company_id, score)
+                values ('f9000000-0000-0000-0000-0000000000a1',
+                        'f8000000-0000-0000-0000-0000000000a1',
+                        'f0000000-0000-0000-0000-000000000006',
+                        'fc000000-0000-0000-0000-000000000001', 5)$s$);
+
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
 select format('%s  %-5s  %s%s',
