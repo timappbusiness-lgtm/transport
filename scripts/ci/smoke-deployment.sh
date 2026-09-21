@@ -49,4 +49,36 @@ if [[ "$failed" -ne 0 ]]; then
   exit 1
 fi
 
+# The security headers, on the real response.
+#
+# They are set in next.config.ts and covered by a unit test and a Playwright
+# spec, but both of those look at our side of the wire. This looks at what
+# the deployment actually returns — a header lost to a platform setting, a
+# CDN rule or a bad merge would pass every test we run locally and still be
+# missing from production. Before the audit there were none at all.
+headers="$(curl -sS -D - -o /dev/null --max-time 30 ${auth[@]+"${auth[@]}"} "${url}/" || true)"
+missing=()
+
+while IFS='|' read -r header expected; do
+  line="$(printf '%s' "$headers" | grep -i "^${header}:" || true)"
+  if [[ -z "$line" ]]; then
+    missing+=("${header} (absent)")
+  elif [[ "$line" != *"$expected"* ]]; then
+    missing+=("${header} (does not contain '${expected}')")
+  fi
+done <<'CHECKS'
+content-security-policy|frame-ancestors 'none'
+strict-transport-security|max-age=
+x-content-type-options|nosniff
+x-frame-options|DENY
+referrer-policy|strict-origin-when-cross-origin
+permissions-policy|camera=()
+CHECKS
+
+if [[ ${#missing[@]} -ne 0 ]]; then
+  printf '::error::%s is missing security headers: %s\n' "$url" "${missing[*]}" >&2
+  exit 1
+fi
+
+echo "  ok  security headers on /"
 echo "${url} is serving."

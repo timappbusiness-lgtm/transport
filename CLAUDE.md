@@ -99,6 +99,62 @@ offer is accepted.
   and write to `audit_log`.
 - Keep existing schema names (`curse`, `retur`, `pe_sens`, …). No renames.
 
+## Securitate
+
+Regulile de aici nu sunt generalități. Fiecare vine dintr-un bug care a
+existat în proiectul ăsta și este scrisă cu prețul lui. Auditul întreg este
+`docs/12-audit-securitate.md`; gărzile care le țin sunt în
+`supabase/tests/security_test.sql` și cad CI-ul dacă una se rupe.
+
+1. **`current_user` într-o funcție `SECURITY DEFINER` este proprietarul
+   funcției, niciodată apelantul.** A apărut de cinci ori. O condiție pe el
+   ori nu se declanșează niciodată (portiță moartă), ori se declanșează
+   întotdeauna (gardă moartă) — și în ambele cazuri tăcut. Testul corect al
+   apelantului este `auth.uid()`, sau un **flag de sesiune** pus de cine are
+   voie: `app.audit_retention`, `app.rating_write`, `app.evidence_retention`.
+   Într-o funcție `SECURITY INVOKER`, `current_user` chiar este apelantul și
+   se poate folosi.
+
+2. **API-ul este suprafața de atac, nu ecranul.** Cheia `anon` este publică
+   — stă în pachetul din browser. PostgREST servește fiecare tabelă, vedere
+   și funcție cu drept de execuție, folosită de aplicație sau nu. Înainte să
+   adaugi o vedere sau un `grant`, întreabă ce întoarce un `GET` pe ea cu
+   cheia aceea.
+
+3. **Un `grant` și o politică sunt două lucruri.** RLS care întoarce zero
+   rânduri este suficient — până nu mai este. `anon` nu are `select` pe o
+   tabelă fără politică pentru el, și nu are `insert`, `update` sau `delete`
+   nicăieri. Două lucruri trebuie să meargă prost, nu unul.
+
+4. **Un bucket public nu are RLS la descărcare, iar `select` pe
+   `storage.objects` este API-ul de listare.** O politică de forma
+   `bucket_id = '...'` și nimic altceva lasă pe oricine să enumere tot
+   bucketul. Pozele private se servesc cu URL semnat, dintr-un bucket privat.
+
+5. **O vedere `security_invoker = off` citește pe lângă RLS.** Singurul ei
+   filtru este `where`-ul ei. Dacă trebuie să respecte o opțiune a
+   utilizatorului — `public_profile_enabled`, `visibility` — filtrul acela
+   se scrie explicit, sau vederea nu se dă lui `anon`. Modelul curat este
+   `v_requests_private`: nu se dă nimănui, se citește numai printr-o funcție
+   care verifică dreptul.
+
+6. **Când ascunzi ceva, numără ușile.** O cerere privată se ajunge prin
+   pagină, prin ofertele de pe ea, prin firul de mesaje, prin datele de
+   contact și prin pozele din storage. Toate trebuie să întrebe aceeași
+   funcție. Prima dată am găsit trei din cinci.
+
+7. **404, nu 403, pentru ce nu ai voie să știi că există.** Un „nu ai voie"
+   confirmă rândul.
+
+8. **Fiecare funcție nouă: `search_path` fixat și grant explicit.** Fără
+   `search_path`, cine poate crea un obiect într-o schemă de pe cale poate
+   deturna un apel din interiorul funcției.
+
+9. **Datele personale nu sunt doar în tabela lor.** `audit_log.before` și
+   `.after` sunt instantanee întregi de rânduri, iar tabela nu are chei
+   străine, deci nu cascadează nimic. Ștergerea la cerere trebuie să treacă
+   pe acolo, și prin storage.
+
 ## Commands
 
 ```bash

@@ -11423,6 +11423,48 @@ select pg_temp.check('SEC  and the bucket is not public', 'fix',
   null, 'anon',
   $a$select not public from storage.buckets where id = 'listing-photos'$a$, 'true');
 
+-- Cealaltă jumătate, și cea care se putea strica în tăcere: poza unei
+-- cereri **publice** trebuie să se vadă în continuare fără cont, altfel
+-- reparația a rupt panoul în loc să îl apere. O politică prea strânsă
+-- nu dă eroare — dă o pagină cu imagini lipsă.
+select pg_temp.check('SEC  a photo on a public request is still visible without an account', 'fix',
+  null, 'anon',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000006/publica.jpg'$a$, 'true',
+  p_setup => $s$update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000006/publica.jpg']
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000006/publica.jpg',
+             'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('SEC  but not one on a private request', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000004/privata.jpg'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false);
+     update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000004/privata.jpg']
+       where id = (select onboarding_id from pg_temp.asi_ctx);
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000004/privata.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
+select pg_temp.check('SEC  and the invited carrier does see that one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'listing-photos'
+       and name = 'f0000000-0000-0000-0000-000000000004/privata.jpg'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(true);
+     update public.cargo_listings
+       set photo_paths = array['f0000000-0000-0000-0000-000000000004/privata.jpg']
+       where id = (select onboarding_id from pg_temp.asi_ctx);
+     insert into storage.objects (bucket_id, name, owner)
+     values ('listing-photos', 'f0000000-0000-0000-0000-000000000004/privata.jpg',
+             'f0000000-0000-0000-0000-000000000004')$s$);
+
 -- --- R1: directorul de firme -----------------------------------------
 --
 -- `v_companies_public` era dată lui anon, deși comentariul ei spune
@@ -11553,6 +11595,80 @@ select pg_temp.check('SEC  and it has a window that can be changed without a mig
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
   $a$select audit_retention_months between 1 and 120 from public.deletion_settings where id$a$,
   'true');
+-- --- Secțiunea 4 a auditului: fiecare RPC, cu id-ul altcuiva -------
+--
+-- Auditul a numărat 116 funcții apelabile de un cont autentificat care
+-- iau un `uuid`. Suita le atingea pe 91. Restul de 25 sunt în cea mai
+-- mare parte ajutători de politică, verificați indirect de fiecare
+-- verificare de politică — dar șapte **întorc date** sau **scriu**, iar
+-- pentru ele „am citit codul și pare corect" nu este același lucru cu
+-- „suita o dovedește".
+--
+-- Toate șapte s-au dovedit corecte. Verificările sunt aici ca a doua
+-- oară să nu mai fie nevoie de citit.
+select pg_temp.check('SEC  conversation_messages refuses somebody else''s thread', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.conversation_messages(
+       'f4000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('SEC  but a participant reads their own', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 1 from public.conversation_messages(
+       'f4000000-0000-0000-0000-000000000001')$a$, 'true');
+
+select pg_temp.check('SEC  offer_thread refuses somebody else''s offer', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.offer_thread(
+       'f2000000-0000-0000-0000-000000000001')$a$, 'blocked');
+
+select pg_temp.check('SEC  order_evidence_list refuses somebody else''s order', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.order_evidence_list(
+       'f5000000-0000-0000-0000-0000000000d1')$a$, 'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000d1', 'vehicle_picked_up')$s$);
+
+select pg_temp.check('SEC  and a party to it is let in', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 0 from public.order_evidence_list(
+       'f5000000-0000-0000-0000-0000000000d2')$a$, 'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000d2', 'vehicle_picked_up')$s$);
+
+select pg_temp.check('SEC  order_timeline refuses somebody else''s order', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.order_timeline(
+       'f5000000-0000-0000-0000-0000000000d3')$a$, 'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000d3', 'vehicle_picked_up')$s$);
+
+select pg_temp.check('SEC  order_crew_options refuses a firm that is not the carrier', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.order_crew_options(
+       'f5000000-0000-0000-0000-0000000000d4')$a$, 'blocked',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000d4', 'vehicle_picked_up')$s$);
+
+-- Id-ul trece prin `asi_ctx`, nu printr-un subselect pe `route_series`:
+-- sub RLS, celălalt cont nu vede seria deloc, deci subselectul ar da
+-- `null` și funcția ar întoarce liniștită mulțimea goală. Verificarea
+-- ar fi trecut fără să fi cerut vreodată id-ul altcuiva.
+select pg_temp.check('SEC  route_series_upcoming refuses another firm''s series', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) from public.route_series_upcoming(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$delete from pg_temp.asi_ctx;
+     insert into pg_temp.asi_ctx (company_id, onboarding_id)
+     values (null, pg_temp.series())$s$);
+
+select pg_temp.check('SEC  and its own firm still reads it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) >= 1 from public.route_series_upcoming(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$delete from pg_temp.asi_ctx;
+     insert into pg_temp.asi_ctx (company_id, onboarding_id)
+     values (null, pg_temp.series())$s$);
+
+select pg_temp.check('SEC  mark_subscription_request_contacted is staff only', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.mark_subscription_request_contacted(
+       (select id from public.subscription_requests limit 1))$a$, 'blocked');
 
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),

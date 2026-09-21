@@ -18,12 +18,43 @@ dacă aplicația le folosește sau nu.
 |---|---|---|
 | **Critic** | 1 | Pozele anunțurilor sunt publice și enumerabile de oricine |
 | **Ridicat** | 4 | Directorul de firme servit lui `anon`; lipsa antetelor de securitate; jurnalul de audit fără retenție și fără ștergere la anonimizare; dovezile comenzii nu pot fi șterse niciodată |
-| **Mediu** | 7 | Două gărzi moarte, CORS `*`, `SELECT` acordat lui `anon` pe tabele private, publicația realtime trimite corpul mesajului, praguri de abuz publice, acceptare de advisor pe o premisă falsă |
+| **Mediu** | 8 | Două gărzi moarte, CORS `*`, `SELECT` **și drept de scriere** acordate lui `anon` pe tabele private (a doua jumătate găsită de garda nouă), publicația realtime trimite corpul mesajului, praguri de abuz publice, acceptare de advisor pe o premisă falsă |
 | **Scăzut** | 3 | Comparație de secret în timp variabil, e-mail de operator public, `pgcrypto` în `public` |
 
 Nimic din ce urmează nu cere un cont de staff, un token furat sau o parolă
 ghicită. Tot ce e marcat **critic** sau **ridicat** se face cu cheia `anon`
 sau cu un cont obișnuit, nou-făcut.
+
+### Ce s-a reparat, și unde
+
+| | Constatare | PR | Cum a fost dovedită |
+|---|---|---|---|
+| C1 | pozele publice și enumerabile | #43 | 4 verificări SEC, 3 roșii înainte |
+| R1 | directorul de firme la `anon` | #43 | 3 verificări SEC, 2 roșii înainte |
+| R2 | niciun antet de securitate | #44 | 11 unitare + 10 Playwright |
+| R3 | jurnalul fără retenție și fără ștergere | #45 | 6 verificări SEC, toate 6 roșii înainte |
+| R4 | dovezile comenzii, care nu se puteau șterge | #43 | 2 verificări SEC, 1 roșie înainte |
+| M1, M2 | cele două gărzi moarte | #43 | 3 verificări SEC, toate 3 roșii înainte |
+| M3 | CORS `*` | #44 | 5 teste Deno |
+| M4 | granturi `anon` fără politică (citire) | #43 | garda 5 și 6 din `security_test.sql` |
+| M4b | granturi `anon` fără politică (scriere) | #46 | găsită **de garda nouă**, la prima rulare |
+| M6 | pragurile de abuz publice | #43 | 2 verificări, una nouă |
+| S1 | secret comparat în timp variabil | #44 | 3 teste Deno |
+
+**Rămân nereparate, cu motiv:**
+
+- **M5** (publicația realtime trimite corpul mesajului) — depinde de o
+  setare a proiectului, nu de repozitoriu. Vezi §6.1. Riscul real este mic:
+  clientul tratează evenimentul ca pe un semnal și recitește prin
+  `conversation_messages()`, care verifică din nou cine întreabă.
+- **M7** (acceptarea de advisor pe o premisă falsă) — premisa a dispărut
+  odată cu R1; rândul din `docs/DEPLOYMENT.md` rămâne de rescris la
+  următoarea atingere a fișierului aceluia.
+- **S2** (e-mailul de facturare al operatorului, public) — adresă de firmă,
+  nu de persoană. Se închide când se completează datele operatorului.
+- **S3** (`pgcrypto` în `public`) — mutarea unei extensii pe un proiect viu
+  cere o fereastră de mentenanță și nu are ce căuta în același PR cu o
+  reparație de scurgere.
 
 ---
 
@@ -341,6 +372,71 @@ Astea nu se repară cu un commit:
 5. **Verifică limitele de rată ale Auth** (înregistrare, autentificare,
    resetare parolă). Sunt ale GoTrue, cu valorile implicite — noi nu avem
    nimic deasupra lor.
+
+---
+
+## 7. Gărzile care le țin să nu se întoarcă
+
+`supabase/tests/security_test.sql` rulează la fiecare `pnpm db:test` și în
+CI. Nu verifică reguli de business, verifică **forma** schemei — șapte gărzi,
+una pentru fiecare clasă de bug de mai sus:
+
+| Garda | Ce oprește |
+|---|---|
+| RLS pe fiecare tabelă publică | o tabelă nouă fără RLS |
+| cel puțin o politică pe fiecare | o tabelă care refuză tot din scăpare, nu din intenție |
+| `search_path` fixat pe fiecare `SECURITY DEFINER` | deturnarea unui apel din interiorul funcției |
+| `current_user` interzis în `SECURITY DEFINER` | clasa de bug găsită de cinci ori |
+| listă de funcții executabile de `anon` | un `grant ... to anon` din reflex |
+| `anon` fără `SELECT` fără politică | RLS ca singură linie de apărare |
+| `anon` fără drept de scriere nicăieri | aceeași, pentru scriere |
+
+A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
+`delete` pe patruzeci de tabele. Nimic nu curgea — nicio politică de scriere
+pentru `anon` nu există — dar dreptul aștepta acolo. Retras în
+`20260930100000`.
+
+### Secțiunea 4, dusă până la capăt
+
+Auditul a numărat **116 funcții** apelabile de un cont autentificat care iau
+un `uuid` — acelea sunt cele pentru care „id-ul altcuiva" este o întrebare.
+Suita atingea 91. Din restul de 25, optsprezece sunt ajutători de politică
+(`is_company_member`, `can_see_listing`), verificați indirect de fiecare
+verificare de politică. **Șapte întorc date sau scriu**, și pentru ele
+citirea codului nu este o dovadă:
+
+`conversation_messages`, `offer_thread`, `order_evidence_list`,
+`order_timeline`, `order_crew_options`, `route_series_upcoming`,
+`mark_subscription_request_contacted`.
+
+Toate șapte s-au dovedit corecte. Au acum verificări cu id-ul altcuiva, ca a
+doua oară să nu mai fie nevoie de citit.
+
+> Prima scriere a verificării pe `route_series_upcoming` **trecea degeaba**:
+> lua id-ul cu un subselect pe `route_series`, iar sub RLS celălalt cont nu
+> vede seria deloc, deci subselectul dădea `null` și funcția întorcea
+> liniștită mulțimea goală. Id-ul trece acum prin `pg_temp.asi_ctx`. O
+> verificare care nu cere niciodată ce spune că cere este mai rea decât
+> niciuna.
+
+**Rămâne o nuanță, scăzută:** `route_series_upcoming` întoarce mulțimea goală
+pentru o serie inexistentă, dar ridică „Seria nu este a firmei tale" pentru
+una care există și nu este a ta — deci confirmă existența, exact ce spune
+regula 7 din secțiunea „Securitate" să nu faci. Id-urile fiind UUID-uri,
+riscul practic este nul; se corectează la următoarea atingere a funcției.
+
+`scripts/ci/smoke-deployment.sh` verifică antetele **pe răspunsul
+deployment-ului**, nu pe configurația noastră. Testul unitar și cel
+Playwright se uită la partea noastră de sârmă; un antet pierdut într-o
+setare de platformă, într-o regulă de CDN sau într-un merge prost ar trece
+de amândouă și ar lipsi din producție.
+
+`tests/unit/bundle-secrets.test.ts` face cealaltă jumătate: niciun fișier
+`'use client'` nu citește o variabilă care nu este `NEXT_PUBLIC_*`, și
+chunk-urile construite nu conțin nimic în formă de cheie.
+
+Regulile în cuvinte sunt în secțiunea **Securitate** din `CLAUDE.md`, cu
+bug-ul din care vine fiecare.
 
 ---
 
