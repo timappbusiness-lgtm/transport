@@ -210,6 +210,11 @@ export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   contact: [
     'serviceType',
     'durationDays',
+    // Unde apare cererea stă lângă cât timp stă: amândouă răspund la
+    // „unde ajunge asta și pentru cât timp", și amândouă se aleg în
+    // același pas.
+    'isPrivate',
+    'invitedCarriers',
     'description',
     'contactName',
     'contactPhone',
