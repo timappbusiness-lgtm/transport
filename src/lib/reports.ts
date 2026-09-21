@@ -13,7 +13,7 @@
 
 /** The database's names. The screen never shows these. */
 export type ReportStatus = 'open' | 'investigating' | 'resolved' | 'dismissed';
-export type ReportKind = 'firma' | 'anunt' | 'mesaj' | 'altul';
+export type ReportKind = 'firma' | 'anunt' | 'mesaj' | 'evaluare' | 'altul';
 
 export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   open: 'Nou',
@@ -26,8 +26,34 @@ export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
   firma: 'Firmă',
   anunt: 'Anunț',
   mesaj: 'Mesaj',
+  evaluare: 'Evaluare',
   altul: 'Altceva',
 };
+
+/**
+ * Unde se duce echipa pentru fiecare fel de sesizare.
+ *
+ * `null` înseamnă „nu există un ecran pentru asta" — o sesizare despre o
+ * firmă se rezolvă din sesizarea însăși. Cele trei care au ecran duc
+ * acolo, cu id-ul, ca nimeni să nu caute manual rândul.
+ */
+export function reportTarget(row: {
+  kind: ReportKind;
+  message_id?: string | null;
+  rating_id?: string | null;
+  cargo_listing_id?: string | null;
+}): { href: string; label: string } | null {
+  if (row.kind === 'mesaj' && row.message_id) {
+    return { href: '/admin/conversatii', label: 'Vezi conversația' };
+  }
+  if (row.kind === 'anunt' && row.cargo_listing_id) {
+    return { href: '/admin/anunturi', label: 'Vezi anunțul' };
+  }
+  if (row.kind === 'evaluare' && row.rating_id) {
+    return { href: '/admin/evaluari', label: 'Vezi evaluarea' };
+  }
+  return null;
+}
 
 /**
  * The order a queue is worked in: what nobody has looked at, then what
@@ -65,6 +91,9 @@ export interface ReportRow {
   reported_company_name: string | null;
   reported_user_id: string | null;
   cargo_listing_id: string | null;
+  /** Adăugate de 20260924100000 și 20260925100000. */
+  message_id: string | null;
+  rating_id: string | null;
   assigned_to: string | null;
   assigned_name: string | null;
   handled_by: string | null;

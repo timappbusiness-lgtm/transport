@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { useActionState, useId, useState } from 'react';
 import { handleReportAction, type ReportAdminState } from '@/app/admin/sesizari/actions';
 import { buttonClasses } from '@/components/ui/button';
@@ -7,6 +9,7 @@ import { StatusBadge } from '@/components/ui/primitives';
 import { reportsCopy } from '@/content/sesizari';
 import {
   REPORT_KIND_LABELS,
+  reportTarget,
   REPORT_STATUS_LABELS,
   reportedEntity,
   type ReportRow as Row,
@@ -46,6 +49,7 @@ export function ReportRow({ row }: { row: Row }) {
 
   const entity = reportedEntity(row);
   const closed = row.status === 'resolved' || row.status === 'dismissed';
+  const target = reportTarget(row);
 
   return (
     <li className="rounded-card border border-border bg-surface p-5">
@@ -56,6 +60,16 @@ export function ReportRow({ row }: { row: Row }) {
             {REPORT_KIND_LABELS[row.kind]} · {c.row.opened} {when(row.created_at)}
             {closed ? ` · ${c.row.closed} ${when(row.resolved_at)}` : ''}
           </p>
+          {/* Unde se duce echipa pentru felul ăsta de sesizare. O
+              sesizare fără ecran (o firmă) nu are legătură — se rezolvă
+              de aici. */}
+          {target !== null ? (
+            <p className="mt-1 text-[0.8125rem]">
+              <Link href={target.href} className="underline underline-offset-4">
+                {target.label}
+              </Link>
+            </p>
+          ) : null}
         </div>
         <StatusBadge tone={TONES[row.status]}>{REPORT_STATUS_LABELS[row.status]}</StatusBadge>
       </div>
