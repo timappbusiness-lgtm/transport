@@ -164,10 +164,24 @@ select vault.create_secret('https://<proiect>.supabase.co/functions/v1/account-d
 select jobname, schedule, active from cron.job order by jobname;
 ```
 
-Trebuie să vezi **nouă** joburi, toate `active`:
+Trebuie să vezi **nouăsprezece** joburi, toate `active`:
 `account-deletion`, `hourly-booking-expiry-alerts`, `hourly-listing-cleanup`,
-`hourly-push-cleanup`, `nightly-compliance-sweep`, `nightly-expiry-reminders`,
-`nightly-listing-expiry-reminders`, `nightly-retention`, `outbox-dispatcher`.
+`hourly-offer-expiry`, `hourly-order-autocomplete`, `hourly-push-cleanup`,
+`nightly-assisted-sweep`, `nightly-audit-retention`, `nightly-compliance-sweep`,
+`nightly-conversation-retention`, `nightly-expiry-reminders`,
+`nightly-listing-expiry-reminders`, `nightly-order-vehicle-check`,
+`nightly-rating-reminders`, `nightly-reputation`, `nightly-retention`,
+`nightly-route-series`, `nightly-saved-search-digest`, `outbox-dispatcher`.
+
+> Lista de mai sus era rămasă la nouă, de pe vremea când atâtea erau. Ea și
+> cele două din `job_health()` și cele două din `rls_test.sql` trebuie să
+> meargă împreună — un job care lipsește dintr-una dintre ele arată sănătos
+> fără să ruleze vreodată.
+
+**`nightly-audit-retention`** este nou și taie din `audit_log` după fereastra
+din `deletion_settings.audit_retention_months` (pornire: 24 de luni). Până la
+el, jurnalul creștea la nesfârșit, cu nume, telefoane și e-mailuri în
+`before`/`after`.
 
 Apoi `/admin/notificari` → „Joburi programate": în 24 de ore toate trebuie
 să treacă pe „la zi". Dacă lista din `cron.job` e goală, extensia `pg_cron`
