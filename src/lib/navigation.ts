@@ -80,6 +80,7 @@ function driverNav(features: FeatureMap): NavItem[] {
       priority: 85,
     });
   }
+  items.push({ href: ROUTES.accountHelp, label: 'Ajutor', group: 'cont', priority: 5 });
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
   items.push({
     href: ROUTES.accountNotificationSettings,
@@ -143,6 +144,10 @@ function individualNav(features: FeatureMap): NavItem[] {
   if (features.savedSearches) {
     items.push({ href: ROUTES.accountAlerts, label: 'Alerte', group: 'cont', priority: 11 });
   }
+  // Help belongs to every account type: the page itself decides which
+  // answers to show, and an account with nothing switched on is exactly
+  // the one whose owner has questions.
+  items.push({ href: ROUTES.accountHelp, label: 'Ajutor', group: 'cont', priority: 5 });
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
   items.push({
     href: ROUTES.accountNotificationSettings,
@@ -251,6 +256,14 @@ function forwarderItems(features: FeatureMap): NavItem[] {
       priority: 77,
     });
   }
+  // Favourites sit with the work, not with the account settings: they
+  // are what a forwarder reaches for while deciding who to ask.
+  items.push({
+    href: ROUTES.accountFavourites,
+    label: 'Favoriți',
+    group: 'expeditii',
+    priority: 70,
+  });
   items.push({
     href: ROUTES.routes,
     label: 'Trasee disponibile',
@@ -286,6 +299,10 @@ export function buildNav(
   if (features.savedSearches) {
     items.push({ href: ROUTES.accountAlerts, label: 'Alerte', group: 'cont', priority: 11 });
   }
+  // Help belongs to every account type: the page itself decides which
+  // answers to show, and an account with nothing switched on is exactly
+  // the one whose owner has questions.
+  items.push({ href: ROUTES.accountHelp, label: 'Ajutor', group: 'cont', priority: 5 });
   if (features.documents) {
     items.push({ href: ROUTES.accountDocuments, label: 'Documente', group: 'firma', priority: 45 });
   }

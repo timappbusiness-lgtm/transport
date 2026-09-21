@@ -54,6 +54,8 @@ export const ROUTES = {
   accountNotifications: '/cont/notificari',
   accountAlerts: '/cont/alerte',
   accountSettings: '/cont/setari',
+  accountHelp: '/cont/ajutor',
+  accountFavourites: '/cont/favoriti',
   // The notifications *settings*. `accountNotifications` above is the
   // notifications centre, which is a different screen and not built yet.
   accountNotificationSettings: '/cont/setari/notificari',

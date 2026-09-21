@@ -17,11 +17,17 @@
 export interface OrderForReturn {
   /** Unde s-a livrat: de acolo pleacă returul. */
   toCity: string;
-  toCountry: string;
+  /**
+   * Țara, **dacă** o știm. `order_detail()` nu o întoarce, iar a pune
+   * „RO" pentru o livrare la München ar fi o presupunere care se vede
+   * abia după ce omul publică. Null înseamnă „las formularul să
+   * întrebe", nu „România".
+   */
+  toCountry: string | null;
   toCounty: string | null;
   /** De unde a plecat marfa: destinația implicită a returului. */
   fromCity: string;
-  fromCountry: string;
+  fromCountry: string | null;
   fromCounty: string | null;
   vehicleId: string | null;
   /** Livrarea estimată sau cea reală, oricare există. */
@@ -31,10 +37,10 @@ export interface OrderForReturn {
 export interface ReturnPrefill {
   direction: 'retur';
   fromCity: string;
-  fromCountry: string;
+  fromCountry: string | null;
   fromCounty: string | null;
   toCity: string;
-  toCountry: string;
+  toCountry: string | null;
   toCounty: string | null;
   vehicleId: string | null;
   availableFrom: string;
@@ -77,7 +83,7 @@ export function buildReturn(
     // Se întoarce spre bază dacă firma și-a trecut una, altfel spre
     // locul din care a plecat marfa.
     toCity: hasBase ? base.city!.trim() : order.fromCity,
-    toCountry: hasBase ? (base.country ?? 'RO') : order.fromCountry,
+    toCountry: hasBase ? base.country : order.fromCountry,
     toCounty: hasBase ? base.county : order.fromCounty,
     vehicleId: order.vehicleId,
     availableFrom: returnDate(order, today),
@@ -89,11 +95,13 @@ export function returnQuery(prefill: ReturnPrefill): string {
   const params = new URLSearchParams({
     directie: prefill.direction,
     de_la: prefill.fromCity,
-    tara_de_la: prefill.fromCountry,
     pana_la: prefill.toCity,
-    tara_pana_la: prefill.toCountry,
     din: prefill.availableFrom,
   });
+  // Ce nu știm rămâne afară. Un parametru gol în adresă ajunge un câmp
+  // gol în formular, care arată ca o defecțiune, nu ca o întrebare.
+  if (prefill.fromCountry !== null) params.set('tara_de_la', prefill.fromCountry);
+  if (prefill.toCountry !== null) params.set('tara_pana_la', prefill.toCountry);
   if (prefill.fromCounty !== null) params.set('judet_de_la', prefill.fromCounty);
   if (prefill.toCounty !== null) params.set('judet_pana_la', prefill.toCounty);
   if (prefill.vehicleId !== null) params.set('vehicul', prefill.vehicleId);

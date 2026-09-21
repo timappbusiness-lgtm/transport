@@ -10,6 +10,15 @@
  * serious without decoration — especially on a phone at a loading bay.
  */
 export const ordersCopy = {
+  /** «Publică returul», de pe pagina comenzii. */
+  returnLeg: {
+    title: 'Te întorci gol?',
+    lede: 'Pregătim o plecare pe retur din localitatea de livrare, cu același vehicul și cu o dată după livrare. Verifici și publici tu.',
+    action: 'Publică returul',
+    /** Când comanda nu are încă un vehicul repartizat. */
+    noVehicle: 'Repartizează întâi un vehicul, ca returul să plece cu el.',
+  },
+
   meta: { title: 'Transporturi' },
 
   list: {

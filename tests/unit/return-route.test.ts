@@ -107,6 +107,16 @@ describe('ce se pune în adresă', () => {
     expect(query.has('vehicul')).toBe(false);
   });
 
+  it('și nu inventează o țară pe care comanda nu o spune', () => {
+    // `order_detail()` nu întoarce țările. „RO" pentru o livrare la
+    // München ar fi o presupunere care se vede abia după publicare.
+    const query = new URLSearchParams(
+      returnQuery(buildReturn(order({ toCountry: null, fromCountry: null }), TODAY)),
+    );
+    expect(query.has('tara_de_la')).toBe(false);
+    expect(query.has('tara_pana_la')).toBe(false);
+  });
+
   it('scapă diacriticele și spațiile', () => {
     const query = returnQuery(buildReturn(order({ toCity: 'Târgu Mureș' }), TODAY));
     expect(query).toContain('de_la=T');

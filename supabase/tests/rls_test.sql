@@ -11248,6 +11248,29 @@ select pg_temp.check('FAV  nobody writes the table directly', 'fix',
    values ('fc000000-0000-0000-0000-000000000002',
            'fc000000-0000-0000-0000-000000000001', auth.uid())$a$, 'blocked');
 
+
+select pg_temp.check('PRV  a draft becomes private before it is published', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select (public.set_listing_private(
+       (select onboarding_id from pg_temp.asi_ctx))).visibility = 'privata'$a$, 'true',
+  p_setup => $s$select pg_temp.private_request(false, 'draft');
+                update public.cargo_listings set visibility = 'publica'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  but one already on the board cannot be withdrawn into private', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.set_listing_private(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false, 'active');
+                update public.cargo_listings set visibility = 'publica'
+                where id = (select onboarding_id from pg_temp.asi_ctx)$s$);
+
+select pg_temp.check('PRV  and a stranger cannot make somebody''s request private', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.set_listing_private(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false, 'draft')$s$);
+
 -- psql -v verbose=1 prints why each check passed, not only why one failed.
 \if :{?verbose}
 select format('%s  %-5s  %s%s',

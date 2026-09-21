@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { stopDepartureAction, duplicateAsReturnAction } from '@/app/cont/trasee/actions';
 import { BookingDecision } from '@/components/departures/booking-decision';
+import { SeriesCard } from '@/components/departures/series-list';
+import { HelpLink } from '@/components/help/help-link';
 import { HiddenNotice } from '@/components/listings/hidden-notice';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
@@ -10,6 +12,7 @@ import { ROUTES, departureRoute } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { requireAccountContext } from '@/lib/auth/account';
 import { DIRECTION_LABELS, formatWindow, readWaypoints } from '@/lib/departures';
+import { loadSeries, loadUpcoming } from '@/lib/series-source';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: departuresCopy.mine.title };
@@ -79,6 +82,13 @@ export default async function Page() {
       .order('created_at', { ascending: true }),
   ]);
 
+  const series = await loadSeries(company.id);
+  const upcoming = new Map(
+    await Promise.all(
+      series.map(async (row) => [row.id, await loadUpcoming(row.id, 4)] as const),
+    ),
+  );
+
   const departures = (departuresResult.data ?? []) as MyDeparture[];
   const seats = new Map(
     ((seatsResult.data ?? []) as { truck_listing_id: string; slots_taken: number }[]).map((row) => [
@@ -133,6 +143,31 @@ export default async function Page() {
                 </div>
                 <BookingDecision bookingId={booking.id} />
               </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-[1.0625rem]">{departuresCopy.series.title}</h2>
+          <p className="mt-1 max-w-[64ch] text-sm text-muted">{departuresCopy.series.lede}</p>
+          <p className="mt-2">
+            <HelpLink topic="series" />
+          </p>
+        </div>
+
+        {series.length === 0 ? (
+          <div className="rounded-card border border-dashed border-border-strong bg-surface p-5">
+            <p className="text-[0.9375rem]">{departuresCopy.series.empty}</p>
+            <p className="mt-1 max-w-[54ch] text-sm text-muted">
+              {departuresCopy.series.emptyBody}
+            </p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {series.map((row) => (
+              <SeriesCard key={row.id} row={row} upcoming={upcoming.get(row.id) ?? []} />
             ))}
           </ul>
         )}

@@ -590,6 +590,40 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             </select>
           </Labelled>
 
+          {/* Unde apare cererea. Implicit pe bursă, pentru că acolo
+              ajungi la cei mai mulți; cine vrea altfel alege anume.
+              „Privată" nu este o bifă de confort — schimbă cine poate
+              vedea rândul, în RLS. */}
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">{requestsCopy.visibility.label}</legend>
+            <label className="flex items-start gap-2.5 text-[0.8125rem]">
+              <input
+                type="radio"
+                name="visibility"
+                checked={!draft.isPrivate}
+                onChange={() => set('isPrivate', false)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">{requestsCopy.visibility.public}</span>
+                <span className="block text-muted">{requestsCopy.visibility.publicHint}</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2.5 text-[0.8125rem]">
+              <input
+                type="radio"
+                name="visibility"
+                checked={draft.isPrivate}
+                onChange={() => set('isPrivate', true)}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">{requestsCopy.visibility.private}</span>
+                <span className="block text-muted">{requestsCopy.visibility.privateHint}</span>
+              </span>
+            </label>
+          </fieldset>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.contact.name} htmlFor={`${id}-name`}>
               <input

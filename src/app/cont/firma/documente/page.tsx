@@ -6,6 +6,7 @@ import { DocumentUpload } from '@/components/account/document-upload';
 import { RequirementList, type RequirementRow } from '@/components/account/requirement-list';
 import { SubmitForReview } from '@/components/account/submit-for-review';
 import { EyebrowPill } from '@/components/ui/primitives';
+import { HelpLink } from '@/components/help/help-link';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -76,6 +77,10 @@ export default async function Page() {
           <Link href={ROUTES.accountFleet} className="underline underline-offset-4">
             {c.vehicleHint}
           </Link>
+        </p>
+        <p className="mt-2 flex flex-wrap gap-x-4">
+          <HelpLink topic="documents" />
+          <HelpLink topic="expiry" label="Ce se întâmplă la expirare" />
         </p>
       </div>
 

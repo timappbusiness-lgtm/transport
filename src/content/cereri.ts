@@ -9,6 +9,27 @@
  * the distances from the database.
  */
 export const requestsCopy = {
+  /** Cine vede cererea. */
+  visibility: {
+    title: 'Cine vede cererea',
+    label: 'Unde apare cererea',
+    public: 'Pe bursă, pentru toți transportatorii',
+    publicHint: 'Primești oferte de la oricine circulă pe ruta ta.',
+    private: 'Doar transportatorii pe care îi aleg',
+    privateHint:
+      'Nu apare pe panoul public și nimeni altcineva nu primește alertă pentru ea.',
+    privateLede:
+      'Cererea este privată: o văd numai firmele invitate, și numai ele pot trimite oferte.',
+    invited: 'Transportatori invitați',
+    saveInvites: 'Salvează invitațiile',
+    noFavourites:
+      'Nu ai încă transportatori favoriți. Adaugă-i din lista de firme, apoi îi inviți de aici.',
+    openHint:
+      'Dacă nu primești oferta pe care o vrei, deschide cererea pe bursă. Nu se poate reveni: odată publică, rămâne publică.',
+    openAction: 'Deschide pe bursă',
+    badgePrivate: 'Privată',
+  },
+
   form: {
     eyebrow: 'Cerere de transport',
     title: 'Spune-ne ce ai de transportat',

@@ -7384,6 +7384,7 @@ export type Database = {
         Returns: {
           conversation_id: string
           counterparty: string
+          counterparty_company_id: string
           created_at: string
           currency: Database["public"]["Enums"]["currency_code"]
           estimated_delivery_date: string
@@ -8682,6 +8683,60 @@ export type Database = {
       set_listing_invites: {
         Args: { p_cargo_listing_id: string; p_company_ids: string[] }
         Returns: number
+      }
+      set_listing_private: {
+        Args: { p_cargo_listing_id: string }
+        Returns: {
+          board: Database["public"]["Enums"]["listing_board"]
+          company_id: string | null
+          created_at: string
+          currency: Database["public"]["Enums"]["currency_code"]
+          description: string | null
+          duration_days: number
+          expires_at: string | null
+          expiry_reminded_at: string | null
+          hidden_at: string | null
+          hidden_by: string | null
+          hidden_reason: string | null
+          id: string
+          is_promoted: boolean
+          listing_kind: Database["public"]["Enums"]["listing_kind"]
+          loading_city: string
+          loading_country: string
+          loading_county: string | null
+          loading_from: string
+          loading_lat: number | null
+          loading_lng: number | null
+          loading_postcode: string | null
+          loading_to: string | null
+          offers_count: number
+          opened_to_public_at: string | null
+          payment_term_days: number | null
+          photo_paths: string[]
+          posted_by: string
+          previous_status: Database["public"]["Enums"]["listing_status"] | null
+          price_amount: number | null
+          price_type: Database["public"]["Enums"]["price_type"]
+          promoted_until: string | null
+          published_at: string | null
+          required_vehicle_types:
+            Database["public"]["Enums"]["vehicle_type"][] | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          unloading_city: string
+          unloading_country: string
+          unloading_county: string | null
+          unloading_from: string | null
+          unloading_lat: number | null
+          unloading_lng: number | null
+          unloading_postcode: string | null
+          unloading_to: string | null
+          updated_at: string
+          views_count: number
+          visibility: Database["public"]["Enums"]["listing_visibility"]
+          weight_kg: number | null
+        }
       }
       set_matching_settings: {
         Args: { p_category_window_days: number; p_default_detour_km: number }

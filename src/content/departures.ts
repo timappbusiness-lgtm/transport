@@ -76,6 +76,31 @@ export const departuresCopy = {
     notFound: 'Traseul nu mai este disponibil.',
   },
 
+  series: {
+    title: 'Plecări care se repetă',
+    lede: 'O serie publică singură plecările, cu două săptămâni înainte. Fiecare este o plecare obișnuită și se poate retrage separat.',
+    empty: 'Nicio serie.',
+    emptyBody: 'Bifează „Se repetă" când adaugi o plecare, și se publică singură de acolo încolo.',
+    live: 'Activă',
+    paused: 'Pe pauză',
+    ended: 'Oprită',
+    pause: 'Pune pe pauză',
+    resume: 'Repornește',
+    end: 'Oprește seria',
+    next: 'Următoarele plecări',
+    until: (date: string) => `până la ${date}`,
+    published: (n: number) =>
+      n === 0 ? 'Nicio plecare publicată încă' : n === 1 ? 'O plecare publicată' : `${n} plecări publicate`,
+    /** În formularul de plecare. */
+    repeat: 'Se repetă',
+    repeatHint: 'Publică singură plecarea, în zilele alese, până la data pe care o pui.',
+    kindWeekly: 'În zilele săptămânii',
+    kindEveryN: 'La fiecare N zile',
+    weekdays: 'În ce zile',
+    everyN: 'La câte zile',
+    endsOn: 'Până la',
+  },
+
   mine: {
     eyebrow: 'Traseele mele',
     title: 'Traseele firmei',

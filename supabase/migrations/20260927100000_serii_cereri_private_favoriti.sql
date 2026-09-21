@@ -1458,3 +1458,154 @@ exception
     order by e.job;
 end;
 $fn$;
+
+-- ---------------------------------------------------------------------
+-- Cum devine o cerere privată
+--
+-- Numai cât timp este ciornă. Asta nu este o precauție teoretică: o
+-- cerere care a fost pe bursă a fost deja văzută, poate are oferte pe
+-- ea, iar „retragerea" ei în privat ar ascunde de un transportator
+-- exact marfa la care tocmai a licitat.
+--
+-- Drumul invers, `open_listing_to_public()`, nu are limita asta: de la
+-- mai puțini la mai mulți nu se pierde nimic.
+-- ---------------------------------------------------------------------
+create or replace function public.set_listing_private(p_cargo_listing_id uuid)
+returns public.cargo_listings
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_row public.cargo_listings;
+begin
+  select * into v_row from public.cargo_listings
+  where id = p_cargo_listing_id for update;
+  if v_row.id is null then
+    raise exception 'Cererea nu există' using errcode = 'P0002';
+  end if;
+  if not (v_row.posted_by = auth.uid()
+          or (v_row.company_id is not null
+              and public.is_company_member(v_row.company_id))) then
+    raise exception 'Cererea nu este a ta' using errcode = '42501';
+  end if;
+  if v_row.status <> 'draft' then
+    raise exception 'Cererea a fost deja publicată. O cerere de pe bursă nu mai poate deveni privată.'
+      using errcode = '22023';
+  end if;
+
+  update public.cargo_listings
+  set visibility = 'privata'
+  where id = p_cargo_listing_id
+  returning * into v_row;
+
+  perform public.write_audit('request.set_private', 'cargo_listings', v_row.id,
+    jsonb_build_object('visibility', 'publica'),
+    jsonb_build_object('visibility', 'privata'), null);
+
+  return v_row;
+end;
+$fn$;
+
+revoke all on function public.set_listing_private(uuid) from public;
+grant execute on function public.set_listing_private(uuid) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+-- Ofertele primite, cu firma din spatele lor
+--
+-- `my_offers()` reprodusă din 20260922100000 cu o coloană în plus, ca
+-- filtrul «doar favoriți» să compare id-uri și nu nume. `create or
+-- replace` nu poate schimba forma unui `returns table`, deci funcția
+-- se șterge și se face din nou; semnătura de apel rămâne aceeași.
+-- ---------------------------------------------------------------------
+drop function if exists public.my_offers(text, public.offer_status);
+
+create function public.my_offers(
+  p_box text default 'trimise',
+  p_status public.offer_status default null
+)
+returns table (
+  id uuid,
+  created_at timestamptz,
+  status public.offer_status,
+  price_amount numeric,
+  currency public.currency_code,
+  estimated_pickup_date date,
+  estimated_delivery_date date,
+  valid_until timestamptz,
+  request_id uuid,
+  request_title text,
+  from_city text,
+  to_city text,
+  loading_from date,
+  counterparty text,
+  -- Nou: firma din spatele ofertei, ca filtrul «doar favoriți» să
+  -- compare id-uri, nu nume. Două firme cu același nume există, iar un
+  -- filtru pe text le-ar amesteca.
+  counterparty_company_id uuid,
+  conversation_id uuid,
+  unread_messages integer,
+  transport_id uuid
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $fn$
+declare
+  v_user uuid := auth.uid();
+  v_company uuid;
+begin
+  if v_user is null then
+    raise exception 'Autentificare necesară' using errcode = '42501';
+  end if;
+  if p_box not in ('trimise', 'primite') then
+    raise exception 'Cutia poate fi „trimise" sau „primite"' using errcode = '22023';
+  end if;
+
+  select cm.company_id into v_company
+  from public.company_members cm where cm.user_id = v_user
+  order by cm.created_at limit 1;
+
+  return query
+  select
+    o.id, o.created_at, o.status, o.price_amount, o.currency,
+    o.estimated_pickup_date, o.estimated_delivery_date, o.valid_until,
+    l.id, l.title, l.loading_city, l.unloading_city, l.loading_from,
+    case
+      when p_box = 'trimise'
+        then coalesce(oc.display_name, oc.legal_name, op.full_name)
+      else coalesce(bc.display_name, bc.legal_name, bp.full_name)
+    end,
+    case when p_box = 'trimise' then oc.id else bc.id end,
+    cv.id,
+    (select count(*)::integer from public.messages m
+     where m.conversation_id = cv.id
+       and m.sender_user_id <> v_user
+       and m.read_at is null
+       and m.hidden_at is null),
+    t.id
+  from public.offers o
+  join public.cargo_listings l on l.id = o.cargo_listing_id
+  join public.profiles bp on bp.id = o.from_user_id
+  left join public.companies bc on bc.id = o.from_company_id
+  join public.profiles op on op.id = l.posted_by
+  left join public.companies oc on oc.id = l.company_id
+  left join public.conversations cv on cv.offer_id = o.id
+  left join public.transports t on t.offer_id = o.id
+  where (p_status is null or o.status = p_status)
+    and case
+      when p_box = 'trimise' then
+        (v_company is not null and o.from_company_id = v_company)
+        or (v_company is null and o.from_user_id = v_user)
+      else
+        l.posted_by = v_user
+        or (l.company_id is not null and l.company_id = v_company)
+    end
+  order by o.created_at desc;
+end;
+$fn$;
+
+revoke all on function public.my_offers(text, public.offer_status) from public;
+grant execute on function public.my_offers(text, public.offer_status) to authenticated;

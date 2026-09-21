@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { Card, StatusBadge } from '@/components/ui/primitives';
+import { HelpLink } from '@/components/help/help-link';
 import { ROUTES } from '@/config/routes';
 import { messagesCopy } from '@/content/mesaje';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -42,6 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <TopBar title={c.title} actions={[]} />
       <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <HelpLink topic="messages" />
 
       <nav aria-label={c.title} className="flex flex-wrap gap-2">
         {BOXES.map((b) => (
