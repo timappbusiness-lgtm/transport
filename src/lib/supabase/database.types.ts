@@ -313,6 +313,7 @@ export type Database = {
           id: number
           on_behalf_of_company_id: string | null
           reason: string | null
+          scrubbed_at: string | null
         }
         Insert: {
           action: string
@@ -326,6 +327,7 @@ export type Database = {
           id?: never
           on_behalf_of_company_id?: string | null
           reason?: string | null
+          scrubbed_at?: string | null
         }
         Update: {
           action?: string
@@ -339,6 +341,7 @@ export type Database = {
           id?: never
           on_behalf_of_company_id?: string | null
           reason?: string | null
+          scrubbed_at?: string | null
         }
         Relationships: []
       }
@@ -1479,6 +1482,7 @@ export type Database = {
       }
       deletion_settings: {
         Row: {
+          audit_retention_months: number
           contact_reveal_months: number
           export_per_day: number
           export_valid_hours: number
@@ -1488,6 +1492,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          audit_retention_months?: number
           contact_reveal_months?: number
           export_per_day?: number
           export_valid_hours?: number
@@ -1497,6 +1502,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          audit_retention_months?: number
           contact_reveal_months?: number
           export_per_day?: number
           export_valid_hours?: number
@@ -8604,6 +8610,10 @@ export type Database = {
         Args: { p_limit?: number; p_series_id: string }
         Returns: string[]
       }
+      run_audit_retention: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       run_compliance_sweep: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -8664,6 +8674,10 @@ export type Database = {
           plan_name: string
           used: number
         }[]
+      }
+      scrub_audit_for_subject: {
+        Args: { p_company_id: string; p_user_id: string }
+        Returns: number
       }
       send_test_push: {
         Args: Record<PropertyKey, never>
@@ -8743,6 +8757,7 @@ export type Database = {
           p_support_email: string
         }
         Returns: {
+          audit_retention_months: number
           contact_reveal_months: number
           export_per_day: number
           export_valid_hours: number

@@ -5346,7 +5346,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 18 from public.job_health()$a$, 'true');
+  $a$select count(*) = 19 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6234,7 +6234,7 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
   $a$select string_agg(jobname, ', ' order by jobname) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-assisted-sweep, nightly-compliance-sweep, '
+     'nightly-assisted-sweep, nightly-audit-retention, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, nightly-retention, '
@@ -6293,7 +6293,7 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
   $a$select string_agg(job, ', ' order by job) =
      'account-deletion, hourly-booking-expiry-alerts, hourly-listing-cleanup, '
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
-     'nightly-assisted-sweep, nightly-compliance-sweep, '
+     'nightly-assisted-sweep, nightly-audit-retention, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
      'nightly-rating-reminders, nightly-reputation, nightly-retention, '
@@ -11494,6 +11494,65 @@ select pg_temp.check('SEC  and the author can still correct it through the RPC',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
   $a$select (public.edit_rating('f9000000-0000-0000-0000-0000000000c3'::uuid, 4, 5, 5, null, null, null, 'Corectat')).id is not null$a$, 'true',
   p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000c3', 'f9000000-0000-0000-0000-0000000000c3')$s$);
+
+-- --- R3: jurnalul de audit, retenția și ștergerea la cerere ----------
+--
+-- `audit_log.before` și `.after` sunt instantanee `jsonb` ale rândurilor:
+-- nume, telefon, e-mail, CUI, textul unei evaluări. Tabela nu are nicio
+-- cheie străină, deci nimic nu cascadează, iar `purge_audit_log()`
+-- exista dar nu era programată. Un om care cerea ștergerea contului
+-- rămânea în jurnal, integral, pentru totdeauna.
+--
+-- Reparația nu șterge rândul: evenimentul în sine este o evidență care
+-- trebuie să rămână. Se scoate conținutul personal din el.
+select pg_temp.check('SEC  erasure scrubs the personal payload out of the audit log', 'fix',
+  null, 'service_role',
+  $a$select public.scrub_audit_for_subject('f0000000-0000-0000-0000-00000000000a', null)$a$,
+  'allowed',
+  p_setup => $s$select public.write_audit('profile.updated', 'profile',
+       'f0000000-0000-0000-0000-00000000000a', null,
+       jsonb_build_object('email', 'victim@test.ro', 'phone', '+40711000010'))$s$,
+  p_verify => $v$select not exists (
+       select 1 from public.audit_log
+       where after::text like '%victim@test.ro%' or before::text like '%victim@test.ro%')$v$,
+  p_verify_as_role => true);
+
+select pg_temp.check('SEC  but the event itself stays, because it is the record', 'fix',
+  null, 'service_role',
+  $a$select public.scrub_audit_for_subject('f0000000-0000-0000-0000-00000000000a', null)$a$,
+  'allowed',
+  p_setup => $s$select public.write_audit('profile.updated', 'profile',
+       'f0000000-0000-0000-0000-00000000000a', null,
+       jsonb_build_object('email', 'victim@test.ro'))$s$,
+  p_verify => $v$select exists (
+       select 1 from public.audit_log
+       where action = 'profile.updated' and scrubbed_at is not null)$v$,
+  p_verify_as_role => true);
+
+select pg_temp.check('SEC  somebody else''s entries are not touched', 'fix',
+  null, 'service_role',
+  $a$select public.scrub_audit_for_subject('f0000000-0000-0000-0000-00000000000a', null)$a$,
+  'allowed',
+  p_setup => $s$select public.write_audit('profile.updated', 'profile',
+       'f0000000-0000-0000-0000-000000000006', null,
+       jsonb_build_object('email', 'bystander@test.ro'))$s$,
+  p_verify => $v$select exists (
+       select 1 from public.audit_log where after::text like '%bystander@test.ro%')$v$,
+  p_verify_as_role => true);
+
+select pg_temp.check('SEC  no signed-in account can scrub the audit log', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.scrub_audit_for_subject('f0000000-0000-0000-0000-00000000000a', null)$a$,
+  'blocked');
+
+select pg_temp.check('SEC  the audit retention job is scheduled', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from cron.job where jobname = 'nightly-audit-retention'$a$, 'true');
+
+select pg_temp.check('SEC  and it has a window that can be changed without a migration', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select audit_retention_months between 1 and 120 from public.deletion_settings where id$a$,
+  'true');
 
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
