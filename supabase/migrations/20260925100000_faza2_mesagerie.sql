@@ -261,6 +261,15 @@ grant execute on function public.staff_may_read_conversation(uuid) to authentica
 -- echipa citea orice discuție privată de pe platformă. Se înlocuiește cu
 -- „participant sau o conversație pe care echipa are voie să o deschidă".
 -- ---------------------------------------------------------------------
+-- Firul unei comenzi se creează odată cu comanda, de `create_order()`.
+-- Un cont nu îl poate insera: politica refuză orice rând cu
+-- `transport_id`, iar `create_order()` este SECURITY DEFINER și nu trece
+-- prin politică.
+drop policy if exists "conversations_insert_initiator" on public.conversations;
+create policy "conversations_insert_initiator" on public.conversations
+  for insert to authenticated
+  with check (initiator_user_id = auth.uid() and transport_id is null);
+
 drop policy if exists "conversations_select_participant" on public.conversations;
 create policy "conversations_select_participant" on public.conversations
   for select to authenticated
@@ -419,12 +428,12 @@ declare
   v_company uuid;
   v_offer public.offers;
 begin
-  -- Un fir de comandă nu trece pe aici din contul nimănui: îl creează
-  -- `create_order()`, ca `service_role`, cu părțile scrise deja.
+  -- Un fir de comandă nu trece pe aici din contul nimănui. Regula stă în
+  -- politica de INSERT, nu aici: funcția asta este SECURITY DEFINER, deci
+  -- `current_user` este proprietarul ei și nu spune nimic despre cine a
+  -- cerut. RLS spune, și tot RLS este ce `create_order()` ocolește
+  -- legitim, fiind la rândul ei SECURITY DEFINER.
   if new.transport_id is not null then
-    if current_user in ('authenticated', 'anon') then
-      raise exception 'Firul unei comenzi se creează odată cu comanda' using errcode = '42501';
-    end if;
     return new;
   end if;
 
@@ -480,10 +489,13 @@ $fn$;
 -- duplicat se uită la ultimul mesaj din firul ăsta: două mesaje identice
 -- la rând sunt aproape întotdeauna un buton apăsat de două ori.
 -- ---------------------------------------------------------------------
+-- Invoker, nu definer. O funcție SECURITY DEFINER vede în `current_user`
+-- proprietarul ei, nu pe cel care a cerut, deci ramura „sari peste
+-- verificare pentru joburi" ar sări întotdeauna. Aceeași greșeală a
+-- lăsat firul de comandă deschis oricui, până a spus-o suita de teste.
 create or replace function public.guard_message_rate()
 returns trigger
 language plpgsql
-security definer
 set search_path = public
 as $fn$
 declare
@@ -640,81 +652,49 @@ create policy "message_attachments_insert_parties" on storage.objects
 -- ---------------------------------------------------------------------
 -- 9. Comanda își face firul
 --
--- `create_order()` reprodusă din 20260923100100 cu patru rânduri în
--- plus la final. Firul se creează aici și nu într-un trigger pe
--- `transports`, ca să fie evident la citire că o comandă vine cu o
--- conversație — un trigger ar fi ascuns exact lucrul pe care cineva îl
--- caută când se întreabă de unde a apărut.
+-- Un trigger, nu o linie în `create_order()`. Prima variantă a fost
+-- acolo, cu argumentul că un trigger ascunde exact lucrul pe care cineva
+-- îl caută când se întreabă de unde a apărut firul. Argumentul e
+-- adevărat și insuficient: `create_order()` nu este singurul drum prin
+-- care apare un rând în `transports` — suita de teste inserează direct,
+-- și mâine o reparație manuală o va face la fel. „Fiecare comandă are un
+-- fir" este o regulă a tabelei, deci stă pe tabelă.
 --
--- Legarea de firul dinainte nu mută mesajele. Două adevăruri despre
--- când s-a spus ceva sunt mai rele decât un click în plus.
+-- Legarea de firul dinainte nu mută mesajele. Două adevăruri despre când
+-- s-a spus ceva sunt mai rele decât un click în plus.
 -- ---------------------------------------------------------------------
-create or replace function public.create_order(
-  p_carrier_company_id uuid,
-  p_shipper_company_id uuid,
-  p_shipper_user_id uuid,
-  p_agreed_price numeric,
-  p_currency public.currency_code,
-  p_payment_term_days integer default null,
-  p_cargo_listing_id uuid default null,
-  p_truck_listing_id uuid default null,
-  p_vehicle_id uuid default null,
-  p_offer_id uuid default null,
-  p_departure_booking_id uuid default null
-)
-returns public.transports
+create or replace function public.create_order_conversation()
+returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $fn$
 declare
-  v_transport public.transports;
   v_carrier_user uuid;
   v_previous uuid;
 begin
-  if p_carrier_company_id is null then
-    raise exception 'Comanda are nevoie de un transportator' using errcode = '23502';
-  end if;
-  if p_shipper_company_id is null and p_shipper_user_id is null then
-    raise exception 'Comanda are nevoie de un client' using errcode = '23502';
-  end if;
-  if p_agreed_price is null or p_agreed_price < 0 then
-    raise exception 'Comanda are nevoie de un preț convenit' using errcode = '23502';
-  end if;
-  if p_offer_id is null and p_departure_booking_id is null then
-    raise exception 'O comandă vine dintr-o ofertă acceptată sau dintr-o rezervare confirmată' using errcode = '23502';
-  end if;
-
-  insert into public.transports
-    (cargo_listing_id, truck_listing_id, offer_id, departure_booking_id,
-     shipper_company_id, shipper_user_id, carrier_company_id, vehicle_id,
-     agreed_price, currency, payment_term_days, status)
-  values
-    (p_cargo_listing_id, p_truck_listing_id, p_offer_id, p_departure_booking_id,
-     p_shipper_company_id, p_shipper_user_id, p_carrier_company_id, p_vehicle_id,
-     p_agreed_price, p_currency, p_payment_term_days, 'order_confirmed')
-  returning * into v_transport;
-
-  -- Adăugat de 20260925100000: firul comenzii.
-  --
-  -- `owner_user_id` este cineva care conduce firma transportatoare, ca
-  -- să existe o persoană în coloană; cine chiar poate citi firul decide
-  -- `can_see_order()`, deci un dispecer care se schimbă mâine nu rupe
-  -- nimic. Șoferul alocat intră prin aceeași funcție, nu prin coloane.
+  -- `owner_user_id` este cineva care conduce firma transportatoare, ca să
+  -- existe o persoană în coloană; cine chiar poate citi firul decide
+  -- `can_see_order()`, deci un dispecer care pleacă mâine nu rupe nimic.
+  -- Șoferul alocat intră prin aceeași funcție, nu prin coloane.
   select cm.user_id into v_carrier_user
   from public.company_members cm
-  where cm.company_id = p_carrier_company_id
+  where cm.company_id = new.carrier_company_id
   order by case cm.role when 'owner' then 0 when 'admin' then 1 else 2 end, cm.created_at
   limit 1;
 
+  if v_carrier_user is null and new.shipper_user_id is null then
+    return new;
+  end if;
+
   select c.id into v_previous
   from public.conversations c
-  where (p_offer_id is not null and c.offer_id = p_offer_id)
+  where (new.offer_id is not null and c.offer_id = new.offer_id)
      or (c.offer_id is null and c.transport_id is null
-         and c.cargo_listing_id is not distinct from p_cargo_listing_id
-         and c.truck_listing_id is not distinct from p_truck_listing_id
+         and c.cargo_listing_id is not distinct from new.cargo_listing_id
+         and c.truck_listing_id is not distinct from new.truck_listing_id
          and c.initiator_user_id in (
-           coalesce(p_shipper_user_id, '00000000-0000-0000-0000-000000000000'::uuid),
+           coalesce(new.shipper_user_id, '00000000-0000-0000-0000-000000000000'::uuid),
            coalesce(v_carrier_user, '00000000-0000-0000-0000-000000000000'::uuid)))
   order by c.created_at
   limit 1;
@@ -722,19 +702,19 @@ begin
   insert into public.conversations
     (transport_id, initiator_user_id, owner_user_id, linked_conversation_id)
   values
-    (v_transport.id,
-     coalesce(p_shipper_user_id, v_carrier_user),
-     coalesce(v_carrier_user, p_shipper_user_id),
+    (new.id,
+     coalesce(new.shipper_user_id, v_carrier_user),
+     coalesce(v_carrier_user, new.shipper_user_id),
      v_previous)
   on conflict do nothing;
 
-  perform public.write_audit('order.created', 'transports', v_transport.id, null, to_jsonb(v_transport));
-  return v_transport;
+  return new;
 end;
 $fn$;
 
-revoke all on function public.create_order(uuid, uuid, uuid, numeric, public.currency_code, integer, uuid, uuid, uuid, uuid, uuid)
-  from public, anon, authenticated, service_role;
+create trigger transports_create_conversation
+  after insert on public.transports
+  for each row execute function public.create_order_conversation();
 
 -- ---------------------------------------------------------------------
 -- 10. Un e-mail pe conversație, nu pe mesaj
@@ -1809,5 +1789,67 @@ exception
       from public.job_run_log l group by l.workflow
     ) g on g.job = e.job
     order by e.job;
+end;
+$fn$;
+
+-- ---------------------------------------------------------------------
+-- 20. Firul comenzii nu se maschează
+--
+-- `guard_message_contacts()` reprodusă din 20260922100000 cu un caz în
+-- plus. Citea anunțul din conversație sau din oferta ei ca să întrebe
+-- `has_agreed_order()`; un fir de comandă nu are niciunul, deci
+-- răspunsul era „nu" și masca se aplica peste numerele pe care cele două
+-- părți tocmai și le dăduseră legal.
+-- ---------------------------------------------------------------------
+create or replace function public.guard_message_contacts()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  c public.conversations;
+  v_masked text;
+  v_cargo uuid;
+  v_truck uuid;
+begin
+  select * into c from public.conversations where id = new.conversation_id;
+  if c.id is null then
+    raise exception 'Conversația nu există' using errcode = 'P0002';
+  end if;
+
+  if coalesce(trim(new.body), '') = '' then
+    raise exception 'Scrie un mesaj' using errcode = '22023';
+  end if;
+  if length(new.body) > 1000 then
+    raise exception 'Mesajul poate avea cel mult 1000 de caractere' using errcode = '22023';
+  end if;
+
+  -- Firul unei comenzi nu se maschează niciodată: contactele sunt deja
+  -- schimbate, `order_contacts()` le-a dat. Adăugat de 20260925100000,
+  -- când forma a treia de conversație a apărut și n-avea nici anunț,
+  -- nici ofertă din care să se citească starea.
+  if c.transport_id is not null then
+    return new;
+  end if;
+
+  v_cargo := c.cargo_listing_id;
+  v_truck := c.truck_listing_id;
+  if c.offer_id is not null then
+    select o.cargo_listing_id, o.truck_listing_id into v_cargo, v_truck
+    from public.offers o where o.id = c.offer_id;
+  end if;
+
+  -- Once there is an order between these two, the contacts are theirs
+  -- to exchange: `consume_contact_access` already gives them away free.
+  if not public.has_agreed_order(new.sender_user_id, v_cargo, v_truck) then
+    v_masked := public.mask_contacts(new.body);
+    if v_masked is distinct from new.body then
+      new.body := v_masked;
+      new.was_masked := true;
+    end if;
+  end if;
+
+  return new;
 end;
 $fn$;
