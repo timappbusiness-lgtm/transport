@@ -9,7 +9,7 @@ import { ROUTES } from '@/config/routes';
 import { messagesCopy } from '@/content/mesaje';
 import { requireAccountContext } from '@/lib/auth/account';
 import { contextHref, kindLabel } from '@/lib/messages';
-import { loadConversation, loadMessages, signAttachments } from '@/lib/messages-source';
+import { loadBlocks, loadConversation, loadMessages, signAttachments } from '@/lib/messages-source';
 
 export const metadata: Metadata = { title: messagesCopy.list.title };
 export const dynamic = 'force-dynamic';
@@ -33,6 +33,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const messages = await loadMessages(id);
   const urls = await signAttachments(messages.flatMap((m) => m.attachments));
   const href = contextHref(conversation);
+
+  // Blocarea se poate ridica din același loc din care s-a pus, deci
+  // firul are nevoie să știe dacă există deja una pe contul celuilalt.
+  const blocks = await loadBlocks();
+  const block =
+    conversation.counterparty_user_id === null
+      ? null
+      : (blocks.find((b) => b.blocked_user_id === conversation.counterparty_user_id) ?? null);
 
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
@@ -71,6 +79,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <MessageActions
             conversationId={conversation.id}
             messages={messages.filter((m) => !m.mine).map((m) => ({ id: m.id, at: m.created_at }))}
+            counterpartyUserId={conversation.counterparty_user_id}
+            blockId={block?.id ?? null}
           />
         </div>
       </div>

@@ -27,6 +27,8 @@ export interface Conversation {
   id: string;
   kind: ConversationKind;
   counterparty_name: string | null;
+  counterparty_company_id: string | null;
+  counterparty_user_id: string | null;
   from_city: string | null;
   to_city: string | null;
   order_id: string | null;

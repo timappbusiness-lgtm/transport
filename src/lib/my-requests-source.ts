@@ -27,6 +27,8 @@ interface Row {
   service_type: ServiceType;
   published_at: string | null;
   created_at: string;
+  hidden_at: string | null;
+  hidden_reason: string | null;
   cargo_vehicle_details:
     | {
         category: CargoCategory;
@@ -48,7 +50,7 @@ interface Row {
 }
 
 const COLUMNS =
-  'id, status, loading_city, loading_country, unloading_city, unloading_country, loading_from, loading_to, service_type, published_at, created_at, cargo_vehicle_details(category, make, model, year, is_running, needs_winch)' as const;
+  'id, status, loading_city, loading_country, unloading_city, unloading_country, loading_from, loading_to, service_type, published_at, created_at, hidden_at, hidden_reason, cargo_vehicle_details(category, make, model, year, is_running, needs_winch)' as const;
 
 export async function loadMyRequests(context: AccountContext): Promise<MyRequest[]> {
   if (!isSupabaseConfigured()) return [];
@@ -104,6 +106,8 @@ function toRequest(row: Row): MyRequest | null {
     serviceType: row.service_type,
     publishedAt: row.published_at,
     createdAt: row.created_at,
+    hiddenAt: row.hidden_at,
+    hiddenReason: row.hidden_reason,
   };
 }
 

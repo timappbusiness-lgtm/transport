@@ -6,7 +6,10 @@ import { markReadAction } from '@/app/cont/mesaje/actions';
 import { StatusBadge } from '@/components/ui/primitives';
 import { messagesCopy } from '@/content/mesaje';
 import { formatTime, groupByDay, type Message } from '@/lib/messages';
+import { subscribeToConversation, type RealtimeClientLike } from '@/lib/message-realtime';
 import { createPollScheduler } from '@/lib/poll-scheduler';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
 const c = messagesCopy.thread;
@@ -53,6 +56,23 @@ export function Thread({
   }, [conversationId]);
 
   useEffect(() => POLL.subscribe(onRefresh), [onRefresh]);
+
+  // Realtime peste temporizator. Dacă lipsește configurarea, dacă
+  // publicația nu are tabela, sau dacă rețeaua taie WebSocket-ul,
+  // abonarea pică în gol și rămâne ticul de mai sus — motiv pentru care
+  // nu se anunță nicăieri pe ecran că „ești conectat". O promisiune de
+  // instantaneu pe care nu o putem garanta este mai rea decât liniștea.
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    let close: (() => void) | null = null;
+    try {
+      const client = createClient() as unknown as RealtimeClientLike;
+      close = subscribeToConversation(client, conversationId, onRefresh);
+    } catch (error) {
+      console.error('[mesaje:realtime]', error);
+    }
+    return () => close?.();
+  }, [conversationId, onRefresh]);
 
   const groups = groupByDay(messages);
   const anyMasked = messages.some((m) => m.was_masked);

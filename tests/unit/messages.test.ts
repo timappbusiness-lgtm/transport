@@ -42,6 +42,8 @@ function conv(over: Partial<Conversation> = {}): Conversation {
     id: 'c1',
     kind: 'cerere',
     counterparty_name: 'Transport Ardeal SRL',
+    counterparty_company_id: null,
+    counterparty_user_id: 'u2',
     from_city: 'Cluj-Napoca',
     to_city: 'Timișoara',
     order_id: null,

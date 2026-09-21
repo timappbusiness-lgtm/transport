@@ -1,7 +1,12 @@
 'use client';
 
 import { useActionState, useId, useState } from 'react';
-import { reportMessageAction, type MessageState } from '@/app/cont/mesaje/actions';
+import {
+  blockSenderAction,
+  reportMessageAction,
+  unblockSenderAction,
+  type MessageState,
+} from '@/app/cont/mesaje/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
@@ -20,27 +25,39 @@ const c = messagesCopy.actions;
 export function MessageActions({
   conversationId,
   messages,
+  counterpartyUserId = null,
+  blockId = null,
 }: {
   conversationId: string;
   /** Mesajele celeilalte părți — ale tale nu se sesizează. */
   messages: readonly { id: string; at: string }[];
+  /** Cine este de partea cealaltă. Null pe un fir de comandă cu mai mulți. */
+  counterpartyUserId?: string | null;
+  /** Blocarea existentă pe contul ăla, dacă există. */
+  blockId?: string | null;
 }) {
   const [state, action, pending] = useActionState(reportMessageAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
-  if (messages.length === 0) return null;
   if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-muted underline underline-offset-4 hover:text-foreground"
-      >
-        {c.report}
-      </button>
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {messages.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="text-muted underline underline-offset-4 hover:text-foreground"
+          >
+            {c.report}
+          </button>
+        ) : null}
+        {counterpartyUserId !== null ? (
+          <Block userId={counterpartyUserId} blockId={blockId} />
+        ) : null}
+      </span>
     );
   }
 
@@ -90,6 +107,89 @@ export function MessageActions({
       </div>
       <FormError>{state.error}</FormError>
       <input type="hidden" name="conversation_id" value={conversationId} />
+    </form>
+  );
+}
+
+/**
+ * Blocarea, spusă cu ce nu face.
+ *
+ * „Nu mai poate deschide conversații noi cu tine de pe anunțuri. Firele
+ * comenzilor în curs rămân deschise" — regula este în
+ * `guard_conversation_insert()`, care refuză numai firele de pe anunț.
+ * Un om care blochează crede de obicei că a tăiat tot; dacă află abia
+ * din primul mesaj de pe o comandă că nu e așa, crede că blocarea nu a
+ * funcționat.
+ */
+function Block({ userId, blockId }: { userId: string; blockId: string | null }) {
+  const [state, action, pending] = useActionState(
+    blockId === null ? blockSenderAction : unblockSenderAction,
+    EMPTY,
+  );
+  const [open, setOpen] = useState(false);
+  const id = useId();
+
+  if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
+
+  if (blockId !== null) {
+    return (
+      <form action={action} className="inline">
+        <input type="hidden" name="block_id" value={blockId} />
+        <button
+          type="submit"
+          disabled={pending}
+          className="text-muted underline underline-offset-4 hover:text-foreground"
+        >
+          {c.unblock}
+        </button>
+      </form>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-muted underline underline-offset-4 hover:text-foreground"
+      >
+        {c.block}
+      </button>
+    );
+  }
+
+  return (
+    <form
+      action={action}
+      className="mt-2 flex w-full flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
+    >
+      <input type="hidden" name="user_id" value={userId} />
+      <p className="text-[0.8125rem] font-medium">{c.blockTitle}</p>
+      <p className="max-w-[52ch] text-xs text-muted">{c.blockHint}</p>
+
+      <label htmlFor={`${id}-reason`} className="sr-only">
+        {c.blockTitle}
+      </label>
+      <input
+        id={`${id}-reason`}
+        name="reason"
+        maxLength={500}
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+      />
+
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+          {c.blockSubmit}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className={buttonClasses('secondary', 'sm')}
+        >
+          Renunță
+        </button>
+      </div>
+      <FormError>{state.error}</FormError>
     </form>
   );
 }

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { stopDepartureAction, duplicateAsReturnAction } from '@/app/cont/trasee/actions';
 import { BookingDecision } from '@/components/departures/booking-decision';
+import { HiddenNotice } from '@/components/listings/hidden-notice';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, departureRoute } from '@/config/routes';
@@ -25,6 +26,8 @@ interface MyDeparture {
   available_to: string | null;
   platform_slots_total: number | null;
   status: string;
+  hidden_at: string | null;
+  hidden_reason: string | null;
 }
 
 interface PendingBooking {
@@ -58,7 +61,7 @@ export default async function Page() {
     supabase
       .from('truck_listings')
       .select(
-        'id, direction, from_country, from_city, to_country, to_city, waypoints, available_from, available_to, platform_slots_total, status',
+        'id, direction, from_country, from_city, to_country, to_city, waypoints, available_from, available_to, platform_slots_total, status, hidden_at, hidden_reason',
       )
       .eq('company_id', company.id)
       .order('available_from', { ascending: true })
@@ -170,6 +173,9 @@ export default async function Page() {
                     </p>
                     {total !== null ? (
                       <p className="mt-1 text-xs text-muted">{c.seatsTaken(taken, total)}</p>
+                    ) : null}
+                    {departure.hidden_at !== null ? (
+                      <HiddenNotice reason={departure.hidden_reason} />
                     ) : null}
                   </div>
 

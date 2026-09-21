@@ -9,6 +9,7 @@ import {
   type RequestActionState,
 } from '@/app/cerere/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
+import { HiddenNotice } from '@/components/listings/hidden-notice';
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
@@ -101,6 +102,8 @@ export function MyRequestCard({
           {requestsCopy.status[request.status as keyof typeof requestsCopy.status]}
         </StatusBadge>
       </div>
+
+      {request.hiddenAt !== null ? <HiddenNotice reason={request.hiddenReason} /> : null}
 
       {note ? <p className="mt-3 text-[0.8125rem] text-muted">{note}</p> : null}
 

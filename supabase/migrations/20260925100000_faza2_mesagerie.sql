@@ -1853,3 +1853,37 @@ begin
   return new;
 end;
 $fn$;
+
+
+-- ---------------------------------------------------------------------
+-- 21. Realtime
+-- ---------------------------------------------------------------------
+--
+-- `messages` intră în publicația realtime ca să nu aștepte nimeni
+-- cincisprezece secunde pentru un mesaj.
+--
+-- Evenimentul este numai un semnal — „uită-te din nou". Ecranul nu
+-- desenează nimic din payload; recitește prin `conversation_messages()`,
+-- care verifică încă o dată cine întreabă și aplică aceleași reguli ca
+-- la prima încărcare. Deci chiar dacă publicația ar trimite un rând mai
+-- mult decât trebuie, nu ajunge pe niciun ecran. Cine primește
+-- evenimentul rămâne oricum treaba lui `messages_select_participant`,
+-- pe care Realtime îl evaluează cu rolul celui abonat.
+--
+-- Blocul condiționat este pentru baza de probă din `pnpm db:test`, unde
+-- publicația `supabase_realtime` nu există: acolo pasul ăsta nu face
+-- nimic, iar restul migrării trece mai departe.
+do $realtime$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (
+       select 1 from pg_publication_tables
+       where pubname = 'supabase_realtime'
+         and schemaname = 'public'
+         and tablename = 'messages'
+     )
+  then
+    alter publication supabase_realtime add table public.messages;
+  end if;
+end;
+$realtime$;
