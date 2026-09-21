@@ -5338,7 +5338,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 17 from public.job_health()$a$, 'true');
+  $a$select count(*) = 18 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6229,8 +6229,8 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
      'nightly-assisted-sweep, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
-     'nightly-rating-reminders, nightly-reputation, '
-     'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
+     'nightly-rating-reminders, nightly-reputation, nightly-retention, '
+     'nightly-route-series, nightly-saved-search-digest, outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6288,8 +6288,8 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
      'nightly-assisted-sweep, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
-     'nightly-rating-reminders, nightly-reputation, '
-     'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
+     'nightly-rating-reminders, nightly-reputation, nightly-retention, '
+     'nightly-route-series, nightly-saved-search-digest, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',
