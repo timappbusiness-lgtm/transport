@@ -6,6 +6,7 @@ import { askOfferAction, type OfferState } from '@/app/cont/oferte/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { offersCopy } from '@/content/oferte';
 import { wouldBeMasked } from '@/lib/contact-mask';
+import { createPollScheduler } from '@/lib/poll-scheduler';
 import type { ThreadMessage } from '@/lib/offers-source';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,19 @@ const c = offersCopy.thread;
 
 /** Fifteen seconds: a question is not a chat, and a chat is not this. */
 const POLL_MS = 15_000;
+
+/**
+ * One timer for the whole page.
+ *
+ * The offer list renders a thread under each offer, and each of them
+ * refreshing the page on its own schedule is six identical requests
+ * every fifteen seconds for one answer. They share this instead. It
+ * also skips a tick while the tab is in the background, because polling
+ * a page nobody is looking at is work nobody asked for.
+ */
+const POLL = createPollScheduler(POLL_MS, undefined, () =>
+  typeof document === 'undefined' ? false : document.visibilityState === 'visible',
+);
 
 function when(iso: string): string {
   return new Date(iso).toLocaleString('ro-RO', {
@@ -54,8 +68,7 @@ export function OfferThread({
   // connection pool nobody asked for.
   useEffect(() => {
     if (!open) return;
-    const timer = setInterval(() => router.refresh(), POLL_MS);
-    return () => clearInterval(timer);
+    return POLL.subscribe(() => router.refresh());
   }, [open, router]);
 
   if (!open) {
