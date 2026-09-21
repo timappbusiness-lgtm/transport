@@ -17,6 +17,16 @@ să te bazezi pe vreun rând din tabele.
 > | Fluxul ofertei (`20260922100000`) | „Nu există ofertă în platformă" — al doilea lucru care bloca un pilot |
 > | Comanda, dovada de livrare și disputele (`20260923100100`) | §3 comandă și livrare, „regulile sunt în bază, dar nu au interfață" |
 > | Evaluările și reputația calculată (`20260924100000`) | §3 evaluări, „tabela există, ecranul nu"; și profilul care arăta o cifră fără nimic în spatele ei |
+> | Mesageria generală și moderarea anunțurilor (`20260925100000`) | §3 mesagerie, „conversațiile există în bază, dar nu are unde să le citească nimeni"; și moderarea din Faza 10, care nu avea niciun ecran |
+>
+> **Cu asta, Faza 2 este încheiată în cod.** Ofertă, comandă, dovadă de
+> livrare, evaluări, mesagerie, moderare — toate au ecrane, reguli în
+> Postgres și verificări. Ce rămâne deschis în Faza 2 nu mai este cod: este
+> configurarea din afara depozitului (furnizorul de e-mail, SMTP în Supabase
+> Auth, datele legale ale operatorului, prețurile indicative, verificarea
+> juridică) și cele două decizii — procesatorul de plăți și proiectul
+> Supabase de producție. Lista, cu un responsabil pe fiecare rând, este în
+> `docs/faza-1-checklist.md`; pașii în `docs/configurare-externa.md`.
 >
 > Două lucruri din document au fost între timp depășite de cod și se
 > citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge

@@ -126,10 +126,10 @@ end to end.
   confirmed *— done, at insert, so the unmasked text never reaches a row*;
   messages immutable *— done, the update policy is gone*; staff hide a
   message with an audit entry *— done*
-- **Not built: report abusive message.** `reports` already carries the
-  table and the staff screen (`/admin/sesizari`, phase 1), but nothing on
-  a message opens one. It belongs with general messaging rather than with
-  offers.
+- ~~**Not built: report abusive message.**~~ **Built in phase 11.**
+  `report_message()` opens a report of kind „mesaj" from the thread, and
+  it is also what decides whether staff may read the conversation at
+  all.
 
 What this phase added beyond the list above, because the flow needed it:
 
@@ -256,11 +256,60 @@ What this phase added beyond the list above:
 
 ## Phase 10 — Admin
 
-- **Moderate requests and listings**
-- **Reported conversations** and hidden messages
+- **Moderate requests and listings** *— done in phase 11, `/admin/anunturi`*
+- **Reported conversations** and hidden messages *— done in phase 11,
+  `/admin/conversatii`, and narrowed: only conversations with a report or
+  on a disputed order*
 - **Complaints** and **refunds**
 - **Grant promotions**
-- **Report export**
+- **Report export** *— done in phase 11, CSV of reports and moderation
+  actions for a date range*
+
+## Phase 11 — General messaging and moderation (done, September 2026)
+
+This is where Faza 2 stops. Everything in it is code-complete.
+
+- **One inbox for every conversation** at `/cont/mesaje`, for every account
+  type *— done*
+- **Three kinds of conversation in the same two tables** — the offer
+  thread (free, masked), the listing conversation (through the contact
+  gate, counted once per listing, masked), the order conversation (made
+  by a trigger at order creation, free, never masked) *— done*
+- **Attachments**: up to five images per message, re-encoded server-side,
+  private bucket, short-lived signed links *— done. No other file type,
+  in the browser and in the bucket*
+- **Block** a sender from opening new listing conversations, order
+  threads unaffected, audited and reversible *— done*
+- **Retention**: a conversation with no order is deleted after 24 months
+  (a setting), attachments with it *— done, nightly*
+- Listing **moderation** with a reason the owner reads, and **restore**
+  *— done*
+
+What this phase decided, beyond the list:
+
+- **Three kinds, two tables.** Three tables would have meant three
+  policies, three unread counts and three ways for them to drift.
+  `conversation_kind()` derives the kind from which column is filled, and
+  one check constraint says which combinations exist.
+- **Staff read less than they did.** `staff_may_read_conversation()`
+  narrows admin access from „every private conversation" to „one with a
+  report in it, or on a disputed order", and `/admin/conversatii` *is*
+  that set rather than a filtered view over everything. The rule is
+  written on `/confidentialitate`, which is what makes it a promise.
+- **History never unmasks.** Masking happens at insert, so a message
+  written before the order has no unmasked copy anywhere. The order
+  thread never masks, because by then `order_contacts()` has already
+  given both sides the other's details.
+- **The order thread is made by a trigger on `transports`**, not by
+  `create_order()`. `create_order` is not the only writer, and a rule
+  that lives in one caller is a rule the next caller forgets.
+- **Digest by dedupe key.** The 15-minute grouping is the window integer
+  inside the outbox dedupe key, so a second message in the same window
+  lands on `on conflict do nothing` rather than needing a scheduler.
+- **Realtime is an accelerator, not the guarantee.** The event is only a
+  signal to re-read through `conversation_messages()`; nothing is drawn
+  from the payload. A blocked WebSocket leaves the fifteen-second poll,
+  which is why the screen never claims to be „connected".
 
 **MVP exit criteria:** 20 verified carriers and 5 forwarders using it weekly
 without us in the loop, and more than half of accepted deals starting from an
