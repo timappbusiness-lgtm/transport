@@ -325,10 +325,15 @@ insert into public.offers (id, truck_listing_id, from_company_id, from_user_id, 
   ('f2000000-0000-0000-0000-000000000006', 'fb000000-0000-0000-0000-000000000005', 'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 700, 'EUR'),
   ('f2000000-0000-0000-0000-000000000007', 'fb000000-0000-0000-0000-000000000005', null,                                   'f0000000-0000-0000-0000-000000000006', 710, 'EUR');
 
-insert into public.transports (id, truck_listing_id, shipper_company_id, shipper_user_id, carrier_company_id, vehicle_id, agreed_price, currency, status) values
-  ('f3000000-0000-0000-0000-000000000001', 'fb000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 650, 'EUR', 'delivered'),
-  ('f3000000-0000-0000-0000-000000000002', 'fb000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 650, 'EUR', 'agreed'),
-  ('f3000000-0000-0000-0000-000000000003', 'fb000000-0000-0000-0000-000000000001', null,                                   'f0000000-0000-0000-0000-000000000006', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 600, 'EUR', 'delivered');
+-- `delivered` and `agreed` were the phase 0 spellings. 20260923100100
+-- migrated every row off them and nothing writes them any more, so the
+-- fixtures stopped writing them too. `closed_at` is what the rating
+-- window is measured from, so a completed order without one is an order
+-- nobody can ever rate.
+insert into public.transports (id, truck_listing_id, shipper_company_id, shipper_user_id, carrier_company_id, vehicle_id, agreed_price, currency, status, closed_at) values
+  ('f3000000-0000-0000-0000-000000000001', 'fb000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 650, 'EUR', 'order_completed', now() - interval '1 day'),
+  ('f3000000-0000-0000-0000-000000000002', 'fb000000-0000-0000-0000-000000000001', 'fc000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 650, 'EUR', 'order_confirmed', null),
+  ('f3000000-0000-0000-0000-000000000003', 'fb000000-0000-0000-0000-000000000001', null,                                   'f0000000-0000-0000-0000-000000000006', 'fc000000-0000-0000-0000-000000000001', 'fe000000-0000-0000-0000-000000000001', 600, 'EUR', 'order_completed', now() - interval '1 day');
 
 insert into public.ratings (id, transport_id, rater_user_id, rater_company_id, rated_company_id, score) values
   ('f7000000-0000-0000-0000-000000000001', 'f3000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000004',
@@ -718,44 +723,50 @@ select pg_temp.check('P6   a party cannot rewrite a transport', 'fix',
   $a$update public.transports set agreed_price = 1 where id = 'f3000000-0000-0000-0000-000000000001'$a$, 'blocked',
   p_verify => $v$select agreed_price = 650 from public.transports where id = 'f3000000-0000-0000-0000-000000000001'$v$);
 
-select pg_temp.check('P6   a rating always lands on the counterparty, not on the company the client names', 'fix',
+-- 20260924100000 took the INSERT policy off `ratings` entirely: the only
+-- door is `post_rating()`. The checks below go through it, and the first
+-- one proves the door is the only one there is.
+
+select pg_temp.check('P6   nobody writes a rating straight into the table any more', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$insert into public.ratings (transport_id, rater_user_id, rated_company_id, score)
-     values ('f3000000-0000-0000-0000-000000000001', auth.uid(), 'fc000000-0000-0000-0000-000000000003', 1)$a$, 'allowed',
+     values ('f3000000-0000-0000-0000-000000000001', auth.uid(), 'fc000000-0000-0000-0000-000000000002', 1)$a$, 'blocked',
+  p_verify => $v$select count(*) = 1 from public.ratings
+                 where transport_id = 'f3000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('P6   a rating always lands on the counterparty, not on the company the rater names', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.post_rating('f3000000-0000-0000-0000-000000000001', 4)).id$a$, 'allowed',
   p_verify => $v$select not exists (select 1 from public.ratings where rated_company_id = 'fc000000-0000-0000-0000-000000000003')
                     and exists (select 1 from public.ratings
                                 where transport_id = 'f3000000-0000-0000-0000-000000000001'
                                   and rated_company_id = 'fc000000-0000-0000-0000-000000000002'
                                   and rater_company_id = 'fc000000-0000-0000-0000-000000000001')$v$);
 
-select pg_temp.check('P6   one rating per side per transport', 'fix',
+select pg_temp.check('P6   one rating per side, whichever colleague writes it', 'fix',
   'f0000000-0000-0000-0000-000000000005', 'authenticated',
-  $a$insert into public.ratings (transport_id, rater_user_id, rated_company_id, score)
-     values ('f3000000-0000-0000-0000-000000000001', auth.uid(), 'fc000000-0000-0000-0000-000000000001', 1)$a$, 'blocked',
+  $a$select (public.post_rating('f3000000-0000-0000-0000-000000000001', 1)).id$a$, 'blocked',
   p_verify => $v$select count(*) = 1 from public.ratings
                  where transport_id = 'f3000000-0000-0000-0000-000000000001'
                    and rated_company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
 
 select pg_temp.check('P6   individuals are not rated (out of MVP)', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
-  $a$insert into public.ratings (transport_id, rater_user_id, rated_company_id, score)
-     values ('f3000000-0000-0000-0000-000000000003', auth.uid(), 'fc000000-0000-0000-0000-000000000001', 1)$a$, 'blocked',
+  $a$select (public.post_rating('f3000000-0000-0000-0000-000000000003', 1)).id$a$, 'blocked',
   p_verify => $v$select not exists (select 1 from public.ratings where transport_id = 'f3000000-0000-0000-0000-000000000003')$v$);
 
-select pg_temp.check('P6   a rating cannot be edited afterwards', 'fix',
+select pg_temp.check('P6   a rating cannot be rewritten in the table', 'fix',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
   $a$update public.ratings set score = 1 where id = 'f7000000-0000-0000-0000-000000000001'$a$, 'blocked',
   p_verify => $v$select score = 5 from public.ratings where id = 'f7000000-0000-0000-0000-000000000001'$v$);
 
-select pg_temp.check('P6   no rating before delivery', 'guard',
+select pg_temp.check('P6   no rating before the order is finished', 'guard',
   'f0000000-0000-0000-0000-000000000004', 'authenticated',
-  $a$insert into public.ratings (transport_id, rater_user_id, rated_company_id, score)
-     values ('f3000000-0000-0000-0000-000000000002', auth.uid(), 'fc000000-0000-0000-0000-000000000001', 1)$a$, 'blocked');
+  $a$select (public.post_rating('f3000000-0000-0000-0000-000000000002', 1)).id$a$, 'blocked');
 
 select pg_temp.check('P6   a non-party cannot rate', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
-  $a$insert into public.ratings (transport_id, rater_user_id, rated_company_id, score)
-     values ('f3000000-0000-0000-0000-000000000001', auth.uid(), 'fc000000-0000-0000-0000-000000000001', 1)$a$, 'blocked');
+  $a$select (public.post_rating('f3000000-0000-0000-0000-000000000001', 1)).id$a$, 'blocked');
 
 -- =====================================================================
 -- P5, P11 - messaging
@@ -4493,14 +4504,19 @@ select pg_temp.check('PUSH an override wins over the default', 'fix',
 -- A type with no screen behind it is off on every channel whatever
 -- anybody set, because a push that opens a 404 spends the one tap a
 -- person gives you.
+-- The stand-in for „a type with no screen" used to be `offer_received`.
+-- Offers and orders got their screens, so 20260924100000 turned those on;
+-- general messaging is the phase after this one and has none, which is
+-- what `message_received` is doing here. The rule under test has not
+-- changed, only the example that still satisfies it.
 select pg_temp.check('PUSH a type with no screen is off on every channel', 'fix',
   null, 'service_role',
   $a$select not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'offer_received', 'push')
+           'f0000000-0000-0000-0000-000000000006', 'message_received', 'push')
        and not public.notification_channel_enabled(
-           'f0000000-0000-0000-0000-000000000006', 'offer_received', 'email')$a$, 'true',
+           'f0000000-0000-0000-0000-000000000006', 'message_received', 'email')$a$, 'true',
   p_setup => $s$insert into public.notification_preferences (user_id, type, push, email)
-                values ('f0000000-0000-0000-0000-000000000006', 'offer_received', true, true)$s$);
+                values ('f0000000-0000-0000-0000-000000000006', 'message_received', true, true)$s$);
 
 -- ---------------------------------------------------------------------
 -- When a push actually leaves
@@ -4522,7 +4538,7 @@ select pg_temp.check('PUSH nothing is queued for a channel that is off', 'fix',
 
 select pg_temp.check('PUSH nothing is queued for a type with no screen', 'fix',
   null, 'service_role',
-  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'offer_received',
+  $a$select public.queue_push('f0000000-0000-0000-0000-000000000006', 'message_received',
                               'Titlu', 'Corp') is null$a$, 'true',
   p_setup => $s$insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
                 values ('f0000000-0000-0000-0000-000000000006', 'https://push.example/q2', 'k', 'a')$s$);
@@ -5314,7 +5330,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 13 from public.job_health()$a$, 'true');
+  $a$select count(*) = 15 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6204,6 +6220,7 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
      'nightly-compliance-sweep, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
+     'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from cron.job$a$, 'true');
 
@@ -6261,6 +6278,7 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
      'hourly-offer-expiry, hourly-order-autocomplete, hourly-push-cleanup, '
      'nightly-compliance-sweep, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
+     'nightly-rating-reminders, nightly-reputation, '
      'nightly-retention, nightly-saved-search-digest, outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
