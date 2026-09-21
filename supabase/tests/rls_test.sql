@@ -10987,6 +10987,52 @@ select pg_temp.check('PRV  and staff do, because somebody has to', 'fix',
   p_setup => $s$select pg_temp.private_request(false)$s$);
 
 -- ---------------------------------------------------------------------
+-- Datele de contact de pe o cerere privată
+--
+-- `reveal_contact()` este SECURITY DEFINER și citește `listing_contacts`
+-- pe lângă RLS. Fără verificare, cine avea id-ul primea numele,
+-- telefonul și e-mailul clientului fără să fi fost invitat.
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  a carrier who was not invited cannot reveal the contact', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.reveal_contact(
+       (select onboarding_id from pg_temp.asi_ctx), null)$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  but the invited one gets it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) from public.reveal_contact(
+       (select onboarding_id from pg_temp.asi_ctx), null)$a$, 'allowed',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+-- ---------------------------------------------------------------------
+-- Firul de mesaje de pe o cerere privată
+--
+-- Politica de INSERT pe `conversations` întreabă doar „ești tu cel care
+-- deschide?". Fără garda din trigger, cine are id-ul cererii putea
+-- deschide un fir pe ea — ceea ce îi consuma un contact, deci îi arăta
+-- datele clientului, și îi punea clientului în inbox firma pe care nu
+-- o alesese.
+-- ---------------------------------------------------------------------
+select pg_temp.check('PRV  a carrier who was not invited cannot open a thread on it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ((select onboarding_id from pg_temp.asi_ctx),
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000004')$a$, 'blocked',
+  p_setup => $s$select pg_temp.private_request(false)$s$);
+
+select pg_temp.check('PRV  but the invited one can', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.conversations
+       (cargo_listing_id, initiator_user_id, owner_user_id)
+     values ((select onboarding_id from pg_temp.asi_ctx),
+             'f0000000-0000-0000-0000-000000000002',
+             'f0000000-0000-0000-0000-000000000004')$a$, 'allowed',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+-- ---------------------------------------------------------------------
 -- Pagina cererii, pe linkul din invitație
 --
 -- Vederea publică filtrează cererile private, deci `/cereri/<id>` ar fi

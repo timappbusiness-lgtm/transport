@@ -1703,3 +1703,137 @@ comment on function public.private_request_for_viewer(uuid) is
 
 revoke all on function public.private_request_for_viewer(uuid) from public, anon;
 grant execute on function public.private_request_for_viewer(uuid) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+-- Nici pe firul de mesaje nu se intră neinvitat
+--
+-- `conversations_insert_initiator` întreabă un singur lucru: „ești tu
+-- cel care deschide?". Pentru un anunț public este destul. Pentru unul
+-- privat nu: cine are id-ul cererii putea deschide un fir pe ea, ceea
+-- ce îi consuma un contact — deci îi arăta datele clientului — și îi
+-- punea clientului în inbox exact firma pe care nu o alesese.
+--
+-- `guard_conversation_insert()` reprodusă din 20260925100000 cu o
+-- singură condiție în plus, pe ramura anunțului. Ramurile dinaintea ei
+-- ies mai devreme și rămân neatinse: firul de comandă și cel de ofertă.
+--
+-- `can_see_listing()` întreabă `auth.uid()`, care într-o funcție
+-- `security definer` este tot apelantul — vine din JWT, nu din rolul de
+-- execuție.
+-- ---------------------------------------------------------------------
+create or replace function public.guard_conversation_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_owner uuid;
+  v_company uuid;
+  v_offer public.offers;
+begin
+  -- Un fir de comandă nu trece pe aici din contul nimănui. Regula stă în
+  -- politica de INSERT, nu aici: funcția asta este SECURITY DEFINER, deci
+  -- `current_user` este proprietarul ei și nu spune nimic despre cine a
+  -- cerut. RLS spune, și tot RLS este ce `create_order()` ocolește
+  -- legitim, fiind la rândul ei SECURITY DEFINER.
+  if new.transport_id is not null then
+    return new;
+  end if;
+
+  -- Firul unei oferte: părțile vin cu oferta, iar poarta de contact nu
+  -- se atinge — o lămurire înainte de acceptare este gratis.
+  if new.offer_id is not null then
+    select * into v_offer from public.offers where id = new.offer_id;
+    if v_offer.id is null then
+      raise exception 'Oferta nu există' using errcode = 'P0002';
+    end if;
+    new.last_message_at := null;
+    return new;
+  end if;
+
+  if new.cargo_listing_id is not null then
+    select posted_by, company_id into v_owner, v_company
+    from public.cargo_listings where id = new.cargo_listing_id;
+
+    -- Cererea privată: numai cine are voie să o vadă are voie să scrie
+    -- pe ea. Mesajul este același pe care îl primește cineva care cere
+    -- un anunț inexistent — că nu există sau că nu este pentru tine
+    -- sunt două lucruri pe care nu are rost să le deosebim.
+    if not public.can_see_listing(new.cargo_listing_id) then
+      raise exception 'Anunț inexistent' using errcode = 'P0002';
+    end if;
+  else
+    select posted_by, company_id into v_owner, v_company
+    from public.truck_listings where id = new.truck_listing_id;
+  end if;
+  if v_owner is null then
+    raise exception 'Anunț inexistent' using errcode = 'P0002';
+  end if;
+
+  -- The owner is whoever posted the listing, not what the client sends.
+  new.owner_user_id := v_owner;
+  new.last_message_at := null;
+
+  if new.initiator_user_id = v_owner
+     or (v_company is not null and exists (
+           select 1 from public.company_members m
+           where m.company_id = v_company and m.user_id = new.initiator_user_id)) then
+    raise exception 'Nu poți deschide o conversație pe propriul anunț' using errcode = '42501';
+  end if;
+
+  -- Blocat de proprietarul anunțului: nu se deschide un fir nou. Cele
+  -- vechi și cele de comandă rămân.
+  if public.is_blocked(new.initiator_user_id, v_owner) then
+    raise exception 'Nu poți trimite mesaje acestui cont' using errcode = '42501';
+  end if;
+
+  -- Same gate and quota as reveal_contact(): a conversation is a contact.
+  perform public.consume_contact_access(new.initiator_user_id, new.cargo_listing_id, new.truck_listing_id);
+  return new;
+end;
+$fn$;
+
+
+-- ---------------------------------------------------------------------
+-- Nici datele de contact nu se deschid neinvitat
+--
+-- A treia ușă din aceeași cameră. `reveal_contact()` este SECURITY
+-- DEFINER și citește `listing_contacts` pe lângă RLS — corect pentru un
+-- anunț public, unde oricine cu abonament are voie. Pentru o cerere
+-- privată, cine avea id-ul primea numele, telefonul și e-mailul
+-- clientului fără să fi fost invitat.
+--
+-- Reprodusă din 20260916130200 cu verificarea înainte de consum:
+-- refuzul nu trebuie să coste un contact.
+--
+-- Ramura traseelor rămâne neatinsă: un traseu nu are vizibilitate.
+-- ---------------------------------------------------------------------
+create or replace function public.reveal_contact(
+  p_cargo_listing_id uuid default null,
+  p_truck_listing_id uuid default null
+)
+returns table (contact_name text, contact_phone text, contact_email text)
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  if p_cargo_listing_id is not null
+     and not public.can_see_listing(p_cargo_listing_id) then
+    raise exception 'Anunț inexistent' using errcode = 'P0002';
+  end if;
+
+  perform public.consume_contact_access(auth.uid(), p_cargo_listing_id, p_truck_listing_id);
+
+  return query
+  select lc.contact_name, lc.contact_phone, lc.contact_email
+  from public.listing_contacts lc
+  where (p_cargo_listing_id is not null and lc.cargo_listing_id = p_cargo_listing_id)
+     or (p_truck_listing_id is not null and lc.truck_listing_id = p_truck_listing_id);
+end;
+$fn$;
+
+revoke all on function public.reveal_contact(uuid, uuid) from public, anon;
+grant execute on function public.reveal_contact(uuid, uuid) to authenticated;
