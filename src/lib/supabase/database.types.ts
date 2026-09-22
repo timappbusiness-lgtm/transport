@@ -2288,33 +2288,140 @@ export type Database = {
       }
       localities: {
         Row: {
+          aliases: string[]
           country: string
           created_at: string
           id: string
+          is_county_seat: boolean
           lat: number
           lng: number
           name: string
+          population: number | null
           region: string
+          source: string
         }
         Insert: {
+          aliases?: string[]
           country: string
           created_at?: string
           id?: string
+          is_county_seat?: boolean
           lat: number
           lng: number
           name: string
+          population?: number | null
           region: string
+          source?: string
         }
         Update: {
+          aliases?: string[]
           country?: string
           created_at?: string
           id?: string
+          is_county_seat?: boolean
           lat?: number
           lng?: number
           name?: string
+          population?: number | null
           region?: string
+          source?: string
         }
         Relationships: []
+      }
+      locality_recent: {
+        Row: {
+          locality_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          locality_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          locality_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locality_recent_locality_id_fkey"
+            columns: ["locality_id"]
+            isOneToOne: false
+            referencedRelation: "localities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locality_requests: {
+        Row: {
+          cargo_listing_id: string | null
+          country: string
+          created_at: string
+          created_by: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          typed: string
+        }
+        Insert: {
+          cargo_listing_id?: string | null
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          typed: string
+        }
+        Update: {
+          cargo_listing_id?: string | null
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          typed?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locality_requests_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locality_requests_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_private"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locality_requests_cargo_listing_id_fkey"
+            columns: ["cargo_listing_id"]
+            isOneToOne: false
+            referencedRelation: "v_requests_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locality_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locality_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       matching_settings: {
         Row: {
@@ -6576,6 +6683,10 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      cargo_category_is_offered: {
+        Args: { p_category: Database["public"]["Enums"]["cargo_category"] }
+        Returns: boolean
+      }
       cargo_category_label: {
         Args: { p_category: Database["public"]["Enums"]["cargo_category"] }
         Returns: string
@@ -6691,6 +6802,10 @@ export type Database = {
         }[]
       }
       company_can_act: {
+        Args: { p_company_id: string }
+        Returns: boolean
+      }
+      company_carries_closed: {
         Args: { p_company_id: string }
         Returns: boolean
       }
@@ -7525,13 +7640,17 @@ export type Database = {
       locality_point: {
         Args: { p_city: string; p_country: string }
         Returns: {
+          aliases: string[]
           country: string
           created_at: string
           id: string
+          is_county_seat: boolean
           lat: number
           lng: number
           name: string
+          population: number | null
           region: string
+          source: string
         }
       }
       log_job_run: {
@@ -8410,6 +8529,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      remember_locality: {
+        Args: { p_locality_id: string }
+        Returns: undefined
+      }
       remind_pending_ratings: {
         Args: { p_now?: string }
         Returns: number
@@ -8462,6 +8585,10 @@ export type Database = {
           transport_id: string | null
           updated_at: string
         }
+      }
+      report_missing_locality: {
+        Args: { p_country?: string; p_listing_id?: string; p_typed: string }
+        Returns: string
       }
       report_rating: {
         Args: { p_rating_id: string; p_reason: string }
@@ -8862,6 +8989,25 @@ export type Database = {
       scrub_audit_for_subject: {
         Args: { p_company_id: string; p_user_id: string }
         Returns: number
+      }
+      search_localities: {
+        Args: {
+          p_limit?: number
+          p_near_lat?: number
+          p_near_lng?: number
+          p_query: string
+        }
+        Returns: {
+          country: string
+          id: string
+          is_county_seat: boolean
+          lat: number
+          lng: number
+          match_kind: string
+          name: string
+          population: number
+          region: string
+        }[]
       }
       send_test_push: {
         Args: Record<PropertyKey, never>

@@ -7513,6 +7513,149 @@ select pg_temp.check('CAT  anon cannot ask who has a closed trailer', 'fix',
   $a$select public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
   'blocked');
 
+-- ---------------------------------------------------------------------
+-- LOC — căutarea de localități
+--
+-- Comportament, nu drepturi, dar stă aici fiindcă aici rulează pe o bază
+-- cu migrările aplicate. Ordinea întoarsă este ce vede omul în listă.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('LOC  diacritics do not have to be typed', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' and match_kind = 'exact'
+     from public.search_localities('timisoara', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  and they may be typed', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' from public.search_localities('Timișoara', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  a typo still finds the town', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' from public.search_localities('timisora', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  the start of the name is enough', 'fix',
+  null, 'anon',
+  $a$select name = 'Cluj-Napoca' and match_kind = 'prefix'
+     from public.search_localities('cluj', null, null, 1)$a$, 'true');
+
+-- „mare" trebuie să dea Baia Mare și Satu Mare. Fără potrivirea pe
+-- început de cuvânt, jumătate din localitățile compuse din România sunt
+-- de negăsit dacă nu începi cu primul cuvânt.
+select pg_temp.check('LOC  so is the start of any word in it', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 2 from public.search_localities('mare', null, null, 5)
+     where name in ('Baia Mare', 'Satu Mare') and match_kind = 'word'$a$, 'true');
+
+-- Aliasurile: cum scrie omul, nu cum scriem noi.
+select pg_temp.check('LOC  Munich finds München', 'fix',
+  null, 'anon',
+  $a$select name = 'München' and match_kind = 'alias'
+     from public.search_localities('Munich', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  Viena finds Wien', 'fix',
+  null, 'anon',
+  $a$select name = 'Wien' from public.search_localities('Viena', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  Bucuresti finds București', 'fix',
+  null, 'anon',
+  $a$select name = 'București' from public.search_localities('Bucuresti', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  Bucharest finds it too', 'fix',
+  null, 'anon',
+  $a$select name = 'București' from public.search_localities('Bucharest', null, null, 1)$a$,
+  'true');
+
+-- Între două potriviri la fel de bune, orașul mare este aproape
+-- întotdeauna cel căutat.
+select pg_temp.check('LOC  the larger town comes first between equals', 'fix',
+  null, 'anon',
+  $a$select name = 'Târgu Mureș' from public.search_localities('targu', null, null, 1)$a$,
+  'true');
+
+-- Apropierea de ce a ales deja: cu plecarea în Cluj, „Turda" (35 km)
+-- trebuie să fie înaintea unei potriviri la fel de bune de departe.
+select pg_temp.check('LOC  what is near what you already chose ranks higher', 'fix',
+  null, 'anon',
+  $a$select name = 'Turda'
+     from public.search_localities('turda', 46.7712, 23.6236, 1)$a$, 'true');
+
+select pg_temp.check('LOC  two characters are the minimum, one finds nothing', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.search_localities('', null, null, 8)$a$, 'true');
+
+select pg_temp.check('LOC  and the limit is honoured', 'fix',
+  null, 'anon',
+  $a$select count(*) <= 5 from public.search_localities('a', null, null, 5)$a$, 'true');
+
+-- Nomenclatorul se citește fără cont; nimeni nu scrie în el prin API.
+select pg_temp.check('LOC  a visitor may search it', 'fix',
+  null, 'anon',
+  $a$select count(*) > 0 from public.search_localities('cluj', null, null, 3)$a$, 'true');
+
+select pg_temp.check('LOC  but not remember anything', 'fix',
+  null, 'anon',
+  $a$select public.remember_locality(
+       (select id from public.localities where name = 'Cluj-Napoca'))$a$, 'blocked');
+
+-- `remember_locality` întoarce void; se verifică faptul că trece, nu o
+-- valoare. `select f() is null` ar fi fost fals oricum: void într-un
+-- select este șir gol, nu null.
+select pg_temp.check('LOC  a signed-in person remembers their own choice', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.remember_locality(
+       (select id from public.localities where name = 'Cluj-Napoca'))$a$, 'allowed',
+  p_verify => $v$select count(*) = 1 from public.locality_recent
+     where user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('LOC  and reads only their own', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.locality_recent$a$, 'true',
+  p_setup => $s$insert into public.locality_recent (user_id, locality_id)
+     select 'f0000000-0000-0000-0000-000000000006',
+            id from public.localities where name = 'Cluj-Napoca'
+     on conflict do nothing$s$);
+
+select pg_temp.check('LOC  nobody writes a recent row in somebody else''s name', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.locality_recent (user_id, locality_id)
+     select 'f0000000-0000-0000-0000-000000000006',
+            id from public.localities where name = 'Cluj-Napoca'$a$, 'blocked');
+
+-- „Nu găsim localitatea?": textul intră, steagul se ridică.
+select pg_temp.check('LOC  a missing town can be reported', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.report_missing_locality('Cătunul Meu', 'RO', null) is not null$a$,
+  'true');
+
+-- Fiecare verificare rulează în tranzacția ei și se derulează înapoi,
+-- deci rândul scris de verificarea de dinainte nu mai există aici. Se
+-- creează în pregătire.
+select pg_temp.check('LOC  and the person sees their own report', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 1 from public.locality_requests where typed = 'Cătunul Meu'$a$,
+  'true',
+  p_setup => $s$insert into public.locality_requests (created_by, typed, country)
+     values ('f0000000-0000-0000-0000-000000000006', 'Cătunul Meu', 'RO')$s$);
+
+select pg_temp.check('LOC  somebody else does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.locality_requests where typed = 'Cătunul Meu'$a$,
+  'true',
+  p_setup => $s$insert into public.locality_requests (created_by, typed, country)
+     values ('f0000000-0000-0000-0000-000000000006', 'Cătunul Meu', 'RO')$s$);
+
+select pg_temp.check('LOC  a visitor cannot report one at all', 'fix',
+  null, 'anon',
+  $a$select public.report_missing_locality('Cătunul Lor', 'RO', null)$a$, 'blocked');
+
+select pg_temp.check('LOC  nor hang one on somebody else''s request', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.report_missing_locality(
+       'Cătunul Altcuiva', 'RO', 'f1000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
 -- Insigna din meniu. Numără exact cutia „primite" și starea „pending",
 -- fiindcă numai alea așteaptă pe cineva; o ofertă trimisă așteaptă pe
 -- altcineva, iar o insignă care nu ajunge niciodată la zero este una pe

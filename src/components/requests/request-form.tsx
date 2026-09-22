@@ -13,9 +13,9 @@ import { AutoChip, ImportDisclaimer, ImportPanel } from '@/components/requests/i
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { CarrierPreview } from '@/components/requests/carrier-preview';
 import { buttonClasses } from '@/components/ui/button';
+import { LocalityPicker } from '@/components/ui/locality-picker';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
-import { CITY_GROUPS } from '@/lib/cities';
 import { createDraftStore } from '@/lib/draft-store';
 import { importCopy } from '@/content/import-anunt';
 import { applyExtraction, type ImportedField } from '@/lib/listing-import';
@@ -153,11 +153,25 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   }, [state.requestId, store]);
 
   function set<K extends RequestField>(field: K, value: RequestDraft[K]): void {
-    store.set({ ...draft, [field]: value });
+    setMany({ [field]: value } as Partial<RequestDraft>, [field]);
+  }
+
+  /**
+   * Several fields in one write.
+   *
+   * `set` spreads the `draft` captured by this render, so calling it
+   * twice in one handler makes the second overwrite the first — the city
+   * disappeared the moment the locality picker started setting the city
+   * and the country together, and the form refused to leave step one
+   * with „Scrie orașul de plecare" over a field somebody had just
+   * filled. Anything that changes more than one field goes through here.
+   */
+  function setMany(fields: Partial<RequestDraft>, touched: readonly RequestField[]): void {
+    store.set({ ...draft, ...fields });
     setAuto((current) => {
-      if (!current.has(field as ImportedField)) return current;
+      if (!touched.some((field) => current.has(field as ImportedField))) return current;
       const next = new Set(current);
-      next.delete(field as ImportedField);
+      for (const field of touched) next.delete(field as ImportedField);
       return next;
     });
   }
@@ -293,14 +307,19 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                     </option>
                   ))}
                 </select>
-                <input
-                  id={`${id}-from`}
-                  list={`${id}-cities`}
-                  value={draft.fromCity}
-                  onChange={(event) => set('fromCity', event.target.value)}
-                  placeholder="München"
-                  className={CONTROL}
-                />
+                <div className="min-w-0 flex-1">
+                  <LocalityPicker
+                    id={`${id}-from`}
+                    value={{ city: draft.fromCity, country: draft.fromCountry }}
+                    onChange={(picked) =>
+                      setMany(
+                        { fromCity: picked.city, fromCountry: picked.country },
+                        ['fromCity', 'fromCountry'],
+                      )
+                    }
+                    placeholder="München"
+                  />
+                </div>
               </div>
             </Labelled>
 
@@ -322,25 +341,22 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                     </option>
                   ))}
                 </select>
-                <input
-                  id={`${id}-to`}
-                  list={`${id}-cities`}
-                  value={draft.toCity}
-                  onChange={(event) => set('toCity', event.target.value)}
-                  placeholder="Cluj-Napoca"
-                  className={CONTROL}
-                />
+                <div className="min-w-0 flex-1">
+                  <LocalityPicker
+                    id={`${id}-to`}
+                    value={{ city: draft.toCity, country: draft.toCountry }}
+                    onChange={(picked) =>
+                      setMany(
+                        { toCity: picked.city, toCountry: picked.country },
+                        ['toCity', 'toCountry'],
+                      )
+                    }
+                    placeholder="Cluj-Napoca"
+                  />
+                </div>
               </div>
             </Labelled>
           </div>
-
-          {/* Suggestions, not a closed list: most cars are collected from
-              somewhere smaller than a county seat. */}
-          <datalist id={`${id}-cities`}>
-            {CITY_GROUPS.flatMap((group) => group.cities).map((city) => (
-              <option key={`${city.name}-${city.country}`} value={city.name} />
-            ))}
-          </datalist>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled

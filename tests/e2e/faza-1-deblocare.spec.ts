@@ -61,13 +61,28 @@ test.describe('empty states offer somewhere to go', () => {
 });
 
 test.describe('the filters cover what the board holds', () => {
-  test('every vehicle category can be filtered for, not only six', async ({ page }) => {
+  test('every category of the niche can be filtered for, not only six', async ({ page }) => {
     await page.goto('/cereri');
     const options = page.locator('#rf-category option');
-    // Fourteen categories plus the "any" option.
-    expect(await options.count()).toBe(15);
-    await expect(page.locator('#rf-category option[value="camion"]')).toHaveCount(1);
-    await expect(page.locator('#rf-category option[value="ambarcatiune"]')).toHaveCount(1);
+    // The ten offered categories plus the „any" option.
+    expect(await options.count()).toBe(11);
+
+    // The three that were missing from the niche and used to be
+    // published as „altele".
+    for (const code of ['atv_quad', 'cvadriciclu', 'istoric']) {
+      await expect(page.locator(`#rf-category option[value="${code}"]`)).toHaveCount(1);
+    }
+  });
+
+  test('and nothing outside it', async ({ page }) => {
+    await page.goto('/cereri');
+    // This used to assert the opposite: that camion and ambarcatiune
+    // were filterable, back when the filter mirrored the competitor's
+    // thirteen categories. They need different equipment and different
+    // authorisations, so they are no longer offered — anywhere.
+    for (const code of ['camion', 'ambarcatiune', 'container', 'cap_tractor', 'utilaj_agricol']) {
+      await expect(page.locator(`#rf-category option[value="${code}"]`)).toHaveCount(0);
+    }
   });
 
   test('express is a filter, not only a badge', async ({ page }) => {
