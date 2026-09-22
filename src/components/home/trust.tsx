@@ -3,6 +3,7 @@ import { Container } from '@/components/layout/container';
 import { SampleTag, SectionHead, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { trustCopy } from '@/content/siguranta';
+import { iconForContent } from '@/lib/icons';
 
 const c = trustCopy.section;
 
@@ -22,7 +23,7 @@ export function Trust() {
   return (
     <section id="siguranta" className="bg-background">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft} />
+        <SectionHead eyebrow={c.eyebrow} icon={iconForContent('document')} strong={c.strong} soft={c.soft} />
 
         <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {c.items.map((item, index) => (

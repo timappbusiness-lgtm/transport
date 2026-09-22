@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { ROUTES } from '@/config/routes';
 import { getAccountContext } from '@/lib/auth/account';
+import { Icon } from '@/components/ui/icon';
+import { ICON_GAP, iconForRoute } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Administrare' };
 
@@ -63,8 +66,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link
                 key={item.href}
                 href={item.href}
-                className="whitespace-nowrap rounded-pill px-3 py-2 text-sm text-muted hover:text-foreground"
+                className={cn(
+                  'flex items-center whitespace-nowrap rounded-pill px-3 py-2 text-sm text-muted hover:text-foreground',
+                  ICON_GAP,
+                )}
               >
+                {/* Twenty-three entries in one column: the icon is what
+                    stops it reading as a wall of Romanian nouns. */}
+                {iconForRoute(item.href) ? (
+                  <Icon as={iconForRoute(item.href)!} size="sm" />
+                ) : null}
                 {item.label}
               </Link>
             ))}

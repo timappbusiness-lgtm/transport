@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Check, Clock } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { CompanyCard } from '@/components/directory/company-card';
 import { Container } from '@/components/layout/container';
 import { buttonClasses } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import { showCompanyGrid } from '@/lib/directory';
 import { formatCompanies } from '@/lib/trust';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { iconForContent } from '@/lib/icons';
 
 const c = directoryCopy.signup;
 
@@ -71,7 +73,7 @@ export function CarriersBody({
     <section id="transportatori" className="bg-ground-alt">
       <Container className="py-16 sm:py-20">
         <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
-          <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+          <SectionHead eyebrow={c.eyebrow} icon={iconForContent('comanda')} strong={c.strong} soft={c.soft}>
             <Lede>{c.lede}</Lede>
             {showCount ? (
               <p className="mt-4 text-[0.9375rem] text-muted">
@@ -97,9 +99,9 @@ export function CarriersBody({
                   {cardFeatures(plan).map((feature) => (
                     <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
                       {feature.status === 'coming_soon' ? (
-                        <Clock size={16} className="mt-0.5 flex-none text-muted" aria-hidden="true" />
+                        <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
                       ) : (
-                        <Check size={16} className="mt-0.5 flex-none text-success" aria-hidden="true" />
+                        <Icon as={uiIcon('check')} size="md" className="mt-0.5 text-success" />
                       )}
                       <span>
                         {feature.label}

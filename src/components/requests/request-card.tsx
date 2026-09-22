@@ -4,7 +4,7 @@ import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
 import { homeCopy } from '@/content/home';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
-import { Icon } from '@/components/ui/icon';
+import { IconLabel } from '@/components/ui/icon';
 import { iconForCategory } from '@/lib/icons';
 import {
   SCOPE_LABELS,
@@ -52,10 +52,9 @@ export function RequestCard({
         )}
       >
         <p className="flex items-center justify-between gap-3 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
-          <span className="flex min-w-0 items-center gap-1.5 truncate">
-            <Icon as={iconForCategory(request.category)} size="sm" />
+          <IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
             {CARGO_CATEGORY_LABELS[request.category]}
-          </span>
+          </IconLabel>
           <span className="flex-none">{SCOPE_LABELS[scope]}</span>
         </p>
 

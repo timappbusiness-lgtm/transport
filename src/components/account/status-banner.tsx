@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { AlertTriangle, Clock, FileWarning, XCircle } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForBanner, type BannerKind } from '@/lib/icons';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
@@ -20,24 +21,27 @@ const ICON_TONE: Record<Tone, string> = {
   danger: 'text-danger',
 };
 
+/**
+ * `kind` decides the icon, and for a suspension or a rejection it decides
+ * there is none — see `BANNER_ICONS`.
+ */
 function Banner({
   tone,
-  icon,
+  kind,
   title,
   body,
   action,
 }: {
   tone: Tone;
-  icon: React.ReactNode;
+  kind: BannerKind;
   title: string;
   body: React.ReactNode;
   action?: { href: string; label: string } | undefined;
 }) {
+  const glyph = iconForBanner(kind);
   return (
     <div className={cn('flex flex-col gap-3 rounded-card border p-4 sm:flex-row sm:items-start', TONE[tone])}>
-      <span aria-hidden="true" className={cn('mt-0.5 flex-none', ICON_TONE[tone])}>
-        {icon}
-      </span>
+      {glyph ? <Icon as={glyph} size="md" className={cn('mt-0.5', ICON_TONE[tone])} /> : null}
       <div className="min-w-0 flex-1">
         <p className="font-display text-[0.9375rem] font-medium">{title}</p>
         <div className="mt-1 text-sm text-muted">{body}</div>
@@ -74,7 +78,7 @@ export function CompanyStatusBanner({ company }: { company: Company }) {
     return (
       <Banner
         tone="danger"
-        icon={<FileWarning size={18} />}
+        kind="suspended"
         title={c.suspended.title}
         body={
           <>
@@ -94,7 +98,7 @@ export function CompanyStatusBanner({ company }: { company: Company }) {
       return (
         <Banner
           tone="warn"
-          icon={<AlertTriangle size={18} />}
+          kind="draft"
           title={c.draft.title}
           body={c.draft.body}
           action={{ href: ROUTES.accountCompany, label: c.draft.action }}
@@ -104,7 +108,7 @@ export function CompanyStatusBanner({ company }: { company: Company }) {
       return (
         <Banner
           tone="info"
-          icon={<Clock size={18} />}
+          kind="pending"
           title={c.pending.title}
           body={c.pending.body}
         />
@@ -113,7 +117,7 @@ export function CompanyStatusBanner({ company }: { company: Company }) {
       return (
         <Banner
           tone="danger"
-          icon={<XCircle size={18} />}
+          kind="rejected"
           title={c.rejected.title}
           // The schema has no rejection-reason column yet, so the database
           // reason is shown when one was written into suspension_reason and

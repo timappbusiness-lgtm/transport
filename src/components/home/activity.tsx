@@ -8,6 +8,7 @@ import { ROUTES } from '@/config/routes';
 import { homeCopy } from '@/content/home';
 import { formatNumber, pluralRo, showFeed, showStats } from '@/lib/requests';
 import { loadHomepageActivity, type HomepageActivity } from '@/lib/requests-source';
+import { iconForContent } from '@/lib/icons';
 
 const c = homeCopy.activity;
 
@@ -47,7 +48,7 @@ export function ActivitySection({
   return (
     <section id="cereri" className="bg-background">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft} />
+        <SectionHead eyebrow={c.eyebrow} icon={iconForContent('cerere')} strong={c.strong} soft={c.soft} />
 
         {withStats && stats ? (
           <dl className="mt-8 grid gap-6 rounded-card border border-border bg-surface p-5 sm:grid-cols-3 sm:p-6">

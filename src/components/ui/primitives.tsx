@@ -1,4 +1,6 @@
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from '@/lib/icons';
+import { IconLabel } from '@/components/ui/icon';
 
 /**
  * Two-tone headline: the claim in ink, the qualifier in the soft tone.
@@ -109,6 +111,7 @@ export function Section({
 
 export function SectionHead({
   eyebrow,
+  icon,
   strong,
   soft,
   children,
@@ -116,6 +119,15 @@ export function SectionHead({
   className,
 }: {
   eyebrow?: string | undefined;
+  /**
+   * Drawn inside the eyebrow pill, never beside the headline.
+   *
+   * The eyebrow is the section's label — short, uppercase, the thing
+   * somebody's eye lands on while scrolling — and that is exactly where
+   * an icon helps. Next to a 2rem headline it would be decoration, which
+   * this system does not do.
+   */
+  icon?: LucideIcon | undefined;
   strong: string;
   soft?: string | undefined;
   children?: React.ReactNode;
@@ -124,7 +136,17 @@ export function SectionHead({
 }) {
   return (
     <div className={cn('min-w-0 max-w-[46rem]', className)}>
-      {eyebrow ? <EyebrowPill tone={tone}>{eyebrow}</EyebrowPill> : null}
+      {eyebrow ? (
+        <EyebrowPill tone={tone}>
+          {icon ? (
+            <IconLabel as={icon} size="sm">
+              {eyebrow}
+            </IconLabel>
+          ) : (
+            eyebrow
+          )}
+        </EyebrowPill>
+      ) : null}
       <Headline
         strong={strong}
         soft={soft}

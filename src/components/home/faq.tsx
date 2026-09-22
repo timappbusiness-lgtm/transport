@@ -7,6 +7,7 @@ import { faqCopy } from '@/content/faq';
 import type { FaqEntry } from '@/content/faq';
 import { homepageFaq } from '@/lib/faq';
 import { loadFaq } from '@/lib/faq-source';
+import { uiIcon } from '@/lib/icons';
 
 const c = faqCopy;
 
@@ -28,7 +29,7 @@ export function FaqBody({ entries }: { entries: FaqEntry[] }) {
   return (
     <section id="intrebari" className="bg-ground-alt">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+        <SectionHead eyebrow={c.eyebrow} icon={uiIcon('search')} strong={c.strong} soft={c.soft}>
           <Lede>{c.lede}</Lede>
         </SectionHead>
 

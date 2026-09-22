@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ROUTES } from '@/config/routes';
 import { FEATURES, type FeatureMap } from '@/lib/features';
+import { NAV_ICONS, iconForRoute } from '@/lib/icons';
 import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import {
   BOTTOM_NAV_MAX,
@@ -660,5 +662,82 @@ describe('a source with no database configured returns nothing, never throws', (
       });
 
     expect(unguarded, 'these call createClient() with no configuration guard').toEqual([]);
+  });
+});
+
+describe('every menu item carries an icon', () => {
+  /**
+   * The check that would have caught the whole thing.
+   *
+   * The icon map is keyed by route, so a destination added to the menu
+   * without a line in `NAV_ICONS` renders a label with a hole where its
+   * icon should be — and nothing anywhere else fails. This walks every
+   * item the builder can produce, for every kind of account and both
+   * extremes of the feature map, and names the route that has none.
+   */
+  const CONTEXTS: { name: string; ctx: NavContext }[] = [
+    { name: 'transport company owner', ctx: context() },
+    { name: 'forwarder', ctx: context({ companyType: 'expeditie' }) },
+    { name: 'both', ctx: context({ companyType: 'both' }) },
+    { name: 'dispatcher', ctx: context({ role: 'dispatcher' }) },
+    { name: 'driver', ctx: context({ role: 'driver' }) },
+    { name: 'individual', ctx: context({ accountType: 'individual', companyType: null, role: null }) },
+    { name: 'staff', ctx: context({ isStaff: true }) },
+    { name: 'no company yet', ctx: context({ companyType: null, role: null }) },
+  ];
+
+  for (const { name, ctx } of CONTEXTS) {
+    for (const [featureName, features] of [['everything on', ALL], ['nothing on', NONE]] as const) {
+      it(`${name}, ${featureName}`, () => {
+        const items = buildNav(ctx, features);
+        expect(items.length, 'an account with no menu at all').toBeGreaterThan(0);
+        for (const item of items) {
+          expect(iconForRoute(item.href), `${item.href} („${item.label}") has no icon`).toBeTruthy();
+        }
+      });
+    }
+  }
+
+  it('including every entry in the header menu', () => {
+    for (const { name, ctx } of CONTEXTS) {
+      // Staff get /admin appended here, outside `buildNav`, so this
+      // covers a route the loop above never sees.
+      for (const item of headerMenu(ctx, NO_NAV_COUNTS, ALL)) {
+        expect(iconForRoute(item.href), `${name}: ${item.href} has no icon`).toBeTruthy();
+      }
+    }
+  });
+
+  it('and both halves of the bottom bar on a phone', () => {
+    for (const { name, ctx } of CONTEXTS) {
+      const { bar, more } = bottomNav(buildNav(ctx, ALL));
+      for (const item of [...bar, ...more]) {
+        expect(iconForRoute(item.href), `${name}: ${item.href} has no icon`).toBeTruthy();
+      }
+    }
+  });
+
+  it('and every entry in the staff sidebar, which is its own list', () => {
+    // /admin/layout.tsx writes its own NAV array rather than using the
+    // builder — twenty-three routes that no other check walks. Read it
+    // from the source so adding a screen there fails here until it has
+    // an icon.
+    const layout = readFileSync('src/app/admin/layout.tsx', 'utf8');
+    const block = layout.slice(layout.indexOf('const NAV = ['), layout.indexOf('] as const;'));
+    const keys = [...block.matchAll(/ROUTES\.(\w+)/g)].map((m) => m[1]!);
+    expect(keys.length, 'the admin NAV array moved or changed shape').toBeGreaterThan(15);
+    for (const key of keys) {
+      const href = ROUTES[key as keyof typeof ROUTES];
+      expect(iconForRoute(href as string), `/admin sidebar: ${key} has no icon`).toBeTruthy();
+    }
+  });
+
+  it('and no icon points at a route that no longer exists', () => {
+    // The other direction: a key in the map that ROUTES does not have is
+    // a rename nobody finished.
+    const known = new Set<string>(Object.values(ROUTES));
+    for (const href of Object.keys(NAV_ICONS)) {
+      expect(known.has(href), `NAV_ICONS has ${href}, ROUTES does not`).toBe(true);
+    }
   });
 });

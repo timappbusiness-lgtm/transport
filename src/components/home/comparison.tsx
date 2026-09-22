@@ -2,6 +2,7 @@ import { Container } from '@/components/layout/container';
 import { SectionHead } from '@/components/ui/primitives';
 import { homeCopy } from '@/content/home';
 import { cn } from '@/lib/utils';
+import { iconForAction } from '@/lib/icons';
 
 const c = homeCopy.comparison;
 
@@ -55,7 +56,7 @@ export function Comparison() {
   return (
     <section className="bg-background">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft} />
+        <SectionHead eyebrow={c.eyebrow} icon={iconForAction('filter')} strong={c.strong} soft={c.soft} />
         <div className="mt-10 grid gap-4">
           <Row title={c.oldTitle} steps={c.old} tone="old" />
           <Row title={c.newTitle} steps={c.fresh} tone="new" />

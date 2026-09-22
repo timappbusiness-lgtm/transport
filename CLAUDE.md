@@ -220,8 +220,8 @@ pnpm check:functions   # Deno type-check for the edge functions
 - Never show invented numbers as real data. Samples are labelled as samples,
   estimates as estimates.
 - **Icons help scanning; they never decorate a serious moment.** One map,
-  `src/lib/icons.ts`, and one component, `<Icon>` — nothing renders a
-  lucide glyph directly. Never an icon as the only meaning, never one on
+  `src/lib/icons.ts`, and one component, `<Icon>` — `lucide-react` is
+  imported in that one file and nowhere else, which a test enforces. Never an icon as the only meaning, never one on
   a legal page, a suspension, a rejection, a dispute, a deletion, an
   error or a destructive confirmation, and never one that could read as
   an official seal. No emoji anywhere in the interface. The whole rule,

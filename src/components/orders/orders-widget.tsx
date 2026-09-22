@@ -5,6 +5,8 @@ import { ROUTES, transportRoute } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import { formatWindow, nextAction, orderStatusLabel } from '@/lib/orders';
 import type { OrderRow } from '@/lib/orders-source';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForContent } from '@/lib/icons';
 
 /**
  * What an order needs from whoever just opened the application.
@@ -40,7 +42,9 @@ export function OrdersWidget({
   return (
     <section aria-labelledby="transporturi">
       <h2 id="transporturi" className="text-[1.0625rem]">
-        {c.title}
+        <IconLabel as={iconForContent('comanda')} size="md" tone="strong">
+          {c.title}
+        </IconLabel>
       </h2>
 
       <Card className="mt-3 p-5">

@@ -390,7 +390,7 @@ export function HandoverForm({ orderId }: { orderId: string }) {
 /** The client's copy of the code, which the carrier never sees. */
 export function ConfirmationCode({ code }: { code: string }) {
   return (
-    <div className="rounded-card border border-accent/45 bg-accent/8 p-4">
+    <div className="rounded-card border border-foreground/35 bg-ground-alt p-4">
       <p className="text-xs text-muted">{ordersCopy.handover.title}</p>
       <p className="mt-1 font-mono text-[1.75rem] tracking-[0.2em] tabular-nums">
         {formatCode(code)}
@@ -416,7 +416,7 @@ export function ConfirmDelivery({
   const deadline = confirmationDeadline(deliveredAt, hours, new Date(now));
 
   return (
-    <form action={submit} className="flex flex-col gap-3 rounded-card border border-accent/45 bg-accent/8 p-5">
+    <form action={submit} className="flex flex-col gap-3 rounded-card border border-foreground/35 bg-ground-alt p-5">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value="order_completed" />
 

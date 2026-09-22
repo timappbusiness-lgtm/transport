@@ -8,6 +8,7 @@ import {
   CONTENT_LABELS,
   EQUIPMENT_ICONS,
   ICON_MAPS,
+  ICON_GAP,
   ICON_SIZES,
   ICON_STROKE,
   ORDER_STEP_ICONS,
@@ -146,14 +147,40 @@ describe('the order timeline', () => {
 describe('one scale, one stroke', () => {
   it('offers three sizes and no more', () => {
     expect(Object.keys(ICON_SIZES)).toEqual(['sm', 'md', 'lg']);
-    for (const size of Object.values(ICON_SIZES)) {
-      expect(size).toBeGreaterThan(10);
-      expect(size).toBeLessThan(28);
-    }
   });
 
-  it('and one stroke width', () => {
-    expect(ICON_STROKE).toBe(1.75);
+  it('starts above the text an icon sits beside, which is the whole fix', () => {
+    // The set was reported as invisible on the deployed site. The cause
+    // was `sm`: 13px beside a 10px label, in the same grey, at a stroke
+    // thin enough to disappear. The smallest size has to be larger than
+    // the smallest type we set — 0.625rem, which is 10px — by enough to
+    // read as a drawing rather than as a speck.
+    const SMALLEST_TYPE_PX = 10;
+    expect(ICON_SIZES.sm).toBeGreaterThanOrEqual(SMALLEST_TYPE_PX + 4);
+  });
+
+  it('and the scale goes up, in steps somebody can tell apart', () => {
+    const steps = [ICON_SIZES.sm, ICON_SIZES.md, ICON_SIZES.lg];
+    expect(steps).toEqual([...steps].sort((a, b) => a - b));
+    expect(new Set(steps).size).toBe(3);
+    for (let i = 1; i < steps.length; i += 1) {
+      expect(steps[i]! - steps[i - 1]!, 'two sizes one pixel apart are one size').toBeGreaterThanOrEqual(2);
+    }
+    // Nothing on this site is a hero graphic.
+    expect(ICON_SIZES.lg).toBeLessThan(28);
+  });
+
+  it('and one stroke width, heavy enough to survive a small size', () => {
+    // 1.75 was the old value and it read as a smudge at 13px. Anything
+    // below 1.5 is a hairline; anything above 2.5 is a cartoon.
+    expect(ICON_STROKE).toBeGreaterThanOrEqual(1.75);
+    expect(ICON_STROKE).toBeLessThanOrEqual(2.5);
+  });
+
+  it('and one gap between an icon and its label', () => {
+    // A Tailwind gap class, applied by `IconLabel` and by anything that
+    // lays out its own row. It had drifted to three different values.
+    expect(ICON_GAP).toMatch(/^gap-[\d.]+$/);
   });
 });
 

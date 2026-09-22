@@ -13,6 +13,7 @@ import {
   formatValidMonth,
 } from '@/lib/pricing';
 import { homeRates, isPublished, loadPrices } from '@/lib/prices-source';
+import { iconForFact } from '@/lib/icons';
 
 const c = pricesCopy.home;
 
@@ -37,7 +38,7 @@ export async function Prices() {
   return (
     <section id="tarife" className="bg-background">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+        <SectionHead eyebrow={c.eyebrow} icon={iconForFact('price')} strong={c.strong} soft={c.soft}>
           <Lede>{published ? c.lede : c.ledeUnpublished}</Lede>
         </SectionHead>
 

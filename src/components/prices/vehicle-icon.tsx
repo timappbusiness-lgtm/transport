@@ -1,33 +1,33 @@
-import { Bike, Car, CarFront, CarTaxiFront, Van, type LucideIcon } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForVehicleClass } from '@/lib/icons';
 import type { VehicleClass } from '@/lib/pricing';
-import { cn } from '@/lib/utils';
+import type { IconSize } from '@/lib/icons';
 
 /**
  * Decorative, like every other glyph on the site: the class name next to it
  * carries the meaning, so the icon is aria-hidden and a screen reader never
  * has to guess which drawing is the SUV.
+ *
+ * This file used to hold its own map, its own stroke width and its own
+ * pixel size — a second icon system beside the one that was supposed to be
+ * the only one. The map moved to `src/lib/icons.ts`; what is left is the
+ * name the price screens already call.
  */
-const ICONS: Record<VehicleClass, LucideIcon> = {
-  motocicleta: Bike,
-  hatchback: Car,
-  sedan: CarFront,
-  suv: CarTaxiFront,
-  autoutilitara: Van,
-};
-
 export function VehicleIcon({
   vehicleClass,
-  size = 20,
+  size = 'lg',
   className,
 }: {
   vehicleClass: VehicleClass;
-  size?: number | undefined;
+  size?: IconSize | undefined;
   className?: string | undefined;
 }) {
-  const Icon = ICONS[vehicleClass];
   return (
-    <span aria-hidden="true" className={cn('flex-none text-muted', className)}>
-      <Icon size={size} strokeWidth={1.5} />
-    </span>
+    <Icon
+      as={iconForVehicleClass(vehicleClass)}
+      size={size}
+      tone="muted"
+      className={className}
+    />
   );
 }

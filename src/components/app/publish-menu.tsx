@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Plus } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForAction, uiIcon } from '@/lib/icons';
 import { buttonClasses } from '@/components/ui/button';
 import { appCopy } from '@/content/app';
 import type { PublishAction } from '@/lib/navigation';
@@ -50,7 +51,7 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
   if (actions.length === 1 && only) {
     return (
       <Link href={only.href} className={buttonClasses('primary', 'sm')}>
-        <Plus size={15} aria-hidden="true" />
+        <Icon as={iconForAction('add')} size="sm" />
         {only.label}
       </Link>
     );
@@ -67,9 +68,9 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
         onClick={() => setOpen((current) => !current)}
         className={buttonClasses('primary', 'sm')}
       >
-        <Plus size={15} aria-hidden="true" />
+        <Icon as={iconForAction('add')} size="sm" />
         {c.publish}
-        <ChevronDown size={13} aria-hidden="true" />
+        <Icon as={uiIcon('expand')} size="sm" />
       </button>
 
       {open ? (

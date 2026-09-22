@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { signOutAction } from '@/app/auth-actions';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
@@ -309,7 +310,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 aria-label={accountCopy.nav.menu}
                 className="flex size-7 flex-none items-center justify-center rounded-full text-white/85 hover:bg-white/12 hover:text-white"
               >
-                <ChevronDown size={13} aria-hidden="true" />
+                <Icon as={uiIcon('expand')} size="sm" />
               </button>
             </div>
 
@@ -324,6 +325,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
               >
                 {user.items.map((item) => {
                   const current = pathname === item.href;
+                  const glyph = iconForRoute(item.href);
                   return (
                     <Link
                       key={item.href}
@@ -337,7 +339,10 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                         current ? 'bg-ground-alt font-medium' : 'hover:bg-ground-alt',
                       )}
                     >
-                      <span className="truncate">{item.label}</span>
+                      <span className={cn('flex min-w-0 items-center', ICON_GAP)}>
+                        {glyph ? <Icon as={glyph} size="sm" tone="muted" /> : null}
+                        <span className="truncate">{item.label}</span>
+                      </span>
                       {item.badge > 0 ? (
                         <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-[0.625rem] leading-none text-surface">
                           {badgeLabel(item.badge)}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { LifeBuoy } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { ICON_GAP, iconForAction, iconForRoute } from '@/lib/icons';
 import { CompanySwitcher } from '@/components/app/company-switcher';
 import { BRAND_NAME } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
@@ -71,6 +72,7 @@ export function Sidebar({
             <ul className="flex flex-col gap-0.5">
               {group.items.map((item) => {
                 const badge = badgeFor(item.href, counts);
+                const glyph = iconForRoute(item.href);
                 return (
                   <li key={item.href}>
                     <Link
@@ -84,7 +86,15 @@ export function Sidebar({
                           : 'text-muted hover:bg-surface/60 hover:text-foreground',
                       )}
                     >
-                      <span className="truncate">{item.label}</span>
+                      <span className={cn('flex min-w-0 items-center', ICON_GAP)}>
+                        {/* The icon is what a returning dispatcher scans
+                            for: they know the shape of „Trasee" before
+                            they have read the word. It follows the link's
+                            own colour, so the current item's icon goes
+                            ink with its label. */}
+                        {glyph ? <Icon as={glyph} size="sm" /> : null}
+                        <span className="truncate">{item.label}</span>
+                      </span>
                       {/* The same number as the header's, from the same
                           call: two counts of one thing is how a badge
                           stops being believed. */}
@@ -108,7 +118,7 @@ export function Sidebar({
           href={ROUTES.accountHelp}
           className="inline-flex items-center gap-2 text-muted hover:text-foreground"
         >
-          <LifeBuoy size={14} aria-hidden="true" />
+          <Icon as={iconForAction('help')} size="sm" />
           {c.help}
         </Link>
       </p>

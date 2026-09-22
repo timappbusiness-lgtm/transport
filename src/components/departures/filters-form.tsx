@@ -1,4 +1,7 @@
 import { buttonClasses } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
+import { ICON_GAP, iconForAction } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { CITY_GROUPS, cityLabel, cityValue } from '@/lib/cities';
@@ -227,7 +230,11 @@ export function FiltersForm({ filters }: { filters: DepartureFilters }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className={buttonClasses('primary', 'sm')}>
+        <button
+          type="submit"
+          className={cn(buttonClasses('primary', 'sm'), 'inline-flex items-center', ICON_GAP)}
+        >
+          <Icon as={iconForAction('search')} size="sm" />
           {c.apply}
         </button>
         {hasActiveFilters(filters) ? (

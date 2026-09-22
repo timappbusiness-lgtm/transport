@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { CalendarClock, FileWarning, Truck } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForContent, iconForFact, iconForStatus } from '@/lib/icons';
 import { SendOffer } from '@/components/offers/send-offer';
 import { PushPermissionCard } from '@/components/push/permission-card';
 import { RequestCard } from '@/components/requests/request-card';
@@ -83,7 +84,7 @@ export function CarrierHome({
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {data.pendingBookings.length > 0 ? (
               <Attention
-                icon={<CalendarClock size={16} />}
+                icon={<Icon as={iconForFact('window')} size="md" />}
                 title={c.bookings.title}
                 href={ROUTES.accountDepartures}
                 action={c.bookings.action}
@@ -106,7 +107,7 @@ export function CarrierHome({
 
             {data.documentsExpiring > 0 || data.documentsRejected > 0 ? (
               <Attention
-                icon={<FileWarning size={16} />}
+                icon={<Icon as={iconForStatus('expiring_soon')} size="md" />}
                 title={c.documents.title}
                 href={ROUTES.accountDocuments}
                 action={c.documents.action}
@@ -124,7 +125,7 @@ export function CarrierHome({
 
             {data.vehiclesBlocked > 0 ? (
               <Attention
-                icon={<Truck size={16} />}
+                icon={<Icon as={iconForContent('comanda')} size="md" />}
                 title={c.vehicles.title}
                 href={ROUTES.accountFleet}
                 action={c.vehicles.action}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { CheckCircle2, Phone } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { sendPhoneOtpAction, verifyPhoneOtpAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { accountCopy } from '@/content/account';
@@ -34,7 +35,7 @@ export function PhoneVerification({
     return (
       <section className="flex items-start gap-3 rounded-card border border-success/40 bg-success/8 p-4">
         <span aria-hidden="true" className="mt-0.5 text-success">
-          <CheckCircle2 size={18} />
+          <Icon as={uiIcon('check')} size="md" />
         </span>
         <div>
           <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>
@@ -48,7 +49,7 @@ export function PhoneVerification({
     <section className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-start gap-3">
         <span aria-hidden="true" className="mt-0.5 text-muted">
-          <Phone size={18} />
+          <Icon as={uiIcon('phone')} size="md" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>

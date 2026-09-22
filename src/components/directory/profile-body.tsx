@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
 import { RevealContactButton } from '@/components/departures/reveal-contact-button';
 import { ReportButton } from '@/components/trust/report-button';
 import { buttonClasses } from '@/components/ui/button';
@@ -327,7 +326,6 @@ function Shield({
                 key={document.kind}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-3 last:border-b-0 last:pb-0"
               >
-                <ShieldCheck size={16} aria-hidden="true" className="flex-none text-success" />
                 <span className="min-w-0 flex-1 text-[0.9375rem]">{document.label}</span>
                 {document.validMonth ? (
                   <span className="text-[0.8125rem] text-muted">

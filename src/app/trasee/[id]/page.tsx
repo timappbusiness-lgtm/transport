@@ -24,6 +24,8 @@ import {
 } from '@/lib/departures';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForFact } from '@/lib/icons';
 
 export const metadata: Metadata = { title: 'Traseu' };
 
@@ -108,7 +110,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.route}</h2>
+            <h2 className="text-sm font-medium">
+              <IconLabel as={iconForFact('route')} size="sm" tone="strong">
+                {c.route}
+              </IconLabel>
+            </h2>
             <ol className="mt-4 flex flex-col gap-3">
               {cities.map((city, index) => (
                 <li key={`${city}-${index}`} className="flex items-center gap-3 text-sm">
@@ -126,7 +132,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
           {departure.platform_slots_total !== null ? (
             <section className="rounded-card border border-border bg-surface p-5">
-              <h2 className="text-sm font-medium">{c.seats}</h2>
+              <h2 className="text-sm font-medium">
+              <IconLabel as={iconForFact('capacity')} size="sm" tone="strong">
+                {c.seats}
+              </IconLabel>
+            </h2>
               <p className="mt-1 text-sm text-muted">{seatsSentence(departure)}</p>
               <div className="mt-4 max-w-[22rem]">
                 <SeatDeck
@@ -139,7 +149,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
 
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.services}</h2>
+            <h2 className="text-sm font-medium">
+              <IconLabel as={iconForFact('service')} size="sm" tone="strong">
+                {c.services}
+              </IconLabel>
+            </h2>
             <dl className="mt-3 flex flex-col gap-3">
               {departure.service_types.map((service) => (
                 <div key={service}>
@@ -165,7 +179,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
         <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.price}</h2>
+            <h2 className="text-sm font-medium">
+              <IconLabel as={iconForFact('price')} size="sm" tone="strong">
+                {c.price}
+              </IconLabel>
+            </h2>
             <p className="mt-1 font-mono text-[1.125rem] tabular-nums">
               {priceSentence(departure) ?? departuresCopy.card.noPrice}
             </p>
@@ -185,7 +203,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </section>
 
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.carrier}</h2>
+            <h2 className="text-sm font-medium">
+              <IconLabel as={iconForFact('company')} size="sm" tone="strong">
+                {c.carrier}
+              </IconLabel>
+            </h2>
             {carrier ? (
               <div className="mt-3">
                 <p className="text-sm font-medium">{carrier.name}</p>

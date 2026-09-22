@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { AlertTriangle, Clock, FileWarning, XCircle } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForBanner, type BannerKind } from '@/lib/icons';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
@@ -59,7 +60,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="danger"
-          icon={<AlertTriangle size={18} />}
+          kind="suspended"
           title={c.suspended.title}
           body={
             <>
@@ -78,7 +79,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="danger"
-          icon={<XCircle size={18} />}
+          kind="rejected"
           title={c.rejected.title}
           body={<p>{company?.verification_note ?? c.rejected.fallback}</p>}
           action={{ href: ROUTES.accountDocuments, label: c.rejected.action }}
@@ -89,7 +90,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="info"
-          icon={<Clock size={18} />}
+          kind="pending"
           title={c.pending.title}
           body={<p>{c.pending.body}</p>}
         />
@@ -99,7 +100,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="warn"
-          icon={<FileWarning size={18} />}
+          kind="documents_expiring"
           title={a.documentsExpiring.title}
           body={<p>{a.documentsExpiring.body(pluralRo(expiringDocuments, 'document', 'documente', 'un'))}</p>}
           action={{ href: ROUTES.accountDocuments, label: a.documentsExpiring.action }}
@@ -110,7 +111,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="warn"
-          icon={<Clock size={18} />}
+          kind="trial_ending"
           title={a.trialEnding.title}
           body={<p>{a.trialEnding.body(pluralRo(Math.max(trialDaysLeft ?? 0, 0), 'zi', 'zile'))}</p>}
           action={{ href: ROUTES.plans, label: a.trialEnding.action }}
@@ -121,7 +122,7 @@ export function StatusBanner({
       return (
         <Banner
           tone="warn"
-          icon={<AlertTriangle size={18} />}
+          kind="quota_reached"
           title={a.quotaReached.title}
           body={<p>{a.quotaReached.body}</p>}
           action={{ href: ROUTES.plans, label: a.quotaReached.action }}
@@ -130,19 +131,26 @@ export function StatusBanner({
   }
 }
 
+/**
+ * `kind` decides the icon, and for a suspension or a rejection it decides
+ * there is none — see `BANNER_ICONS`. The component takes the kind rather
+ * than a glyph so that the rule lives in one map instead of in whatever
+ * each call site happened to pass.
+ */
 function Banner({
   tone,
-  icon,
+  kind,
   title,
   body,
   action,
 }: {
   tone: Tone;
-  icon: React.ReactNode;
+  kind: BannerKind;
   title: string;
   body: React.ReactNode;
   action?: { href: string; label: string } | undefined;
 }) {
+  const glyph = iconForBanner(kind);
   return (
     <div
       className={cn(
@@ -150,9 +158,9 @@ function Banner({
         TONE[tone],
       )}
     >
-      <span aria-hidden="true" className={cn('mt-0.5 flex-none', ICON_TONE[tone])}>
-        {icon}
-      </span>
+      {glyph ? (
+        <Icon as={glyph} size="md" className={cn('mt-0.5', ICON_TONE[tone])} />
+      ) : null}
       <div className="min-w-0 flex-1">
         <p className="font-display text-[0.9375rem] font-medium">{title}</p>
         <div className="mt-1 text-sm text-muted">{body}</div>

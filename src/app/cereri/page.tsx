@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForAction } from '@/lib/icons';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
 import { buttonClasses } from '@/components/ui/button';
@@ -121,7 +123,11 @@ export default async function Page({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
         <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">{requestsCopy.filters.title}</h2>
+          <h2 className="mb-4 text-sm font-medium">
+            <IconLabel as={iconForAction('filter')} size="sm">
+              {requestsCopy.filters.title}
+            </IconLabel>
+          </h2>
           <BoardFilters filters={filters} showMine={canFilterByCompany} />
 
           {/* Whatever is filtered right now is what a saved search would
