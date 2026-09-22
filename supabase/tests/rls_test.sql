@@ -7361,6 +7361,37 @@ select pg_temp.check('OFR  the client sees what it received', 'fix',
              'f0000000-0000-0000-0000-000000000002', 2400,
              'fe000000-0000-0000-0000-000000000001')$s$);
 
+-- Insigna din meniu. Numără exact cutia „primite" și starea „pending",
+-- fiindcă numai alea așteaptă pe cineva; o ofertă trimisă așteaptă pe
+-- altcineva, iar o insignă care nu ajunge niciodată la zero este una pe
+-- care oamenii învață să o ignore.
+select pg_temp.check('OFR  the badge counts what the client must answer', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.unanswered_offer_count() >= 1$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('OFR  and not what the carrier is still waiting on', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.unanswered_offer_count() = 0$a$, 'true',
+  p_setup => $s$insert into public.offers
+       (cargo_listing_id, from_company_id, from_user_id, price_amount, vehicle_id)
+     values ('f1000000-0000-0000-0000-000000000002',
+             'fc000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 2400,
+             'fe000000-0000-0000-0000-000000000001')$s$);
+
+-- Fără grant pentru `anon`: pentru un vizitator nu există „ofertele mele",
+-- iar `auth.uid()` din `my_offers()` ar fi null. Refuzul este la execuție,
+-- nu un zero politicos.
+select pg_temp.check('OFR  a visitor cannot ask for the badge either', 'fix',
+  null, 'anon',
+  $a$select public.unanswered_offer_count()$a$, 'blocked');
+
 -- Era „întreabă și primește zero rânduri". Acum nici nu poate întreba:
 -- grantul de `select` pentru `anon` a fost retras de pe tabelele care
 -- nu au politică pentru el, ca RLS să nu mai fie singurul lucru care

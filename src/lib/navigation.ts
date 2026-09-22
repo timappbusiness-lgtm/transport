@@ -1,4 +1,5 @@
 import { ROUTES } from '@/config/routes';
+import { accountCopy } from '@/content/account';
 import { FEATURES, type FeatureMap } from './features';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -343,6 +344,152 @@ export function buildNav(
     priority: 8,
   });
   return dedupe(items);
+}
+
+/**
+ * The whole of a driver's application, as hrefs.
+ *
+ * `guards.ts` refuses a driver anything outside this list, and it is taken
+ * from the same builder that draws their menu rather than written out
+ * beside it. Written out, the two drifted: the menu offered
+ * /cont/transporturi, /cont/mesaje, /cont/ajutor and the two settings
+ * pages while the guard allowed only /cont and /cont/profil, so every item
+ * but one 404'd for the account type least able to work out why.
+ */
+export function driverPaths(features: FeatureMap = FEATURES): string[] {
+  return driverNav(features).map((item) => item.href);
+}
+
+/**
+ * How many things on a page are waiting for this person.
+ *
+ * Read once per request and handed to both menus, so the number in the
+ * header and the number in the sidebar cannot disagree — two counts of the
+ * same thing is how a badge stops being believed.
+ */
+export interface NavCounts {
+  /** Messages nobody has read, across every thread. */
+  messages: number;
+  /** Offers received and still unanswered. */
+  offers: number;
+}
+
+export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
+
+/**
+ * The badge for one item, or 0 when it carries none.
+ *
+ * Only two items take one. An item that is a shortcut to a board — Cereri
+ * de transport, Trasee disponibile — has nothing waiting on it: everything
+ * there is somebody else's, and a number that never reaches zero is
+ * furniture.
+ */
+export function badgeFor(href: string, counts: NavCounts = NO_NAV_COUNTS): number {
+  if (href === ROUTES.accountMessages) return Math.max(0, counts.messages);
+  if (href === ROUTES.accountOffers) return Math.max(0, counts.offers);
+  return 0;
+}
+
+/** A menu item with the number waiting on it, which is usually none. */
+export interface BadgedNavItem extends NavItem {
+  badge: number;
+}
+
+export function withBadges(
+  items: readonly NavItem[],
+  counts: NavCounts = NO_NAV_COUNTS,
+): BadgedNavItem[] {
+  return items.map((item) => ({ ...item, badge: badgeFor(item.href, counts) }));
+}
+
+/**
+ * The shortcuts in the header menu, per kind of account, most used first.
+ *
+ * Hrefs rather than items: the label, and whether the item may exist at
+ * all, stay `buildNav`'s to decide. This list only says which of the pages
+ * it already built are worth a place in a menu that has room for a
+ * handful. Anything named here that `buildNav` leaves out — a feature not
+ * built, a role not allowed — is simply absent, which is why the header
+ * cannot offer something the sidebar does not.
+ */
+function shortcutOrder(context: NavContext): string[] {
+  if (context.role === 'driver') return [ROUTES.accountTransports];
+
+  if (context.accountType === 'individual' && context.companyType === null) {
+    return [ROUTES.accountRequests, ROUTES.accountOffers, ROUTES.accountMessages];
+  }
+
+  const type = context.companyType;
+  const carrier = type === 'transport' || type === 'both';
+  const forwarder = type === 'expeditie' || type === 'both';
+
+  return [
+    // A carrier's own routes come before the board: the board is everyone's,
+    // the routes are theirs.
+    ...(carrier ? [ROUTES.accountDepartures, ROUTES.requests] : []),
+    ...(forwarder ? [ROUTES.accountRequests] : []),
+    ROUTES.accountOffers,
+    ROUTES.accountMessages,
+    ROUTES.accountDocuments,
+  ];
+}
+
+/** At most this many shortcuts, before the account section. */
+export const HEADER_SHORTCUT_MAX = 5;
+
+/**
+ * What the header's account menu offers.
+ *
+ * Three sections, in this order: the dashboard, the shortcuts, and the
+ * account itself. The sign-out sits below them and is not a link, so it is
+ * the component's and not this function's.
+ *
+ * `group` carries the section, reusing `NavGroup` rather than inventing a
+ * second vocabulary: `principal` is the work, `cont` is the account.
+ */
+export function headerMenu(
+  context: NavContext,
+  counts: NavCounts = NO_NAV_COUNTS,
+  features: FeatureMap = FEATURES,
+): BadgedNavItem[] {
+  const built = buildNav(context, features);
+  const byHref = new Map(built.map((item) => [item.href, item]));
+
+  // Contul meu is always first and always present: `buildNav` opens every
+  // menu with it, whatever the account type, and it is the destination the
+  // name in the bar is a shortcut to.
+  const items: NavItem[] = [];
+  const dashboard = byHref.get(ROUTES.account);
+  if (dashboard) items.push({ ...dashboard, label: accountCopy.nav.dashboard });
+
+  for (const href of shortcutOrder(context)) {
+    if (items.length > HEADER_SHORTCUT_MAX) break;
+    const item = byHref.get(href);
+    if (item && item.href !== ROUTES.account) items.push(item);
+  }
+
+  const profile = byHref.get(ROUTES.accountProfile);
+  if (profile) items.push(profile);
+  // Settings is one page, /cont/setari, and it is not built — `FEATURES`
+  // says so and there is nothing at that path. The two settings screens
+  // that do exist are in the sidebar under Cont; putting a menu item here
+  // that 404s is the exact thing `FEATURES` exists to prevent.
+  const settings = byHref.get(ROUTES.accountSettings);
+  if (settings) items.push(settings);
+
+  // Staff is not part of `buildNav`: /admin is a different application
+  // with its own shell, and an item for it does not belong in the account
+  // sidebar. It belongs here, where somebody moves between the two.
+  if (context.isStaff) {
+    items.push({
+      href: ROUTES.admin,
+      label: accountCopy.nav.admin,
+      group: 'cont',
+      priority: 0,
+    });
+  }
+
+  return withBadges(dedupe(items), counts);
 }
 
 /**

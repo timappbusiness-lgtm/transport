@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 import { requireAccountContext, type AccountContext, type Company } from './account';
-import { isManagerRole } from '@/lib/navigation';
+import { driverPaths, isManagerRole } from '@/lib/navigation';
 
 /**
  * The server side of what the menu hides.
@@ -49,15 +49,29 @@ export async function requireManagerContext(next: string): Promise<CompanyContex
  *
  * A driver is not a dispatcher with fewer buttons: the only thing they do
  * here is look at what they were assigned. Rather than adding a guard to
- * every page they must not reach, the shell refuses anything outside this
- * list — which is the whole of their application.
+ * every page they must not reach, the shell refuses anything outside the
+ * menu `buildNav` draws for them — which is the whole of their
+ * application.
+ *
+ * Two bugs paid for the shape of this. The list used to be written out
+ * beside the builder, as `[ROUTES.account, ROUTES.accountProfile]`, and
+ * drifted from it the moment orders and messaging shipped: the menu
+ * offered five pages the list did not name. And because `/cont` was in the
+ * list and every entry was matched as a prefix, `/cont/oricare`.startsWith
+ * (`/cont/`) was true — so the guard refused nothing at all, and a driver
+ * could open the firm's fleet, its documents and its published routes.
+ * A dead guard reads exactly like a live one.
+ *
+ * So the list is the builder's, and `/cont` matches only itself: it is the
+ * dashboard, not the parent of the account area. The same reasoning as
+ * `activeHref`, for the same reason.
  */
-const DRIVER_ALLOWED: readonly string[] = [ROUTES.account, ROUTES.accountProfile];
-
 export function isDriverAllowed(pathname: string): boolean {
-  return DRIVER_ALLOWED.some(
-    (allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`),
-  );
+  return driverPaths().some((allowed) => {
+    if (pathname === allowed) return true;
+    if (allowed === ROUTES.account) return false;
+    return pathname.startsWith(`${allowed}/`);
+  });
 }
 
 /**
