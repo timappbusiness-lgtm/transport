@@ -1,4 +1,6 @@
+import { cityFromValue, cityValue, type City } from './cities';
 import { CARGO_CATEGORIES, type CargoCategory } from './departures';
+import { DEFAULT_RADIUS_KM, MAX_RADIUS_KM } from './radius';
 import type { ListingBoard } from './requests';
 import type { Database } from './supabase/database.types';
 
@@ -45,6 +47,9 @@ export type ServiceFilter = Extract<
   'pe_sens' | 'expres'
 >;
 
+/** The heaviest thing this marketplace moves, from the publish form. */
+const MAX_FILTER_WEIGHT_KG = 20000;
+
 export interface RequestFilters {
   tab: Tab;
   fromCountry: string | null;
@@ -68,6 +73,25 @@ export interface RequestFilters {
    * alert e-mails use.
    */
   mine: boolean;
+  /**
+   * „Lângă" — the locality a radius is measured from.
+   *
+   * A known city from `cities.ts`, because the radius needs coordinates
+   * and only a known city has them. Somebody who types a town that is
+   * not on the list gets no radius rather than a silent full board.
+   */
+  near: City | null;
+  /** Kilometres from `near`. Meaningless, and null, without one. */
+  radiusKm: number | null;
+  /**
+   * The heaviest vehicle the carrier will take, in kilograms.
+   *
+   * Requests with no weight written down stay in the list. The field is
+   * optional on the publish form, so excluding them would hide most of
+   * the board from anyone who used this filter at all — and the weight,
+   * or its absence, is on every card.
+   */
+  maxWeightKg: number | null;
 }
 
 export const EMPTY_REQUEST_FILTERS: RequestFilters = {
@@ -83,6 +107,9 @@ export const EMPTY_REQUEST_FILTERS: RequestFilters = {
   scope: null,
   service: null,
   mine: false,
+  near: null,
+  radiusKm: null,
+  maxWeightKg: null,
 };
 
 /** Query keys, Romanian so a shared link reads like the site. */
@@ -99,6 +126,9 @@ export const REQUEST_FILTER_KEYS = {
   scope: 'acoperire',
   service: 'serviciu',
   mine: 'doar',
+  near: 'langa',
+  radiusKm: 'raza',
+  maxWeightKg: 'greutate',
 } as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -158,6 +188,13 @@ function isService(value: string | null): value is ServiceFilter {
   return value === 'pe_sens' || value === 'expres';
 }
 
+/** A whole number inside a range, or nothing. */
+function bounded(value: string | null, min: number, max: number): number | null {
+  if (value === null) return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= min && n <= max ? n : null;
+}
+
 export function parseRequestFilters(params: SearchParams): RequestFilters {
   const rawTab = one(params, REQUEST_FILTER_KEYS.tab);
   const rawCategory = one(params, REQUEST_FILTER_KEYS.category);
@@ -169,6 +206,16 @@ export function parseRequestFilters(params: SearchParams): RequestFilters {
   // A window that runs backwards is a typo, not a filter; drop the end
   // rather than returning nothing and looking broken.
   if (dateFrom && dateTo && dateTo < dateFrom) dateTo = null;
+
+  // The two travel together. A radius with no centre cannot be applied,
+  // and a centre with no radius is somebody who picked a town and left
+  // the distance alone — that is the default distance, not no filter.
+  const near = cityFromValue(one(params, REQUEST_FILTER_KEYS.near));
+  const radiusKm =
+    near === null
+      ? null
+      : (bounded(one(params, REQUEST_FILTER_KEYS.radiusKm), 1, MAX_RADIUS_KM) ??
+        DEFAULT_RADIUS_KM);
 
   return {
     tab: isTab(rawTab) ? rawTab : 'toate',
@@ -185,6 +232,9 @@ export function parseRequestFilters(params: SearchParams): RequestFilters {
       ? (one(params, REQUEST_FILTER_KEYS.service) as ServiceFilter)
       : null,
     mine: one(params, REQUEST_FILTER_KEYS.mine) === 'firma',
+    near,
+    radiusKm,
+    maxWeightKg: bounded(one(params, REQUEST_FILTER_KEYS.maxWeightKg), 1, MAX_FILTER_WEIGHT_KG),
   };
 }
 
@@ -203,6 +253,13 @@ export function requestFiltersToQuery(filters: RequestFilters): string {
   if (filters.scope) query.set(REQUEST_FILTER_KEYS.scope, filters.scope);
   if (filters.service) query.set(REQUEST_FILTER_KEYS.service, filters.service);
   if (filters.mine) query.set(REQUEST_FILTER_KEYS.mine, 'firma');
+  if (filters.near) {
+    query.set(REQUEST_FILTER_KEYS.near, cityValue(filters.near));
+    query.set(REQUEST_FILTER_KEYS.radiusKm, String(filters.radiusKm ?? DEFAULT_RADIUS_KM));
+  }
+  if (filters.maxWeightKg !== null) {
+    query.set(REQUEST_FILTER_KEYS.maxWeightKg, String(filters.maxWeightKg));
+  }
   const text = query.toString();
   return text === '' ? '' : `?${text}`;
 }

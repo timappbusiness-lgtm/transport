@@ -1,4 +1,9 @@
+import { cityFromValue, cityValue, type City } from './cities';
 import { FILTERABLE_CATEGORIES, type CargoCategory, type Direction } from './departures';
+import { DEFAULT_RADIUS_KM, MAX_RADIUS_KM } from './radius';
+
+/** The largest platform this marketplace has, with room to spare. */
+const MAX_FILTER_CAPACITY_KG = 30000;
 
 /**
  * The board's filters live in the URL and nowhere else.
@@ -34,6 +39,22 @@ export interface DepartureFilters {
   minSeats: number | null;
   vehicleType: CargoCategory | null;
   scope: ScopeFilter | null;
+  /**
+   * „Pleacă din apropierea" — the locality the radius is measured from.
+   *
+   * The same gazetteer and the same steps as the request board, so a
+   * carrier and a client mean the same thing by „50 km".
+   */
+  near: City | null;
+  radiusKm: number | null;
+  /**
+   * The load the client needs room for, in kilograms.
+   *
+   * Departures that have not written down their free capacity stay in
+   * the list, for the same reason as on the request board: the field is
+   * optional, and hiding a route nobody measured helps no one.
+   */
+  minCapacityKg: number | null;
 }
 
 export const EMPTY_FILTERS: DepartureFilters = {
@@ -47,6 +68,9 @@ export const EMPTY_FILTERS: DepartureFilters = {
   minSeats: null,
   vehicleType: null,
   scope: null,
+  near: null,
+  radiusKm: null,
+  minCapacityKg: null,
 };
 
 /** Query keys, Romanian so a shared link reads like the site. */
@@ -61,6 +85,9 @@ export const FILTER_KEYS = {
   minSeats: 'locuri',
   vehicleType: 'vehicul',
   scope: 'acoperire',
+  near: 'langa',
+  radiusKm: 'raza',
+  minCapacityKg: 'capacitate',
 } as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -99,6 +126,13 @@ function isCategory(value: string | null): value is CargoCategory {
   return value !== null && (FILTERABLE_CATEGORIES as readonly string[]).includes(value);
 }
 
+/** A whole number inside a range, or nothing. */
+function bounded(value: string | null, min: number, max: number): number | null {
+  if (value === null) return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= min && n <= max ? n : null;
+}
+
 /** A county name, trimmed and length-capped; anything longer is not one. */
 function county(value: string | null): string | null {
   if (value === null) return null;
@@ -115,6 +149,14 @@ export function parseFilters(params: SearchParams): DepartureFilters {
   // rather than returning nothing and looking broken.
   if (dateFrom && dateTo && dateTo < dateFrom) dateTo = null;
 
+  // A radius with no centre cannot be applied; a centre with no radius
+  // is the default distance, not the absence of a filter.
+  const near = cityFromValue(one(params, FILTER_KEYS.near));
+  const radiusKm =
+    near === null
+      ? null
+      : (bounded(one(params, FILTER_KEYS.radiusKm), 1, MAX_RADIUS_KM) ?? DEFAULT_RADIUS_KM);
+
   return {
     tab: isTab(rawTab) ? rawTab : 'toate',
     fromCountry: countryCode(one(params, FILTER_KEYS.fromCountry)),
@@ -128,6 +170,9 @@ export function parseFilters(params: SearchParams): DepartureFilters {
       ? (one(params, FILTER_KEYS.vehicleType) as CargoCategory)
       : null,
     scope: isScope(one(params, FILTER_KEYS.scope)) ? one(params, FILTER_KEYS.scope) as ScopeFilter : null,
+    near,
+    radiusKm,
+    minCapacityKg: bounded(one(params, FILTER_KEYS.minCapacityKg), 1, MAX_FILTER_CAPACITY_KG),
   };
 }
 
@@ -144,6 +189,13 @@ export function filtersToQuery(filters: DepartureFilters): string {
   if (filters.minSeats !== null) query.set(FILTER_KEYS.minSeats, String(filters.minSeats));
   if (filters.vehicleType) query.set(FILTER_KEYS.vehicleType, filters.vehicleType);
   if (filters.scope) query.set(FILTER_KEYS.scope, filters.scope);
+  if (filters.near) {
+    query.set(FILTER_KEYS.near, cityValue(filters.near));
+    query.set(FILTER_KEYS.radiusKm, String(filters.radiusKm ?? DEFAULT_RADIUS_KM));
+  }
+  if (filters.minCapacityKg !== null) {
+    query.set(FILTER_KEYS.minCapacityKg, String(filters.minCapacityKg));
+  }
   const text = query.toString();
   return text === '' ? '' : `?${text}`;
 }

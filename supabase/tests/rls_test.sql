@@ -1525,6 +1525,29 @@ select pg_temp.check('PUB  the public board carries no company column', 'fix',
                              'from_lat', 'from_lng', 'to_lat', 'to_lng',
                              'notes', 'contact_name', 'contact_phone'))$a$, 'true');
 
+-- Raza are nevoie de un punct, iar „niciun punct" ar fi însemnat un
+-- filtru care nu se poate face. Vederea dă centroidul localității din
+-- `localities`, nu coloana anunțului: chiar dacă cineva ștampilează un
+-- traseu cu o adresă exactă, aici nu poate ajunge.
+select pg_temp.check('PUB  and the point it does carry is the locality, not the listing', 'fix',
+  null, 'anon',
+  $a$select from_locality_lat = 46.7712 and from_locality_lng = 23.6236
+     from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-0000000000c1'$a$, 'true',
+  p_setup => $s$insert into public.truck_listings
+       (id, company_id, vehicle_id, posted_by, direction,
+        from_country, from_city, to_country, to_city,
+        available_from, available_to, platform_slots_total,
+        accepted_vehicle_types, status, published_at, from_lat, from_lng)
+     values ('fb000000-0000-0000-0000-0000000000c1',
+             'fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur',
+             'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+             current_date, current_date + 10, 3,
+             array['autoturism']::public.cargo_category[], 'active', now(),
+             46.7000, 23.5000)$s$);
+
 select pg_temp.check('PUB  anon still cannot reach truck_listings itself', 'guard',
   null, 'anon', $a$select * from public.truck_listings$a$, 'blocked');
 
@@ -1986,7 +2009,11 @@ select pg_temp.check('CRQ  a request without coordinates adds no kilometres, rat
              title, loading_city, unloading_city, loading_from, status, published_at)
       values ('fc000000-0000-0000-0000-000000000002',
               'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
-              'Fără coordonate', 'Sibiu', 'Brașov', current_date + 4, 'delivered', now());
+              -- Un sat, nu o reședință de județ: de când `localities`
+              -- ștampilează coordonatele, „fără coordonate" înseamnă
+              -- exact „o localitate pe care gazetarul nu o știe", care
+              -- este și cazul real — multe mașini se iau dintr-un sat.
+              'Fără coordonate', 'Cisnădie', 'Râșnov', current_date + 4, 'delivered', now());
     end $d$$s$);
 
 select pg_temp.check('CRQ  the daily series is thirty days long and ends today', 'fix',
