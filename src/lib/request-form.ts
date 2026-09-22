@@ -206,7 +206,11 @@ function integer(value: string): number | null {
 /** The fields each step owns, so a step is checked without the ones after it. */
 export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   ruta: ['fromCity', 'fromCountry', 'toCity', 'toCountry', 'loadingFrom', 'loadingTo'],
-  vehicul: ['category', 'make', 'model', 'year', 'weightKg'],
+  // `description` is here as well as in `contact`: for „Altceva" the
+  // description is asked on this step, and a step that lets somebody
+  // walk past a rule the database enforces only tells them at the end,
+  // three steps later, about a field they have stopped looking at.
+  vehicul: ['category', 'make', 'model', 'year', 'weightKg', 'description'],
   stare: ['isRunning', 'wheelsTurn', 'steeringWorks', 'hasKeys', 'isDamaged', 'damageNotes'],
   contact: [
     'serviceType',
