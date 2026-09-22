@@ -16,7 +16,7 @@ dacă aplicația le folosește sau nu.
 
 | Severitate | Câte | Pe scurt |
 |---|---|---|
-| **Critic** | 1 | Pozele anunțurilor sunt publice și enumerabile de oricine |
+| **Critic** | 2 | Pozele anunțurilor sunt publice și enumerabile de oricine; `anon` putea **șterge firme** prin `v_public_companies` (găsită după audit) |
 | **Ridicat** | 4 | Directorul de firme servit lui `anon`; lipsa antetelor de securitate; jurnalul de audit fără retenție și fără ștergere la anonimizare; dovezile comenzii nu pot fi șterse niciodată |
 | **Mediu** | 8 | Două gărzi moarte, CORS `*`, `SELECT` **și drept de scriere** acordate lui `anon` pe tabele private (a doua jumătate găsită de garda nouă), publicația realtime trimite corpul mesajului, praguri de abuz publice, acceptare de advisor pe o premisă falsă |
 | **Scăzut** | 3 | Comparație de secret în timp variabil, e-mail de operator public, `pgcrypto` în `public` |
@@ -30,6 +30,7 @@ sau cu un cont obișnuit, nou-făcut.
 | | Constatare | PR | Cum a fost dovedită |
 |---|---|---|---|
 | C1 | pozele publice și enumerabile | #43 | 4 verificări SEC, 3 roșii înainte |
+| C2 | scriere prin vederi, pe lângă RLS | #47 | 4 verificări VUE, 3 roșii înainte, + garda 8 |
 | R1 | directorul de firme la `anon` | #43 | 3 verificări SEC, 2 roșii înainte |
 | R2 | niciun antet de securitate | #44 | 11 unitare + 10 Playwright |
 | R3 | jurnalul fără retenție și fără ștergere | #45 | 6 verificări SEC, toate 6 roșii înainte |
@@ -104,6 +105,68 @@ select name from storage.objects where bucket_id = 'listing-photos';
 **Reparația.** Bucketul devine privat; politica de `select` cere calea
 proprie sau dreptul de a vedea anunțul; pozele se servesc prin URL semnat,
 nu prin `getPublicUrl`.
+
+---
+
+### C2. `anon` putea șterge firme prin `v_public_companies`
+
+**Găsită după audit**, în octombrie, în timp ce se rescria nota de advisor din
+`docs/DEPLOYMENT.md`. Reparată în `20261001100000`.
+
+**Unde:** implicitul Supabase (`alter default privileges in schema public
+grant all on tables`) plus `create view`. Nicio migrare nu a acordat nimic —
+nu era nevoie, venea din oficiu.
+
+**De ce a scăpat auditului.** Auditul a numărat granturile pe **tabele**:
+`relkind = 'r'`, și în interogările secțiunii 3, și în migrarea
+`20260930100000`, și în garda 6 din `security_test.sql`. Vederile au
+`relkind = 'v'`. Au trecut pe lângă toate trei.
+
+**Cum se exploatează.** Trei lucruri trebuie să fie adevărate deodată, și
+erau:
+
+1. Vederea este o proiecție simplă dintr-o singură tabelă, deci Postgres o
+   face **scriibilă automat** (`information_schema.views.is_updatable`).
+   Trei dintre vederile noastre sunt așa: `v_public_companies`,
+   `v_companies_public`, `v_document_requirements_public`.
+2. Toate vederile noastre sunt `security_invoker = off`, deci scrierea prin
+   ele se face **ca proprietarul vederii** — pe lângă RLS, pe lângă politici.
+3. `anon` și `authenticated` aveau `insert`, `update` și `delete` pe ele.
+
+**Dovedit:**
+
+```
+set role anon;
+delete from public.v_public_companies where cui = '...';
+-- DELETE 1
+
+reset role;
+select count(*) from public.companies where cui = '...';
+--  0
+```
+
+Fără cont. Politicile de pe `companies` nu au apucat să fie consultate.
+Singurul lucru care a oprit un `update` în aceeași probă a fost triggerul
+`guard_company_write` — și numai pe coloanele de identificare, nu pe restul.
+
+**De ce e critic.** Este ștergere de date de la distanță, neautentificată, cu
+o cheie care stă în pachetul din browser. Nu scurgere: distrugere. Firmele
+vizibile sunt exact cele cu profil public, adică exact cele pe care se
+sprijină directorul.
+
+**Reparația.** `revoke insert, update, delete, truncate, references, trigger`
+de la `anon` și `authenticated` pe fiecare vedere, condus din catalog; și
+`alter default privileges in schema public revoke insert, update, delete,
+truncate on tables from anon`, ca să nu mai vină din oficiu. Garda 8 din
+`security_test.sql` cade dacă o vedere nouă apare cu drept de scriere;
+patru verificări `VUE` în `rls_test.sql` fac proba de sus, trei roșii
+înainte de migrare.
+
+**Ce de învățat.** Regula 3 („un grant și o politică sunt două lucruri") și
+regula 5 („o vedere `security_invoker = off` citește pe lângă RLS") se
+citeau amândouă ca fiind despre citire. Sunt și despre scriere. Iar o gardă
+scrisă cu `relkind = 'r'` are o margine care nu se vede din text —
+`CLAUDE.md` a primit rândul despre vederi.
 
 ---
 
@@ -378,7 +441,7 @@ Astea nu se repară cu un commit:
 ## 7. Gărzile care le țin să nu se întoarcă
 
 `supabase/tests/security_test.sql` rulează la fiecare `pnpm db:test` și în
-CI. Nu verifică reguli de business, verifică **forma** schemei — șapte gărzi,
+CI. Nu verifică reguli de business, verifică **forma** schemei — opt gărzi,
 una pentru fiecare clasă de bug de mai sus:
 
 | Garda | Ce oprește |
@@ -390,6 +453,7 @@ una pentru fiecare clasă de bug de mai sus:
 | listă de funcții executabile de `anon` | un `grant ... to anon` din reflex |
 | `anon` fără `SELECT` fără politică | RLS ca singură linie de apărare |
 | `anon` fără drept de scriere nicăieri | aceeași, pentru scriere |
+| nicio vedere cu drept de scriere pentru `anon` sau `authenticated` | o vedere scriibilă automat, care scrie pe lângă RLS |
 
 A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
 `delete` pe patruzeci de tabele. Nimic nu curgea — nicio politică de scriere
@@ -419,11 +483,19 @@ doua oară să nu mai fie nevoie de citit.
 > verificare care nu cere niciodată ce spune că cere este mai rea decât
 > niciuna.
 
-**Rămâne o nuanță, scăzută:** `route_series_upcoming` întoarce mulțimea goală
-pentru o serie inexistentă, dar ridică „Seria nu este a firmei tale" pentru
-una care există și nu este a ta — deci confirmă existența, exact ce spune
-regula 7 din secțiunea „Securitate" să nu faci. Id-urile fiind UUID-uri,
-riscul practic este nul; se corectează la următoarea atingere a funcției.
+Nuanța care rămăsese — `route_series_upcoming` ridica „Seria nu este a
+firmei tale" pentru o serie care există și nu este a ta, dar tăcea pentru
+una inexistentă, deci confirma existența — s-a închis în `20261001100000`.
+Amândouă cazurile întorc acum mulțimea goală, și trei verificări o spun,
+una dintre ele ca egalitate între cele două răspunsuri.
+
+Și cei optsprezece ajutători de politică au acum verificări directe, câte
+două fiecare: o dată cu id-ul altcuiva de un cont autentificat, o dată fără
+cont deloc (blocul `HLP` din `rls_test.sql`). Șaptesprezece erau deja
+corecți. Al optsprezecelea, `is_assisted_company()`, întorcea oricui starea
+de înscriere a oricărei firme; toate cele trei politici care îl folosesc îl
+scriu ca `is_platform_admin() and is_assisted_company(...)`, deci condiția a
+intrat în funcție.
 
 `scripts/ci/smoke-deployment.sh` verifică antetele **pe răspunsul
 deployment-ului**, nu pe configurația noastră. Testul unitar și cel

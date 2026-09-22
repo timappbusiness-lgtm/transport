@@ -11649,10 +11649,32 @@ select pg_temp.check('SEC  order_crew_options refuses a firm that is not the car
 -- sub RLS, celălalt cont nu vede seria deloc, deci subselectul ar da
 -- `null` și funcția ar întoarce liniștită mulțimea goală. Verificarea
 -- ar fi trecut fără să fi cerut vreodată id-ul altcuiva.
-select pg_temp.check('SEC  route_series_upcoming refuses another firm''s series', 'fix',
+-- Răspunsul pentru seria altcuiva trebuie să fie **același** cu
+-- răspunsul pentru un id care nu există: mulțimea goală. Varianta care
+-- ridica „Seria nu este a firmei tale" spunea, prin chiar refuzul ei,
+-- că id-ul este o serie reală a unei firme reale — regula 7: 404, nu
+-- 403, pentru ce nu ai voie să știi că există.
+select pg_temp.check('SEC  route_series_upcoming tells nothing about another firm''s series', 'fix',
   'f0000000-0000-0000-0000-00000000000a', 'authenticated',
-  $a$select count(*) from public.route_series_upcoming(
-       (select onboarding_id from pg_temp.asi_ctx))$a$, 'blocked',
+  $a$select count(*) = 0 from public.route_series_upcoming(
+       (select onboarding_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$delete from pg_temp.asi_ctx;
+     insert into pg_temp.asi_ctx (company_id, onboarding_id)
+     values (null, pg_temp.series())$s$);
+
+select pg_temp.check('SEC  and an id that is no series at all answers exactly the same', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) = 0 from public.route_series_upcoming(
+       '00000000-0000-0000-0000-0000000000ff')$a$, 'true');
+
+-- Aceeași verificare, spusă o dată ca egalitate: dacă vreodată una
+-- dintre cele două ramuri începe iar să răspundă altfel, aici cade.
+select pg_temp.check('SEC  the two answers are indistinguishable', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select (select count(*) from public.route_series_upcoming(
+              (select onboarding_id from pg_temp.asi_ctx)))
+          = (select count(*) from public.route_series_upcoming(
+              '00000000-0000-0000-0000-0000000000ff'))$a$, 'true',
   p_setup => $s$delete from pg_temp.asi_ctx;
      insert into pg_temp.asi_ctx (company_id, onboarding_id)
      values (null, pg_temp.series())$s$);
@@ -11669,6 +11691,276 @@ select pg_temp.check('SEC  mark_subscription_request_contacted is staff only', '
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$select public.mark_subscription_request_contacted(
        (select id from public.subscription_requests limit 1))$a$, 'blocked');
+
+-- O firmă cu profil public și fără nimic agățat de ea: fără membri,
+-- fără vehicule, fără anunțuri. Firma A are toate astea, iar o cheie
+-- străină ar refuza `delete`-ul înaintea privilegiului — verificarea ar
+-- fi trecut fără să fi dovedit nimic despre drepturi.
+create or replace function pg_temp.lonely_company() returns void language sql as $lc$
+  insert into public.companies
+    (id, cui, legal_name, company_type, created_by,
+     public_profile_enabled, verification_status, is_suspended, slug)
+  values
+    ('fc000000-0000-0000-0000-0000000000f9', '90009001', 'RLS Singura SRL', 'transport',
+     'f0000000-0000-0000-0000-000000000001', true, 'verified', false, 'rls-singura-srl')
+  on conflict (id) do nothing;
+$lc$;
+
+-- --- VUE: vederile nu sunt o ușă de scriere -------------------------
+--
+-- Auditul a numărat granturile pe tabele. O vedere nu este o tabelă în
+-- `pg_class`, deci a trecut pe lângă numărătoare — cu implicitul
+-- Supabase pe ea. Iar `v_public_companies` este o proiecție simplă
+-- dintr-o singură tabelă, deci Postgres o face scriibilă automat, și
+-- este `security_invoker = off`, deci scrierea se face ca proprietarul
+-- vederii: pe lângă RLS, pe lângă politici, pe lângă tot.
+--
+-- Înainte de migrarea 20261001100000, `delete` de mai jos întorcea
+-- `DELETE 1` și firma dispărea. Fără cont.
+select pg_temp.check('VUE  anon cannot delete a company through the public view', 'fix',
+  null, 'anon',
+  $a$delete from public.v_public_companies where cui = '90009001'$a$, 'blocked',
+  p_setup => $s$select pg_temp.lonely_company()$s$,
+  p_verify => $v$select count(*) = 1 from public.companies
+                 where id = 'fc000000-0000-0000-0000-0000000000f9'$v$);
+
+select pg_temp.check('VUE  and neither can an account with no claim on the firm', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$delete from public.v_public_companies where cui = '90009001'$a$, 'blocked',
+  p_setup => $s$select pg_temp.lonely_company()$s$,
+  p_verify => $v$select count(*) = 1 from public.companies
+                 where id = 'fc000000-0000-0000-0000-0000000000f9'$v$);
+
+-- `update`-ul fără cont era oprit și înainte, dar de `guard_company_write`
+-- — un trigger, nu un drept. Verificarea rămâne ca gardă: plasa a doua
+-- nu se pune la socoteală în locul primei.
+select pg_temp.check('VUE  anon cannot rewrite one through it either', 'guard',
+  null, 'anon',
+  $a$update public.v_public_companies set public_description = 'deturnat'
+     where cui = '90009001'$a$, 'blocked',
+  p_setup => $s$select pg_temp.lonely_company()$s$,
+  p_verify => $v$select coalesce(public_description, '') <> 'deturnat' from public.companies
+                 where id = 'fc000000-0000-0000-0000-0000000000f9'$v$);
+
+select pg_temp.check('VUE  nor rewrite one through it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.v_public_companies set public_description = 'deturnat'
+     where cui = '90000001'$a$, 'blocked',
+  p_setup => $s$update public.companies
+     set public_profile_enabled = true, verification_status = 'verified',
+         is_suspended = false, slug = 'rls-carrier-a'
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select coalesce(public_description, '') <> 'deturnat' from public.companies
+                 where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+-- Citirea rămâne exact cum era: profilul public este public.
+select pg_temp.check('VUE  but the public profile is still readable without an account', 'guard',
+  null, 'anon',
+  $a$select count(*) = 1 from public.v_public_companies where cui = '90000001'$a$, 'true',
+  p_setup => $s$update public.companies
+     set public_profile_enabled = true, verification_status = 'verified',
+         is_suspended = false, slug = 'rls-carrier-a'
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+-- --- HLP: cei optsprezece ajutători de politică, ceruți direct -------
+--
+-- Secțiunea 4 a auditului i-a numărat: optsprezece funcții pe care un
+-- cont autentificat le poate apela și pe care suita nu le atingea decât
+-- *indirect*, prin politicile care le folosesc. O politică ce întoarce
+-- zero rânduri este o dovadă bună că ajutătorul a spus „nu" — dar nu
+-- spune nimic despre ce face ajutătorul chemat direct, cu un id străin.
+--
+-- Iar PostgREST îl servește direct: `rpc/is_company_member` este o
+-- adresă ca oricare alta, cu cheia `anon` din pachetul browserului
+-- (regula 2 din secțiunea Securitate a CLAUDE.md). Deci fiecare este
+-- chemat aici de două ori: o dată de un cont care nu are nimic de-a
+-- face cu id-ul cerut, o dată fără cont deloc.
+--
+-- Id-urile sunt fixturi reale ale altcuiva, nu `uuid`-uri inventate:
+-- un ajutător care nu găsește rândul întoarce `false` din lipsa
+-- rândului, nu din lipsa dreptului, și verificarea ar trece degeaba.
+
+-- Fără cont: niciunul nu are drept de execuție. Nu „întoarce false" —
+-- nu se poate apela deloc. Două lucruri trebuie să meargă prost, nu
+-- unul.
+do $anon$
+declare
+  r record;
+begin
+  for r in
+    select * from (values
+      ('can_edit_cargo_listing',
+       $c$select public.can_edit_cargo_listing('f1000000-0000-0000-0000-000000000004')$c$),
+      ('can_see_cargo_listing',
+       $c$select public.can_see_cargo_listing('f1000000-0000-0000-0000-000000000004')$c$),
+      ('can_see_listing',
+       $c$select public.can_see_listing('f1000000-0000-0000-0000-000000000004')$c$),
+      ('can_see_order',
+       $c$select public.can_see_order('f8000000-0000-0000-0000-000000000001')$c$),
+      ('company_slug',
+       $c$select public.company_slug('RLS Carrier A SRL', 'Cluj-Napoca', null)$c$),
+      ('is_assisted_company',
+       $c$select public.is_assisted_company('fc000000-0000-0000-0000-000000000002')$c$),
+      ('is_company_driver_only',
+       $c$select public.is_company_driver_only('fc000000-0000-0000-0000-000000000001')$c$),
+      ('is_company_manager',
+       $c$select public.is_company_manager('fc000000-0000-0000-0000-000000000001')$c$),
+      ('is_company_member',
+       $c$select public.is_company_member('fc000000-0000-0000-0000-000000000001')$c$),
+      ('is_company_operator',
+       $c$select public.is_company_operator('fc000000-0000-0000-0000-000000000001')$c$),
+      ('is_conversation_participant',
+       $c$select public.is_conversation_participant('f4000000-0000-0000-0000-000000000001')$c$),
+      ('is_invited_to_listing',
+       $c$select public.is_invited_to_listing('f1000000-0000-0000-0000-000000000004')$c$),
+      ('is_order_driver',
+       $c$select public.is_order_driver('f8000000-0000-0000-0000-000000000001')$c$),
+      ('is_transport_party',
+       $c$select public.is_transport_party('f8000000-0000-0000-0000-000000000001')$c$),
+      ('order_rating_state',
+       $c$select count(*) from public.order_rating_state('f8000000-0000-0000-0000-000000000001')$c$),
+      ('owns_listing',
+       $c$select public.owns_listing('f1000000-0000-0000-0000-000000000004')$c$),
+      ('staff_hide_rating_reply',
+       $c$select public.staff_hide_rating_reply('f9000000-0000-0000-0000-0000000000e1', 'motiv')$c$),
+      ('staff_may_read_conversation',
+       $c$select public.staff_may_read_conversation('f4000000-0000-0000-0000-000000000001')$c$)
+    ) as t(fn, call)
+  loop
+    perform pg_temp.check(
+      format('HLP  without an account, %s() cannot even be called', r.fn), 'guard',
+      null, 'anon', r.call, 'blocked');
+  end loop;
+end
+$anon$;
+
+-- Cu cont, dar cu id-ul altcuiva. Contul este proprietarul firmei C:
+-- are cont, are firmă, și nu are nicio legătură cu firma A, cu firma B,
+-- cu anunțurile lor, cu comenzile sau cu firele lor de discuție.
+
+select pg_temp.check('HLP  can_edit_cargo_listing says no on another firm''s request', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.can_edit_cargo_listing('f1000000-0000-0000-0000-000000000004') is not true$a$,
+  'true');
+
+select pg_temp.check('HLP  can_see_cargo_listing says no on a request that is not published', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.can_see_cargo_listing('f1000000-0000-0000-0000-000000000004') is not true$a$,
+  'true');
+
+-- `can_see_listing` se uită la `visibility`, nu la `status`, deci id-ul
+-- trebuie să fie al unei cereri private ca să întrebe ceva.
+select pg_temp.check('HLP  can_see_listing says no on a private request', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.can_see_listing((select onboarding_id from pg_temp.asi_ctx)) is not true$a$,
+  'true',
+  p_setup => $s$select pg_temp.private_request()$s$);
+
+select pg_temp.check('HLP  can_see_order says no on somebody else''s order', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.can_see_order('f5000000-0000-0000-0000-0000000000e1') is not true$a$, 'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000e1')$s$);
+
+-- `company_slug` este un formatator, nu o poartă: nu are ce ascunde și
+-- nu are voie să cadă. Verificarea este că răspunde și că răspunsul nu
+-- este gol — dacă ar cădea, înscrierea unei firme ar cădea cu el.
+select pg_temp.check('HLP  company_slug answers without leaning on the caller', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select coalesce(public.company_slug('RLS Carrier A SRL', 'Cluj-Napoca', null), '') <> ''$a$,
+  'true');
+
+-- Singura dintre cele optsprezece care spunea mai mult decât trebuie:
+-- întorcea starea de înscriere a oricărei firme, oricui o cerea. Toate
+-- cele trei politici care o folosesc o scriu ca `is_platform_admin()
+-- and is_assisted_company(...)`, deci condiția a intrat înăuntru.
+-- Firma din montaj chiar **este** în curs de înscriere: verificarea nu
+-- trece pentru că rândul lipsește.
+select pg_temp.check('HLP  is_assisted_company says nothing to a caller who is not staff', 'fix',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_assisted_company((select company_id from pg_temp.asi_ctx)) is not true$a$,
+  'true',
+  p_setup => $s$select pg_temp.assisted()$s$);
+
+select pg_temp.check('HLP  and the team still reads it, so onboarding keeps working', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.is_assisted_company((select company_id from pg_temp.asi_ctx))$a$, 'true',
+  p_setup => $s$select pg_temp.assisted()$s$);
+
+select pg_temp.check('HLP  is_company_driver_only says no on another firm', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_company_driver_only('fc000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
+
+select pg_temp.check('HLP  is_company_manager says no on another firm', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_company_manager('fc000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
+
+select pg_temp.check('HLP  is_company_member says no on another firm', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_company_member('fc000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
+
+select pg_temp.check('HLP  is_company_operator says no on another firm', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_company_operator('fc000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
+
+-- Și, ca să nu treacă pentru că rândul lipsește: pe firma lui, același
+-- apel spune da.
+select pg_temp.check('HLP  is_company_member still says yes on its own firm', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_company_member('fc000000-0000-0000-0000-000000000003')$a$, 'true');
+
+select pg_temp.check('HLP  is_conversation_participant says no on somebody else''s thread', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_conversation_participant('f4000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
+
+select pg_temp.check('HLP  is_invited_to_listing says no when nobody invited you', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_invited_to_listing((select onboarding_id from pg_temp.asi_ctx)) is not true$a$,
+  'true',
+  p_setup => $s$select pg_temp.private_request(true)$s$);
+
+select pg_temp.check('HLP  is_order_driver says no on somebody else''s order', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_order_driver('f5000000-0000-0000-0000-0000000000e2') is not true$a$, 'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000e2')$s$);
+
+select pg_temp.check('HLP  is_transport_party says no on somebody else''s order', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.is_transport_party('f5000000-0000-0000-0000-0000000000e3') is not true$a$, 'true',
+  p_setup => $s$select pg_temp.make_order('f5000000-0000-0000-0000-0000000000e3')$s$);
+
+select pg_temp.check('HLP  order_rating_state returns nothing on somebody else''s order', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select count(*) = 0 from public.order_rating_state('f5000000-0000-0000-0000-0000000000e4')$a$,
+  'true',
+  p_setup => $s$select pg_temp.rated_order('f5000000-0000-0000-0000-0000000000e4')$s$);
+
+select pg_temp.check('HLP  owns_listing says no on another firm''s request', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.owns_listing('f1000000-0000-0000-0000-000000000004') is not true$a$, 'true');
+
+select pg_temp.check('HLP  staff_hide_rating_reply refuses a caller who is not staff', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.staff_hide_rating_reply('f9000000-0000-0000-0000-0000000000e1', 'motiv')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.rated('f5000000-0000-0000-0000-0000000000e5',
+                  'f9000000-0000-0000-0000-0000000000e0');
+                insert into public.rating_replies (id, rating_id, company_id, author_user_id, body)
+                values ('f9000000-0000-0000-0000-0000000000e1',
+                        'f9000000-0000-0000-0000-0000000000e0',
+                        'fc000000-0000-0000-0000-000000000001',
+                        'f0000000-0000-0000-0000-000000000002', 'Răspunsul nostru.')$s$,
+  p_verify => $v$select hidden_at is null from public.rating_replies
+                 where id = 'f9000000-0000-0000-0000-0000000000e1'$v$);
+
+select pg_temp.check('HLP  staff_may_read_conversation says no to somebody who is not staff', 'guard',
+  'f0000000-0000-0000-0000-00000000000a', 'authenticated',
+  $a$select public.staff_may_read_conversation('f4000000-0000-0000-0000-000000000001') is not true$a$,
+  'true');
 
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),

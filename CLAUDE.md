@@ -131,12 +131,20 @@ existat în proiectul ăsta și este scrisă cu prețul lui. Auditul întreg est
    `bucket_id = '...'` și nimic altceva lasă pe oricine să enumere tot
    bucketul. Pozele private se servesc cu URL semnat, dintr-un bucket privat.
 
-5. **O vedere `security_invoker = off` citește pe lângă RLS.** Singurul ei
-   filtru este `where`-ul ei. Dacă trebuie să respecte o opțiune a
-   utilizatorului — `public_profile_enabled`, `visibility` — filtrul acela
+5. **O vedere `security_invoker = off` citește — și scrie — pe lângă RLS.**
+   Singurul ei filtru este `where`-ul ei. Dacă trebuie să respecte o opțiune
+   a utilizatorului — `public_profile_enabled`, `visibility` — filtrul acela
    se scrie explicit, sau vederea nu se dă lui `anon`. Modelul curat este
    `v_requests_private`: nu se dă nimănui, se citește numai printr-o funcție
    care verifică dreptul.
+
+   Partea de scriere a costat o firmă ștearsă de `anon` într-o probă: o
+   vedere care este o proiecție simplă dintr-o singură tabelă este
+   **scriibilă automat**, iar implicitul Supabase îi dă lui `anon` și lui
+   `authenticated` `insert`, `update` și `delete` pe ea. O interogare de
+   catalog scrisă cu `relkind = 'r'` nu vede nicio vedere — și exact așa a
+   trecut C2 pe lângă audit, pe lângă migrarea de revocare și pe lângă
+   garda ei. Când numeri granturi, numără și `'v'`.
 
 6. **Când ascunzi ceva, numără ușile.** O cerere privată se ajunge prin
    pagină, prin ofertele de pe ea, prin firul de mesaje, prin datele de

@@ -165,12 +165,87 @@ supabase db push --linked
 supabase db advisors --linked --type security
 ```
 
-Advisor findings that are accepted: `security_definer_view` on
-`v_companies_public`, `v_corridor_prices` and `v_departures` (each exposes a
-filtered public subset on purpose; `v_departures` must count other people's
-bookings), `*_security_definer_function_executable` for the RPCs and policy
-helpers granted in migration `130300`, and `extension_in_public` for
-`pg_trgm`.
+### Advisor findings that are accepted
+
+Read the list before accepting anything: an acceptance written once outlives
+the reason it was written for. These three are current as of the September
+2026 audit (`docs/12-audit-securitate.md`).
+
+- **`security_definer_view`** on `v_corridor_prices`, `v_departures` and
+  `v_companies_public`. All three read past RLS by design, and each has a
+  different reason to. `v_corridor_prices` is an aggregate of finished
+  transports with no personal data in it, served to `anon`. `v_departures`
+  has to count other people's bookings to say how many seats are left, which
+  is exactly what RLS would hide. `v_companies_public` is now read by
+  `authenticated` only, and no longer carries `trust_score` or
+  `is_suspended` — migration `20260928100000` took both the grant and the
+  two columns away, so the old wording here ("a filtered public subset")
+  described a view that no longer exists.
+
+  What holds them safe is the `where` in each view, not RLS. If one of them
+  ever has to respect a user's own choice — `public_profile_enabled`,
+  `visibility` — that filter goes in the view explicitly, or the view stops
+  being granted to `anon`.
+
+- **`*_security_definer_function_executable`** for the RPCs and policy
+  helpers granted in migration `130300`. Every one of them checks
+  `auth.uid()` itself; `supabase/tests/rls_test.sql` calls each with
+  somebody else's id, as `authenticated` and as `anon`.
+
+- **`extension_in_public`** for `pg_trgm`. Not for `pgcrypto` — see
+  *Planned maintenance* below.
+
+### Planned maintenance: move `pgcrypto` out of `public`
+
+Finding **S3** of the audit, left open on purpose: moving an extension on a
+live project needs a window, and it had no business sharing a pull request
+with a leak fix.
+
+`crypt()`, `gen_salt()` and `pgp_sym_*` currently live in `public` and are
+executable by `anon`. Nothing of ours keeps keys there, so there is nothing
+to read — but `gen_salt('bf', 12)` is deliberately expensive and can be
+called as often as anyone likes with the publishable key. That is the whole
+of the risk: cheap CPU burn, no disclosure.
+
+Nothing in `supabase/migrations/` calls a `pgcrypto` function. The three
+`sha256()` calls in `20260926100000` (claim-token hashing) look like they do,
+but `sha256(bytea)` is a Postgres built-in in `pg_catalog` — unrelated:
+
+```bash
+# expect: crypt, gen_salt, digest -> pgcrypto; sha256 -> pg_catalog
+psql -c "select p.proname, n.nspname, e.extname
+         from pg_proc p
+         join pg_namespace n on n.oid = p.pronamespace
+         left join pg_depend d on d.objid = p.oid and d.deptype = 'e'
+         left join pg_extension e on e.oid = d.refobjid
+         where p.proname in ('sha256','crypt','gen_salt','digest')"
+```
+
+So the move is one short migration, in a quiet window, after the pilot:
+
+1. Confirm nothing outside the repository calls it — a dashboard query, an
+   older function, a SQL snippet in someone's notes. The repository is
+   clean; the project is what has to be checked.
+
+2. ```sql
+   create schema if not exists extensions;
+   alter extension pgcrypto set schema extensions;
+   grant usage on schema extensions to authenticated, service_role;
+   ```
+
+   `anon` gets no `usage`: that is the point of the move.
+
+3. `pnpm db:test` green, then `supabase db push --linked` in the window,
+   then `supabase db advisors --linked --type security` to confirm
+   `extension_in_public` now names only `pg_trgm`.
+
+If a `SECURITY DEFINER` function ever does start calling `crypt()` or
+`pgp_sym_*`, it needs `extensions` in its own `set search_path` — the
+pinned path is what guard 3 of `supabase/tests/security_test.sql` enforces,
+and it does not fall back to a schema it does not name.
+
+`pg_trgm` stays in `public`: its operators are used in index definitions,
+and moving it would mean rebuilding those indexes.
 
 ## Turning the pipeline on (once)
 
