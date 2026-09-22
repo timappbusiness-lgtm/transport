@@ -163,6 +163,43 @@ existat în proiectul ăsta și este scrisă cu prețul lui. Auditul întreg est
    străine, deci nu cascadează nimic. Ștergerea la cerere trebuie să treacă
    pe acolo, și prin storage.
 
+10. **O interogare de catalog care numără `relkind = 'r'` numără tabele, nu
+    relații.** C2 a trecut pe lângă audit, pe lângă migrarea care revoca
+    granturile **și** pe lângă garda scrisă ca să prindă exact clasa aia —
+    toate trei întrebau `'r'`, iar `v_public_companies` este `'v'`. Trei
+    plase cu aceeași gaură nu sunt trei plase.
+
+    Felurile de relație sunt cinci și se numără dintr-un singur loc,
+    `sec_relkinds` din `supabase/tests/security_test.sql`: `'r'` tabelă,
+    `'p'` partiționată, `'f'` străină — astea pot purta RLS; `'v'` vedere și
+    `'m'` vedere materializată — astea **nu**. Orice gardă sau revocare
+    nouă se leagă de tabela aia, nu își scrie propria listă.
+
+    Ce decurge din despărțire:
+
+    - Pe ce poate purta RLS: RLS pornită, cel puțin o politică, `anon` fără
+      `select` acolo unde nu are politică.
+    - Pe ce nu poate: **niciun** drept de scriere pentru `anon` sau
+      `authenticated`, fiindcă nu îl ține nimic — o vedere
+      `security_invoker = off` scrie cu drepturile proprietarului, iar o
+      vedere care este o proiecție simplă dintr-o tabelă este scriibilă
+      automat, fără să fi cerut cineva asta.
+    - O vedere citibilă de `anon` are ori `security_invoker = on`, ori un
+      `where` al ei. Fără niciuna, servește tabela întreagă oricui are
+      cheia din pachetul browserului.
+
+    **Orice migrare care adaugă o vedere își revocă singură ce a primit din
+    oficiu**, altfel garda cade în CI:
+
+    ```sql
+    revoke insert, update, delete, truncate, references, trigger
+      on public.v_noua from anon, authenticated;
+    ```
+
+    Implicitul Supabase nu se poate închide la sursă pentru `authenticated`:
+    `alter default privileges ... on tables` nu deosebește o vedere de o
+    tabelă, iar pe tabele `authenticated` chiar scrie, sub politici.
+
 ## Commands
 
 ```bash

@@ -12,9 +12,21 @@
 --      o gardă moartă sau o portiță care nu se deschidea
 --   4. o funcție executabilă de `anon` fără să fie pe listă
 --   5. `SELECT` acordat lui `anon` pe o tabelă fără politică pentru el
+--   6. drept de scriere acordat lui `anon` oriunde
+--   7. drept de scriere pe o vedere, unde RLS nu are cum să îl țină
+--   8. o vedere citibilă de `anon` care nu filtrează nimic
 --
--- Fiecare listă de excepții de aici este scurtă intenționat. Dacă se
--- lungește, înseamnă că regula nu mai este o regulă.
+-- **Relațiile se numără dintr-un singur loc.** C2 — `anon` ștergea
+-- firme prin `v_public_companies` — a trecut pe lângă audit, pe lângă
+-- migrarea de revocare **și** pe lângă garda ei, fiindcă toate trei
+-- întrebau `relkind = 'r'`. O tabelă este `'r'`; o vedere este `'v'`.
+-- Lista de feluri de relație stă acum în `sec_relkinds`, iar fiecare
+-- gardă se leagă de ea: un fel nou se adaugă o singură dată, și nicio
+-- gardă nu îl poate uita.
+--
+-- Fiecare listă de excepții de aici este scurtă intenționat, și fiecare
+-- intrare are un motiv scris lângă ea. Dacă se lungește, înseamnă că
+-- regula nu mai este o regulă.
 --
 -- Rulat de `pnpm db:test`, pe aceeași bază de unică folosință.
 -- =====================================================================
@@ -37,33 +49,74 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
--- 1. RLS pe fiecare tabelă publică
+-- Felurile de relație, o singură dată
+--
+-- `can_have_rls` este linia care desparte cele două familii de gărzi:
+--
+--   true   tabele, tabele partiționate, tabele străine. RLS le poate
+--          ține, deci regula este „RLS pornită, cel puțin o politică,
+--          și niciun grant care să se sprijine pe altceva".
+--   false  vederi și vederi materializate. RLS **nu** le poate ține —
+--          o vedere `security_invoker = off` citește și scrie ca
+--          proprietarul ei. Pentru ele regula este mai strictă: niciun
+--          drept de scriere pentru nimeni din afară, și un filtru
+--          explicit dacă se citesc fără cont.
+--
+-- Postgres mai are `'t'` (toast) și `'i'` (index), care nu se acordă
+-- nimănui și nu au ce căuta în `public`.
+-- ---------------------------------------------------------------------
+create temp table sec_relkinds (kind "char", label text, can_have_rls boolean);
+insert into sec_relkinds (kind, label, can_have_rls) values
+  ('r', 'tabelă',                 true),
+  ('p', 'tabelă partiționată',    true),
+  ('f', 'tabelă străină',         true),
+  ('v', 'vedere',                 false),
+  ('m', 'vedere materializată',   false);
+
+-- Excepțiile, cu motivul lor într-o coloană și nu într-un comentariu
+-- pierdut într-un `not in (...)`. O gardă care cade îți arată numele;
+-- rândul de aici îți arată de ce nu ar trebui să cadă.
+create temp table sec_rls_allowed (relname text, reason text);
+insert into sec_rls_allowed (relname, reason) values
+  ('carrier_count_probes',
+   'scrisă numai de o funcție SECURITY DEFINER și citită de nimeni; refuzul total este ce trebuie'),
+  ('phone_verifications',
+   'ține code_hash-ul unui cod de verificare; ecranul primește ce îi trebuie din my_phone_verification(), mascat');
+
+-- Nicio vedere nu este o ușă de scriere astăzi. Dacă una devine,
+-- grantul se scrie în migrarea ei și motivul aici — altfel garda cade.
+create temp table sec_write_allowed (relname text, grantee text, reason text);
+
+-- Nicio vedere citibilă fără cont nu este nefiltrată astăzi.
+create temp table sec_unfiltered_allowed (relname text, reason text);
+
+-- ---------------------------------------------------------------------
+-- 1. RLS pe fiecare relație publică ce o poate purta
 --
 -- Nicio excepție. O tabelă fără RLS este vizibilă întreagă oricui are
--- cheia anon, care este publică.
+-- cheia anon, care este publică. Tabelele partiționate și cele străine
+-- intră aici pentru că și ele pot purta RLS — iar o tabelă străină
+-- fără RLS este o bază de date străină deschisă prin a noastră.
 -- ---------------------------------------------------------------------
 select pg_temp.guard(
-  'fiecare tabelă publică are RLS pornită',
-  $q$select string_agg(c.relname, ', ' order by c.relname)
-     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity$q$);
+  'fiecare relație publică ce poate purta RLS o are pornită',
+  $q$select string_agg(k.label || ' ' || c.relname, ', ' order by c.relname)
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
+     where n.nspname = 'public' and k.can_have_rls and not c.relrowsecurity$q$);
 
--- O tabelă cu RLS și fără nicio politică refuză tot, ceea ce este
+-- O relație cu RLS și fără nicio politică refuză tot, ceea ce este
 -- sigur — dar aproape întotdeauna este o scăpare, nu o intenție. Cele
--- care chiar sunt intenționate se scriu aici, cu motivul lor.
+-- care chiar sunt intenționate sunt în `sec_rls_allowed`, cu motivul.
 select pg_temp.guard(
-  'fiecare tabelă cu RLS are cel puțin o politică',
-  $q$select string_agg(c.relname, ', ' order by c.relname)
-     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity
-       -- carrier_count_probes: scris numai de o funcție SECURITY DEFINER
-       -- și citit de nimeni. Refuzul total este ce trebuie.
-       --
-       -- phone_verifications: ține `code_hash`-ul unui cod de verificare.
-       -- Proprietarul rândului nu are ce citi de acolo — ce are nevoie
-       -- ecranul întoarce `my_phone_verification()`, mascat — iar un
-       -- `select` pe tabelă prin PostgREST ar servi hash-ul cui îl cere.
-       and c.relname not in ('carrier_count_probes', 'phone_verifications')
+  'fiecare relație cu RLS are cel puțin o politică',
+  $q$select string_agg(k.label || ' ' || c.relname, ', ' order by c.relname)
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
+     where n.nspname = 'public' and k.can_have_rls and c.relrowsecurity
+       and not exists (select 1 from sec_rls_allowed a where a.relname = c.relname)
        and not exists (select 1 from pg_policy p where p.polrelid = c.oid)$q$);
 
 -- ---------------------------------------------------------------------
@@ -174,10 +227,12 @@ select pg_temp.guard(
 -- RLS se oprește vreodată pe o tabelă, grantul singur ar deschide tot.
 -- ---------------------------------------------------------------------
 select pg_temp.guard(
-  'anon nu are SELECT pe nicio tabelă fără politică pentru anon',
-  $q$select string_agg(c.relname, ', ' order by c.relname)
-     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-     where n.nspname = 'public' and c.relkind = 'r'
+  'anon nu are SELECT pe nicio relație cu RLS fără politică pentru anon',
+  $q$select string_agg(k.label || ' ' || c.relname, ', ' order by c.relname)
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
+     where n.nspname = 'public' and k.can_have_rls
        and has_table_privilege('anon', c.oid, 'SELECT')
        and not exists (
          select 1 from pg_policy p
@@ -186,43 +241,102 @@ select pg_temp.guard(
              select ro.rolname from pg_roles ro where ro.oid = any(p.polroles))))$q$);
 
 -- ---------------------------------------------------------------------
--- 6. Nicio tabelă nu se scrie direct de `anon`
+-- 6. `anon` nu scrie nicăieri, indiferent de felul relației
 --
 -- Scrierile trec prin RPC-uri care verifică cine cheamă. Un `insert`
 -- de la un vizitator fără cont nu are cum să fie intenționat.
+--
+-- „Indiferent de felul relației" este partea care lipsea: garda veche
+-- întreba `relkind = 'r'`, iar `v_public_companies` este `'v'`.
 -- ---------------------------------------------------------------------
 select pg_temp.guard(
-  'anon nu poate scrie în nicio tabelă',
-  $q$select string_agg(distinct c.relname || ' (' || pr.privilege || ')', ', ')
+  'anon nu poate scrie în nicio relație, de niciun fel',
+  $q$select string_agg(distinct k.label || ' ' || c.relname || ' (' || pr.privilege || ')', ', ')
      from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
      cross join lateral (values ('INSERT'), ('UPDATE'), ('DELETE')) as pr(privilege)
-     where n.nspname = 'public' and c.relkind = 'r'
-       and has_table_privilege('anon', c.oid, pr.privilege)$q$);
+     where n.nspname = 'public'
+       and has_table_privilege('anon', c.oid, pr.privilege)
+       and not exists (
+         select 1 from sec_write_allowed a
+         where a.relname = c.relname and a.grantee = 'anon')$q$);
 
 -- ---------------------------------------------------------------------
--- 7. Nicio vedere nu se scrie de `anon` sau de un cont oarecare
+-- 7. Nicio vedere nu se scrie, nici de un cont obișnuit
 --
--- Garda 6 se uită la `relkind = 'r'` — tabele. Vederile au `relkind =
--- 'v'` și au trecut pe lângă ea, cu implicitul Supabase intact. Nu ar
--- fi contat dacă vederile ar fi doar de citit, dar o vedere care este
--- o proiecție simplă dintr-o singură tabelă este scriibilă automat, și
--- toate vederile noastre sunt `security_invoker = off`: scrierea se
--- face ca proprietarul, pe lângă RLS. `anon` chiar ștergea firme prin
--- `v_public_companies`.
+-- Aici regula este mai strictă decât la tabele, și trebuie să fie:
+-- pe o tabelă, `authenticated` chiar scrie, iar RLS îl ține. Pe o
+-- vedere `security_invoker = off` nu îl ține nimic — scrierea se face
+-- cu drepturile proprietarului vederii, pe lângă politici.
 --
--- Nicio vedere de-a noastră nu este o ușă de scriere. Dacă una devine,
--- se scrie grantul în migrarea ei și se spune aici de ce.
+-- Iar o vedere care este o proiecție simplă dintr-o singură tabelă
+-- este **scriibilă automat**: nu trebuie să facă nimeni nimic ca să
+-- devină o ușă. `anon` chiar ștergea firme prin `v_public_companies`,
+-- și nimeni nu scrisese vreodată un `grant` pentru asta — a venit din
+-- implicitul Supabase.
+--
+-- **Garda asta va cădea la fiecare vedere nouă, și este în regulă.**
+-- Implicitul Supabase dă `insert`, `update`, `delete` lui
+-- `authenticated` pe orice relație nouă din `public`, iar `alter
+-- default privileges ... on tables` nu deosebește o vedere de o
+-- tabelă — deci nu se poate închide la sursă fără să rupă fiecare
+-- tabelă nouă, unde `authenticated` chiar scrie sub politici. Migrarea
+-- care adaugă o vedere își revocă singură ce a primit din oficiu:
+--
+--     revoke insert, update, delete, truncate, references, trigger
+--       on public.v_noua from anon, authenticated;
+--
+-- Dacă vreodată o vedere chiar trebuie să fie scriibilă, se scrie
+-- grantul în migrarea ei, cu un trigger `instead of` care verifică
+-- apelantul, și un rând în `sec_write_allowed` care spune de ce.
 -- ---------------------------------------------------------------------
 select pg_temp.guard(
   'nicio vedere nu dă drept de scriere lui anon sau authenticated',
-  $q$select string_agg(distinct c.relname || ' (' || who.role || ': ' || pr.privilege || ')', ', ')
+  $q$select string_agg(distinct k.label || ' ' || c.relname
+                       || ' (' || who.role || ': ' || pr.privilege || ')', ', ')
      from pg_class c
      join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
      cross join lateral (values ('anon'), ('authenticated')) as who(role)
-     cross join lateral (values ('INSERT'), ('UPDATE'), ('DELETE')) as pr(privilege)
-     where n.nspname = 'public' and c.relkind in ('v', 'm')
-       and has_table_privilege(who.role, c.oid, pr.privilege)$q$);
+     cross join lateral (values ('INSERT'), ('UPDATE'), ('DELETE'), ('TRUNCATE')) as pr(privilege)
+     where n.nspname = 'public' and not k.can_have_rls
+       and has_table_privilege(who.role, c.oid, pr.privilege)
+       and not exists (
+         select 1 from sec_write_allowed a
+         where a.relname = c.relname and a.grantee = who.role)$q$);
+
+-- ---------------------------------------------------------------------
+-- 8. O vedere citită fără cont trebuie să filtreze ceva
+--
+-- O vedere `security_invoker = off` citește pe lângă RLS: singurul ei
+-- filtru este `where`-ul ei. Dacă nu are niciunul și este dată lui
+-- `anon`, servește tabela întreagă oricui are cheia din browser —
+-- exact ce a fost `v_companies_public` până în `20260928100000`.
+--
+-- Două ieșiri, amândouă bune: `security_invoker = on`, și atunci RLS
+-- chiar se aplică apelantului; sau un `where` explicit, și atunci
+-- vederea spune singură pe cine lasă înăuntru. Ce nu este bun este o
+-- vedere fără niciuna dintre ele.
+--
+-- Garda se uită la forma definiției, nu la înțelesul ei: un `where`
+-- care nu filtrează nimic util trece de aici. Nu este o slăbiciune, ci
+-- limita a ceea ce poate verifica o gardă structurală — ce **poate**
+-- face este să nu lase pe nimeni să adauge o vedere publică fără să se
+-- fi gândit deloc la filtru.
+-- ---------------------------------------------------------------------
+select pg_temp.guard(
+  'orice vedere citibilă de anon are security_invoker sau un filtru propriu',
+  $q$select string_agg(k.label || ' ' || c.relname, ', ' order by c.relname)
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     join sec_relkinds k on k.kind = c.relkind
+     where n.nspname = 'public' and not k.can_have_rls
+       and has_table_privilege('anon', c.oid, 'SELECT')
+       and coalesce((select option_value from pg_options_to_table(c.reloptions)
+                     where option_name = 'security_invoker'), 'off') <> 'on'
+       and pg_get_viewdef(c.oid) !~* '\swhere\s'
+       and not exists (select 1 from sec_unfiltered_allowed a where a.relname = c.relname)$q$);
 
 -- ---------------------------------------------------------------------
 -- Raportul

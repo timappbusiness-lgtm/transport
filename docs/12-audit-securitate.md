@@ -441,24 +441,54 @@ Astea nu se repară cu un commit:
 ## 7. Gărzile care le țin să nu se întoarcă
 
 `supabase/tests/security_test.sql` rulează la fiecare `pnpm db:test` și în
-CI. Nu verifică reguli de business, verifică **forma** schemei — opt gărzi,
+CI. Nu verifică reguli de business, verifică **forma** schemei — nouă gărzi,
 una pentru fiecare clasă de bug de mai sus:
 
 | Garda | Ce oprește |
 |---|---|
-| RLS pe fiecare tabelă publică | o tabelă nouă fără RLS |
-| cel puțin o politică pe fiecare | o tabelă care refuză tot din scăpare, nu din intenție |
+| RLS pe fiecare relație care o poate purta | o tabelă nouă fără RLS |
+| cel puțin o politică pe fiecare | o relație care refuză tot din scăpare, nu din intenție |
 | `search_path` fixat pe fiecare `SECURITY DEFINER` | deturnarea unui apel din interiorul funcției |
 | `current_user` interzis în `SECURITY DEFINER` | clasa de bug găsită de cinci ori |
 | listă de funcții executabile de `anon` | un `grant ... to anon` din reflex |
 | `anon` fără `SELECT` fără politică | RLS ca singură linie de apărare |
-| `anon` fără drept de scriere nicăieri | aceeași, pentru scriere |
+| `anon` fără drept de scriere **pe nicio relație, de niciun fel** | aceeași, pentru scriere |
 | nicio vedere cu drept de scriere pentru `anon` sau `authenticated` | o vedere scriibilă automat, care scrie pe lângă RLS |
+| orice vedere citibilă de `anon` are `security_invoker` sau un filtru | o vedere publică nefiltrată, care servește tabela întreagă |
 
 A șaptea a găsit ceva la prima rulare: `anon` avea `insert`, `update` și
 `delete` pe patruzeci de tabele. Nimic nu curgea — nicio politică de scriere
 pentru `anon` nu există — dar dreptul aștepta acolo. Retras în
 `20260930100000`.
+
+### Ce a fost lărgit după C2
+
+C2 a trecut pe lângă audit, pe lângă migrarea de revocare **și** pe lângă
+garda scrisă ca să prindă exact clasa aia. Toate trei întrebau
+`relkind = 'r'`. Trei plase cu aceeași gaură nu sunt trei plase.
+
+Cauza nu era vreuna dintre ele, ci faptul că fiecare își scria propria listă
+de feluri de relație. Lista stă acum o singură dată, în `sec_relkinds`:
+`'r'` tabelă, `'p'` partiționată, `'f'` străină — pot purta RLS; `'v'` vedere
+și `'m'` vedere materializată — nu pot. Fiecare gardă se leagă de tabela
+aia, deci un fel nou se adaugă o dată și nicio gardă nu îl poate uita.
+
+Gărzile au fost apoi dovedite pe o bază de unică folosință, cu greșeala
+făcută intenționat:
+
+| Greșeala pusă la mână | Ce a căzut |
+|---|---|
+| `grant delete on v_public_companies to anon` (chiar C2) | gărzile 6 și 7 |
+| `grant update on v_requests_public to authenticated` | garda 7 |
+| o vedere nefiltrată, dată lui `anon` | gărzile 7 și 8 |
+
+A treia a arătat și altceva, în direct: **o vedere nou creată primește din
+oficiu drept de scriere pentru `authenticated`**, fără ca cineva să fi scris
+vreun `grant` — exact mecanismul lui C2. Nu se poate închide la sursă
+(`alter default privileges ... on tables` nu deosebește o vedere de o
+tabelă, iar pe tabele `authenticated` chiar scrie sub politici), deci
+migrarea care adaugă o vedere își revocă singură ce a primit, iar garda este
+cea care nu o lasă să uite.
 
 ### Secțiunea 4, dusă până la capăt
 
