@@ -88,6 +88,20 @@ export interface NotificationsAdminData {
   healthError: string | null;
   mail: MailProviderState | null;
   provider: ProviderStatus;
+  sms: SmsProviderState | null;
+  /** The same reading, for `sms-verify`: it writes its own missing secret. */
+  smsProvider: ProviderStatus;
+}
+
+/** What /admin/notificari shows about the SMS side. Counts, never a secret. */
+export interface SmsProviderState {
+  last_sent_at: string | null;
+  sent_24h: number;
+  failed_24h: number;
+  confirmed_24h: number;
+  pending_now: number;
+  verified_accounts: number;
+  verified_by_staff: number;
 }
 
 /**
@@ -97,8 +111,11 @@ export interface NotificationsAdminData {
  * that has since been set would otherwise keep the screen red long after
  * somebody fixed it.
  */
-export function providerStatusFrom(runs: readonly JobRun[]): ProviderStatus {
-  const last = runs.find((run) => run.workflow === 'outbox-dispatcher');
+export function providerStatusFrom(
+  runs: readonly JobRun[],
+  workflow = 'outbox-dispatcher',
+): ProviderStatus {
+  const last = runs.find((run) => run.workflow === workflow);
   if (last === undefined) return { configured: 'necunoscut', missing: null, reportedAt: null };
 
   const missing = typeof last.details?.missing === 'string' ? last.details.missing : null;
@@ -149,7 +166,7 @@ export async function loadNotificationsAdminData(
     );
   }
 
-  const [health, stats, rows, runs, mail] = await Promise.all([
+  const [health, stats, rows, runs, mail, sms] = await Promise.all([
     supabase.rpc('job_health'),
     supabase.rpc('outbox_stats'),
     query,
@@ -159,10 +176,12 @@ export async function loadNotificationsAdminData(
       .order('ran_at', { ascending: false })
       .limit(20),
     supabase.rpc('mail_provider_state'),
+    supabase.rpc('sms_provider_state'),
   ]);
 
   const runRows = (runs.data as JobRun[] | null) ?? [];
   const mailRow = Array.isArray(mail.data) ? (mail.data[0] as MailProviderState) : null;
+  const smsRow = Array.isArray(sms.data) ? (sms.data[0] as SmsProviderState) : null;
 
   return {
     health: (health.data as JobHealth[] | null) ?? [],
@@ -172,6 +191,8 @@ export async function loadNotificationsAdminData(
     runs: runRows,
     mail: mailRow ?? null,
     provider: providerStatusFrom(runRows),
+    sms: smsRow ?? null,
+    smsProvider: providerStatusFrom(runRows, 'sms-verify'),
   };
 }
 

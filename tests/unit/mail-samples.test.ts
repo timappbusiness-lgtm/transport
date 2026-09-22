@@ -96,6 +96,26 @@ describe('what the screen says about the provider', () => {
     expect(status.missing).toBeNull();
   });
 
+  /**
+   * The same reading, for the SMS side. It is the same function with a
+   * different workflow name on purpose: two copies of „is the provider
+   * configured" would answer differently within a year.
+   */
+  it('reads the SMS function own account of itself, not the dispatcher one', () => {
+    const runs = [
+      run('sms-verify', { missing: 'TWILIO_AUTH_TOKEN' }, '2026-09-20T12:00:00Z'),
+      run('outbox-dispatcher', {}, '2026-09-20T11:00:00Z'),
+    ];
+    expect(providerStatusFrom(runs, 'sms-verify').missing).toBe('TWILIO_AUTH_TOKEN');
+    // And the mail side is untouched by it.
+    expect(providerStatusFrom(runs).configured).toBe('da');
+  });
+
+  it('says the SMS provider is unknown until somebody asks for a code', () => {
+    const status = providerStatusFrom([run('outbox-dispatcher', {})], 'sms-verify');
+    expect(status.configured).toBe('necunoscut');
+  });
+
   it('lets a newer clean run clear an older complaint', () => {
     // The rows arrive newest first, as the query orders them.
     const status = providerStatusFrom([

@@ -5373,7 +5373,7 @@ select pg_temp.check('OUT a visitor cannot see the state of the jobs', 'fix',
 
 select pg_temp.check('OUT staff can', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
-  $a$select count(*) = 19 from public.job_health()$a$, 'true');
+  $a$select count(*) = 20 from public.job_health()$a$, 'true');
 
 select pg_temp.check('OUT a job that never ran reads as late, not as fine', 'fix',
   'f0000000-0000-0000-0000-000000000001', 'authenticated',
@@ -6264,8 +6264,9 @@ select pg_temp.check('JOB  every job a migration schedules is scheduled', 'fix',
      'nightly-assisted-sweep, nightly-audit-retention, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
-     'nightly-rating-reminders, nightly-reputation, nightly-retention, '
-     'nightly-route-series, nightly-saved-search-digest, outbox-dispatcher'
+     'nightly-phone-verifications, nightly-rating-reminders, nightly-reputation, '
+     'nightly-retention, nightly-route-series, nightly-saved-search-digest, '
+     'outbox-dispatcher'
      from cron.job$a$, 'true');
 
 select pg_temp.check('JOB  and every one of them is active', 'fix',
@@ -6323,8 +6324,9 @@ select pg_temp.check('JOB  the health screen watches exactly those', 'fix',
      'nightly-assisted-sweep, nightly-audit-retention, nightly-compliance-sweep, '
      'nightly-conversation-retention, nightly-expiry-reminders, '
      'nightly-listing-expiry-reminders, nightly-order-vehicle-check, '
-     'nightly-rating-reminders, nightly-reputation, nightly-retention, '
-     'nightly-route-series, nightly-saved-search-digest, outbox-dispatcher'
+     'nightly-phone-verifications, nightly-rating-reminders, nightly-reputation, '
+     'nightly-retention, nightly-route-series, nightly-saved-search-digest, '
+     'outbox-dispatcher'
      from public.job_health()$a$, 'true');
 
 select pg_temp.check('JOB  and reports them as scheduled', 'fix',
@@ -12203,6 +12205,218 @@ select pg_temp.check('RAZ  free capacity reaches the public board', 'fix',
              'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
              current_date, current_date + 10, 3,
              array['autoturism']::public.cargo_category[], 'active', now(), 7000)$s$);
+
+-- --- SMS: verificarea numărului prin cod -----------------------------
+--
+-- Până acum singura cale către `phone_verified` era mâna cuiva din
+-- echipă. Asta este a doua, și tot ce contează la ea sunt limitele:
+-- un cod este șase cifre, iar șase cifre se ghicesc dacă nimeni nu
+-- numără încercările.
+--
+-- Codul în clar nu ajunge niciodată într-un rând. Verificările de mai
+-- jos scriu hash-ul direct, ca funcția marginală, fiindcă asta face și
+-- ea — nu există niciun drum prin care un cod să fie scris în bază.
+
+create or replace function pg_temp.challenge(
+  p_user uuid default 'f0000000-0000-0000-0000-000000000007',
+  p_code text default '123456',
+  p_phone text default '+40711000099'
+) returns uuid language plpgsql as $ch$
+declare
+  v_row public.phone_verifications;
+begin
+  select * into v_row from public.open_phone_verification(p_user, p_phone);
+  perform public.sent_phone_verification(
+    v_row.id, encode(sha256(convert_to(p_code, 'UTF8')), 'hex'), 'test', 'SM1');
+  return v_row.id;
+end $ch$;
+
+select pg_temp.check('SMS  the right code confirms the number', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge()$s$,
+  p_verify => $v$select phone_verified and not phone_verified_by_staff
+                   and phone = '+40711000099'
+                 from public.profiles
+                 where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+select pg_temp.check('SMS  and it leaves a line in the journal saying how', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge()$s$,
+  p_verify => $v$select count(*) = 1 from public.audit_log
+                 where action = 'profile.phone_verified'
+                   and entity_id = 'f0000000-0000-0000-0000-000000000007'
+                   and reason = 'cod SMS'$v$);
+
+select pg_temp.check('SMS  a wrong code does not', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select not ok from public.confirm_phone_verification('999999')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge()$s$,
+  p_verify => $v$select not phone_verified from public.profiles
+                 where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+-- Șase cifre se ghicesc. Numărătoarea este singurul lucru care stă între
+-- un străin și numărul altcuiva — și este exact motivul pentru care un
+-- cod greșit întoarce un rând și nu ridică: `raise` anulează scrierile
+-- propriei funcții, deci incrementul s-ar fi pierdut tocmai pe drumul
+-- care îl cere. Verificarea asta a găsit-o.
+select pg_temp.check('SMS  a wrong guess is counted, so guessing runs out', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select attempts_left = 4 from public.confirm_phone_verification('999999')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge()$s$,
+  p_verify => $v$select attempts = 1 from public.phone_verifications
+                 where user_id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+select pg_temp.check('SMS  after the last attempt the code is dead, right one or not', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select not ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge();
+     update public.phone_verifications set attempts = 5
+     where user_id = 'f0000000-0000-0000-0000-000000000007'$s$,
+  p_verify => $v$select not phone_verified from public.profiles
+                 where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+select pg_temp.check('SMS  an expired code is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select not ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge();
+     update public.phone_verifications set expires_at = now() - interval '1 minute'
+     where user_id = 'f0000000-0000-0000-0000-000000000007'$s$);
+
+-- Un cod scris înainte ca SMS-ul să plece ar fi un cod valid pentru un
+-- mesaj care nu a plecat niciodată.
+select pg_temp.check('SMS  a challenge whose message never left cannot be confirmed', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select not ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', '+40711000099')$s$);
+
+-- Codul altcuiva nu este codul tău, oricât de bun ar fi.
+select pg_temp.check('SMS  somebody else''s code confirms nothing', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select not ok from public.confirm_phone_verification('123456')$a$, 'true',
+  p_setup => $s$select pg_temp.challenge('f0000000-0000-0000-0000-000000000007')$s$,
+  p_verify => $v$select not phone_verified from public.profiles
+                 where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+-- Limitele. Ele sunt tot rostul funcției: fără ele „retrimite" este un
+-- buton de spam plătit de noi și de omul de la celălalt capăt.
+select pg_temp.check('SMS  a second code cannot be asked for straight away', 'fix',
+  null, 'service_role',
+  $a$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', '+40711000099')$a$, 'blocked',
+  p_setup => $s$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', '+40711000099')$s$);
+
+select pg_temp.check('SMS  an account runs out of codes for the hour', 'fix',
+  null, 'service_role',
+  $a$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', '+40711000099')$a$, 'blocked',
+  p_setup => $s$insert into public.phone_verifications (user_id, phone, expires_at)
+     select 'f0000000-0000-0000-0000-000000000007', '+40711000099', now() + interval '10 minutes'
+     from generate_series(1, 5)$s$);
+
+-- Și pe număr, nu doar pe cont: zece conturi noi către același telefon
+-- este hărțuire pentru omul de la capăt și o factură pentru noi.
+select pg_temp.check('SMS  and so does a number, whoever is asking', 'fix',
+  null, 'service_role',
+  $a$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000006', '+40711000099')$a$, 'blocked',
+  p_setup => $s$insert into public.phone_verifications (user_id, phone, expires_at)
+     select 'f0000000-0000-0000-0000-000000000007', '+40711000099', now() + interval '10 minutes'
+     from generate_series(1, 5)$s$);
+
+select pg_temp.check('SMS  a number that is not one is refused before any SMS', 'fix',
+  null, 'service_role',
+  $a$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', 'nu e telefon')$a$, 'blocked');
+
+-- Numai funcția marginală deschide provocări. Un cont care poate
+-- deschide una pentru orice număr este un cont care poate trimite
+-- SMS-uri pe banii noștri către oricine.
+select pg_temp.check('SMS  no signed-in account opens a challenge itself', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.open_phone_verification(
+       'f0000000-0000-0000-0000-000000000007', '+40711000099')$a$, 'blocked');
+
+select pg_temp.check('SMS  nor marks one as sent, which would be writing its own code', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.sent_phone_verification(
+       (select id from public.phone_verifications limit 1), 'aa', 'test', null)$a$, 'blocked');
+
+-- Tabela nu se citește prin API deloc: `code_hash` nu are ce căuta
+-- într-un răspuns PostgREST, nici măcar către proprietarul rândului.
+select pg_temp.check('SMS  nobody reads the challenges through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select count(*) from public.phone_verifications$a$, 'blocked',
+  p_setup => $s$select pg_temp.challenge()$s$);
+
+select pg_temp.check('SMS  not without an account either', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.phone_verifications$a$, 'blocked',
+  p_setup => $s$select pg_temp.challenge()$s$);
+
+-- Ce vede ecranul în loc: starea, cu numărul mascat.
+select pg_temp.check('SMS  the screen gets the state, with the number masked', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select attempts_left = 5 and sent and phone_masked not like '%000099'
+     from public.my_phone_verification()$a$, 'true',
+  p_setup => $s$select pg_temp.challenge()$s$);
+
+select pg_temp.check('SMS  and nothing at all when there is no live challenge', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 0 from public.my_phone_verification()$a$, 'true',
+  p_setup => $s$select pg_temp.challenge('f0000000-0000-0000-0000-000000000007')$s$);
+
+-- Bifa manuală rămâne exact cum era: pilotul nu așteaptă un contract.
+select pg_temp.check('SMS  staff can still confirm a number by hand', 'guard',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (public.staff_set_phone_verified(
+       'f0000000-0000-0000-0000-000000000007', true, 'sunat 22.09')).phone_verified$a$, 'true',
+  p_setup => $s$update public.profiles set phone = '+40711000007'
+     where id = 'f0000000-0000-0000-0000-000000000007'$s$);
+
+-- Schimbarea numărului taie bifa, oricum ar fi fost pusă.
+select pg_temp.check('SMS  changing the number afterwards takes the tick with it', 'guard',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$update public.profiles set phone = '+40711000077'
+     where id = 'f0000000-0000-0000-0000-000000000007'$a$, 'allowed',
+  p_setup => $s$select pg_temp.challenge();
+     select set_config('request.jwt.claim.sub',
+       'f0000000-0000-0000-0000-000000000007', true)$s$,
+  p_verify => $v$select not phone_verified from public.profiles
+                 where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+-- Curățenia: numerele nu rămân „pentru statistici".
+select pg_temp.check('SMS  old challenges are deleted, numbers and all', 'fix',
+  null, 'service_role',
+  $a$select public.purge_phone_verifications() >= 1$a$, 'true',
+  p_setup => $s$insert into public.phone_verifications (user_id, phone, expires_at, created_at)
+     values ('f0000000-0000-0000-0000-000000000007', '+40711000099',
+             now() - interval '8 days', now() - interval '8 days')$s$,
+  p_verify => $v$select count(*) = 0 from public.phone_verifications
+                 where created_at < now() - interval '7 days'$v$,
+  p_verify_as_role => true);
+
+select pg_temp.check('SMS  and no signed-in account runs that job', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.purge_phone_verifications()$a$, 'blocked');
+
+select pg_temp.check('SMS  the cleanup job is scheduled', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 1 from cron.job where jobname = 'nightly-phone-verifications'$a$, 'true');
+
+-- Pragurile se schimbă din /admin, nu printr-o migrare — dar numai de
+-- echipă.
+select pg_temp.check('SMS  staff can move the thresholds', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$update public.phone_verification_settings set max_attempts = 3 where id$a$, 'allowed');
+
+select pg_temp.check('SMS  and nobody else can', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$update public.phone_verification_settings set max_attempts = 20 where id$a$, 'blocked',
+  p_verify => $v$select max_attempts = 5 from public.phone_verification_settings$v$);
 
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
