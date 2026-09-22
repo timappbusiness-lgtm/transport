@@ -224,6 +224,25 @@ investigation ("who looked at this load right before it disappeared").
   environments.
 - Saved searches feed the alerting workflow in `n8n/README.md`
 
+**Both boards filter by radius and by weight.** On `/cereri` the radius is
+measured from the loading locality and the weight is the heaviest vehicle the
+carrier will take; on `/trasee` it is measured from the departure locality and
+the weight is the free capacity the client needs. Every criterion lives in the
+URL, so a search is shareable, and a saved search stores the same keys.
+
+The coordinates come from `localities`, a table of the localities we have
+coordinates for, and a trigger stamps every listing from it by city name.
+That is deliberately not an address: the radius is between locality centroids,
+and both screens say so. A listing whose town is not in the table has no
+coordinates and is in no radius — many cars are collected from a village, and
+answering „yes" for those would empty the filter of meaning.
+
+Weight goes the other way. The field is optional when publishing, so a listing
+that never stated one stays in the list rather than disappearing from every
+search that mentions weight; the figure, or its absence, is on the card.
+`saved_search_match()` applies both rules exactly as the boards do, because an
+alert that disagrees with the screen is worse than no alert.
+
 **Saved-route alerts are in the MVP, by e-mail only.** The carrier plan
 promises alerts for requests on the carrier's routes; WhatsApp delivery comes
 after the MVP.

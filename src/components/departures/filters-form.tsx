@@ -213,7 +213,11 @@ export function FiltersForm({ filters }: { filters: DepartureFilters }) {
             inputMode="numeric"
             min={1}
             max={30000}
-            step={100}
+            // `step` rămâne 1. Cu `step={100}` și `min={1}`, singurele
+            // valori valide ar fi 1, 101, 201… — iar browserul refuză
+            // trimiterea formularului pentru orice altceva, tăcut. Cine
+            // scria 2400 apăsa „Caută" și nu se întâmpla nimic.
+            step={1}
             defaultValue={filters.minCapacityKg ?? ''}
             className={CONTROL}
           />
