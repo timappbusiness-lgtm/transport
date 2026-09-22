@@ -24,6 +24,7 @@ import { showCompanyGrid } from '@/lib/directory';
 import { formatCompanies } from '@/lib/trust';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { iconForContent } from '@/lib/icons';
 
 const c = directoryCopy.signup;
 
@@ -72,7 +73,7 @@ export function CarriersBody({
     <section id="transportatori" className="bg-ground-alt">
       <Container className="py-16 sm:py-20">
         <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
-          <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+          <SectionHead eyebrow={c.eyebrow} icon={iconForContent('comanda')} strong={c.strong} soft={c.soft}>
             <Lede>{c.lede}</Lede>
             {showCount ? (
               <p className="mt-4 text-[0.9375rem] text-muted">

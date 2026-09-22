@@ -13,28 +13,48 @@ Numai prin `<Icon>` din `src/components/ui/icon.tsx`. Nimic nu randează
 o componentă lucide direct.
 
 ```tsx
-import { Icon } from '@/components/ui/icon';
+import { IconLabel } from '@/components/ui/icon';
 import { iconForCategory } from '@/lib/icons';
 
-<span className="flex items-center gap-1.5">
-  <Icon as={iconForCategory(request.category)} size="sm" />
+<IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
   {CARGO_CATEGORY_LABELS[request.category]}
-</span>
+</IconLabel>
 ```
 
-Componenta impune trei lucruri care altfel se strică pe rând, câte o
+`IconLabel` este perechea icon + etichetă, cu singurul spațiu dintre ele.
+`Icon` este iconul singur, pentru cazurile care își fac singure rândul —
+un buton, o insignă, șina unei cronologii.
+
+Componenta impune patru lucruri care altfel se strică pe rând, câte o
 componentă odată:
 
-- **o singură scară** — `sm` 13, `md` 16, `lg` 20 — și **o singură
-  grosime de linie**, 1.75, ca un rând de iconuri să arate ca un rând,
-  nu ca mai multe desene diferite;
-- **culoarea din `currentColor`**, deci din tokenul textului de lângă.
-  Un icon nu își aduce culoarea lui;
+- **o singură scară** — `sm` 15, `md` 18, `lg` 22 — și **o singură
+  grosime de linie**, 2, ca un rând de iconuri să arate ca un rând, nu ca
+  mai multe desene diferite;
+- **un singur spațiu** între icon și etichetă, `ICON_GAP`. Ajunsese la
+  trei valori diferite;
+- **tonul, ales la locul apelului**: `strong` (cerneală) sau `muted`,
+  cu `inherit` pentru interiorul unui buton sau al unui banner colorat,
+  unde părintele a decis deja. „Accent" în sistemul ăsta **este**
+  cerneala: `globals.css` scrie de la început că nu există culoare de
+  accent, iar accentul vine din greutate și din spațiu;
 - **o decizie despre înțeles, la locul apelului.** Ori este decor lângă
   o etichetă vizibilă — `aria-hidden`, implicit — ori duce el înțelesul
   și atunci primește `label`, care îi devine nume accesibil. Nu există a
   treia variantă, și asta este ideea: un icon singur, fără nume, este un
   lucru pe care cineva nu îl poate citi.
+
+### De ce scara a crescut
+
+Prima versiune avea `sm` 13 și grosime 1.75. Iconul de pe cardul de
+cerere stă într-un rând de 10px, mono, majuscule, `text-muted` — și,
+moștenind culoarea, ieșea exact cât eticheta de lângă el, doar mai mic.
+Era pe pagină și nu se vedea. Verificat pe build-ul de producție, nu în
+cod: `/cereri` servea tot panoul de filtre cu zero iconuri în `main`.
+
+De aici cele două reguli noi: **cel mai mic icon este mai mare decât cel
+mai mic text de lângă care poate sta**, și **tonul se alege**, fiindcă
+`inherit` peste tot a fost cauza.
 
 **Niciodată un icon ca singur înțeles.** Întotdeauna o etichetă vizibilă
 sau un nume accesibil.
@@ -70,9 +90,26 @@ poate închide. Un scut lângă numele unei firme arată ca o verificare pe
 care firma a câștigat-o. Iar un triunghi galben lângă „Ștergi definitiv?"
 adaugă alarmă acolo unde trebuia claritate.
 
-Trei dintre verificările din `tests/unit/icons.test.ts` țin partea asta:
-paginile legale nu importă lucide, bannerul de stare nu are icon lângă
-suspendare sau respingere, și nu există emoji în `src/content/`.
+Verificările care țin partea asta:
+
+- `tests/unit/icons.test.ts` — paginile legale nu importă lucide,
+  bannerul de stare nu are icon lângă suspendare sau respingere, harta
+  nu importă niciun scut, și nu există emoji în `src/content/`;
+- `tests/unit/icon-coverage.test.tsx` — **numai `src/lib/icons.ts` are
+  voie să importe `lucide-react`** (plus importul de tip din `Icon`).
+  Regula de mai sus era scrisă aici și nerespectată în cod: douăzeci de
+  fișiere importau lucide direct, fiecare cu mărimea și grosimea lui, iar
+  două desenau un scut verde lângă numele unei firme — chiar exemplul cu
+  care documentul ăsta explică regula. Un import direct este felul în
+  care un icon ajunge pe pagină fără să treacă prin nimic, deci importul
+  este ce se interzice;
+- `tests/unit/navigation.test.ts` — fiecare item de meniu pe care îl
+  poate produce constructorul, pentru fiecare tip de cont, are icon;
+- `tests/e2e/iconuri.spec.ts` — fiecare ecran desenează cel puțin atâtea
+  iconuri cât scrie acolo. Verificarea dinainte compara numărul de
+  iconuri fără etichetă cu cel al iconurilor cu nume, ceea ce pe un ecran
+  fără niciun icon înseamnă `0 === 0`; a trecut tot timpul cât boardul nu
+  a avut niciunul.
 
 ## Când adaugi o valoare nouă
 

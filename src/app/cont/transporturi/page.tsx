@@ -114,7 +114,7 @@ function OrderCard({ order }: { order: OrderRow }) {
     <li
       className={cn(
         'rounded-card border bg-surface p-4 sm:p-5',
-        mine ? 'border-accent/45' : 'border-border',
+        mine ? 'border-foreground/35' : 'border-border',
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -153,7 +153,7 @@ function OrderCard({ order }: { order: OrderRow }) {
           {mine && step !== null ? step.label : ordersCopy.list.open}
         </Link>
         {mine ? (
-          <span className="text-[0.8125rem] text-accent">{ordersCopy.list.needsMe}</span>
+          <span className="text-[0.8125rem] font-medium text-foreground">{ordersCopy.list.needsMe}</span>
         ) : step !== null ? (
           <span className="text-[0.8125rem] text-muted">{step.waitingFor}</span>
         ) : null}

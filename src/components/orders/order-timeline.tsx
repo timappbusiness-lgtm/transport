@@ -1,4 +1,6 @@
 import { ordersCopy } from '@/content/comenzi';
+import { Icon, IconLabel } from '@/components/ui/icon';
+import { iconForContent, iconForOrderStep } from '@/lib/icons';
 import {
   asideEvents,
   buildTimeline,
@@ -35,25 +37,44 @@ export function OrderTimeline({
   return (
     <section aria-labelledby="istoric" className="rounded-card border border-border bg-surface p-5">
       <h2 id="istoric" className="text-[1.0625rem]">
-        {c.title}
+        <IconLabel as={iconForContent('comanda')} size="md" tone="strong">
+          {c.title}
+        </IconLabel>
       </h2>
 
       <ol className="mt-4 flex flex-col">
         {rows.map((row) => (
           <li key={row.status} className="flex gap-3 pb-4 last:pb-0">
-            {/* The rail: a filled dot for done, a ring for now, an empty
-                one for what is left. The line stops at the last row so
-                it does not dangle into nothing. */}
+            {/* The rail: the step's own icon rather than a dot, which is
+                what `ORDER_STEP_ICONS` was written for — seven steps read
+                from top to bottom are exactly the case where recognising
+                one is faster than reading it. The state stays in the
+                treatment: ink and a ring for now, success for done, muted
+                and hollow for what is left. The line stops at the last
+                row so it does not dangle into nothing.
+
+                The „current" marker used to be `border-accent` with a
+                `ring-accent/30`, and there is no `--color-accent` in the
+                theme — `globals.css` says at the top that this design has
+                no accent colour. Both classes resolved to nothing, so the
+                step somebody opened the page to find was the one step not
+                marked. */}
             <div className="flex flex-none flex-col items-center">
               <span
-                aria-hidden
                 className={cn(
-                  'mt-1 h-2.5 w-2.5 rounded-full border',
-                  row.state === 'done' && 'border-success bg-success',
-                  row.state === 'current' && 'border-accent bg-surface ring-2 ring-accent/30',
-                  row.state === 'todo' && 'border-border-strong bg-surface',
+                  'mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border',
+                  row.state === 'done' && 'border-success/40 bg-success/10 text-success',
+                  row.state === 'current' &&
+                    'border-foreground bg-surface text-foreground ring-2 ring-foreground/15',
+                  row.state === 'todo' && 'border-border-strong bg-surface text-muted',
                 )}
-              />
+              >
+                {iconForOrderStep(row.status) ? (
+                  <Icon as={iconForOrderStep(row.status)!} size="sm" />
+                ) : (
+                  <span aria-hidden className="h-2 w-2 rounded-full bg-current" />
+                )}
+              </span>
               <span
                 aria-hidden
                 className={cn(

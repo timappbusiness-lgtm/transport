@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/primitives';
 import { homeCopy } from '@/content/home';
 import { SeatDeck } from '@/components/ui/seat-deck';
+import { iconForFact } from '@/lib/icons';
 
 const c = homeCopy.panel;
 
@@ -40,7 +41,7 @@ export function DataPanel() {
   return (
     <section id="cum-functioneaza" className="bg-ground-alt">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+        <SectionHead eyebrow={c.eyebrow} icon={iconForFact('distance')} strong={c.strong} soft={c.soft}>
           <Lede>{c.lede}</Lede>
         </SectionHead>
 

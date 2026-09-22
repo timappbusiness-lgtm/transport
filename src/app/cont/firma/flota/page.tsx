@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { NewDriverForm, NewVehicleForm } from '@/components/account/fleet-forms';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForContent } from '@/lib/icons';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -60,7 +62,11 @@ export default async function Page() {
       </div>
 
       <section className="overflow-hidden rounded-card border border-border bg-surface">
-        <h2 className="border-b border-border px-5 py-3.5 text-sm font-medium">{c.vehicles}</h2>
+        <h2 className="border-b border-border px-5 py-3.5 text-sm font-medium">
+          <IconLabel as={iconForContent('comanda')} size="sm" tone="strong">
+            {c.vehicles}
+          </IconLabel>
+        </h2>
         {vehicles.length === 0 ? (
           <p className="px-5 py-4 text-sm text-muted">{c.noVehicles}</p>
         ) : (
@@ -73,7 +79,9 @@ export default async function Page() {
                 >
                   <span className="min-w-0">
                     <span className="block font-mono text-sm font-medium">
-                      {formatPlate(vehicle.plate_number)}
+                      <IconLabel as={iconForContent('comanda')} size="sm" tone="strong">
+                        {formatPlate(vehicle.plate_number)}
+                      </IconLabel>
                     </span>
                     <span className="block text-xs text-muted">
                       {VEHICLE_TYPE_LABELS[vehicle.vehicle_type]}

@@ -1,4 +1,6 @@
 import { StatusBadge, type StatusTone } from '@/components/ui/primitives';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForContent } from '@/lib/icons';
 import {
   DISPLAY_STATUS,
   REQUIREMENT_STATE,
@@ -46,7 +48,11 @@ export function RequirementList({ rows }: { rows: RequirementRow[] }) {
             className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-2.5"
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium">{row.label_ro}</p>
+              <p className="text-sm font-medium">
+                <IconLabel as={iconForContent('document')} size="sm" tone="strong">
+                  {row.label_ro}
+                </IconLabel>
+              </p>
               <p className="text-xs text-muted">
                 {row.is_blocking ? 'Obligatoriu' : 'Opțional'}
                 {row.valid_until ? ` · valabil până la ${formatDateRo(row.valid_until)}` : ''}

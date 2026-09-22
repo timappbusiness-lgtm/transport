@@ -11,6 +11,8 @@ import { OfferThread } from '@/components/offers/offer-thread';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForContent } from '@/lib/icons';
 import { ReputationInline } from '@/components/ratings/reputation-block';
 import { companyRoute } from '@/config/routes';
 import { ratingsCopy } from '@/content/evaluari';
@@ -205,7 +207,15 @@ function OfferCard({
     <li className="rounded-card border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[1.0625rem]">{offer.company_name ?? 'Transportator'}</h3>
+          <h3 className="text-[1.0625rem]">
+            {/* A firm, not a seal: `iconForContent('firma')` is a plain
+                building. The verification badge below is a word, which
+                is what `docs/13-iconuri.md` requires — nothing beside a
+                company name may look like a mark it earned. */}
+            <IconLabel as={iconForContent('firma')} size="md" tone="strong">
+              {offer.company_name ?? 'Transportator'}
+            </IconLabel>
+          </h3>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
             {offer.company_verified === true ? (
               <StatusBadge tone="success">{c.verified}</StatusBadge>

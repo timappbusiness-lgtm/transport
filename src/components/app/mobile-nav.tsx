@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/icon';
-import { uiIcon } from '@/lib/icons';
+import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { appCopy } from '@/content/app';
 import type { NavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -89,6 +89,9 @@ export function MobileNav({
                   current === item.href ? 'font-medium text-foreground' : 'text-muted',
                 )}
               >
+                {iconForRoute(item.href) ? (
+                  <Icon as={iconForRoute(item.href)!} size="md" />
+                ) : null}
                 <span className="line-clamp-2">{item.label}</span>
               </Link>
             </li>
@@ -149,11 +152,15 @@ export function MobileNav({
                     aria-current={current === item.href ? 'page' : undefined}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'block rounded-input px-3 py-2.5 text-[0.9375rem]',
+                      'flex items-center rounded-input px-3 py-2.5 text-[0.9375rem]',
+                      ICON_GAP,
                       current === item.href ? 'bg-ground-alt font-medium' : 'text-muted',
                     )}
                   >
-                    {item.label}
+                    {iconForRoute(item.href) ? (
+                      <Icon as={iconForRoute(item.href)!} size="sm" />
+                    ) : null}
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 </li>
               ))}

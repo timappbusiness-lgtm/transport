@@ -100,6 +100,13 @@ import { ORDER_STEPS, type OrderStatus } from './orders';
  */
 
 /**
+ * Re-exported so that nothing outside this file needs to name
+ * `lucide-react` at all, not even for a type. A component that takes an
+ * icon as a prop imports the type from here.
+ */
+export type { LucideIcon };
+
+/**
  * The sizes anything in this system may be. Nothing else is allowed.
  *
  * These were 13 / 16 / 20 and the whole set was reported as invisible.

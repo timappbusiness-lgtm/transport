@@ -63,7 +63,7 @@ export function StarInput({
               key={n}
               className={cn(
                 'cursor-pointer rounded-input px-1 leading-none transition-colors',
-                'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent',
+                'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-foreground',
                 star,
                 selected ? 'text-warning' : 'text-border-strong hover:text-muted',
               )}

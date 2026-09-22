@@ -169,32 +169,13 @@ test.describe('the locality field', () => {
   });
 });
 
-test.describe('icons carry a label, never the meaning alone', () => {
-  test('on the requests board', async ({ page }) => {
-    await page.goto('/cereri');
-    // Every svg in the page body is decoration beside text: none of them
-    // is the only thing in its row.
-    const unlabelled = await page.locator('main svg:not([aria-hidden="true"])').count();
-    const named = await page.locator('main svg[aria-label]').count();
-    expect(unlabelled).toBe(named);
-  });
-
-  test('and none of them is an emoji', async ({ page }) => {
-    await page.goto('/cereri');
-    const text = (await page.locator('main').innerText()) ?? '';
-    expect(text).not.toMatch(
-      /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u,
-    );
-  });
-
-  test('and the legal pages have none at all', async ({ page }) => {
-    for (const path of ['/termeni', '/confidentialitate', '/cookies']) {
-      await page.goto(path);
-      // The header and footer are outside `main`.
-      expect(await page.locator('main svg').count(), path).toBe(0);
-    }
-  });
-});
+/*
+ * The icon checks moved to `tests/e2e/iconuri.spec.ts`.
+ *
+ * What was here counted unlabelled icons and labelled ones and asserted
+ * the two were equal — which on a page with no icons is `0 === 0`. It
+ * passed for as long as the board had none, which was the entire time.
+ */
 
 test.describe('at 390px', () => {
   test.use({ viewport: { width: 390, height: 844 } });

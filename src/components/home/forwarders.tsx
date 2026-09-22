@@ -4,6 +4,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { Lede, SectionHead } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { homeCopy } from '@/content/home';
+import { iconForContent } from '@/lib/icons';
 
 const c = homeCopy.forwarders;
 
@@ -11,7 +12,7 @@ export function Forwarders() {
   return (
     <section id="case-de-expeditii" className="bg-background">
       <Container className="py-16 sm:py-20">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft}>
+        <SectionHead eyebrow={c.eyebrow} icon={iconForContent('firma')} strong={c.strong} soft={c.soft}>
           <Lede>{c.lede}</Lede>
         </SectionHead>
 

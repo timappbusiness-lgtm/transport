@@ -6,6 +6,7 @@ import { homeCopy } from '@/content/home';
 import { REQUEST_FILTER_KEYS } from '@/lib/request-filters';
 import { formatNumber, pluralRo, showCategories, type CategoryCount } from '@/lib/requests';
 import { loadHomepageActivity, type HomepageActivity } from '@/lib/requests-source';
+import { iconForFact } from '@/lib/icons';
 
 const c = homeCopy.activity.categories;
 
@@ -37,7 +38,7 @@ export function CategoriesSection({
   return (
     <section id="categorii" aria-label={c.eyebrow} className="bg-ground-alt">
       <Container className="py-14 sm:py-16">
-        <SectionHead eyebrow={c.eyebrow} strong={c.strong} soft={c.soft} />
+        <SectionHead eyebrow={c.eyebrow} icon={iconForFact('vehicle')} strong={c.strong} soft={c.soft} />
         <p className="mt-3 text-[0.8125rem] text-muted">
           {c.note(pluralRo(categoryWindowDays, 'zi', 'zile'))}
         </p>

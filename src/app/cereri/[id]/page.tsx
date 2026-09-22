@@ -29,6 +29,8 @@ import { loadPrices } from '@/lib/prices-source';
 import { formatKm, vehicleLine, type PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { IconLabel } from '@/components/ui/icon';
+import { iconForFact } from '@/lib/icons';
 
 export const metadata: Metadata = { title: 'Cerere de transport' };
 
@@ -130,7 +132,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <section className="flex flex-col gap-4">
           <CarrierCount count={carrierCount} />
           <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-            <h2 className="text-[1.0625rem]">{c.route}</h2>
+            <h2 className="text-[1.0625rem]">
+              <IconLabel as={iconForFact('route')} size="md" tone="strong">
+                {c.route}
+              </IconLabel>
+            </h2>
             <dl className="mt-4 flex flex-col">
               <Row label={c.window}>
                 {formatWindow(request.loading_from, request.loading_to)}
@@ -146,7 +152,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </div>
 
           <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-            <h2 className="text-[1.0625rem]">{c.vehicle}</h2>
+            <h2 className="text-[1.0625rem]">
+              <IconLabel as={iconForFact('vehicle')} size="md" tone="strong">
+                {c.vehicle}
+              </IconLabel>
+            </h2>
             <dl className="mt-4 flex flex-col">
               <Row label="Categoria">{CARGO_CATEGORY_LABELS[request.category]}</Row>
               {vehicle ? <Row label="Model">{vehicle}</Row> : null}
