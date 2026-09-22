@@ -1,5 +1,6 @@
 import { cityLabel, findCity, type City } from './cities';
-import { FILTERABLE_CATEGORIES, type CargoCategory } from './departures';
+import type { CargoCategory } from './departures';
+import { OFFERED_CATEGORIES, needsDescription } from './vehicle-categories';
 import type { Prefill } from './price-prefill';
 import type { VehicleClass } from './pricing';
 import { validateEmail, validatePhone, type FieldErrors } from './validation/auth';
@@ -205,7 +206,11 @@ function integer(value: string): number | null {
 /** The fields each step owns, so a step is checked without the ones after it. */
 export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   ruta: ['fromCity', 'fromCountry', 'toCity', 'toCountry', 'loadingFrom', 'loadingTo'],
-  vehicul: ['category', 'make', 'model', 'year', 'weightKg'],
+  // `description` is here as well as in `contact`: for „Altceva" the
+  // description is asked on this step, and a step that lets somebody
+  // walk past a rule the database enforces only tells them at the end,
+  // three steps later, about a field they have stopped looking at.
+  vehicul: ['category', 'make', 'model', 'year', 'weightKg', 'description'],
   stare: ['isRunning', 'wheelsTurn', 'steeringWorks', 'hasKeys', 'isDamaged', 'damageNotes'],
   contact: [
     'serviceType',
@@ -257,8 +262,14 @@ export function validateDraft(draft: RequestDraft, today: string): FieldErrors<R
     }
   }
 
-  if (!(FILTERABLE_CATEGORIES as readonly string[]).includes(draft.category)) {
+  if (!(OFFERED_CATEGORIES as readonly string[]).includes(draft.category)) {
     errors.category = 'Alege categoria vehiculului.';
+  }
+  // „Altceva" is the one category that carries no information by itself.
+  // The same rule is a trigger in Postgres — that one is the boundary,
+  // this one is the courtesy of saying so before the round trip.
+  if (needsDescription(draft.category) && draft.description.trim().length < 10) {
+    errors.description = 'Scrie ce transporți, în cel puțin 10 caractere.';
   }
   if (draft.make.trim() === '') errors.make = 'Scrie marca.';
   if (draft.model.trim() === '') errors.model = 'Scrie modelul.';
@@ -367,7 +378,7 @@ export function parseDraft(raw: string | null): RequestDraft | null {
   }
   // Two enums, both of which arrive as strings and neither of which may be
   // whatever the string happened to say.
-  if (!(FILTERABLE_CATEGORIES as readonly string[]).includes(draft.category)) {
+  if (!(OFFERED_CATEGORIES as readonly string[]).includes(draft.category)) {
     draft.category = 'autoturism';
   }
   if (!(OFFERED_SERVICES as readonly string[]).includes(draft.serviceType)) {

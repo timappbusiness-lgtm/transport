@@ -88,10 +88,23 @@ export const CARGO_CATEGORIES: readonly CargoCategory[] = [
   'container',
   'ambarcatiune',
   'altele',
+  'atv_quad',
+  'cvadriciclu',
+  'istoric',
 ];
 
+/**
+ * A label for every value the enum can hold, offered or not.
+ *
+ * Wider than what the form shows on purpose: a listing published under
+ * `camion` before that category was retired is still a real listing, and
+ * a board that renders it as `camion` in code font has told somebody
+ * their request is broken when it is not. What may be *chosen* is
+ * `OFFERED_CATEGORIES` in `vehicle-categories.ts`; this is what may be
+ * *read*.
+ */
 export const CARGO_CATEGORY_LABELS: Record<CargoCategory, string> = {
-  autoturism: 'Autoturism',
+  autoturism: 'Autoturism / SUV',
   autoutilitara: 'Autoutilitară',
   motocicleta: 'Motocicletă',
   utilaj_agricol: 'Utilaj agricol',
@@ -100,26 +113,15 @@ export const CARGO_CATEGORY_LABELS: Record<CargoCategory, string> = {
   rulota: 'Rulotă',
   cap_tractor: 'Cap tractor',
   camion: 'Camion',
-  remorca: 'Remorcă',
+  remorca: 'Remorcă ușoară (până la 750 kg)',
   utilaj_manipulare: 'Utilaj de manipulare',
   container: 'Container',
   ambarcatiune: 'Ambarcațiune',
-  altele: 'Altele',
+  altele: 'Altceva',
+  atv_quad: 'ATV sau quad',
+  cvadriciclu: 'Cvadriciclu sau vehicul electric mic',
+  istoric: 'Vehicul istoric sau de colecție',
 };
-
-/**
- * The categories offered on the board's filter, in the order a person
- * scanning them expects. Anything else stays available on a departure but
- * does not clutter the filter.
- */
-export const FILTERABLE_CATEGORIES: readonly CargoCategory[] = [
-  'autoturism',
-  'autoutilitara',
-  'motocicleta',
-  'microbuz',
-  'rulota',
-  'utilaj_agricol',
-];
 
 /** A waypoint as the carrier form stores it. */
 export interface Waypoint {

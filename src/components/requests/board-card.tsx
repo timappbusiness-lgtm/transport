@@ -4,6 +4,8 @@ import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { CARGO_CATEGORY_LABELS, SERVICE_TYPE_LABELS, formatWindow } from '@/lib/departures';
+import { Icon } from '@/components/ui/icon';
+import { iconForCategory } from '@/lib/icons';
 import { formatKm, vehicleLine, type PublicRequest } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
@@ -45,7 +47,12 @@ export function BoardRequestCard({
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
-          <span className="truncate">{CARGO_CATEGORY_LABELS[request.category]}</span>
+          {/* The icon helps somebody scan a column of cards for the
+              one kind they carry; the label is what says which. */}
+          <span className="flex min-w-0 items-center gap-1.5 truncate">
+            <Icon as={iconForCategory(request.category)} size="sm" />
+            {CARGO_CATEGORY_LABELS[request.category]}
+          </span>
           <span className="flex-none">
             {request.board === 'curse' ? c.fromCompany : c.fromIndividual}
           </span>

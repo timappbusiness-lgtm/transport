@@ -216,7 +216,18 @@ select pg_temp.guard(
          -- nu se mai poate deschide fără cont. Sunt funcții de șiruri:
          -- litere mici, fără diacritice, fără semne. Nu ating nicio
          -- tabelă și nu spun nimic despre nimeni.
-         'normalise_locality', 'unaccent_simple'
+         'normalise_locality', 'unaccent_simple',
+         -- Nomenclatorul de localități, căutat. Tabela `localities` este
+         -- deja citibilă fără cont — este un nomenclator public, nu date
+         -- despre cineva — iar funcția nu face decât să o caute și să o
+         -- ordoneze. Formularul de cerere și filtrul „lângă" de pe panou
+         -- se deschid amândouă fără cont, deci fără grantul ăsta
+         -- vizitatorul rămâne cu un câmp care nu sugerează nimic.
+         --
+         -- Partea de „ce am ales eu ultima dată" pleacă de la
+         -- `auth.uid()`, care pentru `anon` este null: un vizitator nu
+         -- vede istoricul nimănui, fiindcă nu are unul.
+         'search_localities'
        )$q$);
 
 -- ---------------------------------------------------------------------

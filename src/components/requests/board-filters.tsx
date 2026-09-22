@@ -2,7 +2,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { CITY_GROUPS, cityLabel, cityValue } from '@/lib/cities';
-import { CARGO_CATEGORIES, CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import { DEFAULT_RADIUS_KM, RADIUS_STEPS_KM } from '@/lib/radius';
 import {
   EMPTY_REQUEST_FILTERS,
@@ -138,7 +139,7 @@ export function BoardFilters({
             className={CONTROL}
           >
             <option value="">{c.any}</option>
-            {CARGO_CATEGORIES.map((category) => (
+            {OFFERED_CATEGORIES.map((category) => (
               <option key={category} value={category}>
                 {CARGO_CATEGORY_LABELS[category]}
               </option>

@@ -70,6 +70,12 @@ export const requestsCopy = {
       year: 'Anul fabricației',
       weight: 'Greutatea, kg (opțional)',
       weightHint: 'Dacă o știi. Transportatorul o folosește pentru sarcina pe punte.',
+      closedSuggestion:
+        'Pentru un vehicul istoric îți recomandăm transportul în remorcă închisă — ferit de praf, pietre și vreme. Transportatorii care au remorcă închisă îți apar primii. Poți alege și platformă deschisă.',
+      otherDescription: 'Ce transporți',
+      otherDescriptionHint:
+        'Obligatoriu pentru „Altceva": scrie ce este și cât cântărește, ca transportatorii să știe dacă pot.',
+      otherDescriptionPlaceholder: 'Un generator de curent pe remorcă, aproximativ 400 kg.',
     },
 
     condition: {

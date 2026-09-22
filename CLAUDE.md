@@ -219,5 +219,19 @@ pnpm check:functions   # Deno type-check for the edge functions
   (`copie conformă`, `ITP`, `RCA`). Code and technical docs are English.
 - Never show invented numbers as real data. Samples are labelled as samples,
   estimates as estimates.
+- **Icons help scanning; they never decorate a serious moment.** One map,
+  `src/lib/icons.ts`, and one component, `<Icon>` — nothing renders a
+  lucide glyph directly. Never an icon as the only meaning, never one on
+  a legal page, a suspension, a rejection, a dispute, a deletion, an
+  error or a destructive confirmation, and never one that could read as
+  an official seal. No emoji anywhere in the interface. The whole rule,
+  with the reasons, is `docs/13-iconuri.md`.
+- **The vehicle categories are one list**, `OFFERED_CATEGORIES` in
+  `src/lib/vehicle-categories.ts`, with the weight hint and the price
+  class on the same row as the label. The niche is what goes up on a car
+  transporter: no boats, containers, agricultural or construction
+  machinery, lorries, coaches, tractor units or semi-trailers. Values
+  outside it stay in the enum and stay readable — `RETIRED_CATEGORIES` —
+  because a published listing is a real listing.
 - Nothing is created or changed on a remote Supabase or Vercel project without
   an explicit go-ahead.

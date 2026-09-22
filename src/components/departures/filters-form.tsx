@@ -9,7 +9,8 @@ import {
   hasActiveFilters,
   type DepartureFilters,
 } from '@/lib/departure-filters';
-import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from '@/lib/departures';
+import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import { DEFAULT_RADIUS_KM, RADIUS_STEPS_KM } from '@/lib/radius';
 import { COUNTRY_OPTIONS } from '@/lib/vehicles';
 
@@ -143,7 +144,7 @@ export function FiltersForm({ filters }: { filters: DepartureFilters }) {
             className={CONTROL}
           >
             <option value="">{c.any}</option>
-            {FILTERABLE_CATEGORIES.map((category) => (
+            {OFFERED_CATEGORIES.map((category) => (
               <option key={category} value={category}>
                 {CARGO_CATEGORY_LABELS[category]}
               </option>

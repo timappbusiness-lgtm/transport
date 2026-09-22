@@ -2009,11 +2009,14 @@ select pg_temp.check('CRQ  a request without coordinates adds no kilometres, rat
              title, loading_city, unloading_city, loading_from, status, published_at)
       values ('fc000000-0000-0000-0000-000000000002',
               'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
-              -- Un sat, nu o reședință de județ: de când `localities`
-              -- ștampilează coordonatele, „fără coordonate" înseamnă
-              -- exact „o localitate pe care gazetarul nu o știe", care
-              -- este și cazul real — multe mașini se iau dintr-un sat.
-              'Fără coordonate', 'Cisnădie', 'Râșnov', current_date + 4, 'delivered', now());
+              -- Un nume inventat, nu un sat real. Aici era „Cisnădie",
+              -- ales pe vremea când nomenclatorul avea 75 de rânduri;
+              -- importul l-a adus înăuntru și verificarea a început să
+              -- măsoare contrariul a ce spune. „Fără coordonate"
+              -- înseamnă „o localitate pe care nu o știm", și singurul
+              -- mod de a scrie asta care rezistă unui import este un
+              -- nume care nu poate exista.
+              'Fără coordonate', 'Nicăieri-pe-Hartă', 'Râșnov', current_date + 4, 'delivered', now());
     end $d$$s$);
 
 select pg_temp.check('CRQ  the daily series is thirty days long and ends today', 'fix',
@@ -7361,6 +7364,298 @@ select pg_temp.check('OFR  the client sees what it received', 'fix',
              'f0000000-0000-0000-0000-000000000002', 2400,
              'fe000000-0000-0000-0000-000000000001')$s$);
 
+-- ---------------------------------------------------------------------
+-- CAT — categoriile de vehicule
+--
+-- Scrierile merg pe unde merg și în aplicație: `publish_cargo_request`,
+-- nu un `update` direct pe tabelă. Un `update` de mână ar fi refuzat de
+-- politici oricum, iar un test care ocolește drumul real nu spune nimic
+-- despre drumul real.
+-- ---------------------------------------------------------------------
+
+-- „Altceva" cere o descriere, iar regula este în Postgres: un check în
+-- formular este o curtoazie, `publish_cargo_request` se poate chema
+-- direct cu cheia din pachetul browserului.
+select pg_temp.check('CAT  publishing „Altceva" without a description is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked',
+  -- Întâi anunțul înapoi pe draft, abia apoi categoria: triggerul de pe
+  -- detalii se uită la starea anunțului, deci ordinea inversă l-ar
+  -- declanșa chiar în pregătire.
+  p_setup => $s$update public.cargo_listings set description = null, status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('CAT  and so is one too short to say anything', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings set description = 'un lucru', status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('CAT  with a real description it publishes', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings
+       set description = 'Un generator de curent pe remorcă, aproximativ 400 kg.',
+           status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Și nu se ocolește publicând întâi și golind descrierea apoi.
+select pg_temp.check('CAT  emptying the description after publishing is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.cargo_listings set description = null
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings
+       set status = 'draft',
+           description = 'Un generator de curent pe remorcă, aproximativ 400 kg.'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_listings set status = 'active'
+       where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- O categorie din nișă nu cere nimic în plus.
+select pg_temp.check('CAT  a category inside the niche needs no description', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings set description = null, status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'istoric'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Fiecare valoare a tipului are etichetă. Una fără iese din
+-- `cargo_category_label()` ca null și ajunge într-un e-mail ca un gol.
+select pg_temp.check('CAT  every category the enum can hold has a Romanian label', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select bool_and(public.cargo_category_label(c) is not null)
+     from unnest(enum_range(null::public.cargo_category)) c$a$, 'true');
+
+select pg_temp.check('CAT  the three new ones are offered', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.cargo_category_is_offered('atv_quad')
+        and public.cargo_category_is_offered('cvadriciclu')
+        and public.cargo_category_is_offered('istoric')$a$, 'true');
+
+select pg_temp.check('CAT  and the seven outside the niche are not', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select not bool_or(public.cargo_category_is_offered(c))
+     from unnest(array['utilaj_agricol', 'utilaj_constructii', 'cap_tractor',
+                       'camion', 'utilaj_manipulare', 'container',
+                       'ambarcatiune']::public.cargo_category[]) c$a$, 'true');
+
+-- „Altceva" nu se potrivește automat cu nimeni. Se întreabă pe unde
+-- întreabă și aplicația: `count_matching_carriers(listing)`, singura cu
+-- grant — `company_matches_route` și numărătoarea pe rută sunt ajutoare
+-- interne, fără ușă către API.
+select pg_temp.check('CAT  nothing is counted as matching on „Altceva"', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
+  'true',
+  p_setup => $s$update public.companies
+       set coverage_scope = 'international', verification_status = 'verified',
+           is_suspended = false, company_type = 'transport',
+           coverage_countries = array['IT'],
+           vehicle_types_accepted = array[]::public.cargo_category[]
+       where id = 'fc000000-0000-0000-0000-000000000001';
+     update public.cargo_listings set status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- …iar aceeași cerere, pe o categorie din nișă, chiar numără pe cineva.
+-- Fără perechea asta, verificarea de sus ar trece și dacă nu se
+-- potrivește nimeni din alt motiv.
+select pg_temp.check('CAT  while the same request on a real category counts somebody', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') > 0$a$,
+  'true',
+  p_setup => $s$update public.companies
+       set coverage_scope = 'international', verification_status = 'verified',
+           is_suspended = false, company_type = 'transport',
+           coverage_countries = array['IT'],
+           vehicle_types_accepted = array[]::public.cargo_category[]
+       where id = 'fc000000-0000-0000-0000-000000000001';
+     update public.cargo_listings set status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'autoturism'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Transport închis: o preferință citibilă, nu un filtru.
+select pg_temp.check('CAT  a firm with a closed trailer is known to have one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+     set equipment = array_append(equipment, 'remorca_inchisa')
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CAT  and one without is not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+     set equipment = array_remove(equipment, 'remorca_inchisa'),
+         services = array_remove(services, 'transport_inchis')
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CAT  anon cannot ask who has a closed trailer', 'fix',
+  null, 'anon',
+  $a$select public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'blocked');
+
+-- ---------------------------------------------------------------------
+-- LOC — căutarea de localități
+--
+-- Comportament, nu drepturi, dar stă aici fiindcă aici rulează pe o bază
+-- cu migrările aplicate. Ordinea întoarsă este ce vede omul în listă.
+-- ---------------------------------------------------------------------
+
+select pg_temp.check('LOC  diacritics do not have to be typed', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' and match_kind = 'exact'
+     from public.search_localities('timisoara', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  and they may be typed', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' from public.search_localities('Timișoara', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  a typo still finds the town', 'fix',
+  null, 'anon',
+  $a$select name = 'Timișoara' from public.search_localities('timisora', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  the start of the name is enough', 'fix',
+  null, 'anon',
+  $a$select name = 'Cluj-Napoca' and match_kind = 'prefix'
+     from public.search_localities('cluj', null, null, 1)$a$, 'true');
+
+-- „mare" trebuie să dea Baia Mare și Satu Mare. Fără potrivirea pe
+-- început de cuvânt, jumătate din localitățile compuse din România sunt
+-- de negăsit dacă nu începi cu primul cuvânt.
+select pg_temp.check('LOC  so is the start of any word in it', 'fix',
+  null, 'anon',
+  $a$select count(*) >= 2 from public.search_localities('mare', null, null, 5)
+     where name in ('Baia Mare', 'Satu Mare') and match_kind = 'word'$a$, 'true');
+
+-- Aliasurile: cum scrie omul, nu cum scriem noi.
+select pg_temp.check('LOC  Munich finds München', 'fix',
+  null, 'anon',
+  $a$select name = 'München' and match_kind = 'alias'
+     from public.search_localities('Munich', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  Viena finds Wien', 'fix',
+  null, 'anon',
+  $a$select name = 'Wien' from public.search_localities('Viena', null, null, 1)$a$, 'true');
+
+select pg_temp.check('LOC  Bucuresti finds București', 'fix',
+  null, 'anon',
+  $a$select name = 'București' from public.search_localities('Bucuresti', null, null, 1)$a$,
+  'true');
+
+select pg_temp.check('LOC  Bucharest finds it too', 'fix',
+  null, 'anon',
+  $a$select name = 'București' from public.search_localities('Bucharest', null, null, 1)$a$,
+  'true');
+
+-- Între două potriviri la fel de bune, orașul mare este aproape
+-- întotdeauna cel căutat.
+select pg_temp.check('LOC  the larger town comes first between equals', 'fix',
+  null, 'anon',
+  $a$select name = 'Târgu Mureș' from public.search_localities('targu', null, null, 1)$a$,
+  'true');
+
+-- Apropierea de ce a ales deja: cu plecarea în Cluj, „Turda" (35 km)
+-- trebuie să fie înaintea unei potriviri la fel de bune de departe.
+select pg_temp.check('LOC  what is near what you already chose ranks higher', 'fix',
+  null, 'anon',
+  $a$select name = 'Turda'
+     from public.search_localities('turda', 46.7712, 23.6236, 1)$a$, 'true');
+
+select pg_temp.check('LOC  two characters are the minimum, one finds nothing', 'fix',
+  null, 'anon',
+  $a$select count(*) = 0 from public.search_localities('', null, null, 8)$a$, 'true');
+
+select pg_temp.check('LOC  and the limit is honoured', 'fix',
+  null, 'anon',
+  $a$select count(*) <= 5 from public.search_localities('a', null, null, 5)$a$, 'true');
+
+-- Nomenclatorul se citește fără cont; nimeni nu scrie în el prin API.
+select pg_temp.check('LOC  a visitor may search it', 'fix',
+  null, 'anon',
+  $a$select count(*) > 0 from public.search_localities('cluj', null, null, 3)$a$, 'true');
+
+select pg_temp.check('LOC  but not remember anything', 'fix',
+  null, 'anon',
+  $a$select public.remember_locality(
+       (select id from public.localities where name = 'Cluj-Napoca'))$a$, 'blocked');
+
+-- `remember_locality` întoarce void; se verifică faptul că trece, nu o
+-- valoare. `select f() is null` ar fi fost fals oricum: void într-un
+-- select este șir gol, nu null.
+select pg_temp.check('LOC  a signed-in person remembers their own choice', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.remember_locality(
+       (select id from public.localities where name = 'Cluj-Napoca'))$a$, 'allowed',
+  p_verify => $v$select count(*) = 1 from public.locality_recent
+     where user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('LOC  and reads only their own', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.locality_recent$a$, 'true',
+  p_setup => $s$insert into public.locality_recent (user_id, locality_id)
+     select 'f0000000-0000-0000-0000-000000000006',
+            id from public.localities where name = 'Cluj-Napoca'
+     on conflict do nothing$s$);
+
+select pg_temp.check('LOC  nobody writes a recent row in somebody else''s name', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.locality_recent (user_id, locality_id)
+     select 'f0000000-0000-0000-0000-000000000006',
+            id from public.localities where name = 'Cluj-Napoca'$a$, 'blocked');
+
+-- „Nu găsim localitatea?": textul intră, steagul se ridică.
+select pg_temp.check('LOC  a missing town can be reported', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.report_missing_locality('Cătunul Meu', 'RO', null) is not null$a$,
+  'true');
+
+-- Fiecare verificare rulează în tranzacția ei și se derulează înapoi,
+-- deci rândul scris de verificarea de dinainte nu mai există aici. Se
+-- creează în pregătire.
+select pg_temp.check('LOC  and the person sees their own report', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) >= 1 from public.locality_requests where typed = 'Cătunul Meu'$a$,
+  'true',
+  p_setup => $s$insert into public.locality_requests (created_by, typed, country)
+     values ('f0000000-0000-0000-0000-000000000006', 'Cătunul Meu', 'RO')$s$);
+
+select pg_temp.check('LOC  somebody else does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.locality_requests where typed = 'Cătunul Meu'$a$,
+  'true',
+  p_setup => $s$insert into public.locality_requests (created_by, typed, country)
+     values ('f0000000-0000-0000-0000-000000000006', 'Cătunul Meu', 'RO')$s$);
+
+select pg_temp.check('LOC  a visitor cannot report one at all', 'fix',
+  null, 'anon',
+  $a$select public.report_missing_locality('Cătunul Lor', 'RO', null)$a$, 'blocked');
+
+select pg_temp.check('LOC  nor hang one on somebody else''s request', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.report_missing_locality(
+       'Cătunul Altcuiva', 'RO', 'f1000000-0000-0000-0000-000000000002')$a$, 'blocked');
+
 -- Insigna din meniu. Numără exact cutia „primite" și starea „pending",
 -- fiindcă numai alea așteaptă pe cineva; o ofertă trimisă așteaptă pe
 -- altcineva, iar o insignă care nu ajunge niciodată la zero este una pe
@@ -12091,7 +12386,7 @@ select pg_temp.check('RAZ  and a town the gazetteer does not know gets none, rat
              'fc000000-0000-0000-0000-000000000001',
              'fe000000-0000-0000-0000-000000000001',
              'f0000000-0000-0000-0000-000000000002', 'tur',
-             'RO', 'Cisnădie', 'RO', 'Râșnov',
+             'RO', 'Nicăieri-pe-Hartă', 'RO', 'Râșnov',
              current_date, current_date + 10, 3,
              array['autoturism']::public.cargo_category[], 'draft')$s$);
 
@@ -12115,9 +12410,24 @@ select pg_temp.check('RAZ  spelling and diacritics do not decide whether a listi
              array['autoturism']::public.cargo_category[], 'draft')$s$);
 
 -- Nomenclatorul: se citește fără cont, nu se scrie de nimeni prin API.
+-- Un prag, nu un număr exact: nomenclatorul crește la fiecare import, iar
+-- o verificare care numără exact cade la fiecare import fără să fi
+-- descoperit nimic. Ce contează este că `anon` îl poate citi și că are
+-- înăuntru și România, și străinătatea.
 select pg_temp.check('RAZ  the gazetteer is readable without an account', 'fix',
   null, 'anon',
-  $a$select count(*) = 75 from public.localities$a$, 'true');
+  $a$select count(*) >= 2000
+        and count(*) filter (where country = 'RO') >= 1000
+        and count(distinct country) >= 15
+     from public.localities$a$, 'true');
+
+-- Și toate cele 41 de reședințe de județ sunt înăuntru. Trei dintre ele
+-- au lipsit la primul import, pierdute la deduplicarea după nume în fața
+-- unui sat omonim; de aia se numără aici, nu se presupune.
+select pg_temp.check('RAZ  and every county seat is in it', 'fix',
+  null, 'anon',
+  $a$select count(*) = 41 from public.localities
+     where country = 'RO' and is_county_seat$a$, 'true');
 
 select pg_temp.check('RAZ  and nobody writes to it through the API', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
@@ -12174,7 +12484,7 @@ select pg_temp.check('RAZ  a request from a town with no coordinates is not in a
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$select count(*) = 0 from public.saved_search_match(
        'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a5')$a$, 'true',
-  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a5', 'Cisnădie');
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a5', 'Nicăieri-pe-Hartă');
      select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"200"}')$s$);
 
 select pg_temp.check('RAZ  and a centre we cannot place matches nothing, rather than everything', 'fix',
@@ -12182,7 +12492,7 @@ select pg_temp.check('RAZ  and a centre we cannot place matches nothing, rather 
   $a$select count(*) = 0 from public.saved_search_match(
        'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a6')$a$, 'true',
   p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a6', 'Cluj-Napoca');
-     select pg_temp.search_with('{"near":"Cisnădie|RO","radius_km":"200"}')$s$);
+     select pg_temp.search_with('{"near":"Nicăieri-pe-Hartă|RO","radius_km":"200"}')$s$);
 
 -- Greutatea. O cerere fără greutate scrisă rămâne — pe panou și aici.
 select pg_temp.check('RAZ  the weight filter keeps what fits', 'fix',

@@ -8,7 +8,8 @@ import { getAccountContext } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
-import { FILTERABLE_CATEGORIES, type CargoCategory, type ServiceType } from '@/lib/departures';
+import type { CargoCategory, ServiceType } from '@/lib/departures';
+import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import {
   MAX_EVERY_N,
   ruleHasErrors,
@@ -65,7 +66,7 @@ function readWaypointsField(raw: string | null): { city: string }[] {
 
 function readCategories(formData: FormData): CargoCategory[] {
   const values = formData.getAll('accepted_vehicle_types').map(String);
-  return FILTERABLE_CATEGORIES.filter((category) => values.includes(category));
+  return OFFERED_CATEGORIES.filter((category) => values.includes(category));
 }
 
 function readServices(formData: FormData): ServiceType[] {

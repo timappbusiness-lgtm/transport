@@ -1,5 +1,6 @@
 import { cityFromValue, cityValue, type City } from './cities';
-import { FILTERABLE_CATEGORIES, type CargoCategory, type Direction } from './departures';
+import type { CargoCategory, Direction } from './departures';
+import { OFFERED_CATEGORIES } from './vehicle-categories';
 import { DEFAULT_RADIUS_KM, MAX_RADIUS_KM } from './radius';
 
 /** The largest platform this marketplace has, with room to spare. */
@@ -123,7 +124,7 @@ function isScope(value: string | null): value is ScopeFilter {
 }
 
 function isCategory(value: string | null): value is CargoCategory {
-  return value !== null && (FILTERABLE_CATEGORIES as readonly string[]).includes(value);
+  return value !== null && (OFFERED_CATEGORIES as readonly string[]).includes(value);
 }
 
 /** A whole number inside a range, or nothing. */

@@ -13,13 +13,20 @@ import { AutoChip, ImportDisclaimer, ImportPanel } from '@/components/requests/i
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { CarrierPreview } from '@/components/requests/carrier-preview';
 import { buttonClasses } from '@/components/ui/button';
+import { LocalityPicker } from '@/components/ui/locality-picker';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
-import { CITY_GROUPS } from '@/lib/cities';
 import { createDraftStore } from '@/lib/draft-store';
 import { importCopy } from '@/content/import-anunt';
 import { applyExtraction, type ImportedField } from '@/lib/listing-import';
-import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from '@/lib/departures';
+import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import {
+  OFFERED_CATEGORIES,
+  categoryMeta,
+  needsDescription,
+  suggestsClosedTransport,
+  weightHintKg,
+} from '@/lib/vehicle-categories';
 import {
   MAX_DAMAGE_NOTES,
   MAX_DESCRIPTION,
@@ -146,11 +153,25 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   }, [state.requestId, store]);
 
   function set<K extends RequestField>(field: K, value: RequestDraft[K]): void {
-    store.set({ ...draft, [field]: value });
+    setMany({ [field]: value } as Partial<RequestDraft>, [field]);
+  }
+
+  /**
+   * Several fields in one write.
+   *
+   * `set` spreads the `draft` captured by this render, so calling it
+   * twice in one handler makes the second overwrite the first — the city
+   * disappeared the moment the locality picker started setting the city
+   * and the country together, and the form refused to leave step one
+   * with „Scrie orașul de plecare" over a field somebody had just
+   * filled. Anything that changes more than one field goes through here.
+   */
+  function setMany(fields: Partial<RequestDraft>, touched: readonly RequestField[]): void {
+    store.set({ ...draft, ...fields });
     setAuto((current) => {
-      if (!current.has(field as ImportedField)) return current;
+      if (!touched.some((field) => current.has(field as ImportedField))) return current;
       const next = new Set(current);
-      next.delete(field as ImportedField);
+      for (const field of touched) next.delete(field as ImportedField);
       return next;
     });
   }
@@ -286,14 +307,19 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                     </option>
                   ))}
                 </select>
-                <input
-                  id={`${id}-from`}
-                  list={`${id}-cities`}
-                  value={draft.fromCity}
-                  onChange={(event) => set('fromCity', event.target.value)}
-                  placeholder="München"
-                  className={CONTROL}
-                />
+                <div className="min-w-0 flex-1">
+                  <LocalityPicker
+                    id={`${id}-from`}
+                    value={{ city: draft.fromCity, country: draft.fromCountry }}
+                    onChange={(picked) =>
+                      setMany(
+                        { fromCity: picked.city, fromCountry: picked.country },
+                        ['fromCity', 'fromCountry'],
+                      )
+                    }
+                    placeholder="München"
+                  />
+                </div>
               </div>
             </Labelled>
 
@@ -315,25 +341,22 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                     </option>
                   ))}
                 </select>
-                <input
-                  id={`${id}-to`}
-                  list={`${id}-cities`}
-                  value={draft.toCity}
-                  onChange={(event) => set('toCity', event.target.value)}
-                  placeholder="Cluj-Napoca"
-                  className={CONTROL}
-                />
+                <div className="min-w-0 flex-1">
+                  <LocalityPicker
+                    id={`${id}-to`}
+                    value={{ city: draft.toCity, country: draft.toCountry }}
+                    onChange={(picked) =>
+                      setMany(
+                        { toCity: picked.city, toCountry: picked.country },
+                        ['toCity', 'toCountry'],
+                      )
+                    }
+                    placeholder="Cluj-Napoca"
+                  />
+                </div>
               </div>
             </Labelled>
           </div>
-
-          {/* Suggestions, not a closed list: most cars are collected from
-              somewhere smaller than a county seat. */}
-          <datalist id={`${id}-cities`}>
-            {CITY_GROUPS.flatMap((group) => group.cities).map((city) => (
-              <option key={`${city.name}-${city.country}`} value={city.name} />
-            ))}
-          </datalist>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled
@@ -418,13 +441,44 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               }
               className={CONTROL}
             >
-              {FILTERABLE_CATEGORIES.map((category) => (
+              {OFFERED_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {CARGO_CATEGORY_LABELS[category]}
                 </option>
               ))}
             </select>
           </Labelled>
+
+          {/* A suggestion, not a rule. The request goes out either way;
+              what changes is that carriers with a closed platform are
+              ranked first, and that the person is told the option
+              exists before they find out from an offer. */}
+          {suggestsClosedTransport(draft.category) ? (
+            <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-[0.8125rem] text-muted">
+              {c.vehicle.closedSuggestion}
+            </p>
+          ) : null}
+
+          {/* „Altceva" is the one category nothing can be deduced from,
+              so it asks. The same rule is a trigger in Postgres: this is
+              the courtesy, that is the boundary. */}
+          {needsDescription(draft.category) ? (
+            <Labelled
+              label={c.vehicle.otherDescription}
+              htmlFor={`${id}-other`}
+              hint={c.vehicle.otherDescriptionHint}
+              error={fieldError('description')}
+            >
+              <textarea
+                id={`${id}-other`}
+                rows={3}
+                value={draft.description}
+                onChange={(event) => set('description', event.target.value)}
+                placeholder={c.vehicle.otherDescriptionPlaceholder}
+                className={CONTROL}
+              />
+            </Labelled>
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.vehicle.make} htmlFor={`${id}-make`} error={fieldError('make')} auto={auto.has('make')}>
@@ -461,7 +515,11 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             <Labelled
               label={c.vehicle.weight}
               htmlFor={`${id}-weight`}
-              hint={c.vehicle.weightHint}
+              /* The hint follows the category: „de obicei între 120 și
+                 350 kg" is worth more under Motocicletă than one
+                 sentence that has to be true of a motorbike and a
+                 minibus at once. */
+              hint={`${c.vehicle.weightHint} ${categoryMeta(draft.category)?.weightHint ?? ''}`.trim()}
               error={fieldError('weightKg')}
               auto={auto.has('weightKg')}
             >
@@ -469,6 +527,10 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                 id={`${id}-weight`}
                 inputMode="numeric"
                 value={draft.weightKg}
+                /* A placeholder, never a value: a number nobody typed is
+                   a number nobody checks, and the carrier loads the axle
+                   against it. */
+                placeholder={String(weightHintKg(draft.category) ?? '')}
                 onChange={(event) => set('weightKg', event.target.value)}
                 className={CONTROL}
               />

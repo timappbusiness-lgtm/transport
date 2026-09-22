@@ -7,10 +7,10 @@ import { buttonClasses } from '@/components/ui/button';
 import { departuresCopy } from '@/content/departures';
 import {
   CARGO_CATEGORY_LABELS,
-  FILTERABLE_CATEGORIES,
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_NOTES,
 } from '@/lib/departures';
+import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import {
   MAX_EVERY_N,
   WEEKDAY_LABELS,
@@ -199,7 +199,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">{c.accepted}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
-          {FILTERABLE_CATEGORIES.map((category) => (
+          {OFFERED_CATEGORIES.map((category) => (
             <label key={category} className="flex items-center gap-2.5 text-sm">
               <input
                 type="checkbox"
