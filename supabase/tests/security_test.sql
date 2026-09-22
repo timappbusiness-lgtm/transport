@@ -188,6 +188,30 @@ select pg_temp.guard(
        and has_table_privilege('anon', c.oid, pr.privilege)$q$);
 
 -- ---------------------------------------------------------------------
+-- 7. Nicio vedere nu se scrie de `anon` sau de un cont oarecare
+--
+-- Garda 6 se uită la `relkind = 'r'` — tabele. Vederile au `relkind =
+-- 'v'` și au trecut pe lângă ea, cu implicitul Supabase intact. Nu ar
+-- fi contat dacă vederile ar fi doar de citit, dar o vedere care este
+-- o proiecție simplă dintr-o singură tabelă este scriibilă automat, și
+-- toate vederile noastre sunt `security_invoker = off`: scrierea se
+-- face ca proprietarul, pe lângă RLS. `anon` chiar ștergea firme prin
+-- `v_public_companies`.
+--
+-- Nicio vedere de-a noastră nu este o ușă de scriere. Dacă una devine,
+-- se scrie grantul în migrarea ei și se spune aici de ce.
+-- ---------------------------------------------------------------------
+select pg_temp.guard(
+  'nicio vedere nu dă drept de scriere lui anon sau authenticated',
+  $q$select string_agg(distinct c.relname || ' (' || who.role || ': ' || pr.privilege || ')', ', ')
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+     cross join lateral (values ('anon'), ('authenticated')) as who(role)
+     cross join lateral (values ('INSERT'), ('UPDATE'), ('DELETE')) as pr(privilege)
+     where n.nspname = 'public' and c.relkind in ('v', 'm')
+       and has_table_privilege(who.role, c.oid, pr.privilege)$q$);
+
+-- ---------------------------------------------------------------------
 -- Raportul
 -- ---------------------------------------------------------------------
 select format('%s  %s%s',
