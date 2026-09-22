@@ -1,5 +1,5 @@
 import { COUNTRY_OPTIONS } from './vehicles';
-import { FILTERABLE_CATEGORIES } from './departures';
+import { OFFERED_CATEGORIES } from './vehicle-categories';
 import { MAX_WEIGHT_KG, type RequestDraft, type RequestField } from './request-form';
 
 /**
@@ -51,7 +51,7 @@ export interface ExtractionResult {
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 const COUNTRY_CODES = new Set(COUNTRY_OPTIONS.map((c) => c.code));
-const CATEGORIES = new Set<string>(FILTERABLE_CATEGORIES);
+const CATEGORIES = new Set<string>(OFFERED_CATEGORIES);
 
 /** The names the function uses, against the names the draft uses. */
 const FIELD_NAMES: Record<string, ImportedField> = {

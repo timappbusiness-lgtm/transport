@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { appCopy } from '@/content/app';
 import { MAIL_SAMPLE_PAYLOAD, MAIL_TEMPLATES, mailTemplateLabel } from '@/content/mail-samples';
@@ -138,19 +138,37 @@ describe('what the screen says about the provider', () => {
   });
 });
 
+/**
+ * The body of the last `create or replace` of a function, across every
+ * migration in order. Later files win, which is what Postgres does.
+ */
+function lastDefinitionOf(name: string): string {
+  const dir = 'supabase/migrations';
+  const files = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+  let body = '';
+  for (const file of files) {
+    const sql = readFileSync(`${dir}/${file}`, 'utf8');
+    const at = sql.indexOf(`create or replace function public.${name}`);
+    if (at === -1) continue;
+    const tail = sql.slice(at);
+    body = tail.slice(0, tail.indexOf('$fn$;'));
+  }
+  if (body === '') throw new Error(`no migration defines ${name}`);
+  return body;
+}
+
 describe('the Romanian category labels, against the ones the database holds', () => {
-  // `cargo_category_label()` in 20260921100000 is a second copy of
-  // CARGO_CATEGORY_LABELS, because the reasons stored on a saved-search
-  // match are rendered into an e-mail by the edge function, which cannot
-  // import the application. This is what stops the two drifting.
-  const migration = readFileSync(
-    'supabase/migrations/20260921100000_faza1_final.sql',
-    'utf8',
-  );
-  const fn = migration.slice(
-    migration.indexOf('create or replace function public.cargo_category_label'),
-  );
-  const body = fn.slice(0, fn.indexOf('$fn$;'));
+  // `cargo_category_label()` is a second copy of CARGO_CATEGORY_LABELS,
+  // because the reasons stored on a saved-search match are rendered into
+  // an e-mail by the edge function, which cannot import the application.
+  // This is what stops the two drifting.
+  //
+  // Read from whichever migration defines it last rather than from a
+  // filename: the first version of this test named 20260921100000, and
+  // when a later migration redefined the function the test went on
+  // checking the old copy — a drift guard that had quietly stopped
+  // looking at the thing that ships.
+  const body = lastDefinitionOf('cargo_category_label');
 
   it('has a Romanian label for every category the app knows', () => {
     for (const [code, label] of Object.entries(CARGO_CATEGORY_LABELS)) {

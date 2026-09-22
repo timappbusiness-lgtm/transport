@@ -1,5 +1,6 @@
 import { cityLabel, findCity, type City } from './cities';
-import { FILTERABLE_CATEGORIES, type CargoCategory } from './departures';
+import type { CargoCategory } from './departures';
+import { OFFERED_CATEGORIES } from './vehicle-categories';
 import type { Prefill } from './price-prefill';
 import type { VehicleClass } from './pricing';
 import { validateEmail, validatePhone, type FieldErrors } from './validation/auth';
@@ -257,7 +258,7 @@ export function validateDraft(draft: RequestDraft, today: string): FieldErrors<R
     }
   }
 
-  if (!(FILTERABLE_CATEGORIES as readonly string[]).includes(draft.category)) {
+  if (!(OFFERED_CATEGORIES as readonly string[]).includes(draft.category)) {
     errors.category = 'Alege categoria vehiculului.';
   }
   if (draft.make.trim() === '') errors.make = 'Scrie marca.';
@@ -367,7 +368,7 @@ export function parseDraft(raw: string | null): RequestDraft | null {
   }
   // Two enums, both of which arrive as strings and neither of which may be
   // whatever the string happened to say.
-  if (!(FILTERABLE_CATEGORIES as readonly string[]).includes(draft.category)) {
+  if (!(OFFERED_CATEGORIES as readonly string[]).includes(draft.category)) {
     draft.category = 'autoturism';
   }
   if (!(OFFERED_SERVICES as readonly string[]).includes(draft.serviceType)) {

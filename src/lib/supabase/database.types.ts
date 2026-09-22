@@ -9964,6 +9964,9 @@ export type Database = {
         | "container"
         | "ambarcatiune"
         | "altele"
+        | "atv_quad"
+        | "cvadriciclu"
+        | "istoric"
       company_member_role: "owner" | "admin" | "dispatcher" | "driver"
       company_type: "expeditie" | "transport" | "both"
       company_verification_status:
@@ -10218,6 +10221,9 @@ export const Constants = {
         "container",
         "ambarcatiune",
         "altele",
+        "atv_quad",
+        "cvadriciclu",
+        "istoric",
       ],
       company_member_role: ["owner", "admin", "dispatcher", "driver"],
       company_type: ["expeditie", "transport", "both"],

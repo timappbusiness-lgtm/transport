@@ -19,7 +19,8 @@ import { CITY_GROUPS } from '@/lib/cities';
 import { createDraftStore } from '@/lib/draft-store';
 import { importCopy } from '@/content/import-anunt';
 import { applyExtraction, type ImportedField } from '@/lib/listing-import';
-import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from '@/lib/departures';
+import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import {
   MAX_DAMAGE_NOTES,
   MAX_DESCRIPTION,
@@ -418,7 +419,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               }
               className={CONTROL}
             >
-              {FILTERABLE_CATEGORIES.map((category) => (
+              {OFFERED_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {CARGO_CATEGORY_LABELS[category]}
                 </option>

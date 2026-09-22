@@ -1,4 +1,5 @@
-import { CARGO_CATEGORY_LABELS, FILTERABLE_CATEGORIES } from './departures';
+import { CARGO_CATEGORY_LABELS } from './departures';
+import { OFFERED_CATEGORIES } from './vehicle-categories';
 import { pluralRo } from './requests';
 import { exemptVehicles, remindersLabel, requiredDocuments, type PublicRequirement } from './trust';
 import { STATIC_FAQ, type FaqEntry, type FaqGroup, type FaqGroupId } from '@/content/faq';
@@ -96,8 +97,8 @@ export function homepageFaq(groups: FaqGroup[], count: number = HOMEPAGE_FAQ_COU
 
 /** The categories the forms actually offer, so the answer cannot overstate. */
 function vehiclesEntry(): FaqEntry | null {
-  if (FILTERABLE_CATEGORIES.length === 0) return null;
-  const labels = FILTERABLE_CATEGORIES.map((c) => CARGO_CATEGORY_LABELS[c].toLowerCase());
+  if (OFFERED_CATEGORIES.length === 0) return null;
+  const labels = OFFERED_CATEGORIES.map((c) => CARGO_CATEGORY_LABELS[c].toLowerCase());
   return {
     id: 'vehicule',
     question: 'Ce vehicule pot transporta?',

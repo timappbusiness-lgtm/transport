@@ -7361,6 +7361,155 @@ select pg_temp.check('OFR  the client sees what it received', 'fix',
              'f0000000-0000-0000-0000-000000000002', 2400,
              'fe000000-0000-0000-0000-000000000001')$s$);
 
+-- ---------------------------------------------------------------------
+-- CAT — categoriile de vehicule
+--
+-- Scrierile merg pe unde merg și în aplicație: `publish_cargo_request`,
+-- nu un `update` direct pe tabelă. Un `update` de mână ar fi refuzat de
+-- politici oricum, iar un test care ocolește drumul real nu spune nimic
+-- despre drumul real.
+-- ---------------------------------------------------------------------
+
+-- „Altceva" cere o descriere, iar regula este în Postgres: un check în
+-- formular este o curtoazie, `publish_cargo_request` se poate chema
+-- direct cu cheia din pachetul browserului.
+select pg_temp.check('CAT  publishing „Altceva" without a description is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked',
+  -- Întâi anunțul înapoi pe draft, abia apoi categoria: triggerul de pe
+  -- detalii se uită la starea anunțului, deci ordinea inversă l-ar
+  -- declanșa chiar în pregătire.
+  p_setup => $s$update public.cargo_listings set description = null, status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('CAT  and so is one too short to say anything', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings set description = 'un lucru', status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+select pg_temp.check('CAT  with a real description it publishes', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings
+       set description = 'Un generator de curent pe remorcă, aproximativ 400 kg.',
+           status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Și nu se ocolește publicând întâi și golind descrierea apoi.
+select pg_temp.check('CAT  emptying the description after publishing is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.cargo_listings set description = null
+     where id = 'f1000000-0000-0000-0000-000000000002'$a$,
+  'blocked',
+  p_setup => $s$update public.cargo_listings
+       set status = 'draft',
+           description = 'Un generator de curent pe remorcă, aproximativ 400 kg.'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_listings set status = 'active'
+       where id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- O categorie din nișă nu cere nimic în plus.
+select pg_temp.check('CAT  a category inside the niche needs no description', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.publish_cargo_request('f1000000-0000-0000-0000-000000000002')$a$,
+  'allowed',
+  p_setup => $s$update public.cargo_listings set description = null, status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'istoric'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Fiecare valoare a tipului are etichetă. Una fără iese din
+-- `cargo_category_label()` ca null și ajunge într-un e-mail ca un gol.
+select pg_temp.check('CAT  every category the enum can hold has a Romanian label', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select bool_and(public.cargo_category_label(c) is not null)
+     from unnest(enum_range(null::public.cargo_category)) c$a$, 'true');
+
+select pg_temp.check('CAT  the three new ones are offered', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.cargo_category_is_offered('atv_quad')
+        and public.cargo_category_is_offered('cvadriciclu')
+        and public.cargo_category_is_offered('istoric')$a$, 'true');
+
+select pg_temp.check('CAT  and the seven outside the niche are not', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select not bool_or(public.cargo_category_is_offered(c))
+     from unnest(array['utilaj_agricol', 'utilaj_constructii', 'cap_tractor',
+                       'camion', 'utilaj_manipulare', 'container',
+                       'ambarcatiune']::public.cargo_category[]) c$a$, 'true');
+
+-- „Altceva" nu se potrivește automat cu nimeni. Se întreabă pe unde
+-- întreabă și aplicația: `count_matching_carriers(listing)`, singura cu
+-- grant — `company_matches_route` și numărătoarea pe rută sunt ajutoare
+-- interne, fără ușă către API.
+select pg_temp.check('CAT  nothing is counted as matching on „Altceva"', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') = 0$a$,
+  'true',
+  p_setup => $s$update public.companies
+       set coverage_scope = 'international', verification_status = 'verified',
+           is_suspended = false, company_type = 'transport',
+           coverage_countries = array['IT'],
+           vehicle_types_accepted = array[]::public.cargo_category[]
+       where id = 'fc000000-0000-0000-0000-000000000001';
+     update public.cargo_listings set status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'altele'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- …iar aceeași cerere, pe o categorie din nișă, chiar numără pe cineva.
+-- Fără perechea asta, verificarea de sus ar trece și dacă nu se
+-- potrivește nimeni din alt motiv.
+select pg_temp.check('CAT  while the same request on a real category counts somebody', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.count_matching_carriers('f1000000-0000-0000-0000-000000000002') > 0$a$,
+  'true',
+  p_setup => $s$update public.companies
+       set coverage_scope = 'international', verification_status = 'verified',
+           is_suspended = false, company_type = 'transport',
+           coverage_countries = array['IT'],
+           vehicle_types_accepted = array[]::public.cargo_category[]
+       where id = 'fc000000-0000-0000-0000-000000000001';
+     update public.cargo_listings set status = 'draft'
+       where id = 'f1000000-0000-0000-0000-000000000002';
+     update public.cargo_vehicle_details set category = 'autoturism'
+       where cargo_listing_id = 'f1000000-0000-0000-0000-000000000002'$s$);
+
+-- Transport închis: o preferință citibilă, nu un filtru.
+select pg_temp.check('CAT  a firm with a closed trailer is known to have one', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+     set equipment = array_append(equipment, 'remorca_inchisa')
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CAT  and one without is not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select not public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'true',
+  p_setup => $s$update public.companies
+     set equipment = array_remove(equipment, 'remorca_inchisa'),
+         services = array_remove(services, 'transport_inchis')
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$);
+
+select pg_temp.check('CAT  anon cannot ask who has a closed trailer', 'fix',
+  null, 'anon',
+  $a$select public.company_carries_closed('fc000000-0000-0000-0000-000000000001')$a$,
+  'blocked');
+
 -- Insigna din meniu. Numără exact cutia „primite" și starea „pending",
 -- fiindcă numai alea așteaptă pe cineva; o ofertă trimisă așteaptă pe
 -- altcineva, iar o insignă care nu ajunge niciodată la zero este una pe

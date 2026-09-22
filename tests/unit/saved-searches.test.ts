@@ -26,7 +26,7 @@ describe('describing a saved search', () => {
   });
 
   it('names the vehicle category in Romanian', () => {
-    expect(describeFilters({ category: 'autoturism' })).toContain('Autoturism');
+    expect(describeFilters({ category: 'autoturism' })).toContain('Autoturism / SUV');
     expect(describeFilters({ category: 'utilaj_constructii' })).toContain(
       'Utilaj de construcții',
     );
