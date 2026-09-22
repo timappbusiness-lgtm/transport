@@ -257,6 +257,23 @@ database.
 platform. A stored counter would drift the first time a booking was cancelled
 outside the happy path.
 
+### `offers_received` is in the enum and nothing writes it
+
+`carrier_selected` is a real stored status: `accept_offer()` and
+`confirm_departure_booking()` write it, and the board reads it.
+`offers_received` is the opposite — it exists in `listing_status` and no code
+path has ever set it.
+
+That is deliberate, and the same reasoning as free slots above. Keeping it in
+step would take four paths: an offer arriving, being withdrawn, being
+rejected, and expiring. The last is an hourly job, so the first miss leaves a
+row claiming offers that are no longer there. `requestStateLabel()` counts the
+live offers instead.
+
+The value stays in the enum: removing it is a migration for no gain, and a row
+restored from an old dump still reads correctly because the derivation decides
+the words.
+
 ### The price view refuses to publish a thin median
 
 `v_corridor_prices` has `having count(*) >= 5`. A median from two transports is

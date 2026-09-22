@@ -77,14 +77,23 @@ documentation.
 |---|---|---|
 | `draft` | Being written, not on the board | Created |
 | `active` | On the board, no offer yet | Published |
-| `offers_received` | On the board, at least one pending offer | First pending offer arrives; back to `active` when every offer is withdrawn or rejected |
-| `carrier_selected` | An offer was accepted, or a seat reservation confirmed; off the board | `accept_offer()` / `confirm_departure_booking()` |
+| `offers_received` | **In the enum, never written.** See the note below | — |
+| `carrier_selected` | An offer was accepted, or a seat reservation confirmed; off the board | `accept_offer()` / `confirm_departure_booking()` — a stored status, written by those two and by nothing else |
 | `in_progress` | The vehicle has been picked up | Order reaches `vehicle_picked_up` |
 | `delivered` | The vehicle has been delivered | Order reaches `vehicle_delivered` |
 | `cancelled` | Withdrawn by the client, before or after selection | Client cancels |
 | `expired` | Its dates passed while it was on the board or suspended | Cleanup job, or reactivation after the dates |
 | `suspended` | Taken off the board because its owner lost compliance | Compliance sweep |
 | `disputed` | A party opened a complaint on the order | Complaint filed |
+
+**`offers_received` exists and is never set.** It was meant to mean „on the
+board, with at least one pending offer", and keeping it in step would take
+four paths — an offer arriving, being withdrawn, being rejected, and
+expiring — the last of which is an hourly job. The first time one of them
+is missed, the stored status describes offers that are no longer there. So
+the label is derived from the live offers instead, in `requestStateLabel()`,
+and nothing writes the enum value. A row that somehow arrives carrying it
+still reads correctly, because the derivation is what decides the words.
 
 **Suspension and return.** When an owner is suspended, their `active` and
 `offers_received` listings become `suspended`, and the status they had is
