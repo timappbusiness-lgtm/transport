@@ -146,6 +146,14 @@ export async function createDepartureAction(
     fieldErrors.platform_slots_total = 'Numărul de locuri trebuie să fie între 1 și 12.';
   }
 
+  // Capacitatea liberă, în kilograme. Opțională: multe platforme nu o
+  // știu exact, iar filtrul de pe panou le păstrează în listă.
+  const capacityRaw = text(formData, 'free_capacity_kg');
+  const capacity = capacityRaw === null ? null : Number(capacityRaw);
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1 || capacity > 30000)) {
+    fieldErrors.free_capacity_kg = 'Capacitatea liberă trebuie să fie între 1 și 30.000 kg.';
+  }
+
   const priceRaw = text(formData, 'price_indicative');
   const price = priceRaw === null ? null : Number(priceRaw.replace(',', '.'));
   if (price !== null && (!Number.isFinite(price) || price <= 0)) {
@@ -203,6 +211,7 @@ export async function createDepartureAction(
       p_accepted_vehicle_types: categories,
       p_price_indicative: price,
       p_notes: text(formData, 'notes'),
+      p_free_capacity_kg: capacity,
     });
 
     if (seriesError) return { error: toAppError(seriesError, 'series.create').message };
@@ -234,6 +243,7 @@ export async function createDepartureAction(
       service_types: services,
       accepted_vehicle_types: categories,
       price_indicative: price,
+      free_capacity_kg: capacity,
       notes: text(formData, 'notes'),
       status: publish ? 'active' : 'draft',
       published_at: publish ? new Date().toISOString() : null,

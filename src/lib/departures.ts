@@ -33,6 +33,19 @@ export interface PublicDeparture {
   price_indicative: number | null;
   currency: string;
   published_at: string | null;
+  is_domestic: boolean | null;
+  /**
+   * The centroid of `from_city`, read from `localities` by the view.
+   *
+   * Not the listing's own coordinates: the public board has never
+   * carried those and still does not. This is the same fact as
+   * `from_city`, in numbers, so the radius filter has something to
+   * measure against.
+   */
+  from_locality_lat: number | null;
+  from_locality_lng: number | null;
+  /** Kilograms still free on the platform. Null when nobody said. */
+  free_capacity_kg: number | null;
 }
 
 export const DIRECTION_LABELS: Record<Direction, string> = {

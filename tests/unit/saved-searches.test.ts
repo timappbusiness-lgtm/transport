@@ -132,3 +132,31 @@ describe('the two frequencies', () => {
     expect(FREQUENCY_HINTS.daily).toMatch(/un singur e-mail/i);
   });
 });
+
+describe('the radius and weight criteria', () => {
+  it('reads back as a sentence, naming the locality', () => {
+    expect(describeFilters({ near: 'Cluj-Napoca|RO', radius_km: '100' })).toContain(
+      'La 100 km de Cluj-Napoca',
+    );
+  });
+
+  it('defaults to fifty kilometres, the same as the board and the matcher', () => {
+    expect(describeFilters({ near: 'Cluj-Napoca|RO' })).toContain('La 50 km de Cluj-Napoca');
+  });
+
+  it('says the weight in kilograms', () => {
+    expect(describeFilters({ max_weight_kg: '2400' })).toContain('Cel mult 2400 kg');
+  });
+
+  it('stores the distance only with a centre to measure from', () => {
+    expect(filtersFromBoard({ near: 'Cluj-Napoca|RO', radiusKm: '25' })).toEqual({
+      near: 'Cluj-Napoca|RO',
+      radius_km: '25',
+    });
+    expect(filtersFromBoard({ near: null, radiusKm: '25' })).toEqual({});
+  });
+
+  it('carries the weight through on its own', () => {
+    expect(filtersFromBoard({ maxWeightKg: '2400' })).toEqual({ max_weight_kg: '2400' });
+  });
+});

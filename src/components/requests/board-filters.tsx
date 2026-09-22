@@ -1,7 +1,9 @@
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
+import { CITY_GROUPS, cityLabel, cityValue } from '@/lib/cities';
 import { CARGO_CATEGORIES, CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { DEFAULT_RADIUS_KM, RADIUS_STEPS_KM } from '@/lib/radius';
 import {
   EMPTY_REQUEST_FILTERS,
   REQUEST_FILTER_KEYS,
@@ -190,6 +192,80 @@ export function BoardFilters({
             <option value="intern">{c.scopeDomestic}</option>
             <option value="international">{c.scopeInternational}</option>
           </select>
+        </div>
+      </div>
+
+      {/*
+        Rază și greutate stau sub restul, cu o linie deasupra: sunt
+        filtrele pe care le pune cineva care caută de lucru în zona lui,
+        nu cineva care caută o rută anume. Localitatea este un select și
+        nu o casetă de text, fiindcă raza are nevoie de coordonate, iar
+        coordonate avem numai pentru localitățile din listă.
+      */}
+      <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="rf-near" className="text-xs font-medium">
+            {c.near}
+          </label>
+          <select
+            id="rf-near"
+            name={REQUEST_FILTER_KEYS.near}
+            defaultValue={filters.near ? cityValue(filters.near) : ''}
+            className={CONTROL}
+          >
+            <option value="">{c.any}</option>
+            {CITY_GROUPS.map((group) => (
+              <optgroup key={group.key} label={group.key === 'ro' ? 'România' : 'Europa'}>
+                {group.cities.map((city) => (
+                  <option key={cityValue(city)} value={cityValue(city)}>
+                    {cityLabel(city)}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="rf-radius" className="text-xs font-medium">
+            {c.radius}
+          </label>
+          <select
+            id="rf-radius"
+            name={REQUEST_FILTER_KEYS.radiusKm}
+            defaultValue={String(filters.radiusKm ?? DEFAULT_RADIUS_KM)}
+            className={CONTROL}
+          >
+            {RADIUS_STEPS_KM.map((km) => (
+              <option key={km} value={km}>
+                {c.radiusOption(km)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <p className="text-xs text-muted sm:col-span-2">{c.radiusHint}</p>
+
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <label htmlFor="rf-weight" className="text-xs font-medium">
+            {c.maxWeight}
+          </label>
+          <input
+            id="rf-weight"
+            name={REQUEST_FILTER_KEYS.maxWeightKg}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={20000}
+            // `step` rămâne 1. Cu `step={100}` și `min={1}`, singurele
+            // valori valide ar fi 1, 101, 201… — iar browserul refuză
+            // trimiterea formularului pentru orice altceva, tăcut. Cine
+            // scria 2400 apăsa „Caută" și nu se întâmpla nimic.
+            step={1}
+            defaultValue={filters.maxWeightKg ?? ''}
+            className={CONTROL}
+          />
+          <p className="text-xs text-muted">{c.maxWeightHint}</p>
         </div>
       </div>
 

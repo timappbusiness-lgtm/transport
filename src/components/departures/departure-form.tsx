@@ -180,6 +180,20 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
         >
           <input id={`${id}-detour`} name="max_detour_km" inputMode="numeric" defaultValue="50" className={CONTROL} />
         </Labelled>
+        <Labelled
+          label={c.freeCapacity}
+          htmlFor={`${id}-capacity`}
+          hint={c.freeCapacityHint}
+          error={state.fieldErrors?.free_capacity_kg}
+        >
+          <input
+            id={`${id}-capacity`}
+            name="free_capacity_kg"
+            inputMode="numeric"
+            placeholder="7000"
+            className={CONTROL}
+          />
+        </Labelled>
       </div>
 
       <fieldset className="flex flex-col gap-2">

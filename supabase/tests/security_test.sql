@@ -150,7 +150,15 @@ select pg_temp.guard(
          -- cereri publice se vede de pe panou, fără cont, deci politica
          -- trebuie să poată fi evaluată și pentru `anon`. Funcția nu
          -- întoarce date: răspunde da/nu pentru o cale dată.
-         'can_see_listing_photo'
+         'can_see_listing_photo',
+         -- Normalizarea unui nume de localitate, chemată din interiorul
+         -- lui `v_departures_public`. O vedere își citește tabelele cu
+         -- drepturile proprietarului, dar o funcție din corpul ei se
+         -- verifică tot pe apelant — deci fără astea două panoul public
+         -- nu se mai poate deschide fără cont. Sunt funcții de șiruri:
+         -- litere mici, fără diacritice, fără semne. Nu ating nicio
+         -- tabelă și nu spun nimic despre nimeni.
+         'normalise_locality', 'unaccent_simple'
        )$q$);
 
 -- ---------------------------------------------------------------------

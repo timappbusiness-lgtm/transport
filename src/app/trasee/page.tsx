@@ -19,6 +19,7 @@ import {
   type Tab,
 } from '@/lib/departure-filters';
 import type { PublicDeparture } from '@/lib/departures';
+import { boundingBox, withinRadius } from '@/lib/radius';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,17 @@ export const metadata: Metadata = {
 };
 
 const TABS: readonly Tab[] = ['toate', 'tur', 'retur'];
+const BOARD_LIMIT = 60;
+
+/**
+ * How many rows the radius filter looks at.
+ *
+ * The bounding box goes into the query, the exact circle is applied to
+ * what comes back, so the window decides how much the circle can find.
+ * The same reasoning and the same number as „potrivite cu firma mea"
+ * on the request board.
+ */
+const RADIUS_SCAN_LIMIT = 200;
 
 export default async function Page({
   searchParams,
@@ -173,11 +185,20 @@ async function loadDepartures(
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
+  // A radius is applied twice: the box narrows the query, the circle
+  // narrows what came back. The box has corners the circle never
+  // reaches, so skipping the second step would show a client a platform
+  // further away than they asked for. Scanning wider when a radius is
+  // set is the same trade the „firma mea" filter already makes.
+  const box = filters.near && filters.radiusKm
+    ? boundingBox(filters.near, filters.radiusKm)
+    : null;
+
   let query = supabase
     .from('v_departures_public')
     .select('*')
     .order('available_from', { ascending: true })
-    .limit(60);
+    .limit(box ? RADIUS_SCAN_LIMIT : BOARD_LIMIT);
 
   const direction = tabDirection(filters.tab);
   if (direction) query = query.eq('direction', direction);
@@ -196,11 +217,38 @@ async function loadDepartures(
   // is_domestic is computed in the view, so "intern" means the same thing
   // here as it does on a company profile.
   if (filters.scope) query = query.eq('is_domestic', filters.scope === 'intern');
+  // A platform that never wrote down its free capacity stays in the
+  // list: the field is new, and hiding a route nobody measured helps
+  // nobody. `saved_search_match` reads it the same way.
+  if (filters.minCapacityKg !== null) {
+    query = query.or(
+      `free_capacity_kg.gte.${filters.minCapacityKg},free_capacity_kg.is.null`,
+    );
+  }
+  if (box) {
+    query = query
+      .gte('from_locality_lat', box.minLat)
+      .lte('from_locality_lat', box.maxLat)
+      .gte('from_locality_lng', box.minLng)
+      .lte('from_locality_lng', box.maxLng);
+  }
 
   const { data, error } = await query;
   if (error) {
     console.error('[trasee] board query failed', { code: error.code, message: error.message });
     return [];
   }
-  return (data ?? []) as PublicDeparture[];
+
+  const rows = (data ?? []) as PublicDeparture[];
+  if (!box || filters.near === null || filters.radiusKm === null) return rows;
+
+  return rows
+    .filter((row) =>
+      withinRadius(
+        filters.near as NonNullable<typeof filters.near>,
+        { lat: row.from_locality_lat, lng: row.from_locality_lng },
+        filters.radiusKm as number,
+      ),
+    )
+    .slice(0, BOARD_LIMIT);
 }

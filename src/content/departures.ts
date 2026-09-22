@@ -29,6 +29,14 @@ export const departuresCopy = {
     scope: 'Acoperire',
     scopeDomestic: 'Intern',
     scopeInternational: 'Internațional',
+    near: 'Pleacă de lângă',
+    radius: 'Pe o rază de',
+    radiusOption: (km: number) => `${km} km`,
+    radiusHint:
+      'Distanța în linie dreaptă între localități. Plecările dintr-o localitate pe care nu o știm nu apar în rază.',
+    minCapacity: 'Capacitate liberă, minimum (kg)',
+    minCapacityHint:
+      'Traseele care nu și-au trecut capacitatea rămân în listă. Întreabă transportatorul înainte să rezervi.',
     any: 'Oricare',
     apply: 'Caută',
     clear: 'Șterge filtrele',
@@ -141,6 +149,9 @@ export const departuresCopy = {
     noVehicleAction: 'Mergi la flotă',
     slots: 'Locuri pe platformă',
     slotsHint: 'Câte vehicule încap. Lasă gol dacă nu transporți pe platformă.',
+    freeCapacity: 'Capacitate liberă (kg)',
+    freeCapacityHint:
+      'Câte kilograme mai poți lua. Clienții pot filtra după ea — un traseu fără capacitate trecută apare oricum, dar nu se poate alege după greutate.',
     accepted: 'Ce accepți pe platformă',
     services: 'Tipul serviciului',
     maxDetour: 'Ocol maxim acceptat (km)',

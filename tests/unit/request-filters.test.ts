@@ -97,6 +97,9 @@ describe('requestFiltersToQuery', () => {
       scope: 'international',
       service: 'expres',
       mine: true,
+      near: null,
+      radiusKm: null,
+      maxWeightKg: 2400,
     };
     const query = requestFiltersToQuery(filters);
     const params = Object.fromEntries(new URLSearchParams(query.replace(/^\?/, '')));
@@ -167,5 +170,74 @@ describe('the category filter covers the whole schema', () => {
 
   it('still refuses one that does not exist', () => {
     expect(parseRequestFilters({ [REQUEST_FILTER_KEYS.category]: 'elicopter' }).category).toBeNull();
+  });
+});
+
+describe('the radius filter', () => {
+  it('reads a locality and a distance', () => {
+    const filters = parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: '100' });
+    expect(filters.near?.name).toBe('Cluj-Napoca');
+    expect(filters.radiusKm).toBe(100);
+  });
+
+  it('is forgiving about how the locality is spelled', () => {
+    expect(parseRequestFilters({ langa: 'cluj napoca|ro' }).near?.name).toBe('Cluj-Napoca');
+  });
+
+  // A distance with nothing to measure from cannot be applied, and
+  // silently keeping it would put „raza=100" in a shared link that does
+  // nothing.
+  it('drops a distance with no locality', () => {
+    const filters = parseRequestFilters({ raza: '100' });
+    expect(filters.near).toBeNull();
+    expect(filters.radiusKm).toBeNull();
+  });
+
+  // Somebody who picked a town and left the distance alone meant the
+  // default distance, not „no filter".
+  it('defaults the distance when only a locality is given', () => {
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO' }).radiusKm).toBe(50);
+  });
+
+  it('refuses a locality it has no coordinates for', () => {
+    expect(parseRequestFilters({ langa: 'Cisnădie|RO' }).near).toBeNull();
+    expect(parseRequestFilters({ langa: 'nu-i oraș' }).near).toBeNull();
+  });
+
+  it('refuses a distance that is not a whole number in range', () => {
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: '0' }).radiusKm).toBe(50);
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: '-5' }).radiusKm).toBe(50);
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: '12.5' }).radiusKm).toBe(50);
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: '9000' }).radiusKm).toBe(50);
+    expect(parseRequestFilters({ langa: 'Cluj-Napoca|RO', raza: 'mult' }).radiusKm).toBe(50);
+  });
+
+  it('writes both keys back, or neither', () => {
+    const query = requestFiltersToQuery({
+      ...EMPTY_REQUEST_FILTERS,
+      near: parseRequestFilters({ langa: 'Cluj-Napoca|RO' }).near,
+      radiusKm: 25,
+    });
+    expect(query).toContain('langa=Cluj-Napoca%7CRO');
+    expect(query).toContain('raza=25');
+    expect(requestFiltersToQuery({ ...EMPTY_REQUEST_FILTERS, radiusKm: 25 })).toBe('');
+  });
+});
+
+describe('the weight filter', () => {
+  it('reads a maximum in kilograms', () => {
+    expect(parseRequestFilters({ greutate: '2400' }).maxWeightKg).toBe(2400);
+  });
+
+  it('refuses anything that is not a whole number in range', () => {
+    expect(parseRequestFilters({ greutate: '0' }).maxWeightKg).toBeNull();
+    expect(parseRequestFilters({ greutate: '-1' }).maxWeightKg).toBeNull();
+    expect(parseRequestFilters({ greutate: '1.5' }).maxWeightKg).toBeNull();
+    expect(parseRequestFilters({ greutate: '999999' }).maxWeightKg).toBeNull();
+    expect(parseRequestFilters({ greutate: 'grea' }).maxWeightKg).toBeNull();
+  });
+
+  it('counts as narrowing the board', () => {
+    expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, maxWeightKg: 2400 })).toBe(true);
   });
 });

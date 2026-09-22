@@ -49,6 +49,10 @@ function departure(overrides: Partial<PublicDeparture> = {}): PublicDeparture {
     price_indicative: 650,
     currency: 'EUR',
     published_at: '2026-03-01T10:00:00Z',
+    is_domestic: false,
+    from_locality_lat: 48.1351,
+    from_locality_lng: 11.582,
+    free_capacity_kg: null,
     ...overrides,
   };
 }
@@ -251,5 +255,39 @@ describe('every database value has Romanian words', () => {
     expect(labels).toContain('Autoutilitară');
     expect(labels).toContain('Motocicletă');
     for (const label of labels) expect(label.trim()).not.toBe('');
+  });
+});
+
+describe('the radius and capacity filters', () => {
+  it('reads a locality and a distance', () => {
+    const filters = parseFilters({ langa: 'Timișoara|RO', raza: '200' });
+    expect(filters.near?.name).toBe('Timișoara');
+    expect(filters.radiusKm).toBe(200);
+  });
+
+  it('drops a distance with no locality, and defaults one without a distance', () => {
+    expect(parseFilters({ raza: '200' }).radiusKm).toBeNull();
+    expect(parseFilters({ langa: 'Timișoara|RO' }).radiusKm).toBe(50);
+  });
+
+  it('reads a minimum free capacity in kilograms', () => {
+    expect(parseFilters({ capacitate: '7000' }).minCapacityKg).toBe(7000);
+    expect(parseFilters({ capacitate: '0' }).minCapacityKg).toBeNull();
+    expect(parseFilters({ capacitate: 'multe' }).minCapacityKg).toBeNull();
+  });
+
+  it('survives a round trip through the query string', () => {
+    const filters = parseFilters({ langa: 'Timișoara|RO', raza: '100', capacitate: '3500' });
+    const parsed = parseFilters(
+      Object.fromEntries(new URLSearchParams(filtersToQuery(filters).replace(/^\?/, ''))),
+    );
+    expect(parsed.near?.name).toBe('Timișoara');
+    expect(parsed.radiusKm).toBe(100);
+    expect(parsed.minCapacityKg).toBe(3500);
+  });
+
+  it('counts as narrowing the board', () => {
+    expect(hasActiveFilters(parseFilters({ capacitate: '3500' }))).toBe(true);
+    expect(hasActiveFilters(parseFilters({ langa: 'Timișoara|RO' }))).toBe(true);
   });
 });

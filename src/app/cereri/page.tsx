@@ -30,6 +30,8 @@ import {
   type RequestFilters,
   type Tab,
 } from '@/lib/request-filters';
+import { cityValue } from '@/lib/cities';
+import { boundingBox, withinRadius } from '@/lib/radius';
 import type { PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
@@ -45,17 +47,21 @@ const TABS: readonly Tab[] = ['toate', 'curse', 'retur'];
 const BOARD_LIMIT = 60;
 
 /**
- * How many rows „potrivite cu firma mea" looks at.
+ * How many rows the two filters that finish in this file look at.
  *
- * The filter runs after the query — coverage, categories, equipment and
- * the detour are not columns on the board view — so the window it scans
- * decides how much it can find. Sixty would mean a firm matching one row
- * in twenty sees three matches and concludes the board is empty for
- * them. Two hundred is still one page of rows from Postgres and gives
- * the filter something to work with; the count on screen says which
- * window it examined rather than implying it saw everything.
+ * „Potrivite cu firma mea" runs after the query because coverage,
+ * categories, equipment and the detour are not columns on the board
+ * view. The radius runs after it too, because a great-circle distance
+ * is not a column either — the query narrows to a bounding box and the
+ * circle is applied here.
+ *
+ * Sixty would mean a firm matching one row in twenty sees three matches
+ * and concludes the board is empty for them. Two hundred is still one
+ * page of rows from Postgres and gives both filters something to work
+ * with; the count on screen says which window it examined rather than
+ * implying it saw everything.
  */
-const MINE_SCAN_LIMIT = 200;
+const SCAN_LIMIT = 200;
 
 export default async function Page({
   searchParams,
@@ -65,8 +71,9 @@ export default async function Page({
   const filters = parseRequestFilters(await searchParams);
   const c = requestsCopy.board;
 
+  const widened = filters.mine || filters.near !== null;
   const [all, context] = await Promise.all([
-    loadRequests(filters, filters.mine ? MINE_SCAN_LIMIT : BOARD_LIMIT),
+    loadRequests(filters, widened ? SCAN_LIMIT : BOARD_LIMIT),
     getAccountContext(),
   ]);
 
@@ -129,6 +136,9 @@ export default async function Page({
                 condition: filters.condition,
                 service: filters.service,
                 scope: filters.scope,
+                near: filters.near ? cityValue(filters.near) : null,
+                radiusKm: filters.radiusKm === null ? null : String(filters.radiusKm),
+                maxWeightKg: filters.maxWeightKg === null ? null : String(filters.maxWeightKg),
               })}
               signedIn={context !== null}
             />
@@ -367,11 +377,42 @@ async function loadRequests(
   if (running !== null) query = query.eq('is_running', running);
   if (filters.scope) query = query.eq('is_domestic', filters.scope === 'intern');
   if (filters.service) query = query.eq('service_type', filters.service);
+  // A request with no weight written down stays in the list: the field
+  // is optional on the publish form, so excluding it would hide most of
+  // the board from anybody who used this filter at all — and the weight,
+  // or its absence, is on every card. `saved_search_match` reads it the
+  // same way, so the board and the alert cannot disagree.
+  if (filters.maxWeightKg !== null) {
+    query = query.or(`weight_kg.lte.${filters.maxWeightKg},weight_kg.is.null`);
+  }
+
+  // The radius is applied twice: the bounding box narrows the query —
+  // it is what `cargo_listings_geo_idx` can serve — and the circle
+  // narrows what came back. The box has corners the circle never
+  // reaches, so stopping at the box would show a carrier a car further
+  // away than they asked for.
+  const box = filters.near && filters.radiusKm
+    ? boundingBox(filters.near, filters.radiusKm)
+    : null;
+  if (box) {
+    query = query
+      .gte('from_lat', box.minLat)
+      .lte('from_lat', box.maxLat)
+      .gte('from_lng', box.minLng)
+      .lte('from_lng', box.maxLng);
+  }
 
   const { data, error } = await query;
   if (error) {
     console.error('[cereri] board query failed', { code: error.code, message: error.message });
     return [];
   }
-  return (data ?? []) as PublicRequest[];
+
+  const rows = (data ?? []) as PublicRequest[];
+  const centre = filters.near;
+  const radius = filters.radiusKm;
+  if (centre === null || radius === null) return rows;
+  return rows.filter((row) =>
+    withinRadius(centre, { lat: row.from_lat, lng: row.from_lng }, radius),
+  );
 }

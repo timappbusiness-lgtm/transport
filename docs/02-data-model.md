@@ -32,6 +32,8 @@ auth.users 1─1 profiles
                  └─< cargo_listings ─< offers ─> transports ─< ratings
                           │
                           └─1 listing_contacts   (gated by reveal_contact())
+
+localities            (gazetteer; a trigger stamps both listing tables from it)
 ```
 
 ## Design decisions worth knowing
@@ -148,6 +150,30 @@ migration, which is the right amount of friction.
 `distance_km()` is a plain SQL haversine, immutable and parallel-safe. It
 covers "loads within 100 km of Cluj". Bring PostGIS in when routing along real
 roads or corridor polygons is actually on the roadmap — not before.
+
+### Coordinates are stamped by a trigger, from `localities`
+
+`localities` holds the places we have coordinates for: Romanian county seats
+and the European cities cars are brought home from. A trigger on each listing
+table fills `from_lat`/`from_lng` (and the unloading pair) from it by city
+name, filling only what is missing, so a request that arrived with its own
+coordinates keeps them.
+
+A trigger rather than a line in the publish action, because there are three
+ways a departure is born — the form, `create_route_series()` and
+`generate_route_departures()` — and the last two are SQL and cannot read a
+list that lives in TypeScript. `src/lib/cities.ts` stays what it was, the list
+a picker shows; a unit test keeps the two in step.
+
+This was found by building the radius filter: `truck_listings.from_lat` had
+existed since the first migration and nothing had ever written to it. The
+column being empty did not raise anything — it made `best_route_detour()`
+quietly find no match, ever.
+
+The board's public view does not serve the listing's own coordinates. It joins
+`localities` by city name and serves the centroid, so the column cannot carry
+an address whatever a listing holds. That is the view's guarantee rather than
+a convention somebody has to remember.
 
 ## Computed reputation
 
