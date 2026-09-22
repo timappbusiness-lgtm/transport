@@ -1,8 +1,9 @@
 # Data model
 
-Seven migrations, applied in filename order. Each one is self-contained and
-ends with its own RLS policies — never add a table without its four policies
-in the same file.
+Applied in filename order — the nine foundation migrations are the table
+below; `supabase/migrations/` holds every one since (54 today). Each is
+self-contained and ends with its own RLS policies — never add a table without
+its four policies in the same file.
 
 | File | Contents |
 |---|---|
@@ -119,7 +120,9 @@ Phase 0 hardening (migrations `20260916130000`–`130400`), tested by
 - **State changes are RPCs**: `create_company`, `review_document`,
   `accept_offer`, `withdraw_offer`, `reject_offer`,
   `confirm_departure_booking`, `mark_conversation_read`. Transports exist only
-  through `accept_offer`.
+  through `create_order()`, and it has exactly two callers: `accept_offer()`
+  and `confirm_departure_booking()` — an accepted offer and a confirmed seat
+  are the same event as far as an order is concerned.
 - **`audit_log`** is append-only, even for the service role; only
   `purge_audit_log()` deletes.
 - **Membership is by invitation** (`company_invitations`): nobody is added
@@ -286,7 +289,7 @@ the editorial benchmark in `price_benchmarks` until it has a real sample.
 database rather than in the frontend: the publish guards, the compliance
 sweep, suspension and automatic reactivation, plan quotas, the contact gate,
 the requirement configuration, the vehicle model, platform slots and the
-price threshold. 47 checks, abort on first failure.
+price threshold. 40 checks, abort on first failure.
 
 Run it against a scratch database after touching any migration —
 `supabase/tests/README.md` has both the Supabase and the plain-Postgres
@@ -316,6 +319,7 @@ join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity;
 -- expected: zero rows
 
--- the three jobs must be scheduled
-select jobname, schedule, active from cron.job;
+-- every scheduled job must be there, and active (20 today; job_health()
+-- keeps the list, and rls_test.sql fails if the two disagree)
+select jobname, schedule, active from cron.job order by jobname;
 ```

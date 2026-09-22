@@ -51,8 +51,16 @@ să te bazezi pe vreun rând din tabele.
 > este deja acoperită: formularul se completează întreg fără cont, contul
 > se face la ultimul pas, cu ciorna păstrată.
 >
-> Restul constatărilor stau în picioare, inclusiv retenția pentru
-> `contact_reveals` și paginile juridice.
+> Două constatări pe care documentul le lasă deschise sunt și ele închise:
+> retenția pentru `contact_reveals` (`20260918230000` adaugă
+> `deletion_settings.contact_reveal_months`, `purge_contact_reveals()` și
+> jobul `nightly-retention`) și paginile juridice (`/termeni` și
+> `/confidentialitate` au conținut v1.0 întreg, iar `UNBUILT_ROUTES` din
+> `src/config/routes.ts` este gol din 20 septembrie). Ce rămâne din a doua
+> este numai identitatea operatorului — câmpurile din `src/config/company.ts`,
+> goale intenționat până le completează cineva.
+>
+> Restul constatărilor stau în picioare.
 
 ---
 

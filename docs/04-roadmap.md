@@ -37,9 +37,9 @@ Product decisions taken with it:
   shipper; only companies are rated. Revisit once there is a moderation flow
   for ratings of private persons.
 - **Saved-route alerts stay in the MVP, by e-mail only.** WhatsApp alerts move
-  after the MVP. The homepage still lists „Alerte pe WhatsApp pentru traseele
-  tale” as „în curând”; that line must become „Alerte pe email pentru cereri
-  pe traseele tale” (not yet changed).
+  after the MVP. The homepage line that promised them is gone — nothing in
+  `src/` offers WhatsApp to a visitor, and
+  `tests/e2e/profil-firma-supabase.spec.ts` asserts it stays that way.
 - **Confirming a seat reservation creates the order**, through the same
   internal function as `accept_offer()` (phase 0 follow-up).
 - **Membership is by invitation.** A manager invites by e-mail
@@ -56,7 +56,10 @@ Who is on the platform, and whether their papers are valid.
 - Company signup with `create_company()`; CUI lookup at ANAF with autofill and
   the inactive / struck-off flag (`verify-cui-anaf`) *— database done in phase 0*
 - Membership by invitation, ownership transfer *— done*
-- Individual quick account: phone confirmed by OTP
+- Individual quick account: name, e-mail, password and a telephone number.
+  Publishing asks for the e-mail confirmed and the number on file; the number
+  itself is confirmed later, where it is worth something — by SMS once a
+  provider secret exists, by staff until then
 - Document upload into the company folder; **AI extraction** with
   `parse-document` pre-fills kind, number, holder and dates; a person from the
   platform approves or rejects in the review queue (`review_document()`)
@@ -124,8 +127,8 @@ end to end.
   Messaging rather than Verify, so the code's lifetime, its attempt count
   and the rate limits stay in `phone_verification_settings` where they can
   be read and tested
-- Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
-  email pentru cereri pe traseele tale”
+- ~~Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
+  email pentru cereri pe traseele tale”~~ *— done; the WhatsApp line is gone*
 
 ## Phase 5 — Offers (done, September 2026)
 
