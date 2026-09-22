@@ -2009,11 +2009,14 @@ select pg_temp.check('CRQ  a request without coordinates adds no kilometres, rat
              title, loading_city, unloading_city, loading_from, status, published_at)
       values ('fc000000-0000-0000-0000-000000000002',
               'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
-              -- Un sat, nu o reședință de județ: de când `localities`
-              -- ștampilează coordonatele, „fără coordonate" înseamnă
-              -- exact „o localitate pe care gazetarul nu o știe", care
-              -- este și cazul real — multe mașini se iau dintr-un sat.
-              'Fără coordonate', 'Cisnădie', 'Râșnov', current_date + 4, 'delivered', now());
+              -- Un nume inventat, nu un sat real. Aici era „Cisnădie",
+              -- ales pe vremea când nomenclatorul avea 75 de rânduri;
+              -- importul l-a adus înăuntru și verificarea a început să
+              -- măsoare contrariul a ce spune. „Fără coordonate"
+              -- înseamnă „o localitate pe care nu o știm", și singurul
+              -- mod de a scrie asta care rezistă unui import este un
+              -- nume care nu poate exista.
+              'Fără coordonate', 'Nicăieri-pe-Hartă', 'Râșnov', current_date + 4, 'delivered', now());
     end $d$$s$);
 
 select pg_temp.check('CRQ  the daily series is thirty days long and ends today', 'fix',
@@ -12240,7 +12243,7 @@ select pg_temp.check('RAZ  and a town the gazetteer does not know gets none, rat
              'fc000000-0000-0000-0000-000000000001',
              'fe000000-0000-0000-0000-000000000001',
              'f0000000-0000-0000-0000-000000000002', 'tur',
-             'RO', 'Cisnădie', 'RO', 'Râșnov',
+             'RO', 'Nicăieri-pe-Hartă', 'RO', 'Râșnov',
              current_date, current_date + 10, 3,
              array['autoturism']::public.cargo_category[], 'draft')$s$);
 
@@ -12264,9 +12267,24 @@ select pg_temp.check('RAZ  spelling and diacritics do not decide whether a listi
              array['autoturism']::public.cargo_category[], 'draft')$s$);
 
 -- Nomenclatorul: se citește fără cont, nu se scrie de nimeni prin API.
+-- Un prag, nu un număr exact: nomenclatorul crește la fiecare import, iar
+-- o verificare care numără exact cade la fiecare import fără să fi
+-- descoperit nimic. Ce contează este că `anon` îl poate citi și că are
+-- înăuntru și România, și străinătatea.
 select pg_temp.check('RAZ  the gazetteer is readable without an account', 'fix',
   null, 'anon',
-  $a$select count(*) = 75 from public.localities$a$, 'true');
+  $a$select count(*) >= 2000
+        and count(*) filter (where country = 'RO') >= 1000
+        and count(distinct country) >= 15
+     from public.localities$a$, 'true');
+
+-- Și toate cele 41 de reședințe de județ sunt înăuntru. Trei dintre ele
+-- au lipsit la primul import, pierdute la deduplicarea după nume în fața
+-- unui sat omonim; de aia se numără aici, nu se presupune.
+select pg_temp.check('RAZ  and every county seat is in it', 'fix',
+  null, 'anon',
+  $a$select count(*) = 41 from public.localities
+     where country = 'RO' and is_county_seat$a$, 'true');
 
 select pg_temp.check('RAZ  and nobody writes to it through the API', 'fix',
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
@@ -12323,7 +12341,7 @@ select pg_temp.check('RAZ  a request from a town with no coordinates is not in a
   'f0000000-0000-0000-0000-000000000002', 'authenticated',
   $a$select count(*) = 0 from public.saved_search_match(
        'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a5')$a$, 'true',
-  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a5', 'Cisnădie');
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a5', 'Nicăieri-pe-Hartă');
      select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"200"}')$s$);
 
 select pg_temp.check('RAZ  and a centre we cannot place matches nothing, rather than everything', 'fix',
@@ -12331,7 +12349,7 @@ select pg_temp.check('RAZ  and a centre we cannot place matches nothing, rather 
   $a$select count(*) = 0 from public.saved_search_match(
        'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a6')$a$, 'true',
   p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a6', 'Cluj-Napoca');
-     select pg_temp.search_with('{"near":"Cisnădie|RO","radius_km":"200"}')$s$);
+     select pg_temp.search_with('{"near":"Nicăieri-pe-Hartă|RO","radius_km":"200"}')$s$);
 
 -- Greutatea. O cerere fără greutate scrisă rămâne — pe panou și aici.
 select pg_temp.check('RAZ  the weight filter keeps what fits', 'fix',
