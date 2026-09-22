@@ -11,12 +11,19 @@ import { HeaderBrand } from './header-brand';
  *
  * Split out and suspended so reading a cookie does not make every marketing
  * page uncacheable: the shell is static, this streams in behind it. The
- * fallback is the signed-out nav, which is also what an anonymous visitor
- * ends up with, so the common case never changes shape.
+ * fallback is the signed-out header, which is also what an anonymous
+ * visitor ends up with, so the common case never changes shape.
+ *
+ * The brand is in here too rather than behind a boundary of its own —
+ * where it leads depends on the session as well. One boundary, one call:
+ * two of them read the same cached context but schedule as two separate
+ * pieces of work, and that was enough to change the order a page and its
+ * layout render in. It surfaced a real bug elsewhere rather than causing
+ * one, but a header has no business deciding that ordering.
  */
 async function HeaderAuth() {
   const context = await getAccountContext();
-  if (!context) return <HeaderNav user={null} />;
+  if (!context) return <SignedOutHeader />;
 
   // The menu comes from the same builder the sidebar reads, so the header
   // can never offer a page the sidebar does not — or one that is not
@@ -27,7 +34,21 @@ async function HeaderAuth() {
     items: headerMenu(navContextOf(context), counts),
   };
 
-  return <HeaderNav user={user} />;
+  return (
+    <>
+      <HeaderBrand signedIn />
+      <HeaderNav user={user} />
+    </>
+  );
+}
+
+function SignedOutHeader() {
+  return (
+    <>
+      <HeaderBrand signedIn={false} />
+      <HeaderNav user={null} />
+    </>
+  );
 }
 
 /**
@@ -40,22 +61,10 @@ export function SiteHeader() {
   return (
     <div className="pointer-events-none sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
       <header className="pointer-events-auto mx-auto flex h-14 w-full max-w-[72rem] items-center gap-3 rounded-pill border border-white/25 bg-[rgba(28,38,43,.72)] px-3 text-white backdrop-blur-xl sm:gap-4 sm:px-5">
-        {/* The brand leads to /cont from inside the account and to the
-            homepage everywhere else, which needs both the session and the
-            path — so it streams in with the rest. The fallback is the
-            public target, the same one an anonymous visitor gets. */}
-        <Suspense fallback={<HeaderBrand signedIn={false} />}>
-          <HeaderAuthBrand />
-        </Suspense>
-        <Suspense fallback={<HeaderNav user={null} />}>
+        <Suspense fallback={<SignedOutHeader />}>
           <HeaderAuth />
         </Suspense>
       </header>
     </div>
   );
-}
-
-async function HeaderAuthBrand() {
-  const context = await getAccountContext();
-  return <HeaderBrand signedIn={context !== null} />;
 }

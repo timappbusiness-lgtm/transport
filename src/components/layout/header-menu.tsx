@@ -85,8 +85,9 @@ export function brandHref(signedIn: boolean, pathname: string): string {
   return signedIn && insideAccount(pathname) ? ROUTES.account : ROUTES.home;
 }
 
-/** „3" up to nine, „9+" past it: the badge must not widen the row. */
-function badgeLabel(count: number): string {
+/** „3" up to nine, „9+" past it: a three-digit badge pushes the label
+ *  out of a 240px menu. */
+export function badgeLabel(count: number): string {
   return count > 9 ? '9+' : String(count);
 }
 

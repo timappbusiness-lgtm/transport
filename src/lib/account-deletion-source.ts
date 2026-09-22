@@ -1,5 +1,6 @@
 import 'server-only';
 import type { AccountContext } from '@/lib/auth/account';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -65,7 +66,35 @@ const REQUEST_COLUMNS =
 
 const OPEN: DeletionStatus[] = ['requested', 'blocked', 'scheduled'];
 
+export interface DeletionSettings {
+  graceDays: number;
+  supportEmail: string | null;
+  contactRevealMonths: number;
+}
+
+/** The three numbers as the screens show them with no row and no database. */
+const DEFAULT_DELETION_SETTINGS: DeletionSettings = {
+  graceDays: 14,
+  supportEmail: null,
+  contactRevealMonths: 24,
+};
+
+/** Nothing to show, for a build that cannot reach the database. */
+const EMPTY_PERSONAL_DATA: PersonalDataView = {
+  graceDays: DEFAULT_DELETION_SETTINGS.graceDays,
+  supportEmail: DEFAULT_DELETION_SETTINGS.supportEmail,
+  own: null,
+  ownBlockers: [],
+  companies: [],
+  companyRequests: [],
+  latestExport: null,
+};
+
 export async function loadPersonalData(context: AccountContext): Promise<PersonalDataView> {
+  // Without configuration there is nothing to read, and `createClient()`
+  // throws rather than saying so. Every other source here opens with this.
+  if (!isSupabaseConfigured()) return EMPTY_PERSONAL_DATA;
+
   const supabase = await createClient();
 
   const owned = context.memberships
@@ -124,6 +153,8 @@ export interface DeletionAdminView {
 }
 
 export async function loadDeletionAdminData(): Promise<DeletionAdminView> {
+  if (!isSupabaseConfigured()) return { rows: [], jobLate: null };
+
   const supabase = await createClient();
 
   const [requests, health] = await Promise.all([
@@ -144,12 +175,6 @@ export async function loadDeletionAdminData(): Promise<DeletionAdminView> {
   };
 }
 
-export interface DeletionSettings {
-  graceDays: number;
-  supportEmail: string | null;
-  contactRevealMonths: number;
-}
-
 /**
  * The three numbers behind erasure and retention.
  *
@@ -159,6 +184,10 @@ export interface DeletionSettings {
  * the screen is wrong about.
  */
 export async function loadDeletionSettings(): Promise<DeletionSettings> {
+  // The fallbacks below are the same ones a missing row gets, so an
+  // unconfigured build shows the documented defaults rather than throwing.
+  if (!isSupabaseConfigured()) return DEFAULT_DELETION_SETTINGS;
+
   const supabase = await createClient();
   const { data } = await supabase
     .from('deletion_settings')
@@ -166,8 +195,10 @@ export async function loadDeletionSettings(): Promise<DeletionSettings> {
     .maybeSingle();
 
   return {
-    graceDays: data?.grace_days ?? 14,
-    supportEmail: data?.support_email ?? null,
-    contactRevealMonths: data?.contact_reveal_months ?? 24,
+    graceDays: data?.grace_days ?? DEFAULT_DELETION_SETTINGS.graceDays,
+    supportEmail: data?.support_email ?? DEFAULT_DELETION_SETTINGS.supportEmail,
+    contactRevealMonths:
+      data?.contact_reveal_months ?? DEFAULT_DELETION_SETTINGS.contactRevealMonths,
   };
 }
+

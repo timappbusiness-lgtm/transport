@@ -1,4 +1,5 @@
 import 'server-only';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -126,6 +127,19 @@ export function providerStatusFrom(
   };
 }
 
+/** Nothing to report, for a build that cannot reach the database. */
+const EMPTY_ADMIN_DATA: NotificationsAdminData = {
+  health: [],
+  healthError: null,
+  stats: [],
+  rows: [],
+  runs: [],
+  mail: null,
+  provider: { configured: 'necunoscut', missing: null, reportedAt: null },
+  sms: null,
+  smsProvider: { configured: 'necunoscut', missing: null, reportedAt: null },
+};
+
 export interface QueueFilters {
   status?: string | undefined;
   channel?: string | undefined;
@@ -136,6 +150,14 @@ export interface QueueFilters {
 export async function loadNotificationsAdminData(
   filters: QueueFilters = {},
 ): Promise<NotificationsAdminData> {
+  // Every other source in this directory opens with this; this one did
+  // not, so on a build with no Supabase configuration — a preview, a
+  // checkout with no .env — `createClient()` threw where the rest return
+  // an empty screen. The staff layout 404s an anonymous visitor anyway,
+  // but a layout and the page under it render together, so the page got
+  // far enough to throw and log before the 404 landed.
+  if (!isSupabaseConfigured()) return EMPTY_ADMIN_DATA;
+
   const supabase = await createClient();
 
   let query = supabase
