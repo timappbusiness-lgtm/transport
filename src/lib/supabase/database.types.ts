@@ -2286,6 +2286,36 @@ export type Database = {
           },
         ]
       }
+      localities: {
+        Row: {
+          country: string
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          name: string
+          region: string
+        }
+        Insert: {
+          country: string
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          region: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          region?: string
+        }
+        Relationships: []
+      }
       matching_settings: {
         Row: {
           category_window_days: number
@@ -4121,6 +4151,7 @@ export type Database = {
           ended_at: string | null
           ends_on: string
           every_n_days: number | null
+          free_capacity_kg: number | null
           from_city: string
           from_country: string
           from_county: string | null
@@ -4153,6 +4184,7 @@ export type Database = {
           ended_at?: string | null
           ends_on: string
           every_n_days?: number | null
+          free_capacity_kg?: number | null
           from_city: string
           from_country?: string
           from_county?: string | null
@@ -4185,6 +4217,7 @@ export type Database = {
           ended_at?: string | null
           ends_on?: string
           every_n_days?: number | null
+          free_capacity_kg?: number | null
           from_city?: string
           from_country?: string
           from_county?: string | null
@@ -5511,9 +5544,12 @@ export type Database = {
           available_to: string | null
           currency: Database["public"]["Enums"]["currency_code"] | null
           direction: Database["public"]["Enums"]["truck_direction"] | null
+          free_capacity_kg: number | null
           from_city: string | null
           from_country: string | null
           from_county: string | null
+          from_locality_lat: number | null
+          from_locality_lng: number | null
           is_domestic: boolean | null
           platform_slots_total: number | null
           price_indicative: number | null
@@ -6908,6 +6944,7 @@ export type Database = {
           p_direction: Database["public"]["Enums"]["truck_direction"]
           p_ends_on: string
           p_every_n_days: number
+          p_free_capacity_kg?: number
           p_from_city: string
           p_from_country: string
           p_from_county: string
@@ -6935,6 +6972,7 @@ export type Database = {
           ended_at: string | null
           ends_on: string
           every_n_days: number | null
+          free_capacity_kg: number | null
           from_city: string
           from_country: string
           from_county: string | null
@@ -7389,6 +7427,18 @@ export type Database = {
           user_id: string
         }[]
       }
+      locality_point: {
+        Args: { p_city: string; p_country: string }
+        Returns: {
+          country: string
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          name: string
+          region: string
+        }
+      }
       log_job_run: {
         Args: {
           p_details?: Json
@@ -7567,6 +7617,10 @@ export type Database = {
           score: number
           to_city: string
         }[]
+      }
+      normalise_locality: {
+        Args: { p_name: string }
+        Returns: string
       }
       normalise_phone: {
         Args: { p_phone: string }
@@ -9137,6 +9191,7 @@ export type Database = {
           ended_at: string | null
           ends_on: string
           every_n_days: number | null
+          free_capacity_kg: number | null
           from_city: string
           from_country: string
           from_county: string | null
@@ -9620,6 +9675,10 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      unaccent_simple: {
+        Args: { p_text: string }
+        Returns: string
+      }
       unblock_sender: {
         Args: { p_block_id: string }
         Returns: undefined
@@ -9649,6 +9708,7 @@ export type Database = {
           ended_at: string | null
           ends_on: string
           every_n_days: number | null
+          free_capacity_kg: number | null
           from_city: string
           from_country: string
           from_county: string | null

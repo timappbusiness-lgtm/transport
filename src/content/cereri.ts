@@ -177,6 +177,18 @@ export const requestsCopy = {
     scope: 'Acoperire',
     scopeDomestic: 'Intern',
     scopeInternational: 'Internațional',
+    near: 'Lângă localitatea',
+    radius: 'Pe o rază de',
+    radiusOption: (km: number) => `${km} km`,
+    /**
+     * Says what the radius is measured from, because the coordinates on
+     * a request are a locality's centroid and not an address. Promising
+     * more than that is how a filter starts lying.
+     */
+    radiusHint:
+      'Distanța în linie dreaptă între localități. Cererile luate dintr-un sat pe care nu îl știm nu apar în rază.',
+    maxWeight: 'Greutate maximă (kg)',
+    maxWeightHint: 'Cererile fără greutate trecută rămân în listă — o vezi pe fiecare card.',
     any: 'Oricare',
     apply: 'Caută',
     clear: 'Șterge filtrele',

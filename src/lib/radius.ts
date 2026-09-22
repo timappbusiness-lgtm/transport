@@ -32,8 +32,22 @@ export interface BoundingBox {
   maxLng: number;
 }
 
-/** Kilometres per degree of latitude. Constant; longitude is not. */
-const KM_PER_DEG_LAT = 111.32;
+/** The sphere `straightLineKm` and the database's `distance_km` both use. */
+const EARTH_RADIUS_KM = 6371;
+
+/**
+ * Slack added to the box, in kilometres.
+ *
+ * `straightLineKm` rounds to a tenth, so a point exactly on the edge can
+ * report up to 50 m under the radius and still have to survive the box.
+ * A hundred metres of margin costs a handful of extra rows and removes
+ * the whole class of „the circle kept it, the box had already dropped
+ * it".
+ */
+const BOX_MARGIN_KM = 0.1;
+
+const toRad = (deg: number): number => (deg * Math.PI) / 180;
+const toDeg = (rad: number): number => (rad * 180) / Math.PI;
 
 /**
  * The smallest latitude/longitude rectangle that contains the circle.
@@ -42,16 +56,27 @@ const KM_PER_DEG_LAT = 111.32;
  * a great-circle distance is not a column. The box is a **superset** — it
  * has corners the circle does not reach — so the exact distance still has
  * to be applied to the rows that come back. Getting that order wrong
- * would show a carrier a request 20 km further away than they asked for.
+ * would show a carrier a request further away than they asked for.
+ *
+ * The spherical formulas rather than „111 km to a degree": that constant
+ * is the equatorial meridian, it is short everywhere this marketplace
+ * operates, and a box built from it clips the circle by about a
+ * kilometre at a 100 km radius. The test that walks the edge of the
+ * circle is what found it.
  *
  * Near the poles a degree of longitude collapses to nothing and the box
- * would explode; this marketplace runs between Sicily and Scandinavia, so
- * the latitude is clamped rather than special-cased.
+ * would swallow the globe; this marketplace runs between Sicily and
+ * Scandinavia, so the latitude is clamped rather than special-cased.
  */
 export function boundingBox(centre: LatLng, radiusKm: number): BoundingBox {
-  const latDelta = radiusKm / KM_PER_DEG_LAT;
-  const clamped = Math.min(85, Math.max(-85, centre.lat));
-  const lngDelta = radiusKm / (KM_PER_DEG_LAT * Math.cos((clamped * Math.PI) / 180));
+  const angular = (radiusKm + BOX_MARGIN_KM) / EARTH_RADIUS_KM;
+  const latDelta = toDeg(angular);
+  const latRad = toRad(Math.min(85, Math.max(-85, centre.lat)));
+  // asin of the ratio, clamped: past that the circle wraps a pole and
+  // every meridian is inside it.
+  const ratio = Math.min(1, Math.sin(angular) / Math.cos(latRad));
+  const lngDelta = toDeg(Math.asin(ratio));
+
   return {
     minLat: centre.lat - latDelta,
     maxLat: centre.lat + latDelta,

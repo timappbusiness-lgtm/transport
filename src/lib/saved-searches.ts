@@ -1,3 +1,4 @@
+import { cityFromValue } from './cities';
 import { CARGO_CATEGORY_LABELS, type CargoCategory } from './departures';
 import { COUNTRY_OPTIONS } from './vehicles';
 import { countyName } from './counties';
@@ -29,6 +30,11 @@ export interface SearchFilters {
   condition?: string;
   service?: string;
   scope?: string;
+  /** „Cluj-Napoca|RO" — the same value the board's link carries. */
+  near?: string;
+  /** Kilometres from `near`. Fifty when `near` is set and this is not. */
+  radius_km?: string;
+  max_weight_kg?: string;
 }
 
 export interface SavedSearch {
@@ -94,6 +100,19 @@ export function describeFilters(filters: SearchFilters): string[] {
   if (filters.scope === 'intern') parts.push('Doar intern');
   if (filters.scope === 'international') parts.push('Doar internațional');
 
+  if (filters.near !== undefined && filters.near !== '') {
+    const city = cityFromValue(filters.near);
+    const km = filters.radius_km === undefined ? 50 : Number(filters.radius_km);
+    // The stored value is a city we know, because the board only lets
+    // one be picked — but a row in a jsonb column is not a promise, so
+    // fall back to what was written rather than showing „undefined".
+    parts.push(`La ${Number.isFinite(km) ? km : 50} km de ${city?.name ?? filters.near}`);
+  }
+
+  if (filters.max_weight_kg !== undefined && filters.max_weight_kg !== '') {
+    parts.push(`Cel mult ${filters.max_weight_kg} kg`);
+  }
+
   return parts;
 }
 
@@ -134,6 +153,13 @@ export function filtersFromBoard(params: Record<string, string | null>): SearchF
   put('condition', params.condition ?? null);
   put('service', params.service ?? null);
   put('scope', params.scope ?? null);
+  // The radius only means something with a centre, and the matcher
+  // reads it that way too: `near` without `radius_km` is fifty.
+  if (params.near !== null && params.near !== undefined && params.near.trim() !== '') {
+    put('near', params.near);
+    put('radius_km', params.radiusKm ?? null);
+  }
+  put('max_weight_kg', params.maxWeightKg ?? null);
   return out;
 }
 

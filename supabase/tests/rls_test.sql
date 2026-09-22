@@ -11989,6 +11989,221 @@ select pg_temp.check('HLP  staff_may_read_conversation says no to somebody who i
   $a$select public.staff_may_read_conversation('f4000000-0000-0000-0000-000000000001') is not true$a$,
   'true');
 
+-- --- RAZ: rază, greutate, și coordonatele care le fac posibile --------
+--
+-- `truck_listings.from_lat` a existat de la prima migrare și nu a
+-- scris-o nimeni: nici formularul, nici `create_route_series`, nici
+-- generatorul. Coloana goală nu strica doar filtrul de rază care urma —
+-- `best_route_detour` măsoară față de aceleași coordonate, deci
+-- potrivirea după ocol nu găsea niciodată nimic. O funcție care citește
+-- o coloană goală nu dă eroare, dă „nu se potrivește".
+
+create or replace function pg_temp.at_city(
+  p_id uuid,
+  p_city text,
+  p_weight integer default 1200,
+  p_country text default 'RO'
+) returns void language plpgsql as $ac$
+begin
+  insert into public.cargo_listings
+    (id, company_id, posted_by, board, listing_kind, title,
+     loading_country, loading_city, unloading_country, unloading_city,
+     loading_from, weight_kg, status)
+  values
+    (p_id, 'fc000000-0000-0000-0000-000000000002',
+     'f0000000-0000-0000-0000-000000000004', 'curse', 'vehicul',
+     'Cerere de probă', p_country, p_city, 'RO', 'București',
+     current_date + 3, p_weight, 'draft');
+  insert into public.cargo_vehicle_details (cargo_listing_id, make, model, year)
+  values (p_id, 'Volkswagen', 'Golf', 2019);
+  update public.cargo_listings set status = 'active', published_at = now() where id = p_id;
+end $ac$;
+
+/** O căutare salvată cu filtrele date, a firmei A. */
+create or replace function pg_temp.search_with(p_filters jsonb) returns void language sql as $sw$
+  insert into public.saved_searches (id, user_id, company_id, name, target, filters)
+  values ('fe000000-0000-0000-0000-0000000000a1',
+          'f0000000-0000-0000-0000-000000000002',
+          'fc000000-0000-0000-0000-000000000001', 'Lângă mine', 'cargo', p_filters);
+$sw$;
+
+-- Coordonatele nu mai lipsesc.
+select pg_temp.check('RAZ  a new departure is stamped with its locality''s coordinates', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select from_lat is not null and from_lng is not null
+     from public.truck_listings where id = 'fb000000-0000-0000-0000-0000000000e1'$a$, 'true',
+  p_setup => $s$insert into public.truck_listings
+       (id, company_id, vehicle_id, posted_by, direction,
+        from_country, from_city, to_country, to_city,
+        available_from, available_to, platform_slots_total,
+        accepted_vehicle_types, status)
+     values ('fb000000-0000-0000-0000-0000000000e1',
+             'fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur',
+             'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+             current_date, current_date + 10, 3,
+             array['autoturism']::public.cargo_category[], 'draft')$s$);
+
+select pg_temp.check('RAZ  and a town the gazetteer does not know gets none, rather than a guess', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select from_lat is null from public.truck_listings
+     where id = 'fb000000-0000-0000-0000-0000000000e2'$a$, 'true',
+  p_setup => $s$insert into public.truck_listings
+       (id, company_id, vehicle_id, posted_by, direction,
+        from_country, from_city, to_country, to_city,
+        available_from, available_to, platform_slots_total,
+        accepted_vehicle_types, status)
+     values ('fb000000-0000-0000-0000-0000000000e2',
+             'fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur',
+             'RO', 'Cisnădie', 'RO', 'Râșnov',
+             current_date, current_date + 10, 3,
+             array['autoturism']::public.cargo_category[], 'draft')$s$);
+
+-- Scrisul contează la fel de puțin ca în picker: „cluj napoca" este
+-- aceeași localitate cu „Cluj-Napoca".
+select pg_temp.check('RAZ  spelling and diacritics do not decide whether a listing has a point', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select from_lat = 46.7712 from public.truck_listings
+     where id = 'fb000000-0000-0000-0000-0000000000e3'$a$, 'true',
+  p_setup => $s$insert into public.truck_listings
+       (id, company_id, vehicle_id, posted_by, direction,
+        from_country, from_city, to_country, to_city,
+        available_from, available_to, platform_slots_total,
+        accepted_vehicle_types, status)
+     values ('fb000000-0000-0000-0000-0000000000e3',
+             'fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur',
+             'RO', 'cluj napoca', 'RO', 'Timisoara',
+             current_date, current_date + 10, 3,
+             array['autoturism']::public.cargo_category[], 'draft')$s$);
+
+-- Nomenclatorul: se citește fără cont, nu se scrie de nimeni prin API.
+select pg_temp.check('RAZ  the gazetteer is readable without an account', 'fix',
+  null, 'anon',
+  $a$select count(*) = 75 from public.localities$a$, 'true');
+
+select pg_temp.check('RAZ  and nobody writes to it through the API', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.localities (name, region, country, lat, lng)
+     values ('Inventat', 'Nicăieri', 'RO', 45, 25)$a$, 'blocked',
+  p_verify => $v$select count(*) = 0 from public.localities where name = 'Inventat'$v$);
+
+select pg_temp.check('RAZ  not even without one', 'fix',
+  null, 'anon',
+  $a$delete from public.localities where name = 'Cluj-Napoca'$a$, 'blocked',
+  p_verify => $v$select count(*) = 1 from public.localities where name = 'Cluj-Napoca'$v$);
+
+-- Alerta filtrează după rază exact ca panoul.
+select pg_temp.check('RAZ  a saved search matches a request inside its radius', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a1')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a1', 'Cluj-Napoca');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"25"}')$s$);
+
+select pg_temp.check('RAZ  and refuses one outside it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a2')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a2', 'Timișoara');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"100"}')$s$);
+
+select pg_temp.check('RAZ  a wider radius reaches it', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a3')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a3', 'Timișoara');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"300"}')$s$);
+
+-- `near` fără `radius_km` este cincizeci de kilometri, în bază ca și pe
+-- ecran. Dacă cele două ar alege altceva, alerta ar trimite ce panoul
+-- nu arată. Două verificări, fiindcă una singură nu deosebește „50" de
+-- „fără limită": Zalău este la 63 km de Cluj, deci rămâne afară.
+select pg_temp.check('RAZ  a radius nobody wrote down still reaches the town itself', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a4')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a4', 'Cluj-Napoca');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO"}')$s$);
+
+select pg_temp.check('RAZ  and stops at fifty kilometres, not at the horizon', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a7')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a7', 'Zalău');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO"}')$s$);
+
+select pg_temp.check('RAZ  a request from a town with no coordinates is not in any radius', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a5')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a5', 'Cisnădie');
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"200"}')$s$);
+
+select pg_temp.check('RAZ  and a centre we cannot place matches nothing, rather than everything', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000a6')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000a6', 'Cluj-Napoca');
+     select pg_temp.search_with('{"near":"Cisnădie|RO","radius_km":"200"}')$s$);
+
+-- Greutatea. O cerere fără greutate scrisă rămâne — pe panou și aici.
+select pg_temp.check('RAZ  the weight filter keeps what fits', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000b1')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000b1', 'Cluj-Napoca', 1200);
+     select pg_temp.search_with('{"max_weight_kg":"2000"}')$s$);
+
+select pg_temp.check('RAZ  and drops what does not', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 0 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000b2')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000b2', 'Cluj-Napoca', 3200);
+     select pg_temp.search_with('{"max_weight_kg":"2000"}')$s$);
+
+select pg_temp.check('RAZ  a request nobody weighed stays in, as it does on the board', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select count(*) = 1 from public.saved_search_match(
+       'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000b3')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000b3', 'Cluj-Napoca', null);
+     select pg_temp.search_with('{"max_weight_kg":"2000"}')$s$);
+
+-- Motivul este propoziția pe care o citește omul din e-mail.
+select pg_temp.check('RAZ  the match says how far away it is and how heavy', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select exists (select 1 from unnest((select reasons from public.saved_search_match(
+         'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000b4'))) r
+       where r like 'La % km de Cluj-Napoca')
+     and exists (select 1 from unnest((select reasons from public.saved_search_match(
+         'fe000000-0000-0000-0000-0000000000a1', 'f1000000-0000-0000-0000-0000000000b4'))) r
+       where r = 'Greutate: 1200 kg')$a$, 'true',
+  p_setup => $s$select pg_temp.at_city('f1000000-0000-0000-0000-0000000000b4', 'Cluj-Napoca', 1200);
+     select pg_temp.search_with('{"near":"Cluj-Napoca|RO","radius_km":"50"}')$s$);
+
+-- Capacitatea liberă ajunge pe panoul public, iar seria o duce mai
+-- departe la fiecare plecare pe care o naște.
+select pg_temp.check('RAZ  free capacity reaches the public board', 'fix',
+  null, 'anon',
+  $a$select free_capacity_kg = 7000 from public.v_departures_public
+     where truck_listing_id = 'fb000000-0000-0000-0000-0000000000e4'$a$, 'true',
+  p_setup => $s$insert into public.truck_listings
+       (id, company_id, vehicle_id, posted_by, direction,
+        from_country, from_city, to_country, to_city,
+        available_from, available_to, platform_slots_total,
+        accepted_vehicle_types, status, published_at, free_capacity_kg)
+     values ('fb000000-0000-0000-0000-0000000000e4',
+             'fc000000-0000-0000-0000-000000000001',
+             'fe000000-0000-0000-0000-000000000001',
+             'f0000000-0000-0000-0000-000000000002', 'tur',
+             'RO', 'Cluj-Napoca', 'RO', 'Timișoara',
+             current_date, current_date + 10, 3,
+             array['autoturism']::public.cargo_category[], 'active', now(), 7000)$s$);
+
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
               count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),
