@@ -166,7 +166,7 @@ export async function loadNotificationsAdminData(
     );
   }
 
-  const [health, stats, rows, runs, mail, sms] = await Promise.all([
+  const [health, stats, rows, runs, mail, sms, smsRun] = await Promise.all([
     supabase.rpc('job_health'),
     supabase.rpc('outbox_stats'),
     query,
@@ -177,11 +177,23 @@ export async function loadNotificationsAdminData(
       .limit(20),
     supabase.rpc('mail_provider_state'),
     supabase.rpc('sms_provider_state'),
+    // Asked for on its own rather than found in the twenty rows above.
+    // The dispatcher writes one of those every five minutes, so it fills
+    // that window in under two hours — and the SMS card would go back to
+    // saying „nimeni nu a cerut încă un cod" while the truth was that
+    // somebody did, an hour ago, and it failed for a missing secret.
+    supabase
+      .from('job_run_log')
+      .select('id, ran_at, workflow, processed, failed, details')
+      .eq('workflow', 'sms-verify')
+      .order('ran_at', { ascending: false })
+      .limit(1),
   ]);
 
   const runRows = (runs.data as JobRun[] | null) ?? [];
   const mailRow = Array.isArray(mail.data) ? (mail.data[0] as MailProviderState) : null;
   const smsRow = Array.isArray(sms.data) ? (sms.data[0] as SmsProviderState) : null;
+  const smsRunRows = (smsRun.data as JobRun[] | null) ?? [];
 
   return {
     health: (health.data as JobHealth[] | null) ?? [],
@@ -192,7 +204,7 @@ export async function loadNotificationsAdminData(
     mail: mailRow ?? null,
     provider: providerStatusFrom(runRows),
     sms: smsRow ?? null,
-    smsProvider: providerStatusFrom(runRows, 'sms-verify'),
+    smsProvider: providerStatusFrom(smsRunRows, 'sms-verify'),
   };
 }
 

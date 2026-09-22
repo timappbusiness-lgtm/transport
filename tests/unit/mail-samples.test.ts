@@ -200,3 +200,41 @@ describe('the detour sentence, in both places it is written', () => {
     );
   });
 });
+
+/**
+ * The SMS card reads its own row, not the shared twenty.
+ *
+ * The dispatcher writes a `job_run_log` row every five minutes, so the
+ * twenty newest rows cover under two hours. A single `sms-verify` row
+ * older than that falls out of the window, and the card would go back
+ * to „nobody has asked for a code yet" while the truth was that
+ * somebody did and it failed for a missing secret. The loader asks for
+ * the newest `sms-verify` row separately; this pins the reading that
+ * makes that necessary.
+ */
+describe('the SMS provider state outlives the dispatcher chatter', () => {
+  const run = (workflow: string, details: Record<string, unknown> | null, ran_at: string) => ({
+    id: workflow + ran_at,
+    ran_at,
+    workflow,
+    processed: 0,
+    failed: 0,
+    details,
+  });
+
+  it('is unknown when the window holds only dispatcher rows', () => {
+    const onlyDispatcher = Array.from({ length: 20 }, (_, i) =>
+      run('outbox-dispatcher', {}, `2026-09-20T${String(10 + i).padStart(2, '0')}:00:00Z`),
+    );
+    expect(providerStatusFrom(onlyDispatcher, 'sms-verify').configured).toBe('necunoscut');
+  });
+
+  it('but is read correctly from a row of its own', () => {
+    const status = providerStatusFrom(
+      [run('sms-verify', { missing: 'TWILIO_ACCOUNT_SID' }, '2026-09-20T09:00:00Z')],
+      'sms-verify',
+    );
+    expect(status.configured).toBe('nu');
+    expect(status.missing).toBe('TWILIO_ACCOUNT_SID');
+  });
+});
