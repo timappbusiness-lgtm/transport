@@ -16,6 +16,8 @@ import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { myRequestRoute, requestRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { CARGO_CATEGORY_LABELS, SERVICE_TYPE_LABELS, formatWindow } from '@/lib/departures';
+import { Icon } from '@/components/ui/icon';
+import { iconForCategory } from '@/lib/icons';
 import {
   canCancel,
   canPublish,
@@ -91,7 +93,10 @@ export function MyRequestCard({
           </p>
           <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted">
             <span>{formatWindow(request.loadingFrom, request.loadingTo)}</span>
-            <span>{CARGO_CATEGORY_LABELS[request.category]}</span>
+            <span className="flex items-center gap-1.5">
+              <Icon as={iconForCategory(request.category)} size="sm" />
+              {CARGO_CATEGORY_LABELS[request.category]}
+            </span>
             {vehicle !== '' ? <span className="truncate">{vehicle}</span> : null}
             {request.serviceType !== 'pe_sens' ? (
               <span>{SERVICE_TYPE_LABELS[request.serviceType]}</span>
