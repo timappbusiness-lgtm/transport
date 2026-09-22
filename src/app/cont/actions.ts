@@ -293,6 +293,21 @@ export async function changePasswordAction(
 // Phone verification
 // ---------------------------------------------------------------------
 
+/**
+ * Asking for a code.
+ *
+ * The request goes to the `sms-verify` edge function rather than to
+ * Supabase Auth's own phone provider, because the rules around the code
+ * — how long it lives, how many guesses it gets, how often somebody may
+ * ask for another, per account and per number — are enforced in Postgres
+ * and tested there. A provider that owns those rules owns them
+ * invisibly, and changing provider would silently change them.
+ *
+ * With no provider configured the function answers 503 and names the
+ * secret it is missing. The name goes to `/admin/notificari`, not to the
+ * person asking: they need to know that somebody will ring them, not
+ * which variable is unset.
+ */
 export async function sendPhoneOtpAction(
   _previous: ActionState,
   formData: FormData,
@@ -307,15 +322,35 @@ export async function sendPhoneOtpAction(
   if (!phone) return { fieldErrors: { phone: 'Numărul nu pare valid.' }, values: { phone: raw } };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ phone });
+  const { data, error } = await supabase.functions.invoke('sms-verify', {
+    body: { phone },
+  });
 
-  if (error) {
-    return { error: toAppError(error, 'sendPhoneOtp').message, values: { phone: raw } };
+  const payload = data as { ok?: boolean; error?: string; missing?: string } | null;
+
+  if (error || payload?.ok !== true) {
+    // The function's own sentence when it has one: it is the one that
+    // says how many seconds are left, or that the number is already
+    // confirmed. A generic message in its place would be worse.
+    return {
+      error:
+        payload?.error ??
+        'Nu am putut trimite codul acum. Încearcă din nou sau scrie-ne și îți confirmăm numărul.',
+      values: { phone: raw },
+    };
   }
 
   return { notice: 'Ți-am trimis un cod prin SMS.', values: { phone } };
 }
 
+/**
+ * Confirming it.
+ *
+ * Straight to `confirm_phone_verification()`, with no hop through the
+ * edge function: the provider has no part in checking a code we
+ * generated, and a hop that adds nothing is a hop that can break. The
+ * code is hashed in Postgres and compared there; it is never stored.
+ */
 export async function verifyPhoneOtpAction(
   _previous: ActionState,
   formData: FormData,
@@ -328,14 +363,23 @@ export async function verifyPhoneOtpAction(
   if (otpError) return { fieldErrors: { token: otpError }, values: { phone } };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ phone, token, type: 'phone_change' });
+  const { data, error } = await supabase.rpc('confirm_phone_verification', { p_code: token });
 
   if (error) {
     return { error: toAppError(error, 'verifyPhoneOtp').message, values: { phone } };
   }
 
-  // profiles.phone_verified is synced from auth.users by a trigger; the app
-  // never writes it.
+  // A wrong code is a row saying so, not an error: raising would undo
+  // the attempt counter that the function just wrote, and the limit on
+  // guesses is the whole point of having one.
+  const result = Array.isArray(data) ? data[0] : null;
+  if (result?.ok !== true) {
+    return {
+      fieldErrors: { token: result?.message ?? 'Codul nu este bun.' },
+      values: { phone },
+    };
+  }
+
   revalidatePath('/cont', 'layout');
   return { notice: 'Numărul de telefon a fost confirmat.' };
 }

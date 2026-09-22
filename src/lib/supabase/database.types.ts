@@ -3218,6 +3218,89 @@ export type Database = {
           },
         ]
       }
+      phone_verification_settings: {
+        Row: {
+          code_ttl_seconds: number
+          id: boolean
+          max_attempts: number
+          per_phone_hourly: number
+          per_user_hourly: number
+          resend_cooldown_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          code_ttl_seconds?: number
+          id?: boolean
+          max_attempts?: number
+          per_phone_hourly?: number
+          per_user_hourly?: number
+          resend_cooldown_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          code_ttl_seconds?: number
+          id?: boolean
+          max_attempts?: number
+          per_phone_hourly?: number
+          per_user_hourly?: number
+          resend_cooldown_seconds?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      phone_verifications: {
+        Row: {
+          attempts: number
+          code_hash: string | null
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          last_error: string | null
+          phone: string
+          provider: string | null
+          provider_id: string | null
+          sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_error?: string | null
+          phone: string
+          provider?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_error?: string | null
+          phone?: string
+          provider?: string | null
+          provider_id?: string | null
+          sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_billing_periods: {
         Row: {
           created_at: string
@@ -6716,6 +6799,14 @@ export type Database = {
           updated_at: string
         }
       }
+      confirm_phone_verification: {
+        Args: { p_code: string }
+        Returns: {
+          attempts_left: number
+          message: string
+          ok: boolean
+        }[]
+      }
       consume_contact_access: {
         Args: {
           p_cargo_listing_id: string
@@ -7151,6 +7242,10 @@ export type Database = {
         Args: { p_from: string; p_to: string }
         Returns: string
       }
+      failed_phone_verification: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
       find_account_by_email: {
         Args: { p_email: string }
         Returns: {
@@ -7483,6 +7578,10 @@ export type Database = {
         Args: { p_body: string }
         Returns: string
       }
+      mask_phone_tail: {
+        Args: { p_phone: string }
+        Returns: string
+      }
       my_company_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -7595,6 +7694,16 @@ export type Database = {
           status: Database["public"]["Enums"]["transport_status"]
           to_city: string
           vehicle_flagged: boolean
+        }[]
+      }
+      my_phone_verification: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          attempts_left: number
+          can_resend_at: string
+          expires_at: string
+          phone_masked: string
+          sent: boolean
         }[]
       }
       my_ratings: {
@@ -7794,6 +7903,23 @@ export type Database = {
           updated_at: string
           vehicle_flagged_at: string | null
           vehicle_id: string | null
+        }
+      }
+      open_phone_verification: {
+        Args: { p_phone: string; p_user: string }
+        Returns: {
+          attempts: number
+          code_hash: string | null
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          last_error: string | null
+          phone: string
+          provider: string | null
+          provider_id: string | null
+          sent_at: string | null
+          user_id: string
         }
       }
       order_actor_side: {
@@ -8110,6 +8236,10 @@ export type Database = {
       }
       purge_order_evidence: {
         Args: { p_order_id: string }
+        Returns: number
+      }
+      purge_phone_verifications: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       push_send_after: {
@@ -8737,6 +8867,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      sent_phone_verification: {
+        Args: {
+          p_code_hash: string
+          p_id: string
+          p_provider: string
+          p_provider_id?: string
+        }
+        Returns: undefined
+      }
       set_company_public_profile: {
         Args: { p_company_id: string; p_enabled: boolean; p_reason?: string }
         Returns: {
@@ -9301,6 +9440,18 @@ export type Database = {
       slugify: {
         Args: { p_text: string }
         Returns: string
+      }
+      sms_provider_state: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          confirmed_24h: number
+          failed_24h: number
+          last_sent_at: string
+          pending_now: number
+          sent_24h: number
+          verified_accounts: number
+          verified_by_staff: number
+        }[]
       }
       staff_anonymise_account: {
         Args: { p_reason: string; p_user_id: string }

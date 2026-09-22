@@ -164,24 +164,29 @@ select vault.create_secret('https://<proiect>.supabase.co/functions/v1/account-d
 select jobname, schedule, active from cron.job order by jobname;
 ```
 
-Trebuie să vezi **nouăsprezece** joburi, toate `active`:
+Trebuie să vezi **douăzeci** de joburi, toate `active`:
 `account-deletion`, `hourly-booking-expiry-alerts`, `hourly-listing-cleanup`,
 `hourly-offer-expiry`, `hourly-order-autocomplete`, `hourly-push-cleanup`,
 `nightly-assisted-sweep`, `nightly-audit-retention`, `nightly-compliance-sweep`,
 `nightly-conversation-retention`, `nightly-expiry-reminders`,
 `nightly-listing-expiry-reminders`, `nightly-order-vehicle-check`,
-`nightly-rating-reminders`, `nightly-reputation`, `nightly-retention`,
-`nightly-route-series`, `nightly-saved-search-digest`, `outbox-dispatcher`.
+`nightly-phone-verifications`, `nightly-rating-reminders`, `nightly-reputation`,
+`nightly-retention`, `nightly-route-series`, `nightly-saved-search-digest`,
+`outbox-dispatcher`.
 
 > Lista de mai sus era rămasă la nouă, de pe vremea când atâtea erau. Ea și
 > cele două din `job_health()` și cele două din `rls_test.sql` trebuie să
 > meargă împreună — un job care lipsește dintr-una dintre ele arată sănătos
 > fără să ruleze vreodată.
 
-**`nightly-audit-retention`** este nou și taie din `audit_log` după fereastra
-din `deletion_settings.audit_retention_months` (pornire: 24 de luni). Până la
-el, jurnalul creștea la nesfârșit, cu nume, telefoane și e-mailuri în
+**`nightly-audit-retention`** taie din `audit_log` după fereastra din
+`deletion_settings.audit_retention_months` (pornire: 24 de luni). Până la el,
+jurnalul creștea la nesfârșit, cu nume, telefoane și e-mailuri în
 `before`/`after`.
+
+**`nightly-phone-verifications`** șterge provocările SMS mai vechi de șapte
+zile. Ele poartă numere de telefon, iar fereastra de limitare este de o oră —
+după ea rândul nu mai are ce spune.
 
 Apoi `/admin/notificari` → „Joburi programate": în 24 de ore toate trebuie
 să treacă pe „la zi". Dacă lista din `cron.job` e goală, extensia `pg_cron`
@@ -277,20 +282,60 @@ publicate. Apoi trimite sitemap-ul în Google Search Console.
 
 ## 10. Furnizor de SMS — opțional la pilot
 
-**Ce:** un furnizor de SMS în Supabase Auth (Twilio, Vonage, MessageBird).
+**Ce:** contul de furnizor care chiar trimite SMS-ul cu codul.
 
-**De ce e opțional acum:** din 20 septembrie 2026, publicarea unei cereri
-cere o adresă de e-mail confirmată și un număr de telefon **în profil**,
-nu unul confirmat prin SMS. Numărul confirmat e cerut mai târziu, când
-cineva vrea să deschidă datele de contact ale unui transportator — iar
-până există furnizor, echipa confirmă manual din `/admin/pilot`, cu motiv
-scris și rând în `audit_log`.
+**De ce e opțional acum:** publicarea unei cereri cere o adresă de e-mail
+confirmată și un număr de telefon **în profil**, nu unul confirmat prin SMS.
+Numărul confirmat e cerut mai târziu — la dezvăluirea unui contact, la
+acceptarea unei oferte — iar până există furnizor, echipa îl confirmă manual
+din `/admin/pilot`, cu motiv scris și rând în `audit_log`. Drumul acela
+rămâne, configurat sau nu.
 
-**Unde exact:** Supabase → Authentication → Providers → Phone.
+**Nu prin Supabase Auth → Providers → Phone.** Codul este al nostru: îl
+generează funcția `sms-verify`, iar cât ține, câte încercări are și cât de
+des se poate cere se citesc din `phone_verification_settings` și se verifică
+în `supabase/tests/rls_test.sql`. Un furnizor care ar ține el codul ar ține
+și regulile — invizibil de aici, și diferit de la un furnizor la altul.
 
-**Cum verifici:** `/cont/profil` → adaugi numărul → primești codul prin
-SMS → îl introduci. După asta `profiles.phone_verified` e `true` fără ca
-cineva din echipă să fi atins ceva.
+**Unde exact:** cont Twilio → Console → Account Info pentru primele două,
+apoi un număr sau un Messaging Service:
+
+```bash
+supabase secrets set \
+  TWILIO_ACCOUNT_SID=AC... \
+  TWILIO_AUTH_TOKEN=... \
+  TWILIO_FROM_NUMBER=+40...
+# sau, în locul numărului:
+#  TWILIO_MESSAGING_SERVICE_SID=MG...
+```
+
+Pentru România cere numărul (sau Messaging Service-ul) la Twilio cu
+**Alphanumeric Sender ID** unde se poate: operatorii români livrează mai
+sigur un expeditor cu nume decât un număr străin.
+
+**Cum verifici, fără furnizor:** `/admin/notificari` → „Furnizorul de SMS"
+spune **Necunoscut** până când cineva cere un cod, apoi **Neconfigurat** cu
+numele variabilei care lipsește. Un cont care cere codul din `/cont/profil`
+primește „Trimiterea prin SMS nu este configurată" — nu o rotiță care se
+învârte. Numărul se confirmă în continuare din `/admin/pilot`.
+
+**Cum verifici, cu furnizor:**
+
+1. `/cont/profil` → adaugi numărul → „Trimite codul".
+2. Codul ajunge prin SMS în câteva secunde. Are șase cifre și expiră în zece
+   minute.
+3. Îl introduci → `profiles.phone_verified` devine `true`,
+   `phone_verified_by_staff` rămâne `false`, iar în `audit_log` apare
+   `profile.phone_verified` cu motivul `cod SMS`.
+4. `/admin/notificari` → „Furnizorul de SMS" trece pe **Configurat**, iar
+   „Coduri trimise în 24 h" crește.
+5. Cere un al doilea cod imediat: trebuie să fii refuzat cu numărul de
+   secunde rămase. Greșește codul de cinci ori: al șaselea trebuie refuzat
+   chiar dacă este corect.
+
+**Pragurile** (cât ține codul, câte încercări, câte coduri pe oră și pe
+număr) sunt în `phone_verification_settings` și se schimbă cu un `update`
+din SQL Editor, nu printr-o migrare.
 
 ---
 

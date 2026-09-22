@@ -58,7 +58,12 @@ select pg_temp.guard(
      where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity
        -- carrier_count_probes: scris numai de o funcție SECURITY DEFINER
        -- și citit de nimeni. Refuzul total este ce trebuie.
-       and c.relname not in ('carrier_count_probes')
+       --
+       -- phone_verifications: ține `code_hash`-ul unui cod de verificare.
+       -- Proprietarul rândului nu are ce citi de acolo — ce are nevoie
+       -- ecranul întoarce `my_phone_verification()`, mascat — iar un
+       -- `select` pe tabelă prin PostgREST ar servi hash-ul cui îl cere.
+       and c.relname not in ('carrier_count_probes', 'phone_verifications')
        and not exists (select 1 from pg_policy p where p.polrelid = c.oid)$q$);
 
 -- ---------------------------------------------------------------------

@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     search: one(params, 'cauta'),
   };
 
-  const { health, healthError, stats, rows, runs, mail, provider } =
+  const { health, healthError, stats, rows, runs, mail, provider, sms, smsProvider } =
     await loadNotificationsAdminData(filters);
 
   const totals = new Map<string, number>();
@@ -108,6 +108,58 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         </div>
 
         <TestNotification />
+      </section>
+
+      <section aria-labelledby="sms" className="flex flex-col gap-3">
+        <h2 id="sms" className="text-[1.0625rem]">
+          Furnizorul de SMS
+        </h2>
+
+        {smsProvider.configured === 'nu' ? (
+          <p role="alert" className="rounded-card border border-warning/45 bg-warning/8 p-4 text-sm">
+            <strong>Neconfigurat.</strong> Funcția <code className="font-mono">sms-verify</code> a
+            refuzat să trimită pentru că lipsește{' '}
+            <code className="font-mono">{smsProvider.missing}</code>
+            {smsProvider.reportedAt !== null ? (
+              <> (ultima dată {when(smsProvider.reportedAt)})</>
+            ) : null}
+            . Nu se blochează nimic: numerele se confirmă în continuare de mână, din{' '}
+            <code className="font-mono">/admin/pilot</code>. Pașii pentru furnizor sunt în{' '}
+            <code className="font-mono">docs/configurare-externa.md</code>.
+          </p>
+        ) : smsProvider.configured === 'necunoscut' ? (
+          <p className="rounded-card border border-border-strong bg-surface p-4 text-sm text-muted">
+            Necunoscut: nimeni nu a cerut încă un cod prin SMS, deci funcția nu a avut ocazia să
+            spună dacă îi lipsește ceva. Până atunci, numerele se confirmă de mână din{' '}
+            <code className="font-mono">/admin/pilot</code>.
+          </p>
+        ) : (
+          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
+            <strong>Configurat.</strong> Ultima cerere de cod nu a raportat nicio variabilă lipsă.
+          </p>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Ultimul SMS trimis</p>
+            <p className="mt-1 text-sm">{when(sms?.last_sent_at ?? null)}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Coduri trimise în 24 h</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{sms?.sent_24h ?? 0}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Numere confirmate în 24 h</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{sms?.confirmed_24h ?? 0}</p>
+          </div>
+          <div className="rounded-card border border-border bg-surface p-4">
+            <p className="text-xs text-muted">Conturi cu numărul confirmat</p>
+            <p className="mt-1 font-mono text-[1.25rem]">{sms?.verified_accounts ?? 0}</p>
+            <p className="mt-1 text-xs text-muted">
+              dintre care {sms?.verified_by_staff ?? 0} de mână
+            </p>
+          </div>
+        </div>
       </section>
 
       <section aria-labelledby="joburi" className="flex flex-col gap-3">
