@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { signOutAction } from '@/app/auth-actions';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
+import type { BadgedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 /** Anchors that only mean anything on the homepage. */
@@ -46,8 +47,12 @@ const PAGES = [
 
 export interface HeaderUser {
   name: string;
-  hasCompany: boolean;
-  isStaff: boolean;
+  /**
+   * The menu itself, built by `headerMenu` from the same `buildNav` the
+   * sidebar reads. The component draws what it is given and decides
+   * nothing about who may see what.
+   */
+  items: readonly BadgedNavItem[];
 }
 
 /** Pill button sized for the floating bar, in its on-dark colours. */
@@ -58,11 +63,76 @@ const PILL_SOLID =
 const PILL_QUIET =
   'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-[0.8125rem] text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
 
+/** Where the account area begins. Inside it, the brand leads to /cont. */
+function insideAccount(pathname: string): boolean {
+  return (
+    pathname === ROUTES.account ||
+    pathname.startsWith(`${ROUTES.account}/`) ||
+    pathname === ROUTES.admin ||
+    pathname.startsWith(`${ROUTES.admin}/`)
+  );
+}
+
+/**
+ * Where the brand in the bar should lead.
+ *
+ * Signed in and already in the account, it is the dashboard: a logo that
+ * throws somebody out to the marketing homepage from inside their own
+ * application is the oldest way to lose them. Everywhere else it is the
+ * homepage, which is what a logo on a public page means.
+ */
+export function brandHref(signedIn: boolean, pathname: string): string {
+  return signedIn && insideAccount(pathname) ? ROUTES.account : ROUTES.home;
+}
+
+/** „3" up to nine, „9+" past it: the badge must not widen the row. */
+function badgeLabel(count: number): string {
+  return count > 9 ? '9+' : String(count);
+}
+
+/**
+ * Whether the thing pointing at this page is a finger.
+ *
+ * On a touch screen there is no hover, so the name in the bar has to do
+ * both jobs: one tap opens the menu rather than navigating. On a mouse or
+ * a trackpad the tap is a click, and the click goes to /cont — which is
+ * what a name in a header has always meant.
+ *
+ * `useSyncExternalStore` rather than an effect: the server has no idea
+ * what is pointing at the page, so the server snapshot is `false` and the
+ * first client paint agrees with the HTML it hydrates. A `matchMedia` read
+ * during render would not.
+ */
+function subscribeToPointer(onChange: () => void): () => void {
+  if (typeof window.matchMedia !== 'function') return () => {};
+  const query = window.matchMedia('(pointer: coarse)');
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+function useCoarsePointer(): boolean {
+  return useSyncExternalStore(
+    subscribeToPointer,
+    () => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches,
+    () => false,
+  );
+}
+
 export function HeaderNav({ user }: { user: HeaderUser | null }) {
   const pathname = usePathname();
   const onHome = pathname === ROUTES.home;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLAnchorElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+
+  const coarsePointer = useCoarsePointer();
+
+  const close = useCallback((returnFocus: boolean) => {
+    setMenuOpen(false);
+    if (returnFocus) triggerRef.current?.focus();
+  }, []);
 
   // A dropdown that does not close on an outside click or Escape is one
   // people learn to distrust.
@@ -74,7 +144,10 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
       }
     }
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close(true);
+      }
     }
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
@@ -82,19 +155,63 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [menuOpen]);
+  }, [menuOpen, close]);
 
-  const accountLinks = [
-    { href: ROUTES.account, label: accountCopy.nav.dashboard },
-    { href: ROUTES.accountProfile, label: accountCopy.nav.profile },
-    ...(user?.hasCompany
-      ? [
-          { href: ROUTES.accountCompany, label: accountCopy.nav.company },
-          { href: ROUTES.accountSubscription, label: accountCopy.nav.subscription },
-        ]
-      : []),
-    ...(user?.isStaff ? [{ href: ROUTES.admin, label: accountCopy.nav.admin }] : []),
-  ];
+  /** Every focusable row in the open menu, in the order they are read. */
+  const rows = useCallback(
+    () => Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+    [],
+  );
+
+  // Opening with a key puts focus on the first item; opening with a mouse
+  // leaves it where it was, because moving focus under a pointer somebody
+  // is already using is how a menu closes itself by accident.
+  //
+  // A ref rather than state: the menu is not in the DOM until the render
+  // that opens it, so the focus has to wait for an effect — and „should
+  // the next open take focus" is an intention passed to that effect, not
+  // something the markup depends on. As state it would be a second render
+  // for nothing.
+  const focusFirst = useRef(false);
+  useEffect(() => {
+    if (!menuOpen || !focusFirst.current) return;
+    focusFirst.current = false;
+    rows()[0]?.focus();
+  }, [menuOpen, rows]);
+
+  function openWithKeyboard() {
+    focusFirst.current = true;
+    setMenuOpen(true);
+  }
+
+  /** Arrow keys walk the menu; Home and End jump to its ends. */
+  function onMenuKeyDown(event: React.KeyboardEvent) {
+    const items = rows();
+    if (items.length === 0) return;
+    const at = items.indexOf(document.activeElement as HTMLElement);
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const step = event.key === 'ArrowDown' ? 1 : -1;
+      // Wraps at both ends: a menu of eight items should not need eight
+      // presses to get back to the top.
+      const next = at === -1 ? 0 : (at + step + items.length) % items.length;
+      items[next]?.focus();
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      items[0]?.focus();
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      items[items.length - 1]?.focus();
+    }
+  }
+
+  const signedIn = user !== null;
+  const showAccountButton = signedIn && !insideAccount(pathname);
 
   return (
     <>
@@ -127,51 +244,120 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
       </nav>
 
       {user ? (
-        <div ref={menuRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            className={cn(PILL_QUIET, 'gap-2 border border-white/30')}
-          >
-            <span
-              aria-hidden="true"
-              className="flex size-5 items-center justify-center rounded-full bg-white text-[0.625rem] font-medium text-foreground"
-            >
-              {user.name.slice(0, 1).toUpperCase()}
-            </span>
-            <span className="hidden max-w-[9rem] truncate sm:inline">{user.name}</span>
-            <ChevronDown size={13} aria-hidden="true" />
-          </button>
-
-          {menuOpen ? (
-            <div
-              role="menu"
-              className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-[0_24px_48px_-24px_rgba(28,38,43,.5)]"
-            >
-              {accountLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2.5 text-sm hover:bg-ground-alt"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <form action={signOutAction} className="border-t border-border">
-                <button
-                  type="submit"
-                  role="menuitem"
-                  className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-ground-alt"
-                >
-                  {accountCopy.nav.signOut}
-                </button>
-              </form>
-            </div>
+        <div className="flex items-center gap-1.5">
+          {/* The one visible way back in from a public page. Hidden on a
+              phone, where the bar has no room for it and the menu's first
+              item says the same thing. */}
+          {showAccountButton ? (
+            <Link href={ROUTES.account} className={cn(PILL_SOLID, 'hidden sm:inline-flex')}>
+              {accountCopy.nav.dashboard}
+            </Link>
           ) : null}
+
+          <div ref={menuRef} className="relative">
+            <div className={cn(PILL_QUIET, 'gap-1 border border-white/30 p-0 pr-1 sm:pr-1.5')}>
+              {/* The name is a link, so a click goes where a name in a
+                  header has always gone. The chevron beside it is the
+                  button, so opening the menu is still one press for
+                  somebody who wants the menu rather than the page. */}
+              <Link
+                ref={triggerRef}
+                href={ROUTES.account}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-controls={menuOpen ? menuId : undefined}
+                onClick={(event) => {
+                  if (!coarsePointer) return;
+                  // No hover on a touch screen, so the tap has to open the
+                  // menu. „Contul meu" is its first item, so the page the
+                  // link points at is still one tap away.
+                  event.preventDefault();
+                  setMenuOpen((open) => !open);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    openWithKeyboard();
+                  }
+                }}
+                className="flex items-center gap-2 rounded-pill py-1.5 pl-2 pr-1 sm:pl-3"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex size-5 flex-none items-center justify-center rounded-full bg-white text-[0.625rem] font-medium text-foreground"
+                >
+                  {user.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="hidden max-w-[9rem] truncate sm:inline">{user.name}</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setMenuOpen((open) => !open)}
+                onKeyDown={(event) => {
+                  // Enter and Space are the button's own; this adds the
+                  // arrow, which is what a menu button is expected to do.
+                  if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    openWithKeyboard();
+                  }
+                }}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                aria-controls={menuOpen ? menuId : undefined}
+                aria-label={accountCopy.nav.menu}
+                className="flex size-7 flex-none items-center justify-center rounded-full text-white/85 hover:bg-white/12 hover:text-white"
+              >
+                <ChevronDown size={13} aria-hidden="true" />
+              </button>
+            </div>
+
+            {menuOpen ? (
+              <div
+                ref={listRef}
+                id={menuId}
+                role="menu"
+                aria-label={accountCopy.nav.menu}
+                onKeyDown={onMenuKeyDown}
+                className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-[0_24px_48px_-24px_rgba(28,38,43,.5)]"
+              >
+                {user.items.map((item) => {
+                  const current = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      role="menuitem"
+                      aria-current={current ? 'page' : undefined}
+                      onClick={() => setMenuOpen(false)}
+                      className={cn(
+                        'flex items-center justify-between gap-3 px-4 py-2.5 text-sm',
+                        'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
+                        current ? 'bg-ground-alt font-medium' : 'hover:bg-ground-alt',
+                      )}
+                    >
+                      <span className="truncate">{item.label}</span>
+                      {item.badge > 0 ? (
+                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-[0.625rem] leading-none text-surface">
+                          {badgeLabel(item.badge)}
+                          <span className="sr-only"> {accountCopy.nav.waiting}</span>
+                        </span>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+                <form action={signOutAction} className="border-t border-border">
+                  <button
+                    type="submit"
+                    role="menuitem"
+                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-ground-alt focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground"
+                  >
+                    {accountCopy.nav.signOut}
+                  </button>
+                </form>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : (
         <div className="flex items-center gap-1.5">

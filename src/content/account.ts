@@ -12,6 +12,10 @@ export const accountCopy = {
     subscription: 'Abonament',
     admin: 'Administrare',
     signOut: 'Ieșire',
+    /** The chevron beside the name, for somebody who cannot see it. */
+    menu: 'Meniul contului',
+    /** Read after a badge: „3 care așteaptă". */
+    waiting: 'care așteaptă',
   },
   banners: {
     draft: {

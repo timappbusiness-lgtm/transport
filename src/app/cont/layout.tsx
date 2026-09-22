@@ -14,6 +14,7 @@ import { requireAccountContext } from '@/lib/auth/account';
 import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import { pickBanner } from '@/lib/banners';
 import { EXPIRY_WINDOW_DAYS } from '@/lib/dashboard-source';
+import { loadNavCounts } from '@/lib/nav-counts';
 import { activeHref, bottomNav, buildNav } from '@/lib/navigation';
 import { loadCompanySubscription } from '@/lib/subscription-source';
 import { createClient } from '@/lib/supabase/server';
@@ -52,15 +53,20 @@ export default async function AccountLayout({ children }: { children: React.Reac
     return <TermsGate version={CURRENT_TERMS_VERSION} />;
   }
 
-  // A driver's application is two pages. Refusing here rather than on each
-  // of the dozen pages they must not reach means a page added later is
-  // closed to them by default instead of open by oversight.
+  // A driver's application is the handful of pages `buildNav` draws them.
+  // Refusing here rather than on each of the pages they must not reach
+  // means a page added later is closed to them by default instead of open
+  // by oversight — and `isDriverAllowed` reads that same builder, so the
+  // menu and the refusal cannot disagree about which pages those are.
   if (context.activeRole === 'driver' && !isDriverAllowed(pathname)) notFound();
 
   const company = context.activeCompany;
-  const [subscription, warnings] = await Promise.all([
+  const [subscription, warnings, counts] = await Promise.all([
     loadCompanySubscription(company?.id ?? null),
     loadBannerCounts(company?.id ?? null),
+    // Cached per request, so the header's copy of this is the same call
+    // and the same number rather than a second round trip.
+    loadNavCounts(),
   ]);
 
   const items = buildNav(navContextOf(context));
@@ -81,7 +87,12 @@ export default async function AccountLayout({ children }: { children: React.Reac
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           <aside className="hidden lg:block lg:w-60 lg:flex-none">
             <div className="sticky top-24">
-              <Sidebar context={context} pathname={pathname} subscription={subscription} />
+              <Sidebar
+                context={context}
+                pathname={pathname}
+                subscription={subscription}
+                counts={counts}
+              />
             </div>
           </aside>
 
