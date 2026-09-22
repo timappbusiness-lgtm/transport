@@ -1,14 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { ROUTES } from '@/config/routes';
 import { FEATURES, type FeatureMap } from '@/lib/features';
-import { isOpenWithoutTerms } from '@/lib/auth/guards';
+import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import {
   BOTTOM_NAV_MAX,
+  HEADER_SHORTCUT_MAX,
+  NO_NAV_COUNTS,
   activeHref,
+  badgeFor,
   bottomNav,
   buildNav,
+  driverPaths,
   groupNav,
+  headerMenu,
   publishActions,
+  withBadges,
   type NavContext,
 } from '@/lib/navigation';
 
@@ -365,5 +371,294 @@ describe('what stays open to somebody who has not accepted the terms', () => {
 
   it('does not open a route that merely starts with the same letters', () => {
     expect(isOpenWithoutTerms('/cont/setari/date-personale-altceva')).toBe(false);
+  });
+});
+
+/** What the header menu offers, as hrefs, in the order it offers them. */
+function menu(ctx: NavContext, features: FeatureMap = FEATURES): string[] {
+  return headerMenu(ctx, NO_NAV_COUNTS, features).map((item) => item.href);
+}
+
+describe('the header menu is a selection from the sidebar, never a second list', () => {
+  it('offers nothing the sidebar does not', () => {
+    // The whole point of building it from `buildNav`: two hand-written
+    // lists drift, and the one that drifts is the one nobody tests.
+    for (const ctx of [
+      context({ accountType: 'individual', companyType: null, role: null }),
+      context({ companyType: 'transport' }),
+      context({ companyType: 'expeditie' }),
+      context({ companyType: 'both' }),
+      context({ role: 'dispatcher' }),
+      context({ role: 'driver' }),
+    ]) {
+      const sidebar = new Set(hrefs(ctx));
+      for (const href of menu(ctx)) {
+        // /admin is the one item that is not the sidebar's: it belongs to
+        // a different application with its own shell.
+        if (href === ROUTES.admin) continue;
+        expect(sidebar.has(href), href).toBe(true);
+      }
+    }
+  });
+
+  it('takes the label the sidebar uses, so the two cannot read differently', () => {
+    const ctx = context({ companyType: 'expeditie' });
+    const sidebar = new Map(buildNav(ctx).map((item) => [item.href, item.label]));
+    for (const item of headerMenu(ctx)) {
+      if (item.href === ROUTES.admin) continue;
+      // Contul meu is the exception, and deliberately: the sidebar calls
+      // the dashboard „Acasă", which means nothing in a menu opened from
+      // a public page.
+      if (item.href === ROUTES.account) {
+        expect(item.label).toBe('Contul meu');
+        continue;
+      }
+      expect(item.label, item.href).toBe(sidebar.get(item.href));
+    }
+  });
+
+  it('opens with the dashboard for every kind of account', () => {
+    for (const ctx of [
+      context({ accountType: 'individual', companyType: null, role: null }),
+      context({ companyType: 'transport' }),
+      context({ companyType: 'expeditie' }),
+      context({ role: 'driver' }),
+      context({ isStaff: true }),
+    ]) {
+      expect(menu(ctx)[0]).toBe(ROUTES.account);
+    }
+  });
+
+  it('never offers a page that is not built', () => {
+    // Everything off: the dashboard and the profile survive, because
+    // neither is behind a flag. Nothing else does.
+    const items = menu(context({ companyType: 'transport' }), NONE);
+    expect(items).toEqual([ROUTES.account, ROUTES.accountProfile]);
+  });
+
+  it('leaves Setări out, because /cont/setari is not a page', () => {
+    // `FEATURES.settings` is false and nothing is served at that path —
+    // the two settings screens that exist are /cont/setari/notificari and
+    // /cont/setari/date-personale, and the sidebar lists them by name. An
+    // item here would 404, which is the exact thing the feature map
+    // exists to prevent.
+    //
+    // Not gated in this function either: `buildNav` has no item for it at
+    // all, and the header only ever selects from what `buildNav` built. So
+    // whoever writes that page adds it there, once, and this menu picks it
+    // up with no edit here — which is the whole arrangement working.
+    expect(menu(context({ companyType: 'transport' }), ALL)).not.toContain(
+      ROUTES.accountSettings,
+    );
+    expect(hrefs(context({ companyType: 'transport' }), ALL)).not.toContain(
+      ROUTES.accountSettings,
+    );
+  });
+
+  it('stays short enough to be a menu', () => {
+    for (const ctx of [
+      context({ companyType: 'both', isStaff: true }),
+      context({ companyType: 'transport' }),
+      context({ accountType: 'individual', companyType: null, role: null }),
+    ]) {
+      // The shortcuts, plus the dashboard, the profile and at most the
+      // two tail items. A dropdown longer than that is a sidebar.
+      expect(menu(ctx, ALL).length).toBeLessThanOrEqual(HEADER_SHORTCUT_MAX + 4);
+    }
+  });
+});
+
+describe('what each kind of account gets in the header menu', () => {
+  it('an individual: their requests, the offers on them, the messages', () => {
+    expect(menu(context({ accountType: 'individual', companyType: null, role: null }))).toEqual([
+      ROUTES.account,
+      ROUTES.accountRequests,
+      ROUTES.accountOffers,
+      ROUTES.accountMessages,
+      ROUTES.accountProfile,
+    ]);
+  });
+
+  it('a carrier: its routes first, then the board', () => {
+    // The board is everybody's; the routes are theirs. A carrier opening
+    // this menu is far likelier to want what it published than what the
+    // whole market did.
+    expect(menu(context({ companyType: 'transport' }))).toEqual([
+      ROUTES.account,
+      ROUTES.accountDepartures,
+      ROUTES.requests,
+      ROUTES.accountOffers,
+      ROUTES.accountMessages,
+      ROUTES.accountDocuments,
+      ROUTES.accountProfile,
+    ]);
+  });
+
+  it('a forwarder: its own runs, not a fleet it does not have', () => {
+    expect(menu(context({ companyType: 'expeditie' }))).toEqual([
+      ROUTES.account,
+      ROUTES.accountRequests,
+      ROUTES.accountOffers,
+      ROUTES.accountMessages,
+      ROUTES.accountDocuments,
+      ROUTES.accountProfile,
+    ]);
+    expect(menu(context({ companyType: 'expeditie' }))).not.toContain(ROUTES.accountFleet);
+  });
+
+  it('a driver: the work assigned to them, and nothing else', () => {
+    expect(menu(context({ role: 'driver' }))).toEqual([
+      ROUTES.account,
+      ROUTES.accountTransports,
+      ROUTES.accountProfile,
+    ]);
+  });
+
+  it('a dispatcher gets the work without the billing', () => {
+    const items = menu(context({ role: 'dispatcher' }));
+    expect(items).toContain(ROUTES.accountDepartures);
+    expect(items).not.toContain(ROUTES.accountSubscription);
+    expect(items).not.toContain(ROUTES.accountMembers);
+  });
+
+  it('staff get a way across to /admin, and nobody else does', () => {
+    expect(menu(context({ isStaff: true }))).toContain(ROUTES.admin);
+    expect(menu(context({ isStaff: false }))).not.toContain(ROUTES.admin);
+    // Never in the account sidebar: /admin is a different application.
+    expect(hrefs(context({ isStaff: true }))).not.toContain(ROUTES.admin);
+  });
+
+  it('gives each item once to a company that does both', () => {
+    const items = menu(context({ companyType: 'both' }));
+    expect(new Set(items).size).toBe(items.length);
+  });
+});
+
+describe('the badges', () => {
+  it('count the two things that wait on somebody', () => {
+    const counts = { messages: 3, offers: 2 };
+    expect(badgeFor(ROUTES.accountMessages, counts)).toBe(3);
+    expect(badgeFor(ROUTES.accountOffers, counts)).toBe(2);
+  });
+
+  it('and nothing else, however busy the board is', () => {
+    // A board is everybody's. A number there would never reach zero, and
+    // a badge that never clears is one people stop reading.
+    const counts = { messages: 3, offers: 2 };
+    for (const href of [
+      ROUTES.account,
+      ROUTES.requests,
+      ROUTES.routes,
+      ROUTES.accountRequests,
+      ROUTES.accountDepartures,
+      ROUTES.accountProfile,
+    ]) {
+      expect(badgeFor(href, counts), href).toBe(0);
+    }
+  });
+
+  it('are the same number in the header as in the sidebar', () => {
+    // One count, two menus. Two counts of one thing is how a badge stops
+    // being believed.
+    const counts = { messages: 4, offers: 1 };
+    const ctx = context({ companyType: 'expeditie' });
+    const sidebar = new Map(
+      withBadges(buildNav(ctx), counts).map((item) => [item.href, item.badge]),
+    );
+    for (const item of headerMenu(ctx, counts)) {
+      if (item.href === ROUTES.admin) continue;
+      expect(item.badge, item.href).toBe(sidebar.get(item.href));
+    }
+  });
+
+  it('show nothing at all when there is nothing waiting', () => {
+    const items = headerMenu(context({ companyType: 'transport' }));
+    expect(items.every((item) => item.badge === 0)).toBe(true);
+  });
+
+  it('never go negative, whatever the database returned', () => {
+    expect(badgeFor(ROUTES.accountMessages, { messages: -2, offers: 0 })).toBe(0);
+  });
+});
+
+describe('what a driver may open', () => {
+  it('is exactly the menu they are given', () => {
+    // These drifted once: the list was written out beside the builder as
+    // two paths while the menu grew to seven, so five items would have
+    // 404'd. It is the builder's output now.
+    for (const path of driverPaths()) {
+      expect(isDriverAllowed(path), path).toBe(true);
+    }
+    for (const item of buildNav(context({ role: 'driver' }))) {
+      expect(isDriverAllowed(item.href), item.href).toBe(true);
+    }
+  });
+
+  it('and not the rest of the account', () => {
+    // The bug this replaces: `/cont` sat in a list matched as prefixes, so
+    // `/cont/anything`.startsWith(`/cont/`) was true and the guard refused
+    // nothing at all — a driver could open the firm's fleet, its documents
+    // and its published routes.
+    for (const path of [
+      ROUTES.accountFleet,
+      ROUTES.accountDocuments,
+      ROUTES.accountDepartures,
+      ROUTES.accountSubscription,
+      ROUTES.accountMembers,
+      ROUTES.accountCompany,
+      ROUTES.accountRequests,
+      ROUTES.accountAlerts,
+      ROUTES.accountFavourites,
+      ROUTES.accountRatings,
+    ]) {
+      expect(isDriverAllowed(path), path).toBe(false);
+    }
+  });
+
+  it('covers the pages beneath an item they may open', () => {
+    expect(isDriverAllowed(`${ROUTES.accountTransports}/abc`)).toBe(true);
+    expect(isDriverAllowed(`${ROUTES.accountMessages}/abc`)).toBe(true);
+    expect(isDriverAllowed(`${ROUTES.accountPersonalData}/descarca/abc`)).toBe(true);
+  });
+
+  it('treats /cont as the dashboard, not as the parent of everything', () => {
+    expect(isDriverAllowed(ROUTES.account)).toBe(true);
+    expect(isDriverAllowed('/cont/orice-altceva')).toBe(false);
+  });
+
+  it('does not open a route that merely starts with the same letters', () => {
+    expect(isDriverAllowed('/cont/transporturi-altceva')).toBe(false);
+  });
+});
+
+describe('a source with no database configured returns nothing, never throws', () => {
+  it('holds for every loader in src/lib', async () => {
+    // Three of the thirty source files called `createClient()` without the
+    // guard the rest open with, so on a checkout or a preview build with
+    // no .env they threw where the others return an empty screen.
+    //
+    // They surfaced through the header, which is why they are in this
+    // change: the bar lives in the root layout, so it renders on every
+    // page, and a layout and the page under it render together. A staff
+    // page 404s an anonymous visitor, but not before the loader has run
+    // and logged. „Not on the path the header touches" was the wrong
+    // reading — the header touches everything.
+    //
+    // Checked by reading the files rather than calling them, because
+    // calling one needs a request scope. The guard is one line, and the
+    // check is that it is still there.
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const dir = new URL('../../src/lib/', import.meta.url).pathname;
+
+    const unguarded = readdirSync(dir)
+      .filter((name) => name.endsWith('-source.ts'))
+      .filter((name) => {
+        const body = readFileSync(`${dir}${name}`, 'utf8');
+        // A file that never builds a client needs no guard.
+        if (!body.includes('createClient(')) return false;
+        return !body.includes('isSupabaseConfigured');
+      });
+
+    expect(unguarded, 'these call createClient() with no configuration guard').toEqual([]);
   });
 });

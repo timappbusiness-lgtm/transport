@@ -9830,6 +9830,10 @@ export type Database = {
         Args: { p_text: string }
         Returns: string
       }
+      unanswered_offer_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       unblock_sender: {
         Args: { p_block_id: string }
         Returns: undefined

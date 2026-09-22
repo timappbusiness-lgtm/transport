@@ -1,4 +1,5 @@
 import 'server-only';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -46,6 +47,10 @@ export interface ImportAdminData {
 }
 
 export async function loadImportAdminData(): Promise<ImportAdminData> {
+  // Without configuration there is nothing to read, and `createClient()`
+  // throws rather than saying so. Every other source here opens with this.
+  if (!isSupabaseConfigured()) return { settings: null, budget: null, attempts: [] };
+
   const supabase = await createClient();
 
   const [settings, budget, attempts] = await Promise.all([
