@@ -20,7 +20,13 @@ import { createDraftStore } from '@/lib/draft-store';
 import { importCopy } from '@/content/import-anunt';
 import { applyExtraction, type ImportedField } from '@/lib/listing-import';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
-import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
+import {
+  OFFERED_CATEGORIES,
+  categoryMeta,
+  needsDescription,
+  suggestsClosedTransport,
+  weightHintKg,
+} from '@/lib/vehicle-categories';
 import {
   MAX_DAMAGE_NOTES,
   MAX_DESCRIPTION,
@@ -427,6 +433,37 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             </select>
           </Labelled>
 
+          {/* A suggestion, not a rule. The request goes out either way;
+              what changes is that carriers with a closed platform are
+              ranked first, and that the person is told the option
+              exists before they find out from an offer. */}
+          {suggestsClosedTransport(draft.category) ? (
+            <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-[0.8125rem] text-muted">
+              {c.vehicle.closedSuggestion}
+            </p>
+          ) : null}
+
+          {/* „Altceva" is the one category nothing can be deduced from,
+              so it asks. The same rule is a trigger in Postgres: this is
+              the courtesy, that is the boundary. */}
+          {needsDescription(draft.category) ? (
+            <Labelled
+              label={c.vehicle.otherDescription}
+              htmlFor={`${id}-other`}
+              hint={c.vehicle.otherDescriptionHint}
+              error={fieldError('description')}
+            >
+              <textarea
+                id={`${id}-other`}
+                rows={3}
+                value={draft.description}
+                onChange={(event) => set('description', event.target.value)}
+                placeholder={c.vehicle.otherDescriptionPlaceholder}
+                className={CONTROL}
+              />
+            </Labelled>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled label={c.vehicle.make} htmlFor={`${id}-make`} error={fieldError('make')} auto={auto.has('make')}>
               <input
@@ -462,7 +499,11 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             <Labelled
               label={c.vehicle.weight}
               htmlFor={`${id}-weight`}
-              hint={c.vehicle.weightHint}
+              /* The hint follows the category: „de obicei între 120 și
+                 350 kg" is worth more under Motocicletă than one
+                 sentence that has to be true of a motorbike and a
+                 minibus at once. */
+              hint={`${c.vehicle.weightHint} ${categoryMeta(draft.category)?.weightHint ?? ''}`.trim()}
               error={fieldError('weightKg')}
               auto={auto.has('weightKg')}
             >
@@ -470,6 +511,10 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                 id={`${id}-weight`}
                 inputMode="numeric"
                 value={draft.weightKg}
+                /* A placeholder, never a value: a number nobody typed is
+                   a number nobody checks, and the carrier loads the axle
+                   against it. */
+                placeholder={String(weightHintKg(draft.category) ?? '')}
                 onChange={(event) => set('weightKg', event.target.value)}
                 className={CONTROL}
               />

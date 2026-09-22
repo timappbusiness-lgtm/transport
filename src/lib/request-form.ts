@@ -1,6 +1,6 @@
 import { cityLabel, findCity, type City } from './cities';
 import type { CargoCategory } from './departures';
-import { OFFERED_CATEGORIES } from './vehicle-categories';
+import { OFFERED_CATEGORIES, needsDescription } from './vehicle-categories';
 import type { Prefill } from './price-prefill';
 import type { VehicleClass } from './pricing';
 import { validateEmail, validatePhone, type FieldErrors } from './validation/auth';
@@ -260,6 +260,12 @@ export function validateDraft(draft: RequestDraft, today: string): FieldErrors<R
 
   if (!(OFFERED_CATEGORIES as readonly string[]).includes(draft.category)) {
     errors.category = 'Alege categoria vehiculului.';
+  }
+  // „Altceva" is the one category that carries no information by itself.
+  // The same rule is a trigger in Postgres — that one is the boundary,
+  // this one is the courtesy of saying so before the round trip.
+  if (needsDescription(draft.category) && draft.description.trim().length < 10) {
+    errors.description = 'Scrie ce transporți, în cel puțin 10 caractere.';
   }
   if (draft.make.trim() === '') errors.make = 'Scrie marca.';
   if (draft.model.trim() === '') errors.model = 'Scrie modelul.';
