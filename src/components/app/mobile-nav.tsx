@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { appCopy } from '@/content/app';
 import type { NavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -102,7 +103,7 @@ export function MobileNav({
                 onClick={() => setOpen(true)}
                 className="flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[0.6875rem] text-muted"
               >
-                <Menu size={16} aria-hidden="true" />
+                <Icon as={uiIcon('menu')} size="md" />
                 {c.moreLabel}
               </button>
             </li>
@@ -135,7 +136,7 @@ export function MobileNav({
                 }}
                 className="rounded-input p-1.5 text-muted hover:text-foreground"
               >
-                <X size={18} aria-hidden="true" />
+                <Icon as={uiIcon('close')} size="md" />
                 <span className="sr-only">{c.close}</span>
               </button>
             </div>

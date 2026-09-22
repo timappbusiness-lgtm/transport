@@ -2,7 +2,8 @@
 
 import { useId, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import type { FaqEntry } from '@/content/faq';
 import { cn } from '@/lib/utils';
 
@@ -76,11 +77,12 @@ function Item({
           )}
         >
           <span>{entry.question}</span>
-          <ChevronDown
-            size={18}
-            aria-hidden="true"
+          <Icon
+            as={uiIcon('expand')}
+            size="md"
+            tone="muted"
             className={cn(
-              'mt-0.5 flex-none text-muted transition-transform motion-reduce:transition-none',
+              'mt-0.5 transition-transform motion-reduce:transition-none',
               open && 'rotate-180',
             )}
           />

@@ -1,5 +1,6 @@
 import { Fragment } from 'react';
-import { Check, Clock, Minus } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { plansCopy } from '@/content/plans';
 import {
   featureStatus,
@@ -137,7 +138,7 @@ function Mark({ status }: { status: FeatureStatus }) {
   if (status === 'included') {
     return (
       <>
-        <Check size={16} aria-hidden="true" className="mt-0.5 flex-none text-success" />
+        <Icon as={uiIcon('check')} size="md" className="mt-0.5 text-success" />
         <span className="sr-only">Inclus</span>
       </>
     );
@@ -146,7 +147,7 @@ function Mark({ status }: { status: FeatureStatus }) {
   if (status === 'coming_soon') {
     return (
       <>
-        <Clock size={16} aria-hidden="true" className="mt-0.5 flex-none text-muted" />
+        <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
         <span className="sr-only">{label}</span>
       </>
     );
@@ -154,7 +155,7 @@ function Mark({ status }: { status: FeatureStatus }) {
 
   return (
     <>
-      <Minus size={16} aria-hidden="true" className="mt-0.5 flex-none text-border-strong" />
+      <Icon as={uiIcon('absent')} size="md" className="mt-0.5 text-border-strong" />
       <span className="sr-only">Nu este inclus</span>
     </>
   );

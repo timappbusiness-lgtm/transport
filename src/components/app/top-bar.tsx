@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { PublishMenu } from '@/components/app/publish-menu';
 import { appCopy } from '@/content/app';
 import { ROUTES } from '@/config/routes';
@@ -38,7 +39,7 @@ export function TopBar({
                   <Link href={crumb.href} className="hover:text-foreground">
                     {crumb.label}
                   </Link>
-                  <ChevronRight size={13} aria-hidden="true" className="text-border-strong" />
+                  <Icon as={uiIcon('forward')} size="sm" className="text-border-strong" />
                 </li>
               ))}
             </ol>

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronDown } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { signOutAction } from '@/app/auth-actions';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
@@ -309,7 +310,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 aria-label={accountCopy.nav.menu}
                 className="flex size-7 flex-none items-center justify-center rounded-full text-white/85 hover:bg-white/12 hover:text-white"
               >
-                <ChevronDown size={13} aria-hidden="true" />
+                <Icon as={uiIcon('expand')} size="sm" />
               </button>
             </div>
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { LifeBuoy } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { iconForAction } from '@/lib/icons';
 import { CompanySwitcher } from '@/components/app/company-switcher';
 import { BRAND_NAME } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
@@ -108,7 +109,7 @@ export function Sidebar({
           href={ROUTES.accountHelp}
           className="inline-flex items-center gap-2 text-muted hover:text-foreground"
         >
-          <LifeBuoy size={14} aria-hidden="true" />
+          <Icon as={iconForAction('help')} size="sm" />
           {c.help}
         </Link>
       </p>

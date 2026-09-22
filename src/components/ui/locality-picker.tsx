@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { MapPin, Search } from 'lucide-react';
 import {
   reportMissingLocalityAction,
   searchLocalitiesAction,
 } from '@/app/localitati-actions';
 import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { localitiesCopy } from '@/content/localitati';
 import {
   GROUP_LABELS,
@@ -185,7 +185,7 @@ export function LocalityPicker({
     <div ref={boxRef} className="relative">
       <div className="relative">
         <Icon
-          as={Search}
+          as={uiIcon('search')}
           size="sm"
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
         />
@@ -266,7 +266,7 @@ export function LocalityPicker({
 
       {noResults ? (
         <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.8125rem] text-muted">
-          <Icon as={MapPin} size="sm" />
+          <Icon as={uiIcon('place')} size="sm" />
           {reported ? (
             localitiesCopy.reportedThanks
           ) : (

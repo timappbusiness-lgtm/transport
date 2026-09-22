@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
 import { directoryCopy } from '@/content/directory';
 import { companyRoute } from '@/config/routes';
 import {
@@ -61,8 +60,11 @@ export function CompanyCard({
         </div>
       </div>
 
+      {/* No shield here, and none anywhere near a company name.
+          `docs/13-iconuri.md` uses this exact case to explain the rule:
+          „un scut lângă numele unei firme arată ca o verificare pe care
+          firma a câștigat-o". The word does the work. */}
       <p className="mt-4 inline-flex items-center gap-1.5 text-[0.8125rem] text-muted">
-        <ShieldCheck size={14} aria-hidden="true" className="flex-none text-success" />
         <span className="text-foreground">{c.verified}</span>
         {rating ? <span aria-hidden="true">·</span> : null}
         {rating ? <span className="font-mono tabular-nums">{rating}</span> : null}

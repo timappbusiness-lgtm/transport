@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Check, Clock } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { RequestPlanButton } from '@/components/plans/request-plan-button';
 import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/primitives';
@@ -118,9 +119,9 @@ export function PlanCard({
           {cardFeatures(plan).map((feature) => (
             <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
               {feature.status === 'coming_soon' ? (
-                <Clock size={16} aria-hidden="true" className="mt-0.5 flex-none text-muted" />
+                <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
               ) : (
-                <Check size={16} aria-hidden="true" className="mt-0.5 flex-none text-success" />
+                <Icon as={uiIcon('check')} size="md" className="mt-0.5 text-success" />
               )}
               <span>
                 {feature.label}

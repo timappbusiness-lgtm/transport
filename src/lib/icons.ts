@@ -1,6 +1,8 @@
 import {
   AlarmClock,
   Anchor,
+  Bandage,
+  Bell,
   Bike,
   Box,
   Building2,
@@ -8,31 +10,70 @@ import {
   Cable,
   Car,
   CarFront,
+  CarTaxiFront,
   Caravan,
+  ChartNoAxesColumn,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleCheck,
+  CircleHelp,
   ClipboardCheck,
+  Clock,
   Container,
   Construction,
+  Copy,
+  CreditCard,
+  Download,
+  FileSearch,
   FileText,
   Forklift,
+  Handshake,
   Hourglass,
+  Inbox,
+  LayoutDashboard,
+  LifeBuoy,
   Link2,
+  ListChecks,
+  Lock,
+  MailCheck,
   MapPin,
+  Megaphone,
+  Menu,
   MessageSquare,
+  Minus,
   Package,
   PackageCheck,
+  Phone,
+  Plus,
   Route,
-  ShieldCheck,
+  Scale,
+  ScrollText,
+  Search,
+  Settings,
   Ship,
+  SlidersHorizontal,
   Sparkles,
+  Star,
   Tag,
   Tractor,
   Truck,
   TruckElectric,
   Umbrella,
+  Upload,
+  UserRound,
+  Users,
+  Van,
+  Wallet,
+  Warehouse,
+  Weight,
   Wrench,
+  X,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
+import { VEHICLE_CLASS_ORDER, type VehicleClass } from './pricing';
 import { CARGO_CATEGORIES, type CargoCategory } from './departures';
 import { ORDER_STEPS, type OrderStatus } from './orders';
 
@@ -58,12 +99,35 @@ import { ORDER_STEPS, type OrderStatus } from './orders';
  * an icon mapped to a value that no longer exists.
  */
 
-/** The sizes anything in this system may be. Nothing else is allowed. */
-export const ICON_SIZES = { sm: 13, md: 16, lg: 20 } as const;
+/**
+ * The sizes anything in this system may be. Nothing else is allowed.
+ *
+ * These were 13 / 16 / 20 and the whole set was reported as invisible.
+ * The `sm` case is the one that did the damage: 13px of 1.75 stroke, in
+ * `currentColor`, inside a row of 10px uppercase muted mono — an icon
+ * technically on the page and practically not there. Each step up, and
+ * `sm` is now larger than the text it sits beside rather than smaller.
+ */
+export const ICON_SIZES = { sm: 15, md: 18, lg: 22 } as const;
 export type IconSize = keyof typeof ICON_SIZES;
 
-/** One stroke width, so a row of icons reads as one row. */
-export const ICON_STROKE = 1.75;
+/**
+ * One stroke width, so a row of icons reads as one row.
+ *
+ * 2 rather than 1.75, which is also lucide's own default. At these sizes
+ * the quarter-point is the difference between a drawing and a smudge,
+ * and it costs nothing at `lg`.
+ */
+export const ICON_STROKE = 2;
+
+/**
+ * The one gap between an icon and its label.
+ *
+ * Exported as a class rather than left to each call site, because it had
+ * already drifted to three values. `IconLabel` applies it; anything
+ * laying out its own row uses this constant.
+ */
+export const ICON_GAP = 'gap-2';
 
 // ---------------------------------------------------------------------
 // Vehicle categories
@@ -120,7 +184,9 @@ export const SERVICE_ICONS: Record<string, LucideIcon> = {
   tractare: Cable,
   transport_inchis: Box,
   transport_nefunctional: Wrench,
-  transport_avariat: ShieldCheck,
+  // Not a shield, and not a warning triangle either: this is a service a
+  // firm offers, not an alarm.
+  transport_avariat: Bandage,
   transport_motociclete: Bike,
   transport_utilaje: Tractor,
   ridicare_domiciliu: MapPin,
@@ -137,7 +203,10 @@ export const SERVICE_ICONS: Record<string, LucideIcon> = {
 export type StatusKind = 'valid' | 'expiring_soon' | 'expired' | 'in_review' | 'missing';
 
 export const STATUS_ICONS: Record<StatusKind, LucideIcon> = {
-  valid: ShieldCheck,
+  // A plain tick, not a shield. `docs/13-iconuri.md` is explicit that
+  // nothing may read as an official seal, and a shield on anything to do
+  // with a document is the shape people already recognise as one.
+  valid: CircleCheck,
   expiring_soon: AlarmClock,
   expired: Hourglass,
   in_review: Hourglass,
@@ -211,6 +280,246 @@ export const CONTENT_LABELS: Record<ContentType, string> = {
 };
 
 // ---------------------------------------------------------------------
+// Price classes
+//
+// `price_rates` is keyed by `vehicle_class`, a shorter vocabulary than
+// the categories: it splits a car by size because the rate does, and it
+// knows nothing about caravans. It used to live in its own file with its
+// own map, its own stroke width and its own size — the exact drift the
+// one-map rule exists to stop, discovered while fixing this.
+// ---------------------------------------------------------------------
+export const VEHICLE_CLASS_ICONS: Record<VehicleClass, LucideIcon> = {
+  motocicleta: Bike,
+  hatchback: Car,
+  sedan: CarFront,
+  suv: CarTaxiFront,
+  autoutilitara: Van,
+};
+
+export function iconForVehicleClass(code: VehicleClass): LucideIcon {
+  return VEHICLE_CLASS_ICONS[code];
+}
+
+// ---------------------------------------------------------------------
+// Interface glyphs
+//
+// A chevron is not a domain concept and pretending otherwise would put
+// „chevron" in a list beside „motocicletă". They are here anyway, for
+// one reason: so that `lucide-react` is imported in exactly one file and
+// a test can say so. `tests/unit/icons.test.ts` is that test.
+// ---------------------------------------------------------------------
+export type UiGlyph =
+  | 'expand'
+  | 'forward'
+  | 'menu'
+  | 'close'
+  | 'check'
+  | 'absent'
+  | 'locked'
+  | 'pending'
+  | 'phone'
+  | 'mail'
+  | 'person'
+  | 'company'
+  | 'place'
+  | 'search'
+  | 'empty';
+
+export const UI_ICONS: Record<UiGlyph, LucideIcon> = {
+  expand: ChevronDown,
+  forward: ChevronRight,
+  menu: Menu,
+  close: X,
+  check: Check,
+  absent: Minus,
+  locked: Lock,
+  pending: Clock,
+  phone: Phone,
+  mail: MailCheck,
+  person: UserRound,
+  company: Building2,
+  place: MapPin,
+  search: Search,
+  empty: FileSearch,
+};
+
+export function uiIcon(glyph: UiGlyph): LucideIcon {
+  return UI_ICONS[glyph];
+}
+
+// ---------------------------------------------------------------------
+// Status banners
+//
+// Two of these are deliberately absent, and that absence is the rule
+// rather than an omission: a suspension and a rejection get words and
+// nothing else. `docs/13-iconuri.md` says why — a pictogram beside „Cont
+// suspendat" turns a sentence somebody has to read into a notification
+// they can dismiss. The banners carried a warning triangle and a red
+// cross for months because the rule was written in a document and never
+// applied to the code; `tests/unit/icons.test.ts` now checks the code.
+// ---------------------------------------------------------------------
+export type BannerKind =
+  | 'suspended'
+  | 'rejected'
+  | 'pending'
+  | 'draft'
+  | 'documents_expiring'
+  | 'trial_ending'
+  | 'quota_reached';
+
+export const BANNER_ICONS: Partial<Record<BannerKind, LucideIcon>> = {
+  pending: Clock,
+  draft: ClipboardCheck,
+  documents_expiring: AlarmClock,
+  trial_ending: Clock,
+  quota_reached: ChartNoAxesColumn,
+};
+
+/** Null for the two that must never have one. */
+export function iconForBanner(kind: BannerKind): LucideIcon | null {
+  return BANNER_ICONS[kind] ?? null;
+}
+
+/** The banners that get words and nothing else. */
+export const SOLEMN_BANNERS: readonly BannerKind[] = ['suspended', 'rejected'];
+
+// ---------------------------------------------------------------------
+// Navigation
+//
+// Keyed by the route, because that is what a `NavItem` already carries
+// and the labels differ by account type — a carrier's „Oferte trimise"
+// and a forwarder's „Oferte primite" are the same destination and want
+// the same icon.
+//
+// `tests/unit/navigation.test.ts` walks every item the builder can
+// produce, for every account type, and fails on one without an icon.
+// That is the check that makes this map complete rather than nearly
+// complete, which is what it was the first time.
+// ---------------------------------------------------------------------
+export const NAV_ICONS: Record<string, LucideIcon> = {
+  [ROUTES.account]: LayoutDashboard,
+  [ROUTES.accountRequests]: CarFront,
+  [ROUTES.accountOffers]: Tag,
+  [ROUTES.accountTransports]: Truck,
+  [ROUTES.accountRatings]: Star,
+  [ROUTES.accountMessages]: MessageSquare,
+  [ROUTES.accountDepartures]: Route,
+  [ROUTES.accountFleet]: Truck,
+  [ROUTES.accountDocuments]: FileText,
+  [ROUTES.accountMembers]: Users,
+  [ROUTES.accountCompany]: Building2,
+  [ROUTES.accountSubscription]: CreditCard,
+  [ROUTES.accountAlerts]: Bell,
+  [ROUTES.accountFavourites]: Star,
+  [ROUTES.accountInvitations]: Inbox,
+  [ROUTES.accountProfile]: UserRound,
+  [ROUTES.accountNotificationSettings]: Bell,
+  [ROUTES.accountPersonalData]: ScrollText,
+  [ROUTES.accountHelp]: CircleHelp,
+  [ROUTES.requests]: CarFront,
+  [ROUTES.routes]: Route,
+  [ROUTES.companies]: Building2,
+  [ROUTES.prices]: Wallet,
+  [ROUTES.plans]: CreditCard,
+  [ROUTES.faq]: CircleHelp,
+  [ROUTES.contact]: Megaphone,
+  [ROUTES.newRequest]: Plus,
+  // Admin
+  [ROUTES.admin]: LayoutDashboard,
+  [ROUTES.adminCompanies]: Building2,
+  [ROUTES.adminDocuments]: FileSearch,
+  [ROUTES.adminOffers]: Tag,
+  [ROUTES.adminOrders]: Truck,
+  [ROUTES.adminRatings]: Star,
+  [ROUTES.adminListings]: Megaphone,
+  [ROUTES.adminConversations]: MessageSquare,
+  [ROUTES.adminReports]: Scale,
+  [ROUTES.adminAuditLog]: ScrollText,
+  [ROUTES.adminTeam]: Users,
+  [ROUTES.adminOnboardings]: Handshake,
+  [ROUTES.adminPlans]: CreditCard,
+  [ROUTES.adminSubscriptions]: Wallet,
+  [ROUTES.adminPrices]: Wallet,
+  [ROUTES.adminOptions]: ListChecks,
+  [ROUTES.adminPages]: FileText,
+  [ROUTES.adminImport]: Download,
+  [ROUTES.adminNotifications]: Bell,
+  [ROUTES.adminDeletions]: ScrollText,
+  [ROUTES.adminPilot]: ChartNoAxesColumn,
+  [ROUTES.adminActivity]: ChartNoAxesColumn,
+  [ROUTES.adminSettings]: Settings,
+};
+
+/** Null for a destination nobody has chosen an icon for yet. */
+export function iconForRoute(href: string): LucideIcon | null {
+  return NAV_ICONS[href] ?? null;
+}
+
+// ---------------------------------------------------------------------
+// Repeated actions
+//
+// A button somebody presses many times a day earns an icon; a button
+// pressed once does not, and a destructive one may never have one.
+// ---------------------------------------------------------------------
+export type ActionKind =
+  | 'add'
+  | 'upload'
+  | 'download'
+  | 'search'
+  | 'filter'
+  | 'copy'
+  | 'help';
+
+export const ACTION_ICONS: Record<ActionKind, LucideIcon> = {
+  add: Plus,
+  upload: Upload,
+  download: Download,
+  search: Search,
+  filter: SlidersHorizontal,
+  copy: Copy,
+  help: LifeBuoy,
+};
+
+export function iconForAction(kind: ActionKind): LucideIcon {
+  return ACTION_ICONS[kind];
+}
+
+// ---------------------------------------------------------------------
+// The things a listing is described by
+//
+// Used on the request and route detail pages, where a definition list of
+// twelve rows is otherwise a wall somebody has to read line by line.
+// ---------------------------------------------------------------------
+export type FactKind =
+  | 'route'
+  | 'window'
+  | 'vehicle'
+  | 'weight'
+  | 'distance'
+  | 'service'
+  | 'condition'
+  | 'price'
+  | 'company'
+  | 'capacity';
+
+export const FACT_ICONS: Record<FactKind, LucideIcon> = {
+  route: Route,
+  window: AlarmClock,
+  vehicle: CarFront,
+  weight: Weight,
+  distance: MapPin,
+  service: Tag,
+  condition: Wrench,
+  price: Wallet,
+  company: Building2,
+  capacity: Warehouse,
+};
+
+export function iconForFact(kind: FactKind): LucideIcon {
+  return FACT_ICONS[kind];
+}
+
+// ---------------------------------------------------------------------
 // Lookups
 // ---------------------------------------------------------------------
 
@@ -245,4 +554,8 @@ export const ICON_MAPS = {
   orderStep: { icons: ORDER_STEP_ICONS, values: ORDER_STEPS },
   status: { icons: STATUS_ICONS, values: Object.keys(STATUS_LABELS) },
   content: { icons: CONTENT_ICONS, values: Object.keys(CONTENT_LABELS) },
+  action: { icons: ACTION_ICONS, values: Object.keys(ACTION_ICONS) },
+  fact: { icons: FACT_ICONS, values: Object.keys(FACT_ICONS) },
+  ui: { icons: UI_ICONS, values: Object.keys(UI_ICONS) },
+  vehicleClass: { icons: VEHICLE_CLASS_ICONS, values: VEHICLE_CLASS_ORDER },
 } as const;

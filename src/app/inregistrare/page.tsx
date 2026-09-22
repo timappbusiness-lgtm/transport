@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Building2, User } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { AuthCard, TextLink } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
@@ -69,7 +70,7 @@ export default async function Page({
       <div className="flex flex-col gap-4">
         <Choice
           href={ROUTES.signUpIndividual}
-          icon={<User size={18} />}
+          icon={<Icon as={uiIcon('person')} size="md" />}
           title={c.individual.title}
           body={c.individual.body}
           cta={c.individual.cta}
@@ -78,7 +79,7 @@ export default async function Page({
         />
         <Choice
           href={companyHref}
-          icon={<Building2 size={18} />}
+          icon={<Icon as={uiIcon('company')} size="md" />}
           title={c.company.title}
           body={c.company.body}
           cta={c.company.cta}

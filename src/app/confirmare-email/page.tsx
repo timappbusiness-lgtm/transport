@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { MailCheck } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { AuthCard, TextLink } from '@/components/auth/form';
 import { ResendConfirmationForm } from '@/components/auth/forms';
 import { ROUTES } from '@/config/routes';
@@ -28,7 +29,7 @@ export default async function Page({
       <div className="flex flex-col gap-6">
         <div className="flex items-start gap-3 rounded-card border border-border bg-surface p-4">
           <span aria-hidden="true" className="mt-0.5 text-success">
-            <MailCheck size={18} />
+            <Icon as={uiIcon('mail')} size="md" />
           </span>
           <p className="text-sm text-muted">{c.checkSpam}</p>
         </div>

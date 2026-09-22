@@ -1,4 +1,5 @@
-import { Check, Lock } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { accountCopy } from '@/content/account';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +38,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
                 step.state === 'soon' && 'border border-border text-muted',
               )}
             >
-              {step.state === 'done' ? <Check size={13} /> : index + 1}
+              {step.state === 'done' ? <Icon as={uiIcon('check')} size="sm" /> : index + 1}
             </span>
             <span className="min-w-0 flex-1 text-sm">{step.label}</span>
             {step.state === 'done' ? (
@@ -47,7 +48,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
             ) : null}
             {step.state === 'soon' ? (
               <span className="flex items-center gap-1.5 font-mono text-[0.6875rem] text-muted">
-                <Lock size={11} aria-hidden="true" />
+                <Icon as={uiIcon('locked')} size="sm" />
                 {accountCopy.checklist.soon}
               </span>
             ) : null}

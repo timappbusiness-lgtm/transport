@@ -1,4 +1,5 @@
-import { FileSearch } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { CompanyReview, DocumentReview } from '@/components/admin/review-forms';
 import { StatusBadge } from '@/components/ui/primitives';
 import { adminReviewCopy } from '@/content/admin';
@@ -127,9 +128,7 @@ export function ReviewQueue({
 function Empty({ text }: { text: string }) {
   return (
     <div className="mt-4 flex flex-col items-center gap-2 rounded-card border border-border bg-surface px-5 py-12 text-center">
-      <span aria-hidden="true" className="text-muted">
-        <FileSearch size={22} />
-      </span>
+      <Icon as={uiIcon('empty')} size="lg" tone="muted" />
       <p className="text-sm">{text}</p>
     </div>
   );

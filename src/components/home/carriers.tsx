@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Check, Clock } from 'lucide-react';
+import { Icon } from '@/components/ui/icon';
+import { uiIcon } from '@/lib/icons';
 import { CompanyCard } from '@/components/directory/company-card';
 import { Container } from '@/components/layout/container';
 import { buttonClasses } from '@/components/ui/button';
@@ -97,9 +98,9 @@ export function CarriersBody({
                   {cardFeatures(plan).map((feature) => (
                     <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
                       {feature.status === 'coming_soon' ? (
-                        <Clock size={16} className="mt-0.5 flex-none text-muted" aria-hidden="true" />
+                        <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
                       ) : (
-                        <Check size={16} className="mt-0.5 flex-none text-success" aria-hidden="true" />
+                        <Icon as={uiIcon('check')} size="md" className="mt-0.5 text-success" />
                       )}
                       <span>
                         {feature.label}
