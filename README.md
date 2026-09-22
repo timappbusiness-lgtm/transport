@@ -21,7 +21,7 @@ summary, written to be sent to the client.
 | „când se loghează să încarce licența de transport / casă de expediții" | `documents` + `document_requirements` · `prompts/02`, `prompts/03` |
 | „să sincronizăm cu asigurările, să vedem când expiră, să suspendăm contul" | `run_compliance_sweep()` · [`docs/03-document-compliance.md`](docs/03-document-compliance.md) — **read this one, it explains what is and is not possible in Romania** |
 | „secțiune să verifice ITP și asigurări la mașină și copiile conforme ARR" | `vehicles` + vehicle-scoped `documents` · `prompts/03` |
-| „persoanele fizice… doar cu un cont rapid" | Postare fără cont, telefon confirmat abia la prima ofertă · `prompts/06-individual-quick-account.md` |
+| „persoanele fizice… doar cu un cont rapid" | Formularul se completează fără cont, contul se face la ultimul pas; telefonul se confirmă abia când cineva cere un contact · `prompts/06-individual-quick-account.md` |
 
 ## Layout
 
@@ -31,8 +31,8 @@ docs/          spec, data model, compliance, roadmap, pricing, GDPR,
 src/           the Next.js app
 design/        the design system: tokens, type, motion, copy rules
 supabase/
-  migrations/  9 SQL files, apply in filename order
-  functions/   3 Deno edge functions
+  migrations/  SQL files, applied in filename order
+  functions/   Deno edge functions
   tests/       smoke_test.sql (business rules) and rls_test.sql (who may do
                what, run as the API roles) — `pnpm db:test` runs both
 prompts/       ARCHIVED Lovable prompts — specifications, not runnable

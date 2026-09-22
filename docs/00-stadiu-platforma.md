@@ -18,6 +18,12 @@ să te bazezi pe vreun rând din tabele.
 > | Comanda, dovada de livrare și disputele (`20260923100100`) | §3 comandă și livrare, „regulile sunt în bază, dar nu au interfață" |
 > | Evaluările și reputația calculată (`20260924100000`) | §3 evaluări, „tabela există, ecranul nu"; și profilul care arăta o cifră fără nimic în spatele ei |
 > | Mesageria generală și moderarea anunțurilor (`20260925100000`) | §3 mesagerie, „conversațiile există în bază, dar nu are unde să le citească nimeni"; și moderarea din Faza 10, care nu avea niciun ecran |
+> | Înscrierea asistată (`20260926100000`) | §3, firma care nu se poate înscrie singură |
+> | Serii de plecări, cereri private, favoriți (`20260927100000`) | §3, completările Fazelor 1–2 |
+> | Auditul de securitate, reparat în patru bucăți (`20260928100000`–`20260930100000`) | Nimic din document: auditul este `docs/12-audit-securitate.md`, făcut după el |
+> | Restanțele auditului, și o gaură critică găsită închizându-le (`20261001100000`) | idem |
+> | Filtre de rază și greutate, `localities`, coordonatele ștampilate (`20261002100000`) | §3, „panourile nu se pot îngusta după distanță" |
+> | Verificarea numărului prin SMS, gata dar inactivă (`20261003100000`) | §3, „numărul se confirmă numai manual" |
 >
 > **Cu asta, Faza 2 este încheiată în cod.** Ofertă, comandă, dovadă de
 > livrare, evaluări, mesagerie, moderare — toate au ecrane, reguli în
@@ -28,16 +34,33 @@ să te bazezi pe vreun rând din tabele.
 > Supabase de producție. Lista, cu un responsabil pe fiecare rând, este în
 > `docs/faza-1-checklist.md`; pașii în `docs/configurare-externa.md`.
 >
-> Două lucruri din document au fost între timp depășite de cod și se
+> Trei lucruri din document au fost între timp depășite de cod și se
 > citesc greșit dacă nu se spune: livrarea notificărilor **nu** mai merge
 > prin n8n (cele patru workflow-uri nu au fost construite niciodată; drena
-> este funcția edge `outbox-dispatcher`, din `20260918160000`), iar
+> este funcția edge `outbox-dispatcher`, din `20260918160000`);
 > publicarea unei cereri de către o persoană fizică **nu** mai cere un
 > telefon confirmat prin SMS — cere o adresă de e-mail confirmată și un
-> număr în profil, din `20260920100000`.
+> număr în profil, din `20260920100000`; iar numărul confirmat, cerut mai
+> târziu în flux, are din `20261003100000` și un drum prin SMS pe lângă
+> bifa manuală — inactiv cât timp nu există secret de furnizor, și
+> spunând asta pe `/admin/notificari` în loc să tacă.
 >
-> Restul constatărilor stau în picioare, inclusiv retenția pentru
-> `contact_reveals` și paginile juridice.
+> **Publicarea fără cont nu se face.** Analiza din
+> `docs/10-analiza-lipsuri.md` o recomanda; decizia din 22 septembrie 2026
+> este alta, fiindcă cerința clientului este „un cont rapid", iar asta
+> este deja acoperită: formularul se completează întreg fără cont, contul
+> se face la ultimul pas, cu ciorna păstrată.
+>
+> Două constatări pe care documentul le lasă deschise sunt și ele închise:
+> retenția pentru `contact_reveals` (`20260918230000` adaugă
+> `deletion_settings.contact_reveal_months`, `purge_contact_reveals()` și
+> jobul `nightly-retention`) și paginile juridice (`/termeni` și
+> `/confidentialitate` au conținut v1.0 întreg, iar `UNBUILT_ROUTES` din
+> `src/config/routes.ts` este gol din 20 septembrie). Ce rămâne din a doua
+> este numai identitatea operatorului — câmpurile din `src/config/company.ts`,
+> goale intenționat până le completează cineva.
+>
+> Restul constatărilor stau în picioare.
 
 ---
 

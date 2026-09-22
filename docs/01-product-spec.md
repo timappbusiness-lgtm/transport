@@ -30,13 +30,21 @@ proper nouns of Romanian law and translating them loses meaning.
 | **Freight forwarder** (`expeditie`) | CUI + forwarder credentials | Post loads, browse trucks, bid, rate carriers |
 | **Carrier** (`transport`) | CUI + community licence + fleet | Post trucks (tur/retur), browse loads, bid, rate forwarders |
 | **Both** (`both`) | Both document sets | Everything above |
-| **Individual** (`individual`) | Phone + OTP, name | Post a return-trip request, browse return trucks, contact carriers |
+| **Individual** (`individual`) | Name, e-mail, password and a telephone number | Post a return-trip request, browse return trucks, contact carriers |
 | **Platform admin** | Internal | Review documents, handle reports, suspend accounts |
 
 The individual account is deliberately thin. Asking a private person for a
 transport licence to move a sofa is how you lose that side of the marketplace.
-They verify a phone number and nothing else — see `docs/06-gdpr-and-antifraud.md`
-for why that is safe enough and what limits it carries.
+See `docs/06-gdpr-and-antifraud.md` for why that is safe enough and what limits
+it carries.
+
+**Publishing asks for a confirmed e-mail address and a telephone number on
+file — not a confirmed number.** `phone_is_on_file()` is about reachability;
+`email_is_confirmed()` is the gate (`20260920100000`, `guard_cargo_listing_publish`).
+A *confirmed* number is asked for later, where it is worth something: revealing
+somebody's contact details, accepting an offer, creating an order. It is
+confirmed by the SMS code (`20261003100000`) or, while no provider secret is
+set, by somebody on the team with `staff_set_phone_verified()`.
 
 ## The three boards
 
@@ -77,14 +85,23 @@ documentation.
 |---|---|---|
 | `draft` | Being written, not on the board | Created |
 | `active` | On the board, no offer yet | Published |
-| `offers_received` | On the board, at least one pending offer | First pending offer arrives; back to `active` when every offer is withdrawn or rejected |
-| `carrier_selected` | An offer was accepted, or a seat reservation confirmed; off the board | `accept_offer()` / `confirm_departure_booking()` |
+| `offers_received` | **In the enum, never written.** See the note below | — |
+| `carrier_selected` | An offer was accepted, or a seat reservation confirmed; off the board | `accept_offer()` / `confirm_departure_booking()` — a stored status, written by those two and by nothing else |
 | `in_progress` | The vehicle has been picked up | Order reaches `vehicle_picked_up` |
 | `delivered` | The vehicle has been delivered | Order reaches `vehicle_delivered` |
 | `cancelled` | Withdrawn by the client, before or after selection | Client cancels |
 | `expired` | Its dates passed while it was on the board or suspended | Cleanup job, or reactivation after the dates |
 | `suspended` | Taken off the board because its owner lost compliance | Compliance sweep |
 | `disputed` | A party opened a complaint on the order | Complaint filed |
+
+**`offers_received` exists and is never set.** It was meant to mean „on the
+board, with at least one pending offer", and keeping it in step would take
+four paths — an offer arriving, being withdrawn, being rejected, and
+expiring — the last of which is an hourly job. The first time one of them
+is missed, the stored status describes offers that are no longer there. So
+the label is derived from the live offers instead, in `requestStateLabel()`,
+and nothing writes the enum value. A row that somehow arrives carrying it
+still reads correctly, because the derivation is what decides the words.
 
 **Suspension and return.** When an owner is suspended, their `active` and
 `offers_received` listings become `suspended`, and the status they had is
@@ -132,7 +149,8 @@ Each vehicle records, besides plate, VIN, type and documents:
 ```
 signup
   └─> choose account type
-        ├── individual ──> phone OTP ──> can post on the return board
+        ├── individual ──> e-mail confirmed + phone on file ──> can post
+        │                   on the return board
         └── company
               ├─> enter CUI
               ├─> verify-cui-anaf autofills name, address, VAT, inactive flag
@@ -166,7 +184,8 @@ document.valid_until < today - grace_days
   -> company loses a blocking requirement
   -> companies.is_suspended = true, verification_status = 'suspended'
   -> its active / offers_received listings -> 'suspended', previous status stored
-  -> notification_outbox row -> n8n -> e-mail + WhatsApp
+  -> notification_outbox row -> outbox-dispatcher (edge function, pg_cron
+     every five minutes) -> e-mail and in-app; push goes to push-dispatcher
 ```
 
 Reactivation is the same path in reverse and is automatic: the admin approves
@@ -202,12 +221,18 @@ exchange that works.
 `listing_contacts` is a separate table with its own RLS. A non-owner reaches
 it only through `reveal_contact()`, which checks, in order:
 
-1. the caller is a member of a company that is verified and not suspended,
+1. the caller may see the listing at all — a private request is only visible
+   to its owner and the firms invited to it (`can_see_listing()`)
+2. **the two parties to an agreed order see each other free**, and the check
+   stops here: no eligibility branch, no „is it still active", no quota. An
+   order whose listing has moved on is still an order somebody has to drive
+3. the caller is a member of a company that is verified and not suspended,
    or an individual with a confirmed phone number
-2. the listing is active
-3. their plan has quota left this month (re-opening a listing they already
+4. the listing is active
+5. their plan has quota left this month (re-opening a listing they already
    revealed does not burn quota again)
-4. logs the reveal to `contact_reveals`
+6. logs the reveal to `contact_reveals`, with the reason — an order reveal is
+   recorded like any other and simply does not count against the month
 
 Starting a conversation on a listing is a contact too: it passes the same
 checks and counts against the same quota, once per listing.
@@ -222,7 +247,10 @@ investigation ("who looked at this load right before it disappeared").
 - Radius: `distance_km()`, a plain SQL haversine. No PostGIS until routing or
   polygons are actually needed — one less extension to maintain across
   environments.
-- Saved searches feed the alerting workflow in `n8n/README.md`
+- Saved searches feed `nightly-saved-search-digest`, whose rows
+  `outbox-dispatcher` delivers. **Not n8n:** the four workflows described in
+  `n8n/README.md` were never built and nobody runs an instance — that file
+  says so at the top
 
 **Both boards filter by radius and by weight.** On `/cereri` the radius is
 measured from the loading locality and the weight is the heaviest vehicle the

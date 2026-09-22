@@ -37,9 +37,9 @@ Product decisions taken with it:
   shipper; only companies are rated. Revisit once there is a moderation flow
   for ratings of private persons.
 - **Saved-route alerts stay in the MVP, by e-mail only.** WhatsApp alerts move
-  after the MVP. The homepage still lists „Alerte pe WhatsApp pentru traseele
-  tale” as „în curând”; that line must become „Alerte pe email pentru cereri
-  pe traseele tale” (not yet changed).
+  after the MVP. The homepage line that promised them is gone — nothing in
+  `src/` offers WhatsApp to a visitor, and
+  `tests/e2e/profil-firma-supabase.spec.ts` asserts it stays that way.
 - **Confirming a seat reservation creates the order**, through the same
   internal function as `accept_offer()` (phase 0 follow-up).
 - **Membership is by invitation.** A manager invites by e-mail
@@ -56,7 +56,10 @@ Who is on the platform, and whether their papers are valid.
 - Company signup with `create_company()`; CUI lookup at ANAF with autofill and
   the inactive / struck-off flag (`verify-cui-anaf`) *— database done in phase 0*
 - Membership by invitation, ownership transfer *— done*
-- Individual quick account: phone confirmed by OTP
+- Individual quick account: name, e-mail, password and a telephone number.
+  Publishing asks for the e-mail confirmed and the number on file; the number
+  itself is confirmed later, where it is worth something — by SMS once a
+  provider secret exists, by staff until then
 - Document upload into the company folder; **AI extraction** with
   `parse-document` pre-fills kind, number, holder and dates; a person from the
   platform approves or rejects in the review queue (`review_document()`)
@@ -81,12 +84,20 @@ end to end.
 - Vehicle transport request with **make, model, manufacturing year**,
   **starts and drives**, **service level** standard (`pe_sens`) or express
   (`expres`); `tractare` stays in the schema, hidden in the UI
-- Individuals post a request with the quick account
+- Individuals post a request with the quick account. **Not without an
+  account**: the form is filled in whole without one and the account is made
+  at the last step, with the draft kept across registration. The alternative
+  is argued in `docs/10-analiza-lipsuri.md` §3.1 and was decided against on
+  22 September 2026
 - Listing statuses from the product spec: `draft`, `active`, `cancelled`,
   `expired`, `suspended` in use; `carrier_selected` replaces `assigned` and
   `delivered` replaces `completed`
 - Boards: browse and filter requests by route, dates, vehicle category,
-  condition
+  condition — and, since `20261002100000`, by **radius from a chosen
+  locality** and by **weight**. The same two on the departures board, where
+  the weight is the platform's free capacity. Coordinates come from the
+  `localities` table, stamped onto every listing by a trigger; `cities.ts`
+  stays the list a picker shows
 - Contact reveal gated by eligibility, active listing and plan quota *—
   database done in phase 0*
 
@@ -105,9 +116,19 @@ end to end.
 
 - **Compatible carriers message**: when a request is published, the client
   sees how many verified carriers run a compatible route, without names
-- **Saved-route alerts by e-mail** (MVP; WhatsApp after the MVP)
-- Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
-  email pentru cereri pe traseele tale”
+- **Saved-route alerts by e-mail** (MVP; WhatsApp after the MVP). A saved
+  search stores radius and weight like every other criterion, and
+  `saved_search_match()` applies them exactly as the board does — an alert
+  that disagrees with the screen is worse than no alert
+- **Phone confirmation by SMS**, `20261003100000`: the road is built and
+  inactive until a provider secret is set. Without one, `sms-verify` refuses
+  and names the missing variable, `/admin/notificari` shows it, and a number
+  is still confirmed by hand from `/admin/pilot`. Twilio Programmable
+  Messaging rather than Verify, so the code's lifetime, its attempt count
+  and the rate limits stay in `phone_verification_settings` where they can
+  be read and tested
+- ~~Homepage: „Alerte pe WhatsApp pentru traseele tale” becomes „Alerte pe
+  email pentru cereri pe traseele tale”~~ *— done; the WhatsApp line is gone*
 
 ## Phase 5 — Offers (done, September 2026)
 

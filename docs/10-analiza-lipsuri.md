@@ -85,7 +85,7 @@ cu fișier, tabelă sau test.
 
 | Funcție | Are competitorul | Avem noi | Unde se vede la noi | Cum o facem mai bine / de ce nu o facem | Fază |
 |---|---|---|---|---|---|
-| **Publicare cerere gratuit și fără cont** | da | **nu** | `/cerere/noua` — formularul se completează fără cont, dar la pasul final `AccountPanel` cere înregistrare (`src/components/requests/request-form.tsx:604`) | Ei ne bat aici și e decizia cea mai scumpă din listă. Vezi 3.1 | **1** |
+| **Publicare cerere gratuit și fără cont** | da | **parțial, intenționat** | `/cerere/noua` — formularul se completează fără cont, iar la pasul final `AccountPanel` cere înregistrarea, cu ciorna păstrată (`src/components/requests/request-form.tsx:604`) | Decis altfel pe 22 septembrie 2026: cerința este „un cont rapid", nu „fără cont". Vezi 3.1 | — |
 | **17 tipuri de vehicule** | da, după lista din brief — **dar contoarele lor din `docs/07-competitor-analysis.md` arată 13 rânduri**, inclusiv „Alte cereri". Cele două surse nu se potrivesc și nu am putut verifica azi | **da** | `cargo_category`, 14 valori (`supabase/migrations/20260916120800_vehicle_cargo.sql:20`) | Cele 13 categorii ale lor, în ordinea volumului lor, plus `ambarcatiune`. Filtrul public expune însă doar 6 (`FILTERABLE_CATEGORIES`, `src/lib/departures.ts:102`) — restul se pot publica, dar nu se pot filtra | 1 |
 | **Marcaj „avariat"** | da | **da** | `cargo_vehicle_details.is_damaged`, `damage_notes` | La noi avaria nu e o bifă decorativă: `needs_winch` e o coloană **generată** din `is_running`, `wheels_turn`, `steering_works`, deci cardul nu poate minți despre ce utilaj trebuie adus | 1 |
 | **Marcaj „urgent"** | da | **nu** | — | Avem `service_type = 'expres'` (`20260916120800:41`), care e același lucru spus onest: urgența are un preț, nu e o etichetă gratuită. Ce ne lipsește e vizibilitatea ei pe card. Vezi 3.5 | 1 |
@@ -207,6 +207,13 @@ noastră** — conformitate verificabilă, tranzacția în platformă, date
 oneste. Ce nu trece filtrul e în secțiunea 4, cu motivul.
 
 ### 3.1 Publicarea fără cont
+
+> **Decis altfel, 22 septembrie 2026.** Publicarea fără cont **nu se
+> face**. Cerința clientului este „un cont rapid", iar asta este deja
+> acoperită de forma actuală a fluxului: formularul se completează
+> întreg fără cont, iar contul se face la ultimul pas, cu ciorna
+> păstrată. Ce urmează mai jos rămâne ca argumentație — a fost
+> cântărită, nu uitată — dar nu este un element de lucru.
 
 - **Problema pe care o rezolvă:** omul cu o mașină cumpărată în Germania
   tranzactionează o dată la trei ani. Nu are loialitate, nu are răbdare, și
@@ -669,7 +676,13 @@ cerințele 5 și 6 ale clientului rămân „parțiale" din acest singur motiv.
 > element de meniu public duce la o pagină care nu are ce afișa.
 
 ### 3. Publicarea unei cereri fără cont
-**Fază 1 · efort mare · impact blocant · depinde de 1**
+**Decis altfel, 22 septembrie 2026 — nu se face**
+
+Cerința clientului este „un cont rapid", nu „fără cont", iar forma
+actuală a fluxului o acoperă: formularul se completează întreg fără
+cont și contul se face la ultimul pas, cu ciorna păstrată peste
+înregistrare. Recomandarea de mai jos rămâne scrisă pentru că a fost
+cântărită; nu este un element de lucru.
 
 > Permite publicarea unei cereri fără cont. Formularul de pe
 > `/cerere/noua` scrie cererea ca `draft` și trimite un link de
