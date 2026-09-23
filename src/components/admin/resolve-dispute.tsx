@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { resolveDisputeAction, type OrderState } from '@/app/cont/transporturi/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ordersCopy } from '@/content/comenzi';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OrderState = {};
 const c = ordersCopy.admin.resolve;
@@ -20,13 +22,13 @@ const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-
  * refuses a blank one.
  */
 export function ResolveDispute({ orderId }: { orderId: string }) {
-  const [state, action, pending] = useActionState(resolveDisputeAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(resolveDisputeAction, EMPTY);
   const id = useId();
 
   if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
 
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-5">
+    <KeepingForm action={action} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-5">
       <input type="hidden" name="order_id" value={orderId} />
 
       <h2 className="text-h3">{c.title}</h2>
@@ -64,6 +66,6 @@ export function ResolveDispute({ orderId }: { orderId: string }) {
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   setPriceRateAction,
   setPriceSettingsAction,
@@ -13,6 +13,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { pricesCopy } from '@/content/preturi';
 import { VEHICLE_CLASS_LABELS, type PriceRate, type PriceSettings } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: PriceActionState = {};
 const c = pricesCopy.admin;
@@ -28,10 +30,10 @@ const c = pricesCopy.admin;
  * keyboard produces "5,40" and a number input silently refuses it.
  */
 export function RateForm({ rate }: { rate: PriceRate }) {
-  const [state, action] = useActionState(setPriceRateAction, EMPTY);
+  const [state, action] = useKeptActionState(setPriceRateAction, EMPTY);
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <input type="hidden" name="vehicle_class" value={rate.vehicle_class} />
 
       <p className="flex items-center gap-3">
@@ -90,15 +92,15 @@ export function RateForm({ rate }: { rate: PriceRate }) {
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 
 export function SettingsForm({ settings }: { settings: PriceSettings }) {
-  const [state, action] = useActionState(setPriceSettingsAction, EMPTY);
+  const [state, action] = useKeptActionState(setPriceSettingsAction, EMPTY);
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.settings.title}</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -147,7 +149,7 @@ export function SettingsForm({ settings }: { settings: PriceSettings }) {
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -159,7 +161,7 @@ export function SettingsForm({ settings }: { settings: PriceSettings }) {
  * is the same interaction on a phone as on a desktop.
  */
 export function PublishForm({ published }: { published: boolean }) {
-  const [state, action] = useActionState(setPricesPublishedAction, EMPTY);
+  const [state, action] = useKeptActionState(setPricesPublishedAction, EMPTY);
   const [confirming, setConfirming] = useState(false);
 
   return (
@@ -167,7 +169,7 @@ export function PublishForm({ published }: { published: boolean }) {
       <p className="text-body text-muted">{published ? c.afterPublishWarning : c.draftNote}</p>
 
       {confirming ? (
-        <form action={action} className="mt-4">
+        <KeepingForm action={action} className="mt-4">
           <input type="hidden" name="published" value={published ? 'nu' : 'da'} />
           <p className="text-body">{published ? c.confirmUnpublish : c.confirmPublish}</p>
           <div className="mt-3 flex flex-wrap gap-3">
@@ -182,7 +184,7 @@ export function PublishForm({ published }: { published: boolean }) {
               {c.cancel}
             </button>
           </div>
-        </form>
+        </KeepingForm>
       ) : (
         <div className="mt-4">
           <button

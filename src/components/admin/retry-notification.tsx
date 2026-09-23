@@ -1,22 +1,23 @@
 'use client';
 
-import { useActionState } from 'react';
 import { retryNotificationAction, type RetryState } from '@/app/admin/notificari/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RetryState = {};
 
 /** One button per failed row. The rule it calls is in the database. */
 export function RetryNotification({ id }: { id: string }) {
-  const [state, action, pending] = useActionState(retryNotificationAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(retryNotificationAction, EMPTY);
 
   if (state.notice !== undefined) {
     return <span className="text-small text-muted">{state.notice}</span>;
   }
 
   return (
-    <form action={action} className="flex flex-col items-end gap-1">
+    <KeepingForm action={action} className="flex flex-col items-end gap-1">
       <input type="hidden" name="id" value={id} />
       <button
         type="submit"
@@ -30,6 +31,6 @@ export function RetryNotification({ id }: { id: string }) {
           {state.error}
         </span>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

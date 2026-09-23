@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   createOnboardingCompanyAction,
   type OnboardingState,
@@ -11,6 +10,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { COUNTIES } from '@/lib/counties';
 import { COMPANY_TYPE_LABELS } from '@/lib/directory';
 import { onboardingCopy } from '@/content/inscrieri';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OnboardingState = {};
 const EMPTY_LOOKUP: CuiLookupState = {};
@@ -27,13 +28,13 @@ const FIELD =
  * să fie aceeași funcție.
  */
 export function CompanyStep({ onboardingId }: { onboardingId: string }) {
-  const [lookup, lookupAction, looking] = useActionState(lookupCuiAction, EMPTY_LOOKUP);
-  const [state, action, pending] = useActionState(createOnboardingCompanyAction, EMPTY);
+  const [lookup, lookupAction, looking] = useKeptActionState(lookupCuiAction, EMPTY_LOOKUP);
+  const [state, action, pending] = useKeptActionState(createOnboardingCompanyAction, EMPTY);
   const found = lookup.company;
 
   return (
     <div className="flex flex-col gap-5">
-      <form action={lookupAction} className="flex flex-wrap items-end gap-2">
+      <KeepingForm action={lookupAction} className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.cui}
           <input
@@ -49,12 +50,12 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
         </button>
         <FormError>{lookup.fieldErrors?.cui}</FormError>
         <FormError>{lookup.error}</FormError>
-      </form>
+      </KeepingForm>
 
       {/* `key` on the found CUI: a second lookup has to redraw the
           fields with the new firm's details rather than keep the first
           one's, and a remount is the honest way to do that. */}
-      <form key={found?.cui ?? 'gol'} action={action} className="flex flex-col gap-4">
+      <KeepingForm key={found?.cui ?? 'gol'} action={action} className="flex flex-col gap-4">
         <input type="hidden" name="onboarding_id" value={onboardingId} />
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -131,7 +132,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
           </button>
         </div>
         <FormError>{state.error}</FormError>
-      </form>
+      </KeepingForm>
     </div>
   );
 }

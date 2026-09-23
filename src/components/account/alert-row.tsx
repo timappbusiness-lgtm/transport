@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   deleteSearchAction,
@@ -19,6 +19,8 @@ import {
 } from '@/lib/saved-searches';
 import type { SearchMatch } from '@/lib/saved-searches-source';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: AlertState = {};
 const c = alertsCopy.list;
@@ -48,8 +50,8 @@ export function AlertRow({
   activity: SearchActivity | undefined;
   matches: SearchMatch[];
 }) {
-  const [updateState, update, updating] = useActionState(updateSearchAction, EMPTY);
-  const [deleteState, remove, deleting] = useActionState(deleteSearchAction, EMPTY);
+  const [updateState, update, updating] = useKeptActionState(updateSearchAction, EMPTY);
+  const [deleteState, remove, deleting] = useKeptActionState(deleteSearchAction, EMPTY);
   const [renaming, setRenaming] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -65,7 +67,7 @@ export function AlertRow({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {renaming ? (
-            <form action={update} className="flex flex-wrap items-center gap-2">
+            <KeepingForm action={update} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="id" value={search.id} />
               <label className="sr-only" htmlFor={`name-${search.id}`}>
                 {c.rename}
@@ -86,7 +88,7 @@ export function AlertRow({
               >
                 Renunță
               </button>
-            </form>
+            </KeepingForm>
           ) : (
             <h2 className="text-h3">{search.name}</h2>
           )}
@@ -131,15 +133,15 @@ export function AlertRow({
       </dl>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <form action={update}>
+        <KeepingForm action={update}>
           <input type="hidden" name="id" value={search.id} />
           <input type="hidden" name="is_active" value={search.is_active ? 'no' : 'yes'} />
           <button type="submit" disabled={updating} className={buttonClasses('secondary', 'sm')}>
             {search.is_active ? c.pause : c.resume}
           </button>
-        </form>
+        </KeepingForm>
 
-        <form action={update}>
+        <KeepingForm action={update}>
           <input type="hidden" name="id" value={search.id} />
           <input
             type="hidden"
@@ -149,7 +151,7 @@ export function AlertRow({
           <button type="submit" disabled={updating} className={buttonClasses('secondary', 'sm')}>
             {search.frequency === 'immediate' ? 'Treci pe zilnic' : 'Treci pe imediat'}
           </button>
-        </form>
+        </KeepingForm>
 
         {!renaming ? (
           <button
@@ -170,7 +172,7 @@ export function AlertRow({
           {c.matchesTitle}
         </button>
 
-        <form
+        <KeepingForm
           action={remove}
           onSubmit={(event) => {
             if (!window.confirm(c.deleteConfirm)) event.preventDefault();
@@ -185,7 +187,7 @@ export function AlertRow({
           >
             {c.delete}
           </button>
-        </form>
+        </KeepingForm>
       </div>
 
       {open ? (

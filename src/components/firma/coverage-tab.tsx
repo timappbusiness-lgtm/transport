@@ -2,7 +2,6 @@
 
 import { useActionToast } from '@/components/ui/toast';
 import { useState } from 'react';
-import { useActionState } from 'react';
 import { updateCoverageAction, type ActionState } from '@/app/cont/actions';
 import { FormError } from '@/components/auth/form';
 import { CheckboxGrid } from '@/components/firma/checkbox-grid';
@@ -11,6 +10,8 @@ import { COVERAGE_COUNTRIES, firmaCopy } from '@/content/firma';
 import type { Company } from '@/lib/auth/account';
 import { COVERAGE_SCOPES, type CoverageScope } from '@/lib/company-profile';
 import { COUNTIES } from '@/lib/counties';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 
@@ -26,7 +27,7 @@ const EMPTY: ActionState = {};
  * that the database is about to empty is a form that lies.
  */
 export function CoverageTab({ company }: { company: Company }) {
-  const [state, action] = useActionState(updateCoverageAction, EMPTY);
+  const [state, action] = useKeptActionState(updateCoverageAction, EMPTY);
   // The result where the person is looking: the save button sticks to
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
@@ -34,7 +35,7 @@ export function CoverageTab({ company }: { company: Company }) {
   const c = firmaCopy.coverage;
 
   return (
-    <form action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
@@ -95,6 +96,6 @@ export function CoverageTab({ company }: { company: Company }) {
       ) : null}
 
       <SaveBar />
-    </form>
+    </KeepingForm>
   );
 }

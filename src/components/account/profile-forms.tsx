@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   changeEmailAction,
   changePasswordAction,
@@ -11,6 +10,8 @@ import { signOutEverywhereAction } from '@/app/auth-actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { accountCopy } from '@/content/account';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 
@@ -24,12 +25,12 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export function NameForm({ fullName }: { fullName: string }) {
-  const [state, action] = useActionState(updateProfileAction, EMPTY);
+  const [state, action] = useKeptActionState(updateProfileAction, EMPTY);
   const c = accountCopy.profile;
 
   return (
     <Card title={c.title}>
-      <form action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <Field
@@ -40,18 +41,18 @@ export function NameForm({ fullName }: { fullName: string }) {
           error={state.fieldErrors?.fullName}
         />
         <SubmitButton>{c.save}</SubmitButton>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }
 
 export function EmailForm({ email }: { email: string }) {
-  const [state, action] = useActionState(changeEmailAction, EMPTY);
+  const [state, action] = useKeptActionState(changeEmailAction, EMPTY);
   const c = accountCopy.profile;
 
   return (
     <Card title={c.changeEmail}>
-      <form action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <p className="text-body text-muted">
@@ -68,18 +69,18 @@ export function EmailForm({ email }: { email: string }) {
           error={state.fieldErrors?.email}
         />
         <SubmitButton>{c.save}</SubmitButton>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }
 
 export function PasswordForm() {
-  const [state, action] = useActionState(changePasswordAction, EMPTY);
+  const [state, action] = useKeptActionState(changePasswordAction, EMPTY);
   const c = accountCopy.profile;
 
   return (
     <Card title={c.changePassword}>
-      <form action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <Field
@@ -97,7 +98,7 @@ export function PasswordForm() {
           error={state.fieldErrors?.newPassword}
         />
         <SubmitButton>{c.save}</SubmitButton>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }
@@ -106,12 +107,12 @@ export function SignOutEverywhere() {
   const c = accountCopy.profile;
   return (
     <Card title={c.signOutEverywhere}>
-      <form action={signOutEverywhereAction} className="flex flex-col gap-3">
+      <KeepingForm action={signOutEverywhereAction} className="flex flex-col gap-3">
         <p className="max-w-[54ch] text-body text-muted">{c.signOutEverywhereHint}</p>
         <button type="submit" className={`${buttonClasses('secondary', 'md')} self-start`}>
           {c.signOutEverywhere}
         </button>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }

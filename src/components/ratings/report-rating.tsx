@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { reportRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ratingsCopy } from '@/content/evaluari';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
 const c = ratingsCopy.report;
@@ -17,7 +19,7 @@ const c = ratingsCopy.report;
  * apasă de fiecare dată când primesc trei stele.
  */
 export function ReportRating({ ratingId }: { ratingId: string }) {
-  const [state, action, pending] = useActionState(reportRatingAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(reportRatingAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -36,7 +38,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
   }
 
   return (
-    <form action={action} className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3">
+    <KeepingForm action={action} className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3">
       <input type="hidden" name="rating_id" value={ratingId} />
 
       <label htmlFor={`${id}-reason`} className="text-small font-medium">
@@ -67,6 +69,6 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

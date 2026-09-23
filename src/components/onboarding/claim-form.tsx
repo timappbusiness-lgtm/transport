@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
 import { claimAccountAction, type ClaimState } from '@/app/revendica/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { onboardingCopy } from '@/content/inscrieri';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ClaimState = {};
 const c = onboardingCopy.claim;
@@ -29,12 +30,12 @@ export function ClaimForm({
   emailHint: string;
   fullName: string;
 }) {
-  const [state, action, pending] = useActionState(claimAccountAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(claimAccountAction, EMPTY);
 
   if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <KeepingForm action={action} className="flex flex-col gap-4">
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="full_name" value={fullName} />
 
@@ -94,6 +95,6 @@ export function ClaimForm({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

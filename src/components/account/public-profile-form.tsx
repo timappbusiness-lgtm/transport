@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState, useTransition } from 'react';
+import { useId, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -20,6 +20,8 @@ import {
   logoStoragePath,
 } from '@/lib/directory';
 import { createClient } from '@/lib/supabase/client';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 const c = accountCopy.publicProfile;
@@ -37,7 +39,7 @@ const c = accountCopy.publicProfile;
  * told so, rather than left wondering why it cannot find itself.
  */
 export function PublicProfileForm({ company, logoUrl }: { company: Company; logoUrl: string | null }) {
-  const [state, action] = useActionState(updatePublicProfileAction, EMPTY);
+  const [state, action] = useKeptActionState(updatePublicProfileAction, EMPTY);
   const descriptionId = useId();
 
   const isVerified = company.verification_status === 'verified';
@@ -47,7 +49,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
     <div className="flex flex-col gap-5">
       <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
-      <form action={action} className="flex flex-col gap-4" noValidate>
+      <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
 
@@ -83,7 +85,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
         <SubmitButton className="sm:w-auto sm:px-8 sm:self-start">
           {accountCopy.profile.save}
         </SubmitButton>
-      </form>
+      </KeepingForm>
 
       <LogoField company={company} logoUrl={logoUrl} />
 

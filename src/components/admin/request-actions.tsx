@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import {
   activateRequestAction,
   markContactedAction,
@@ -10,6 +10,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { adminDirectoryCopy } from '@/content/admin-directory';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RequestActionState = {};
 const c = adminDirectoryCopy.requests;
@@ -21,30 +23,30 @@ const c = adminDirectoryCopy.requests;
  * company is told why, and the reason stays in `audit_log`.
  */
 export function RequestActions({ id, status }: { id: string; status: 'new' | 'contacted' }) {
-  const [contactState, contact] = useActionState(markContactedAction, EMPTY);
-  const [activateState, activate] = useActionState(activateRequestAction, EMPTY);
-  const [rejectState, reject] = useActionState(rejectRequestAction, EMPTY);
+  const [contactState, contact] = useKeptActionState(markContactedAction, EMPTY);
+  const [activateState, activate] = useKeptActionState(activateRequestAction, EMPTY);
+  const [rejectState, reject] = useKeptActionState(rejectRequestAction, EMPTY);
   const reasonId = useId();
 
   return (
     <div className="flex flex-col gap-2">
       {status === 'new' ? (
-        <form action={contact}>
+        <KeepingForm action={contact}>
           <input type="hidden" name="id" value={id} />
           <button type="submit" className={buttonClasses('secondary', 'sm')}>
             {c.contact}
           </button>
-        </form>
+        </KeepingForm>
       ) : null}
 
-      <form action={activate}>
+      <KeepingForm action={activate}>
         <input type="hidden" name="id" value={id} />
         <button type="submit" className={buttonClasses('ink', 'sm')}>
           {c.activate}
         </button>
-      </form>
+      </KeepingForm>
 
-      <form action={reject} className="flex flex-col gap-2">
+      <KeepingForm action={reject} className="flex flex-col gap-2">
         <input type="hidden" name="id" value={id} />
         <label htmlFor={reasonId} className="sr-only">
           {c.reason}
@@ -60,7 +62,7 @@ export function RequestActions({ id, status }: { id: string; status: 'new' | 'co
         <button type="submit" className={buttonClasses('secondary', 'sm')}>
           {c.reject}
         </button>
-      </form>
+      </KeepingForm>
 
       {[contactState, activateState, rejectState].map((state, index) => (
         <div key={index}>

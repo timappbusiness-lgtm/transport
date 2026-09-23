@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import {
   inviteMemberAction,
   transferOwnershipAction,
@@ -9,16 +9,18 @@ import {
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 const INVITABLE_ROLES = ['admin', 'dispatcher', 'driver'] as const;
 
 export function InviteMemberForm() {
-  const [state, action] = useActionState(inviteMemberAction, EMPTY);
+  const [state, action] = useKeptActionState(inviteMemberAction, EMPTY);
   const c = accountCopy.members;
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
@@ -49,7 +51,7 @@ export function InviteMemberForm() {
         </div>
       </div>
       <SubmitButton className="sm:w-auto sm:self-start sm:px-8">{c.inviteAction}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -62,7 +64,7 @@ export function TransferOwnership({
 }: {
   candidates: Array<{ userId: string; name: string }>;
 }) {
-  const [state, action] = useActionState(transferOwnershipAction, EMPTY);
+  const [state, action] = useKeptActionState(transferOwnershipAction, EMPTY);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(candidates[0]?.userId ?? '');
   const c = accountCopy.members;
@@ -76,7 +78,7 @@ export function TransferOwnership({
       <p className="mt-1 max-w-[54ch] text-body text-muted">{c.transferHint}</p>
 
       {open ? (
-        <form action={action} className="mt-4 flex flex-col gap-4" noValidate>
+        <KeepingForm action={action} className="mt-4 flex flex-col gap-4" noValidate>
           <FormError>{state.error}</FormError>
           <FormNotice>{state.notice}</FormNotice>
           <div className="flex flex-col gap-1.5">
@@ -115,7 +117,7 @@ export function TransferOwnership({
               Renunță
             </button>
           </div>
-        </form>
+        </KeepingForm>
       ) : (
         <button
           type="button"

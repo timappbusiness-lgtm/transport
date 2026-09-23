@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import {
   setDeletionSettingsAction,
   type SettingsActionState,
@@ -9,6 +9,8 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { personalDataCopy } from '@/content/date-personale';
 import type { DeletionSettings } from '@/lib/account-deletion-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: SettingsActionState = {};
 const c = personalDataCopy.admin.settings;
@@ -24,7 +26,7 @@ const CONTROL =
  * nobody can check.
  */
 export function DeletionSettingsForm({ settings }: { settings: DeletionSettings }) {
-  const [state, action] = useActionState(setDeletionSettingsAction, EMPTY);
+  const [state, action] = useKeptActionState(setDeletionSettingsAction, EMPTY);
   const id = useId();
 
   return (
@@ -34,7 +36,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
       </h2>
       <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
-      <form action={action} className="mt-4 rounded-card border border-border bg-surface p-4 sm:p-5">
+      <KeepingForm action={action} className="mt-4 rounded-card border border-border bg-surface p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             id={`${id}-grace`}
@@ -77,7 +79,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
           <FormError>{state.error}</FormError>
           <FormNotice>{state.notice}</FormNotice>
         </div>
-      </form>
+      </KeepingForm>
     </section>
   );
 }

@@ -2,7 +2,7 @@
 
 import { successCopy } from '@/content/success';
 import { SuccessMoment } from '@/components/ui/success-moment';
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   acceptOfferAction,
@@ -36,6 +36,8 @@ import type { OfferForRequest, ThreadMessage } from '@/lib/offers-source';
 import { VEHICLE_TYPE_LABELS } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.received;
@@ -205,8 +207,8 @@ function OfferCard({
   now: Date;
   canAct: boolean;
 }) {
-  const [acceptState, accept, accepting] = useActionState(acceptOfferAction, EMPTY);
-  const [rejectState, reject, rejecting] = useActionState(rejectOfferAction, EMPTY);
+  const [acceptState, accept, accepting] = useKeptActionState(acceptOfferAction, EMPTY);
+  const [rejectState, reject, rejecting] = useKeptActionState(rejectOfferAction, EMPTY);
   const [confirming, setConfirming] = useState(false);
 
   const urgent = isUrgent(offer.valid_until, now);
@@ -308,7 +310,7 @@ function OfferCard({
       {canAct ? (
         <div className="mt-5 flex flex-wrap items-center gap-2">
           {confirming ? (
-            <form action={accept} className="w-full rounded-card border border-border bg-ground-alt p-4">
+            <KeepingForm action={accept} className="w-full rounded-card border border-border bg-ground-alt p-4">
               <input type="hidden" name="offer_id" value={offer.id} />
               <input type="hidden" name="listing_id" value={listingId} />
               <p className="text-body font-medium">{offersCopy.accept.title}</p>
@@ -342,7 +344,7 @@ function OfferCard({
                   {offersCopy.accept.cancel}
                 </button>
               </div>
-            </form>
+            </KeepingForm>
           ) : (
             <>
               <button
@@ -352,7 +354,7 @@ function OfferCard({
               >
                 {c.accept}
               </button>
-              <form action={reject}>
+              <KeepingForm action={reject}>
                 <input type="hidden" name="offer_id" value={offer.id} />
                 <input type="hidden" name="listing_id" value={listingId} />
                 <button
@@ -362,7 +364,7 @@ function OfferCard({
                 >
                   {c.reject}
                 </button>
-              </form>
+              </KeepingForm>
             </>
           )}
         </div>

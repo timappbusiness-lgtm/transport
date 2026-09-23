@@ -13,6 +13,7 @@ import { requireAccountContext } from '@/lib/auth/account';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
 import { COUNTRY_OPTIONS, VEHICLE_TYPE_LABELS, formatPlate } from '@/lib/vehicles';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 type DocumentKind = Database['public']['Enums']['document_kind'];
 
@@ -171,7 +172,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
                       {route.to_city ? `${route.to_city}, ` : ''}
                       {countryName.get(route.to_country) ?? route.to_country}
                     </span>
-                    <form action={removeRouteAction}>
+                    <KeepingForm action={removeRouteAction}>
                       <input type="hidden" name="vehicle_id" value={vehicleId} />
                       <input type="hidden" name="route_id" value={route.id} />
                       <button
@@ -180,7 +181,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
                       >
                         {c.removeRoute}
                       </button>
-                    </form>
+                    </KeepingForm>
                   </li>
                 ))}
               </ul>

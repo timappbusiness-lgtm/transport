@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   hideRatingAction,
   hideRatingReplyAction,
@@ -10,6 +10,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ratingsCopy } from '@/content/evaluari';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
 
@@ -56,7 +58,7 @@ export function ModerateRating({
   ratingId?: string;
   replyId?: string;
 }) {
-  const [state, action, pending] = useActionState(ACTIONS[kind], EMPTY);
+  const [state, action, pending] = useKeptActionState(ACTIONS[kind], EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
   const words = WORDS[kind];
@@ -76,7 +78,7 @@ export function ModerateRating({
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
@@ -110,6 +112,6 @@ export function ModerateRating({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { startListingConversationAction, type MessageState } from '@/app/cont/mesaje/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { messagesCopy } from '@/content/mesaje';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: MessageState = {};
 const c = messagesCopy.entry;
@@ -32,7 +34,7 @@ export function StartConversation({
   /** Adevărat când contactul pentru anunțul ăsta a fost deja deschis. */
   alreadyOpen?: boolean;
 }) {
-  const [state, action, pending] = useActionState(startListingConversationAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(startListingConversationAction, EMPTY);
   const [confirming, setConfirming] = useState(false);
   const router = useRouter();
 
@@ -56,7 +58,7 @@ export function StartConversation({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <KeepingForm action={action} className="flex flex-col gap-2">
       {requestId !== undefined ? (
         <input type="hidden" name="request_id" value={requestId} />
       ) : null}
@@ -79,6 +81,6 @@ export function StartConversation({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

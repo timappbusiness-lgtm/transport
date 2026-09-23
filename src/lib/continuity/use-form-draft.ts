@@ -19,6 +19,12 @@ export interface FormDraftOptions {
   /** Field names never kept: anything the page sets rather than the person. */
   exclude?: readonly string[] | undefined;
   enabled?: boolean | undefined;
+  /**
+   * After a draft was written back into the fields. A form with a
+   * controlled field — a select whose value is state — sets that state
+   * here, or React draws the old value over the restored one.
+   */
+  onRestore?: ((values: FieldValues) => void) | undefined;
 }
 
 export interface FormDraftController extends Pick<DraftController<FieldValues>, 'restored' | 'status'> {
@@ -41,7 +47,7 @@ export interface FormDraftController extends Pick<DraftController<FieldValues>, 
  */
 export function useFormDraft(
   formRef: RefObject<HTMLFormElement | null>,
-  { form, scope, signedIn, exclude, enabled = true }: FormDraftOptions,
+  { form, scope, signedIn, exclude, enabled = true, onRestore }: FormDraftOptions,
 ): FormDraftController {
   const skip = useRef(new Set(exclude ?? []));
   const initial = useRef<FieldValues | null>(null);
@@ -56,7 +62,11 @@ export function useFormDraft(
     onRestore: (found) => {
       const element = formRef.current;
       if (element === null) return;
+      // What the form showed before the draft went into it: „changed" is
+      // measured against this, not against the draft.
+      initial.current ??= readFields(fieldsOf(element), skip.current);
       writeFields(fieldsOf(element), found.payload, skip.current);
+      onRestore?.(found.payload);
       setDirty(!sameFieldValues(readFields(fieldsOf(element), skip.current), initial.current ?? {}));
     },
   });

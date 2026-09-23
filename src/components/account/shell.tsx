@@ -6,6 +6,7 @@ import type { AccountContext } from '@/lib/auth/account';
 import { companyDisplayName } from '@/lib/auth/account';
 import { setActiveCompanyAction } from '@/app/cont/actions';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 /** Left-hand navigation for the account area. */
 export function AccountNav({
@@ -64,7 +65,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
   if (context.memberships.length < 2 || !context.activeCompany) return null;
 
   return (
-    <form action={setActiveCompanyAction} className="flex flex-col gap-1.5">
+    <KeepingForm action={setActiveCompanyAction} className="flex flex-col gap-1.5">
       <label htmlFor="company-switcher" className="font-mono text-label uppercase tracking-[0.15em] text-muted">
         {accountCopy.switcher.label}
       </label>
@@ -86,7 +87,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
       >
         Schimbă firma
       </button>
-    </form>
+    </KeepingForm>
   );
 }
 

@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
 import { startOnboardingAction, type OnboardingState } from '@/app/admin/inscrieri/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { onboardingCopy } from '@/content/inscrieri';
 import { CONSENT_CHANNELS, CONSENT_LABELS, MAX_CONSENT_NOTE } from '@/lib/onboarding';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.consent;
@@ -18,10 +19,10 @@ function today(): string {
 }
 
 export function ConsentForm() {
-  const [state, action, pending] = useActionState(startOnboardingAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(startOnboardingAction, EMPTY);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <KeepingForm action={action} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.name}
@@ -83,6 +84,6 @@ export function ConsentForm() {
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
 import { addOnboardingVehicleAction, type OnboardingState } from '@/app/admin/inscrieri/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { onboardingCopy } from '@/content/inscrieri';
 import { VEHICLE_TYPE_LABELS } from '@/lib/vehicles';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.vehicles;
@@ -19,13 +20,13 @@ export function VehicleStep({
   onboardingId: string;
   companyId: string;
 }) {
-  const [state, action, pending] = useActionState(addOnboardingVehicleAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(addOnboardingVehicleAction, EMPTY);
 
   return (
     // The notice carries the plate, so a remount on it clears the form
     // after a vehicle lands and keeps what was typed after a refusal —
     // which is the moment somebody needs their text back.
-    <form key={state.notice ?? 'gol'} action={action} className="flex flex-col gap-4">
+    <KeepingForm key={state.notice ?? 'gol'} action={action} className="flex flex-col gap-4">
       <input type="hidden" name="onboarding_id" value={onboardingId} />
       <input type="hidden" name="company_id" value={companyId} />
 
@@ -62,6 +63,6 @@ export function VehicleStep({
 
       {state.notice !== undefined ? <FormNotice>{state.notice}</FormNotice> : null}
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

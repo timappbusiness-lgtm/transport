@@ -1,10 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
 import { answerBookingAction, type DepartureActionState } from '@/app/cont/trasee/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { departuresCopy } from '@/content/departures';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: DepartureActionState = {};
 
@@ -17,7 +18,7 @@ const EMPTY: DepartureActionState = {};
  * function — the same path an accepted offer takes.
  */
 export function BookingDecision({ bookingId }: { bookingId: string }) {
-  const [state, action] = useActionState(answerBookingAction, EMPTY);
+  const [state, action] = useKeptActionState(answerBookingAction, EMPTY);
   const c = departuresCopy.mine;
 
   if (state.notice) {
@@ -25,7 +26,7 @@ export function BookingDecision({ bookingId }: { bookingId: string }) {
   }
 
   return (
-    <form action={action} className="flex flex-col items-end gap-2">
+    <KeepingForm action={action} className="flex flex-col items-end gap-2">
       <input type="hidden" name="booking_id" value={bookingId} />
       <div className="flex gap-2">
         <button
@@ -46,6 +47,6 @@ export function BookingDecision({ bookingId }: { bookingId: string }) {
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

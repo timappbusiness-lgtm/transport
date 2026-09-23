@@ -4,7 +4,6 @@ import { successCopy } from '@/content/success';
 import Link from 'next/link';
 import { SuccessMoment } from '@/components/ui/success-moment';
 import { ROUTES } from '@/config/routes';
-import { useActionState } from 'react';
 import { submitCompanyForReviewAction } from '@/app/cont/actions';
 import type { ActionState } from '@/app/cont/actions';
 import { FormError } from '@/components/auth/form';
@@ -13,6 +12,8 @@ import { StatusBadge } from '@/components/ui/primitives';
 import { accountCopy } from '@/content/account';
 import type { VerificationStatus } from '@/lib/auth/account';
 import type { ReviewProgress } from '@/lib/review';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 const c = accountCopy.review;
@@ -40,7 +41,7 @@ export function SubmitForReview({
   vehiclesReady: boolean;
   note: string | null;
 }) {
-  const [state, action] = useActionState(submitCompanyForReviewAction, EMPTY);
+  const [state, action] = useKeptActionState(submitCompanyForReviewAction, EMPTY);
 
   if (status === 'pending' || state.notice) {
     return (
@@ -94,7 +95,7 @@ export function SubmitForReview({
             : c.ready}
       </p>
 
-      <form action={action} className="mt-4">
+      <KeepingForm action={action} className="mt-4">
         <input type="hidden" name="company_id" value={companyId} />
         <button
           type="submit"
@@ -103,7 +104,7 @@ export function SubmitForReview({
         >
           {c.submit}
         </button>
-      </form>
+      </KeepingForm>
 
       {state.error ? (
         <div className="mt-3">

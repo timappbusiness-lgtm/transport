@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import { withNext } from '@/lib/auth/next-path';
 import type { AuthActionState } from '@/app/auth-actions';
 import {
@@ -15,6 +14,8 @@ import { authCopy } from '@/content/auth';
 import { ROUTES } from '@/config/routes';
 import { CURRENT_TERMS_VERSION } from '@/content/legal';
 import { Field, FormError, FormNotice, SubmitButton, TextLink } from './form';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: AuthActionState = {};
 
@@ -45,11 +46,11 @@ function TermsCheckbox({ label, error }: { label: string; error?: string | undef
 }
 
 export function SignInForm({ next }: { next: string }) {
-  const [state, action] = useActionState(signInAction, EMPTY);
+  const [state, action] = useKeptActionState(signInAction, EMPTY);
   const c = authCopy.signIn;
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <Field
@@ -72,7 +73,7 @@ export function SignInForm({ next }: { next: string }) {
         <TextLink href={withNext(ROUTES.resetPassword, next)}>{c.forgot}</TextLink>
       </div>
       <SubmitButton>{c.submit}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -89,10 +90,10 @@ function SignUpForm({
   /** Where the confirmation link should come back to. */
   next?: string;
 }) {
-  const [state, formAction] = useActionState(action, EMPTY);
+  const [state, formAction] = useKeptActionState(action, EMPTY);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={formAction} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <Field
@@ -133,7 +134,7 @@ function SignUpForm({
       />
       <TermsCheckbox label={copy.terms} error={state.fieldErrors?.terms} />
       <SubmitButton>{copy.submit}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -153,11 +154,11 @@ export function CompanySignUpForm({ next = '' }: { next?: string }) {
 }
 
 export function ResendConfirmationForm({ email, next = '' }: { email: string; next?: string }) {
-  const [state, action] = useActionState(resendConfirmationAction, EMPTY);
+  const [state, action] = useKeptActionState(resendConfirmationAction, EMPTY);
   const c = authCopy.confirmEmail;
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
@@ -171,16 +172,16 @@ export function ResendConfirmationForm({ email, next = '' }: { email: string; ne
         error={state.fieldErrors?.email}
       />
       <SubmitButton>{c.resend}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }
 
 export function RequestPasswordResetForm({ next = '' }: { next?: string }) {
-  const [state, action] = useActionState(requestPasswordResetAction, EMPTY);
+  const [state, action] = useKeptActionState(requestPasswordResetAction, EMPTY);
   const c = authCopy.resetPassword;
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
@@ -194,16 +195,16 @@ export function RequestPasswordResetForm({ next = '' }: { next?: string }) {
         error={state.fieldErrors?.email}
       />
       <SubmitButton>{c.submit}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }
 
 export function NewPasswordForm({ next = '' }: { next?: string }) {
-  const [state, action] = useActionState(updatePasswordAction, EMPTY);
+  const [state, action] = useKeptActionState(updatePasswordAction, EMPTY);
   const c = authCopy.newPassword;
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <Field
@@ -215,6 +216,6 @@ export function NewPasswordForm({ next = '' }: { next?: string }) {
         error={state.fieldErrors?.password}
       />
       <SubmitButton>{c.submit}</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }

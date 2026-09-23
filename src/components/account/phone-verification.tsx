@@ -1,11 +1,13 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { Icon } from '@/components/ui/icon';
 import { uiIcon } from '@/lib/icons';
 import { sendPhoneOtpAction, verifyPhoneOtpAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { accountCopy } from '@/content/account';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 
@@ -24,8 +26,8 @@ export function PhoneVerification({
   verified: boolean;
 }) {
   const c = accountCopy.individual.phoneStep;
-  const [sendState, sendAction] = useActionState(sendPhoneOtpAction, EMPTY);
-  const [verifyState, verifyAction] = useActionState(verifyPhoneOtpAction, EMPTY);
+  const [sendState, sendAction] = useKeptActionState(sendPhoneOtpAction, EMPTY);
+  const [verifyState, verifyAction] = useKeptActionState(verifyPhoneOtpAction, EMPTY);
   const [open, setOpen] = useState(false);
 
   const pendingPhone = sendState.values?.phone ?? phone;
@@ -60,7 +62,7 @@ export function PhoneVerification({
 
       {open ? (
         <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
-          <form action={sendAction} className="flex flex-col gap-3" noValidate>
+          <KeepingForm action={sendAction} className="flex flex-col gap-3" noValidate>
             <FormError>{sendState.error}</FormError>
             <FormNotice>{sendState.notice}</FormNotice>
             <Field
@@ -74,10 +76,10 @@ export function PhoneVerification({
               error={sendState.fieldErrors?.phone}
             />
             <SubmitButton>{codeSent ? 'Trimite alt cod' : 'Trimite codul'}</SubmitButton>
-          </form>
+          </KeepingForm>
 
           {codeSent ? (
-            <form action={verifyAction} className="flex flex-col gap-3 border-t border-border pt-4" noValidate>
+            <KeepingForm action={verifyAction} className="flex flex-col gap-3 border-t border-border pt-4" noValidate>
               <input type="hidden" name="phone" value={pendingPhone} />
               <FormError>{verifyState.error}</FormError>
               <Field
@@ -89,7 +91,7 @@ export function PhoneVerification({
                 error={verifyState.fieldErrors?.token}
               />
               <SubmitButton>Confirmă numărul</SubmitButton>
-            </form>
+            </KeepingForm>
           ) : null}
         </div>
       ) : (

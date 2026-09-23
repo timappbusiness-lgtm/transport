@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { hideMessageAction, type HideState } from '@/app/admin/oferte/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { offersCopy } from '@/content/oferte';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: HideState = {};
 const c = offersCopy.admin.detail;
@@ -18,7 +20,7 @@ const c = offersCopy.admin.detail;
  * whoever pressed the button — this form only collects it.
  */
 export function HideMessage({ messageId, offerId }: { messageId: string; offerId: string }) {
-  const [state, action, pending] = useActionState(hideMessageAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(hideMessageAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -39,7 +41,7 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
   }
 
   return (
-    <form action={action} className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3">
+    <KeepingForm action={action} className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3">
       <input type="hidden" name="message_id" value={messageId} />
       <input type="hidden" name="offer_id" value={offerId} />
 
@@ -69,6 +71,6 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
       </div>
 
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

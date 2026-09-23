@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { hideEvidenceAction, type OrderState } from '@/app/cont/transporturi/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ordersCopy } from '@/content/comenzi';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OrderState = {};
 const c = ordersCopy.evidence;
@@ -19,7 +21,7 @@ const c = ordersCopy.evidence;
  * if the thing decided about is gone.
  */
 export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orderId: string }) {
-  const [state, action, pending] = useActionState(hideEvidenceAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(hideEvidenceAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -38,7 +40,7 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-2"
     >
@@ -70,6 +72,6 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

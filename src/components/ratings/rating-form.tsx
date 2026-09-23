@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { editRatingAction, postRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { Stars, StarInput } from '@/components/ratings/star-input';
@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/primitives';
 import { ratingsCopy } from '@/content/evaluari';
 import { MAX_COMMENT, charsLeft, editWindowLeft, subScoresFor, type RatingSide } from '@/lib/ratings';
 import type { OrderRatingState } from '@/lib/ratings-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
 const c = ratingsCopy.form;
@@ -35,7 +37,7 @@ export function RatingForm({
   existing?: OrderRatingState;
 }) {
   const editing = existing?.rating_id != null;
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     editing ? editRatingAction : postRatingAction,
     EMPTY,
   );
@@ -58,7 +60,7 @@ export function RatingForm({
       </h2>
       {editing ? <p className="mt-1 text-small text-muted">{c.editHint}</p> : null}
 
-      <form action={action} className="mt-4 flex flex-col gap-5">
+      <KeepingForm action={action} className="mt-4 flex flex-col gap-5">
         <input type="hidden" name="order_id" value={orderId} />
         {slug !== null ? <input type="hidden" name="slug" value={slug} /> : null}
         {editing ? <input type="hidden" name="rating_id" value={existing.rating_id ?? ''} /> : null}
@@ -134,7 +136,7 @@ export function RatingForm({
 
         {left !== null ? <p className="text-small text-muted">{c.editable(left)}</p> : null}
         <FormError>{state.error}</FormError>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }

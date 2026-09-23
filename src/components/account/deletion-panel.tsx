@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   cancelDeletionAction,
   requestDeletionAction,
@@ -10,6 +10,8 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { personalDataCopy } from '@/content/date-personale';
 import type { DeletionRequest } from '@/lib/account-deletion-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const c = personalDataCopy.deletion;
 const EMPTY: PersonalDataState = {};
@@ -58,8 +60,8 @@ export function DeletionPanel({
   blockers,
   request,
 }: DeletionPanelProps) {
-  const [state, action, pending] = useActionState(requestDeletionAction, EMPTY);
-  const [cancelState, cancelAction, cancelling] = useActionState(cancelDeletionAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(requestDeletionAction, EMPTY);
+  const [cancelState, cancelAction, cancelling] = useKeptActionState(cancelDeletionAction, EMPTY);
   const [confirming, setConfirming] = useState(false);
   const id = useId();
 
@@ -86,12 +88,12 @@ export function DeletionPanel({
           <p className="text-body font-medium">{c.scheduledTitle}</p>
           <p className="mt-1 text-body">{c.scheduledOn(onDate(request!.scheduled_for))}</p>
           <p className="mt-1 text-body text-muted">{c.held}</p>
-          <form action={cancelAction} className="mt-3">
+          <KeepingForm action={cancelAction} className="mt-3">
             <input type="hidden" name="request_id" value={request!.id} />
             <button type="submit" disabled={cancelling} className={buttonClasses('ink', 'sm')}>
               {c.cancel}
             </button>
-          </form>
+          </KeepingForm>
         </div>
       ) : null}
 
@@ -129,7 +131,7 @@ export function DeletionPanel({
           </div>
 
           {confirming ? (
-            <form action={action} className="mt-5 flex max-w-[42ch] flex-col gap-2">
+            <KeepingForm action={action} className="mt-5 flex max-w-[42ch] flex-col gap-2">
               <input type="hidden" name="kind" value={kind} />
               {companyId !== undefined ? (
                 <input type="hidden" name="company_id" value={companyId} />
@@ -159,7 +161,7 @@ export function DeletionPanel({
                   {c.back}
                 </button>
               </div>
-            </form>
+            </KeepingForm>
           ) : (
             <button
               type="button"

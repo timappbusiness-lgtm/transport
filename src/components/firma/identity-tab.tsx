@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionToast } from '@/components/ui/toast';
-import { useActionState } from 'react';
 import { updateCompanyIdentityAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError } from '@/components/auth/form';
 import { SaveBar } from '@/components/firma/save-bar';
@@ -9,6 +8,8 @@ import { COMPANY_TYPE_LABELS, accountCopy } from '@/content/account';
 import { firmaCopy } from '@/content/firma';
 import type { Company } from '@/lib/auth/account';
 import { COUNTIES } from '@/lib/counties';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 const TYPES = ['transport', 'expeditie', 'both'] as const;
@@ -46,7 +47,7 @@ function ReadOnly({
  * why it sits under the address it is about rather than on the public tab.
  */
 export function IdentityTab({ company }: { company: Company }) {
-  const [state, action] = useActionState(updateCompanyIdentityAction, EMPTY);
+  const [state, action] = useKeptActionState(updateCompanyIdentityAction, EMPTY);
   // The result where the person is looking: the save button sticks to
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
@@ -54,7 +55,7 @@ export function IdentityTab({ company }: { company: Company }) {
   const isDraft = company.verification_status === 'draft';
 
   return (
-    <form action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
@@ -178,6 +179,6 @@ export function IdentityTab({ company }: { company: Company }) {
       </label>
 
       <SaveBar />
-    </form>
+    </KeepingForm>
   );
 }

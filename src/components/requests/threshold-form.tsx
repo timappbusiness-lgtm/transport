@@ -1,12 +1,14 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { setThresholdsAction, type ThresholdActionState } from '@/app/admin/activitate/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { activityAdminCopy } from '@/content/activitate';
 import type { ActivityThresholds } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ThresholdActionState = {};
 const c = activityAdminCopy;
@@ -18,11 +20,11 @@ export function ThresholdForm({
   thresholds: ActivityThresholds;
   reviewTimeLabel: string | null;
 }) {
-  const [state, action] = useActionState(setThresholdsAction, EMPTY);
+  const [state, action] = useKeptActionState(setThresholdsAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id={`${id}-stats`}
@@ -70,7 +72,7 @@ export function ThresholdForm({
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

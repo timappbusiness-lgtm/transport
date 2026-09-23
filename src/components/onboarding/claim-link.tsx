@@ -1,11 +1,13 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { issueClaimAction, type OnboardingState } from '@/app/admin/inscrieri/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { onboardingCopy } from '@/content/inscrieri';
 import { claimPath } from '@/lib/onboarding';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.finish;
@@ -29,7 +31,7 @@ export function ClaimLink({
   /** False when the dispatcher last complained about a missing secret. */
   mailConfigured?: boolean;
 }) {
-  const [state, action, pending] = useActionState(issueClaimAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(issueClaimAction, EMPTY);
   const [copied, setCopied] = useState(false);
 
   const url =
@@ -74,7 +76,7 @@ export function ClaimLink({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="onboarding_id" value={onboardingId} />
 
       {!mailConfigured ? (
@@ -95,6 +97,6 @@ export function ClaimLink({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

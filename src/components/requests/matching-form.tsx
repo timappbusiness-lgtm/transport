@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import {
   setMatchingSettingsAction,
   type ThresholdActionState,
@@ -9,6 +9,8 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { activityAdminCopy } from '@/content/activitate';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ThresholdActionState = {};
 const c = activityAdminCopy.matching;
@@ -28,11 +30,11 @@ export function MatchingForm({
   defaultDetourKm: number;
   categoryWindowDays: number;
 }) {
-  const [state, action] = useActionState(setMatchingSettingsAction, EMPTY);
+  const [state, action] = useKeptActionState(setMatchingSettingsAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
       <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
@@ -66,7 +68,7 @@ export function MatchingForm({
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

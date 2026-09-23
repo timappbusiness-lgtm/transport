@@ -12,6 +12,7 @@ import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { PUBLIC_NAV, currentPublicHref, type BadgedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 export interface HeaderUser {
   name: string;
@@ -335,7 +336,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                     </Link>
                   );
                 })}
-                <form action={signOutAction} className="border-t border-border">
+                <KeepingForm action={signOutAction} className="border-t border-border">
                   <button
                     type="submit"
                     role="menuitem"
@@ -343,7 +344,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                   >
                     {accountCopy.nav.signOut}
                   </button>
-                </form>
+                </KeepingForm>
               </div>
             ) : null}
           </div>

@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
 import Link from 'next/link';
 import { orderContactsAction, type ContactsState } from '@/app/cont/oferte/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { transportRoute } from '@/config/routes';
 import { offersCopy } from '@/content/oferte';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ContactsState = {};
 const c = offersCopy.contact;
@@ -24,7 +25,7 @@ const c = offersCopy.contact;
  * the client gets the carrier, the carrier gets the client.
  */
 export function OrderContacts({ offerId, label }: { offerId: string; label?: string }) {
-  const [state, action] = useActionState(orderContactsAction, EMPTY);
+  const [state, action] = useKeptActionState(orderContactsAction, EMPTY);
 
   if (state.contacts) {
     const { displayName, name, phone, email, transportId } = state.contacts;
@@ -65,13 +66,13 @@ export function OrderContacts({ offerId, label }: { offerId: string; label?: str
   }
 
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <KeepingForm action={action} className="flex flex-col gap-2">
       <input type="hidden" name="offer_id" value={offerId} />
       <button type="submit" className={buttonClasses('primary', 'sm')}>
         {label ?? c.open}
       </button>
       <p className="text-small text-muted">{c.free}</p>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

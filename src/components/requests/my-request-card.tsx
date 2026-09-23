@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   cancelRequestAction,
@@ -26,6 +26,8 @@ import {
   type MyRequest,
 } from '@/lib/my-requests';
 import type { ListingStatus } from '@/lib/requests';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RequestActionState = {};
 
@@ -64,7 +66,7 @@ export function MyRequestCard({
    */
   offerCount?: number | null;
 }) {
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     async (previous: RequestActionState, formData: FormData) => {
       const intent = String(formData.get('intent') ?? '');
       if (intent === 'publish') return publishExistingRequestAction(previous, formData);
@@ -113,7 +115,7 @@ export function MyRequestCard({
 
       <CarrierCount count={carrierCount} explain={false} className="mt-3" />
 
-      <form action={action} className="mt-4 flex flex-col gap-3">
+      <KeepingForm action={action} className="mt-4 flex flex-col gap-3">
         <input type="hidden" name="request_id" value={request.id} />
 
         {confirming === 'reopen' ? (
@@ -234,7 +236,7 @@ export function MyRequestCard({
 
         <FormError>{state.error}</FormError>
         {state.notice ? <FormNotice>{state.notice}</FormNotice> : null}
-      </form>
+      </KeepingForm>
     </li>
   );
 }

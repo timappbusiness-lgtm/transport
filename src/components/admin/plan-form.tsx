@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import {
   setPlanAction,
   setPlanPeriodAction,
@@ -19,6 +19,8 @@ import {
   type Plan,
 } from '@/lib/plans';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.plans;
@@ -32,12 +34,12 @@ export interface EditablePlan extends Plan {
 }
 
 export function PlanForm({ plan }: { plan: EditablePlan }) {
-  const [state, action] = useActionState(setPlanAction, EMPTY);
+  const [state, action] = useKeptActionState(setPlanAction, EMPTY);
   const id = useId();
 
   return (
     <div className="rounded-card border border-border bg-surface p-4 sm:p-5">
-      <form action={action}>
+      <KeepingForm action={action}>
         <input type="hidden" name="code" value={plan.code} />
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -130,7 +132,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
             <FormError>{state.error}</FormError>
           </div>
         ) : null}
-      </form>
+      </KeepingForm>
 
       <Periods plan={plan} />
     </div>
@@ -161,7 +163,7 @@ function Periods({ plan }: { plan: EditablePlan }) {
 }
 
 function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonths }) {
-  const [state, action] = useActionState(setPlanPeriodAction, EMPTY);
+  const [state, action] = useKeptActionState(setPlanPeriodAction, EMPTY);
   const id = useId();
   const current = plan.allPeriods.find((p) => p.months === months);
 
@@ -170,7 +172,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
   const free = freeMonths(plan.monthlyPrice, total, months);
 
   return (
-    <form action={action} className="rounded-input border border-border p-3">
+    <KeepingForm action={action} className="rounded-input border border-border p-3">
       <input type="hidden" name="code" value={plan.code} />
       <input type="hidden" name="months" value={months} />
 
@@ -215,7 +217,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
       {state.fieldErrors?.total_price_ron ? (
         <p className="mt-2 text-small text-danger">{state.fieldErrors.total_price_ron}</p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

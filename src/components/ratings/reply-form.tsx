@@ -1,18 +1,20 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { replyToRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ratingsCopy } from '@/content/evaluari';
 import { MAX_COMMENT, charsLeft } from '@/lib/ratings';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
 const c = ratingsCopy.reply;
 
 /** Răspunsul firmei evaluate. Unul singur, și rămâne cum a fost scris. */
 export function ReplyForm({ ratingId, slug }: { ratingId: string; slug: string | null }) {
-  const [state, action, pending] = useActionState(replyToRatingAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(replyToRatingAction, EMPTY);
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState('');
   const id = useId();
@@ -32,7 +34,7 @@ export function ReplyForm({ ratingId, slug }: { ratingId: string; slug: string |
   }
 
   return (
-    <form action={action} className="mt-3 flex flex-col gap-2">
+    <KeepingForm action={action} className="mt-3 flex flex-col gap-2">
       <input type="hidden" name="rating_id" value={ratingId} />
       {slug !== null ? <input type="hidden" name="slug" value={slug} /> : null}
 
@@ -66,6 +68,6 @@ export function ReplyForm({ ratingId, slug }: { ratingId: string; slug: string |
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

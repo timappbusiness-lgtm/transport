@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   setEquipmentOptionAction,
   setServiceOptionAction,
@@ -8,6 +7,8 @@ import {
 } from '@/app/admin/optiuni/actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { firmaCopy } from '@/content/firma';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OptionActionState = {};
 const c = firmaCopy.admin;
@@ -36,14 +37,14 @@ export function OptionForm({
   kind: 'equipment' | 'service';
   row?: OptionRow | undefined;
 }) {
-  const [state, action] = useActionState(
+  const [state, action] = useKeptActionState(
     kind === 'equipment' ? setEquipmentOptionAction : setServiceOptionAction,
     EMPTY,
   );
   const existing = row !== undefined;
 
   return (
-    <form action={action} className="flex flex-col gap-3 py-4" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-3 py-4" noValidate>
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
 
@@ -107,6 +108,6 @@ export function OptionForm({
           {existing ? firmaCopy.save : c.add}
         </SubmitButton>
       </div>
-    </form>
+    </KeepingForm>
   );
 }

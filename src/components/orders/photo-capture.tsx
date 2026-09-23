@@ -1,11 +1,13 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { uploadEvidenceAction, type UploadState } from '@/app/cont/transporturi/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ordersCopy } from '@/content/comenzi';
 import { MAX_EDGE_PX, canResizeInBrowser, scaleToFit } from '@/lib/photo-upload';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: UploadState = {};
 const c = ordersCopy.capture;
@@ -39,7 +41,7 @@ export function PhotoCapture({
   /** Shown once the set is complete. */
   done?: React.ReactNode;
 }) {
-  const [state, action, pending] = useActionState(uploadEvidenceAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(uploadEvidenceAction, EMPTY);
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
   const [geoAsked, setGeoAsked] = useState(false);
   const [geoDenied, setGeoDenied] = useState(false);
@@ -72,7 +74,7 @@ export function PhotoCapture({
   }
 
   return (
-    <form ref={formRef} action={action} className="flex flex-col gap-3">
+    <KeepingForm ref={formRef} action={action} className="flex flex-col gap-3">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="kind" value={kind} />
       {geo !== null ? (
@@ -157,7 +159,7 @@ export function PhotoCapture({
           </button>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

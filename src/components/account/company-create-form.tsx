@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   createCompanyAction,
   lookupCuiAction,
@@ -9,6 +8,8 @@ import {
 } from '@/app/cont/actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { COMPANY_TYPE_LABELS } from '@/content/account';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY_LOOKUP: CuiLookupState = {};
 const EMPTY: ActionState = {};
@@ -23,8 +24,8 @@ const TYPES = ['transport', 'expeditie', 'both'] as const;
  * are often years out of date.
  */
 export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
-  const [lookup, lookupAction] = useActionState(lookupCuiAction, EMPTY_LOOKUP);
-  const [create, createAction] = useActionState(createCompanyAction, EMPTY);
+  const [lookup, lookupAction] = useKeptActionState(lookupCuiAction, EMPTY_LOOKUP);
+  const [create, createAction] = useKeptActionState(createCompanyAction, EMPTY);
 
   const found = lookup.company;
 
@@ -35,7 +36,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
         <p className="mt-1 text-body text-muted">
           Verificăm la ANAF că firma există și este activă, apoi completăm ce putem.
         </p>
-        <form action={lookupAction} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" noValidate>
+        <KeepingForm action={lookupAction} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" noValidate>
           <div className="flex-1">
             <Field
               label="CUI"
@@ -47,7 +48,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
             />
           </div>
           <SubmitButton className="sm:w-auto sm:px-6">Caută</SubmitButton>
-        </form>
+        </KeepingForm>
         <div className="mt-3">
           <FormError>{lookup.error}</FormError>
           {found ? <FormNotice>Firmă găsită la ANAF: {found.legalName}</FormNotice> : null}
@@ -56,7 +57,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
 
       <section className="rounded-card border border-border bg-surface p-5">
         <h2 className="text-h3">Datele firmei</h2>
-        <form action={createAction} className="mt-4 flex flex-col gap-4" noValidate>
+        <KeepingForm action={createAction} className="mt-4 flex flex-col gap-4" noValidate>
           <FormError>{create.error}</FormError>
 
           <Field
@@ -116,7 +117,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
           </div>
 
           <SubmitButton>Creează firma</SubmitButton>
-        </form>
+        </KeepingForm>
       </section>
     </div>
   );

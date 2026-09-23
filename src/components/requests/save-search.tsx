@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import Link from 'next/link';
 import { saveSearchAction, type AlertState } from '@/app/cont/alerte/actions';
 import { buttonClasses } from '@/components/ui/button';
@@ -14,6 +14,8 @@ import {
   type SearchFilters,
 } from '@/lib/saved-searches';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: AlertState = {};
 const c = alertsCopy.form;
@@ -40,7 +42,7 @@ export function SaveSearch({
   label?: string;
   variant?: 'primary' | 'secondary' | 'quiet';
 }) {
-  const [state, action, pending] = useActionState(saveSearchAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(saveSearchAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -90,7 +92,7 @@ export function SaveSearch({
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="flex w-full flex-col gap-3 rounded-card border border-border bg-ground-alt p-4"
     >
@@ -173,6 +175,6 @@ export function SaveSearch({
           ) : null}
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

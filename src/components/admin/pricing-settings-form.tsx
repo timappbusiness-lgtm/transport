@@ -1,12 +1,14 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { setPricingSettingsAction, type PlanActionState } from '@/app/admin/planuri/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { adminDirectoryCopy } from '@/content/admin-directory';
 import type { PricingSettings } from '@/lib/plans';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.pricing;
@@ -20,11 +22,11 @@ const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-
  * Setting it to zero stops the promise and the trial together.
  */
 export function PricingSettingsForm({ settings }: { settings: PricingSettings }) {
-  const [state, action] = useActionState(setPricingSettingsAction, EMPTY);
+  const [state, action] = useKeptActionState(setPricingSettingsAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
       <p className="mt-1 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
@@ -105,6 +107,6 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

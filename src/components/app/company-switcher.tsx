@@ -2,6 +2,7 @@ import { setActiveCompanyAction } from '@/app/cont/actions';
 import { appCopy } from '@/content/app';
 import { COMPANY_TYPE_LABELS } from '@/content/account';
 import { companyDisplayName, type AccountContext } from '@/lib/auth/account';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 const c = appCopy.shell;
 
@@ -32,7 +33,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
   }
 
   return (
-    <form action={setActiveCompanyAction} className="flex flex-col gap-1.5">
+    <KeepingForm action={setActiveCompanyAction} className="flex flex-col gap-1.5">
       <label
         htmlFor="company-switcher"
         className="font-mono text-label uppercase tracking-[0.12em] text-muted"
@@ -59,6 +60,6 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
           {c.switcherAction}
         </button>
       </div>
-    </form>
+    </KeepingForm>
   );
 }

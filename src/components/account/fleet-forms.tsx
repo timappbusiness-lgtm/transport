@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import type { ActionState } from '@/app/cont/actions';
 import {
   addRouteAction,
@@ -12,6 +12,8 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { COUNTRY_OPTIONS, VEHICLE_TYPE_LABELS, VEHICLE_TYPE_ORDER } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
 
@@ -155,11 +157,11 @@ function SpecFields({
 }
 
 export function NewVehicleForm() {
-  const [state, action] = useActionState(createVehicleAction, EMPTY);
+  const [state, action] = useKeptActionState(createVehicleAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
       <div className="grid gap-3 sm:grid-cols-3">
         <Labelled
           label="Număr de înmatriculare"
@@ -209,7 +211,7 @@ export function NewVehicleForm() {
       <div>
         <Submit pendingLabel="Se adaugă…">Adaugă vehiculul</Submit>
       </div>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -224,11 +226,11 @@ export function EditVehicleForm({
   assignedDriverId: string | null;
   drivers: { id: string; full_name: string }[];
 }) {
-  const [state, action] = useActionState(updateVehicleAction, EMPTY);
+  const [state, action] = useKeptActionState(updateVehicleAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="vehicle_id" value={vehicleId} />
       <SpecFields fieldErrors={state.fieldErrors} defaults={specs} prefix={`${id}-edit`} />
 
@@ -258,16 +260,16 @@ export function EditVehicleForm({
       <div>
         <Submit pendingLabel="Se salvează…">Salvează</Submit>
       </div>
-    </form>
+    </KeepingForm>
   );
 }
 
 export function NewDriverForm() {
-  const [state, action] = useActionState(createDriverAction, EMPTY);
+  const [state, action] = useKeptActionState(createDriverAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
       <div className="grid gap-3 sm:grid-cols-2">
         <Labelled label="Nume" htmlFor={`${id}-name`} error={state.fieldErrors?.full_name}>
           <input
@@ -290,12 +292,12 @@ export function NewDriverForm() {
           Adaugă șoferul
         </Submit>
       </div>
-    </form>
+    </KeepingForm>
   );
 }
 
 export function AddRouteForm({ vehicleId }: { vehicleId: string }) {
-  const [state, action] = useActionState(addRouteAction, EMPTY);
+  const [state, action] = useKeptActionState(addRouteAction, EMPTY);
   const id = useId();
 
   const countries = (name: string, defaultValue: string) => (
@@ -309,7 +311,7 @@ export function AddRouteForm({ vehicleId }: { vehicleId: string }) {
   );
 
   return (
-    <form action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="vehicle_id" value={vehicleId} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Labelled label="Din țara" htmlFor={`${id}-from_country`}>
@@ -334,6 +336,6 @@ export function AddRouteForm({ vehicleId }: { vehicleId: string }) {
           Adaugă ruta
         </Submit>
       </div>
-    </form>
+    </KeepingForm>
   );
 }

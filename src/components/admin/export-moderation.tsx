@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { exportModerationAction, type ModerationState } from '@/app/admin/anunturi/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ModerationState = {};
 const c = messagesCopy.admin.export;
@@ -17,7 +19,7 @@ const c = messagesCopy.admin.export;
  * conține este jurnalul, care este deja auditat.
  */
 export function ExportModeration() {
-  const [state, action, pending] = useActionState(exportModerationAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(exportModerationAction, EMPTY);
   const id = useId();
 
   function download(csv: string) {
@@ -31,7 +33,7 @@ export function ExportModeration() {
   }
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4">
+    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4">
       <p className="text-body font-medium">{c.title}</p>
       <p className="mt-1 text-small text-muted">{c.hint}</p>
 
@@ -71,6 +73,6 @@ export function ExportModeration() {
         </button>
       ) : null}
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
