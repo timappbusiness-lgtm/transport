@@ -141,12 +141,15 @@ test.describe('the focus ring is unchanged', () => {
     expect(ring.style).toBe('solid');
   });
 
-  test('and white on the dark sections', async ({ page }) => {
+  test('and the bright accent on the dark sections', async ({ page }) => {
+    // White on the dark ground was 11:1 but also the colour of every
+    // label there; the bright step is 6.1:1 on the bar and 8.8:1 on the
+    // darkest ground, and reads as the focus rather than as text.
     await page.goto('/');
-    const link = page.locator('[data-surface="dark"] a').first();
+    const link = page.locator('[data-surface="dark"] a:visible').first();
     await link.focus();
     const colour = await link.evaluate((n) => getComputedStyle(n).outlineColor);
-    expect(colour).toBe('rgb(255, 255, 255)');
+    expect(colour).toBe('rgb(79, 209, 216)');
   });
 });
 

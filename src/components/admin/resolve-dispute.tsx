@@ -8,7 +8,7 @@ import { ordersCopy } from '@/content/comenzi';
 
 const EMPTY: OrderState = {};
 const c = ordersCopy.admin.resolve;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * Closing a dispute, which is the one thing staff decide here.
@@ -30,21 +30,21 @@ export function ResolveDispute({ orderId }: { orderId: string }) {
       <input type="hidden" name="order_id" value={orderId} />
 
       <h2 className="text-h3">{c.title}</h2>
-      <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{c.outcome}</legend>
-        <label className="flex items-center gap-2 text-sm">
+        <legend className="text-body font-medium">{c.outcome}</legend>
+        <label className="flex items-center gap-2 text-body">
           <input type="radio" name="outcome" value="order_completed" defaultChecked />
           {c.completed}
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-body">
           <input type="radio" name="outcome" value="cancelled" />
           {c.cancelled}
         </label>
       </fieldset>
 
-      <label htmlFor={`${id}-note`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-note`} className="flex flex-col gap-1.5 text-body font-medium">
         {c.note}
         <textarea
           id={`${id}-note`}
@@ -54,7 +54,7 @@ export function ResolveDispute({ orderId }: { orderId: string }) {
           maxLength={2000}
           className={`${CONTROL} font-normal`}
         />
-        <span className="text-xs font-normal text-muted">{c.noteHint}</span>
+        <span className="text-small font-normal text-muted">{c.noteHint}</span>
       </label>
       {state.fieldErrors?.note !== undefined ? <FormError>{state.fieldErrors.note}</FormError> : null}
 

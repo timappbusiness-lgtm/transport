@@ -21,10 +21,10 @@ export function AuthCard({
     <div className="mx-auto flex w-full max-w-[28rem] flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
       {eyebrow ? <EyebrowPill>{eyebrow}</EyebrowPill> : null}
       <h1 className="mt-2.5 text-h2">{title}</h1>
-      {lede ? <p className="mt-3 text-sm text-muted sm:text-base">{lede}</p> : null}
+      {lede ? <p className="mt-3 text-body text-muted sm:text-body-lg">{lede}</p> : null}
       <div className="mt-8">{children}</div>
       {footer ? (
-        <div className="mt-8 border-t border-border pt-6 text-sm text-muted">{footer}</div>
+        <div className="mt-8 border-t border-border pt-6 text-body text-muted">{footer}</div>
       ) : null}
     </div>
   );
@@ -60,7 +60,7 @@ export function Field({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -81,12 +81,12 @@ export function Field({
         )}
       />
       {hint ? (
-        <p id={`${id}-hint`} className="text-xs text-muted">
+        <p id={`${id}-hint`} className="text-small text-muted">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={`${id}-error`} className="text-xs text-danger">
+        <p id={`${id}-error`} className="text-small text-danger">
           {error}
         </p>
       ) : null}
@@ -100,7 +100,7 @@ export function FormError({ children }: { children?: string | undefined }) {
   return (
     <p
       role="alert"
-      className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-sm text-foreground"
+      className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body text-foreground"
     >
       {children}
     </p>
@@ -112,7 +112,7 @@ export function FormNotice({ children }: { children?: React.ReactNode }) {
   return (
     <p
       role="status"
-      className="rounded-input border border-success/40 bg-success/8 px-3.5 py-2.5 text-sm text-foreground"
+      className="rounded-input border border-success/40 bg-success/8 px-3.5 py-2.5 text-body text-foreground"
     >
       {children}
     </p>

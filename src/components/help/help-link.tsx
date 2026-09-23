@@ -21,7 +21,7 @@ export function HelpLink({ topic, label }: { topic: ContextHelpKey; label?: stri
     >
       <span
         aria-hidden="true"
-        className="inline-flex size-4 items-center justify-center rounded-full border border-border-strong text-xs leading-none"
+        className="inline-flex size-4 items-center justify-center rounded-full border border-border-strong text-small leading-none"
       >
         ?
       </span>

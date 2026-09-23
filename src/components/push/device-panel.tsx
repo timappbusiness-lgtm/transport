@@ -36,14 +36,14 @@ export function DevicePanel({ devices }: { devices: DeviceRow[] }) {
       </h2>
 
       {push.support === 'not-configured' ? (
-        <p className="mt-2 text-sm text-muted">{c.notConfigured}</p>
+        <p className="mt-2 text-body text-muted">{c.notConfigured}</p>
       ) : push.support === 'unsupported' ? (
-        <p className="mt-2 text-sm text-muted">{c.unsupported}</p>
+        <p className="mt-2 text-body text-muted">{c.unsupported}</p>
       ) : push.support === 'needs-install' ? (
-        <p className="mt-2 max-w-[56ch] text-sm text-muted">{pushCopy.card.iosBody}</p>
+        <p className="mt-2 max-w-[56ch] text-body text-muted">{pushCopy.card.iosBody}</p>
       ) : (
         <>
-          <p className="mt-2 text-sm text-muted">{push.subscribed ? c.on : c.off}</p>
+          <p className="mt-2 text-body text-muted">{push.subscribed ? c.on : c.off}</p>
 
           <FormError>{push.error ?? error ?? undefined}</FormError>
           {notice ? <FormNotice>{notice}</FormNotice> : null}
@@ -88,21 +88,21 @@ export function DevicePanel({ devices }: { devices: DeviceRow[] }) {
             )}
           </div>
 
-          {push.subscribed ? <p className="mt-2 text-xs text-muted">{c.testHint}</p> : null}
+          {push.subscribed ? <p className="mt-2 text-small text-muted">{c.testHint}</p> : null}
         </>
       )}
 
       <div className="mt-6 border-t border-border pt-5">
-        <p className="text-sm font-medium">{c.others}</p>
+        <p className="text-body font-medium">{c.others}</p>
         {others.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">{c.none}</p>
+          <p className="mt-2 text-body text-muted">{c.none}</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-3">
             {others.map((device) => (
               <li key={device.id} className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm">{device.userAgent ?? 'Dispozitiv'}</p>
-                  <p className="text-xs text-muted">
+                  <p className="text-body">{device.userAgent ?? 'Dispozitiv'}</p>
+                  <p className="text-small text-muted">
                     {c.lastSeen(formatDateRo(device.lastSeenAt))}
                   </p>
                 </div>

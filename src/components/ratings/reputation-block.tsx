@@ -32,23 +32,23 @@ export function ReputationBlock({
 
   return (
     <section aria-labelledby="reputatie" className="flex flex-col gap-4">
-      <h2 id="reputatie" className="text-lg">
+      <h2 id="reputatie" className="text-h3">
         {c.title}
       </h2>
 
       <Card className="p-5">
         {rep.ratingCount === 0 ? (
-          <p className="text-sm text-muted">{c.none}</p>
+          <p className="text-body text-muted">{c.none}</p>
         ) : average !== null ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-mono text-figure tabular-nums text-accent">{average}</span>
             <Stars score={Math.round(rep.ratingAvg ?? 0)} />
-            <span className="text-sm text-muted">{c.ratingsCount(rep.ratingCount)}</span>
+            <span className="text-body text-muted">{c.ratingsCount(rep.ratingCount)}</span>
           </div>
         ) : (
           <div>
             <p className="text-body-lg">{c.tooFew}</p>
-            <p className="mt-1 text-sm text-muted">{c.tooFewHint(rep.ratingCount)}</p>
+            <p className="mt-1 text-body text-muted">{c.tooFewHint(rep.ratingCount)}</p>
           </div>
         )}
 
@@ -91,7 +91,7 @@ export function ReputationBlock({
 
       <details className="rounded-card border border-border bg-ground-alt p-4">
         <summary className="cursor-pointer text-body font-medium">{c.howTitle}</summary>
-        <ul className="mt-3 flex flex-col gap-2 text-sm text-muted">
+        <ul className="mt-3 flex flex-col gap-2 text-body text-muted">
           {c.how.map((line) => (
             <li key={line}>{line}</li>
           ))}
@@ -138,7 +138,7 @@ function Figure({
       <dd className="text-body">
         {value ?? <span className="text-muted">{note ?? '—'}</span>}
         {value !== null && note !== undefined ? (
-          <span className="ml-1.5 text-xs text-muted">{note}</span>
+          <span className="ml-1.5 text-small text-muted">{note}</span>
         ) : null}
       </dd>
     </div>
@@ -159,7 +159,7 @@ export function ReputationInline({
   const average = publicAverage(rep, minPublic);
 
   return (
-    <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-muted">
+    <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small text-muted">
       {average !== null ? (
         <span>
           <span className="font-mono tabular-nums text-foreground">{average}</span>{' '}

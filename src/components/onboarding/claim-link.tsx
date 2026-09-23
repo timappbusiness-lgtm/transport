@@ -40,7 +40,7 @@ export function ClaimLink({
   if (url !== null) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm">{c.sent}</p>
+        <p className="text-body">{c.sent}</p>
 
         {!mailConfigured ? (
           <p className="max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
@@ -53,7 +53,7 @@ export function ClaimLink({
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
-          <code className="min-w-0 flex-1 break-all rounded-input border border-border bg-ground-alt px-3 py-2 font-mono text-xs">
+          <code className="min-w-0 flex-1 break-all rounded-input border border-border bg-ground-alt px-3 py-2 font-mono text-small">
             {url}
           </code>
           <button

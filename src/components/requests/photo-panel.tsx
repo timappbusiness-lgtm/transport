@@ -152,12 +152,12 @@ export function PhotoPanel({
                 type="button"
                 onClick={() => remove(photo)}
                 aria-label={c.removeOf(index + 1)}
-                className="absolute bottom-1.5 right-1.5 rounded-pill bg-surface/95 px-2.5 py-1 text-xs font-medium text-foreground shadow-card hover:bg-surface"
+                className="absolute bottom-1.5 right-1.5 rounded-pill bg-surface/95 px-2.5 py-1 text-small font-medium text-foreground shadow-card hover:bg-surface"
               >
                 {c.removeVisible}
               </button>
               {photo.fromImport === true ? (
-                <span className="absolute left-1.5 top-1.5 rounded-pill bg-surface/95 px-2 py-0.5 text-xs text-foreground">
+                <span className="absolute left-1.5 top-1.5 rounded-pill bg-surface/95 px-2 py-0.5 text-small text-foreground">
                   {c.fromImport}
                 </span>
               ) : null}
@@ -216,7 +216,7 @@ export function PhotoPanel({
       )}
 
       {error !== null ? (
-        <p role="alert" className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-sm">
+        <p role="alert" className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body">
           {error}
         </p>
       ) : null}

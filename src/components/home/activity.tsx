@@ -173,7 +173,7 @@ function Cta() {
             <li key={step} className="flex gap-4">
               <span
                 aria-hidden="true"
-                className="flex size-7 flex-none items-center justify-center rounded-full border border-border-strong font-mono text-xs tabular-nums"
+                className="flex size-7 flex-none items-center justify-center rounded-full border border-border-strong font-mono text-small tabular-nums"
               >
                 {index + 1}
               </span>

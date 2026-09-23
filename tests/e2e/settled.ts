@@ -16,3 +16,23 @@ import { expect, type Page } from '@playwright/test';
 export async function settled(page: Page): Promise<void> {
   await expect(page.locator('[data-skeleton]')).toHaveCount(0);
 }
+
+/**
+ * Opens the phone menu in the bar, when there is one to open.
+ *
+ * A press that lands before React has attached to the button does
+ * nothing — the page is drawn on the server and the menu's state lives
+ * in the browser — so the press is repeated until the panel is there,
+ * which is what a person does too. Returns false at widths where the
+ * links sit in the bar and there is no menu.
+ */
+export async function openMenu(page: Page): Promise<boolean> {
+  const toggle = page.locator('header [data-nav-toggle]');
+  if (!(await toggle.isVisible())) return false;
+  const nav = page.getByRole('navigation', { name: 'Navigare' });
+  await expect(async () => {
+    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+    await expect(nav).toBeVisible({ timeout: 500 });
+  }).toPass();
+  return true;
+}

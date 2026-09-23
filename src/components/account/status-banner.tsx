@@ -44,7 +44,7 @@ function Banner({
       {glyph ? <Icon as={glyph} size="md" className={cn('mt-0.5', ICON_TONE[tone])} /> : null}
       <div className="min-w-0 flex-1">
         <p className="font-display text-body font-medium">{title}</p>
-        <div className="mt-1 text-sm text-muted">{body}</div>
+        <div className="mt-1 text-body text-muted">{body}</div>
       </div>
       {action ? (
         <Link href={action.href} className={cn(buttonClasses('secondary', 'sm'), 'flex-none')}>

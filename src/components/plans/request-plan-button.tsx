@@ -72,11 +72,11 @@ export function RequestPlanButton({
           <h4 ref={headingRef} tabIndex={-1} className="text-body font-medium">
             {c.title}
           </h4>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-body text-muted">
             {c.summary(plan.name, pluralRo(months, 'lună', 'luni'))}
           </p>
           {price ? (
-            <p className="mt-1 font-mono text-sm tabular-nums">
+            <p className="mt-1 font-mono text-body tabular-nums">
               {c.total(price.months === 1 ? totalLabel(price) : formatLei(price.total))}
             </p>
           ) : null}
@@ -96,7 +96,7 @@ export function RequestPlanButton({
                 rows={2}
                 maxLength={500}
                 placeholder={c.notesPlaceholder}
-                className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+                className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
               />
             </label>
 

@@ -75,8 +75,8 @@ export function Calculator({
 
   return (
     <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-      <h2 className="text-lg">{c.title}</h2>
-      <p className="mt-2 text-sm text-muted">{c.lede}</p>
+      <h2 className="text-h3">{c.title}</h2>
+      <p className="mt-2 text-body text-muted">{c.lede}</p>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label={c.from} htmlFor={`${id}-from`}>
@@ -127,7 +127,7 @@ export function Calculator({
         />
       </div>
 
-      <p className="mt-4 text-xs text-muted">{c.cityNote}</p>
+      <p className="mt-4 text-small text-muted">{c.cityNote}</p>
 
       <div
         aria-live="polite"
@@ -154,11 +154,11 @@ export function Calculator({
             ) : null}
           </>
         ) : (
-          <p className="text-sm text-muted">{sameCity ? c.same : c.empty}</p>
+          <p className="text-body text-muted">{sameCity ? c.same : c.empty}</p>
         )}
       </div>
 
-      <p className="mt-4 text-xs text-muted">{c.disclaimer}</p>
+      <p className="mt-4 text-small text-muted">{c.disclaimer}</p>
 
       <div className="mt-5">
         <Link href={`${ROUTES.newRequest}${query}`} className={buttonClasses('primary', 'md')}>
@@ -225,7 +225,7 @@ function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
+      <label htmlFor={htmlFor} className="text-body font-medium">
         {label}
       </label>
       {children}
@@ -248,10 +248,10 @@ function Choice({
 }) {
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-1.5 text-sm font-medium">{legend}</legend>
+      <legend className="mb-1.5 text-body font-medium">{legend}</legend>
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {options.map(([option, label]) => (
-          <label key={option} className="flex items-center gap-2 text-sm">
+          <label key={option} className="flex items-center gap-2 text-body">
             <input
               type="radio"
               name={name}

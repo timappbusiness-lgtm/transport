@@ -45,13 +45,13 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <form action={action} className="flex flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
 
-        <label className="flex items-start gap-3 text-sm">
+        <label className="flex items-start gap-3 text-body">
           <input
             type="checkbox"
             name="publicProfileEnabled"
@@ -60,12 +60,12 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
           />
           <span>
             {c.enable}
-            <span className="mt-1 block text-xs text-muted">{c.enableHint}</span>
+            <span className="mt-1 block text-small text-muted">{c.enableHint}</span>
           </span>
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={descriptionId} className="text-sm font-medium">
+          <label htmlFor={descriptionId} className="text-body font-medium">
             {c.description}
           </label>
           <textarea
@@ -76,7 +76,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
             defaultValue={state.values?.publicDescription ?? company.public_description ?? ''}
             className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
           />
-          <p className="text-xs text-muted">{c.descriptionHint}</p>
+          <p className="text-small text-muted">{c.descriptionHint}</p>
           <FormError>{state.fieldErrors?.publicDescription}</FormError>
         </div>
 
@@ -88,7 +88,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
       <LogoField company={company} logoUrl={logoUrl} />
 
       {company.public_profile_enabled ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           {company.is_suspended ? (
             c.suspended
           ) : !isVerified ? (
@@ -146,7 +146,7 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
 
   return (
     <div className="flex flex-col gap-3 border-t border-border pt-5">
-      <p className="text-sm font-medium">{c.logo}</p>
+      <p className="text-body font-medium">{c.logo}</p>
       <FormError>{state.error}</FormError>
 
       <div className="flex flex-wrap items-center gap-4">
@@ -188,14 +188,14 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
                 router.refresh();
               })
             }
-            className="text-sm text-muted underline underline-offset-4 hover:text-foreground"
+            className="text-body text-muted underline underline-offset-4 hover:text-foreground"
           >
             {c.logoRemove}
           </button>
         ) : null}
       </div>
 
-      <p className="text-xs text-muted">{c.logoHint}</p>
+      <p className="text-small text-muted">{c.logoHint}</p>
     </div>
   );
 }

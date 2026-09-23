@@ -43,6 +43,30 @@ describe('components use tokens, not values', () => {
     expect(offenders, `arbitrary radius or shadow in:\n${offenders.join('\n')}`).toEqual([]);
   });
 
+  it('no size, radius or shadow from outside the scale either', () => {
+    // Tailwind's own steps are values too. `text-sm` (14px) and `text-xs`
+    // (12px) sat between the scale's body (15) and small (13) on 1134
+    // sites in 201 files; `shadow-sm` was a fourth shadow nobody chose.
+    // A size is a step of the scale, a radius is card, input or pill, a
+    // shadow is card, raised or float — or `none` to take one away.
+    const outside =
+      /(?<![\w-])(?:[a-z0-9-]+:)*(?:text-(?:xs|sm|base|lg|[2-9]?xl)|rounded(?:-[trblse]{1,2})?-(?:xs|sm|md|lg|[2-9]?xl)|shadow-(?:xs|sm|md|lg|[2-9]?xl|inner))(?![\w-])/;
+    // `shadow` and `rounded` on their own are steps too, but also English
+    // words, so those two are looked for inside quoted class strings only.
+    // A class string is lower-case words, colons, dashes, slashes and
+    // brackets and nothing else — never an interpolation or a sentence.
+    const bare =
+      /['"`][a-z0-9:\-/.[\]() ]*(?<![\w-])(?:[a-z0-9-]+:)*(?:shadow|rounded)(?![\w-])[a-z0-9:\-/.[\]() ]*['"`]/;
+    const offenders = FILES.flatMap((f) => {
+      const hits = readFileSync(f, 'utf8')
+        .split('\n')
+        .filter((line) => !/^\s*(?:\/\/|\*|\/\*|\{\/\*)/.test(line))
+        .filter((line) => outside.test(line) || bare.test(line));
+      return hits.map((line) => `${f}: ${line.trim()}`);
+    });
+    expect(offenders, `outside the scale:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('no raw hex colour in a component', () => {
     // No exceptions. The hover shades that used to be written as hexes
     // are `--color-accent-hover` and `--color-ink-hover`; the third was

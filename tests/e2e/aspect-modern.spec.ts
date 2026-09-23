@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { settled } from './settled';
+import { openMenu, settled } from './settled';
 
 /**
  * The visual quality pass, checked in a browser.
@@ -167,7 +167,7 @@ test.describe('the public links on a phone', () => {
       await expect(toggle).toHaveText('Meniu');
       await expect(nav).toBeHidden();
 
-      await toggle.click();
+      await openMenu(page);
       await expect(toggle).toHaveAttribute('aria-expanded', 'true');
       await expect(nav).toBeVisible();
       const links = nav.getByRole('link');
@@ -188,7 +188,7 @@ test.describe('the public links on a phone', () => {
       await expect(nav).toBeHidden();
       await expect(toggle).toBeFocused();
 
-      await toggle.click();
+      await openMenu(page);
       await nav.getByRole('link', { name: 'Firme' }).click();
       await expect(page).toHaveURL(/\/firme$/);
       await expect(nav).toBeHidden();

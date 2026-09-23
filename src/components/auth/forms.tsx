@@ -21,7 +21,7 @@ const EMPTY: AuthActionState = {};
 function TermsCheckbox({ label, error }: { label: string; error?: string | undefined }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="flex items-start gap-2.5 text-sm text-muted">
+      <label className="flex items-start gap-2.5 text-body text-muted">
         <input
           type="checkbox"
           name="terms"
@@ -35,10 +35,10 @@ function TermsCheckbox({ label, error }: { label: string; error?: string | undef
           {/* The version is on the page because it is what we store. A
               consent record that says "accepted the terms" without saying
               which terms is a record of nothing. */}
-          <span className="text-xs">(versiunea {CURRENT_TERMS_VERSION})</span>
+          <span className="text-small">(versiunea {CURRENT_TERMS_VERSION})</span>
         </span>
       </label>
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }
@@ -67,7 +67,7 @@ export function SignInForm({ next }: { next: string }) {
         autoComplete="current-password"
         error={state.fieldErrors?.password}
       />
-      <div className="-mt-1 text-right text-sm">
+      <div className="-mt-1 text-right text-body">
         <TextLink href={ROUTES.resetPassword}>{c.forgot}</TextLink>
       </div>
       <SubmitButton>{c.submit}</SubmitButton>

@@ -65,7 +65,7 @@ export async function Prices() {
                     value={formatRatePerKm(rate.international_eur_per_km, 'EUR')}
                   />
                 </dl>
-                <p className="mt-3 text-xs text-muted">{formatMinimums(rate)}</p>
+                <p className="mt-3 text-small text-muted">{formatMinimums(rate)}</p>
               </li>
             ))}
           </ul>

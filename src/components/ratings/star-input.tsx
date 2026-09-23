@@ -41,7 +41,7 @@ export function StarInput({
 }) {
   const [value, setValue] = useState<number | null>(defaultValue);
   const id = useId();
-  const star = size === 'lg' ? 'text-figure' : 'text-xl';
+  const star = size === 'lg' ? 'text-figure' : 'text-h2';
 
   return (
     <fieldset className="border-0 p-0" aria-describedby={hint ? `${id}-hint` : undefined}>
@@ -50,7 +50,7 @@ export function StarInput({
         {required ? <span aria-hidden="true"> *</span> : null}
       </legend>
       {hint ? (
-        <p id={`${id}-hint`} className="mt-0.5 text-xs text-muted">
+        <p id={`${id}-hint`} className="mt-0.5 text-small text-muted">
           {hint}
         </p>
       ) : null}

@@ -27,7 +27,7 @@ import {
 import type { CrewOption, DisputeReason } from '@/lib/orders-source';
 
 const EMPTY: OrderState = {};
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * The one thing to do next, and who may do it.
@@ -59,7 +59,7 @@ export function NextStep({
 
   if (!mine) {
     return (
-      <p className="rounded-card border border-border bg-ground-alt p-4 text-sm text-muted">
+      <p className="rounded-card border border-border bg-ground-alt p-4 text-body text-muted">
         {ordersCopy.actions.waitingOn(action.waitingFor)}
       </p>
     );
@@ -141,7 +141,7 @@ function ScheduleForm({
       <input type="hidden" name="to" value={action.to} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label htmlFor={`${id}-from`} className="flex flex-col gap-1.5 text-sm font-medium">
+        <label htmlFor={`${id}-from`} className="flex flex-col gap-1.5 text-body font-medium">
           {ordersCopy.actions.from}
           <input
             id={`${id}-from`}
@@ -151,7 +151,7 @@ function ScheduleForm({
             className={`${CONTROL} font-normal`}
           />
         </label>
-        <label htmlFor={`${id}-to`} className="flex flex-col gap-1.5 text-sm font-medium">
+        <label htmlFor={`${id}-to`} className="flex flex-col gap-1.5 text-body font-medium">
           {ordersCopy.actions.to}
           <input
             id={`${id}-to`}
@@ -161,7 +161,7 @@ function ScheduleForm({
           />
         </label>
       </div>
-      <p className="text-xs text-muted">{ordersCopy.actions.windowHint}</p>
+      <p className="text-small text-muted">{ordersCopy.actions.windowHint}</p>
 
       <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
@@ -204,7 +204,7 @@ export function AssignCrew({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-muted underline underline-offset-4"
+        className="text-body text-muted underline underline-offset-4"
       >
         {ordersCopy.detail.reassign}
       </button>
@@ -216,7 +216,7 @@ export function AssignCrew({
       <input type="hidden" name="order_id" value={orderId} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label htmlFor={`${id}-driver`} className="flex flex-col gap-1.5 text-sm font-medium">
+        <label htmlFor={`${id}-driver`} className="flex flex-col gap-1.5 text-body font-medium">
           {ordersCopy.detail.driver}
           <select
             id={`${id}-driver`}
@@ -234,7 +234,7 @@ export function AssignCrew({
           </select>
         </label>
 
-        <label htmlFor={`${id}-vehicle`} className="flex flex-col gap-1.5 text-sm font-medium">
+        <label htmlFor={`${id}-vehicle`} className="flex flex-col gap-1.5 text-body font-medium">
           {ordersCopy.detail.vehicle}
           <select
             id={`${id}-vehicle`}
@@ -289,12 +289,12 @@ export function ConditionForm({ orderId }: { orderId: string }) {
   return (
     <form action={submit} className="flex flex-col gap-3">
       <input type="hidden" name="order_id" value={orderId} />
-      <p className="text-sm text-muted">{ordersCopy.checklist.lede}</p>
+      <p className="text-body text-muted">{ordersCopy.checklist.lede}</p>
 
       <div className="flex flex-col gap-3">
         {CONDITION_CHECKLIST.map((item) => (
           <div key={item.key} className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-${item.key}`} className="text-sm font-medium">
+            <label htmlFor={`${id}-${item.key}`} className="text-body font-medium">
               {item.label}
             </label>
             {item.kind === 'state' ? (
@@ -326,10 +326,10 @@ export function ConditionForm({ orderId }: { orderId: string }) {
         ))}
       </div>
 
-      <label htmlFor={`${id}-note`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-note`} className="flex flex-col gap-1.5 text-body font-medium">
         {ordersCopy.checklist.note}
         <textarea id={`${id}-note`} name="note" rows={3} maxLength={2000} className={`${CONTROL} font-normal`} />
-        <span className="text-xs font-normal text-muted">{ordersCopy.checklist.noteHint}</span>
+        <span className="text-small font-normal text-muted">{ordersCopy.checklist.noteHint}</span>
       </label>
 
       <button type="submit" disabled={pending} className={`${buttonClasses('primary', 'md')} w-full`}>
@@ -359,9 +359,9 @@ export function HandoverForm({ orderId }: { orderId: string }) {
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value="vehicle_delivered" />
 
-      <p className="text-sm text-muted">{ordersCopy.handover.driverHint}</p>
+      <p className="text-body text-muted">{ordersCopy.handover.driverHint}</p>
 
-      <label htmlFor={`${id}-code`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-code`} className="flex flex-col gap-1.5 text-body font-medium">
         {ordersCopy.handover.codeLabel}
         <input
           id={`${id}-code`}
@@ -391,11 +391,11 @@ export function HandoverForm({ orderId }: { orderId: string }) {
 export function ConfirmationCode({ code }: { code: string }) {
   return (
     <div className="rounded-card border border-foreground/35 bg-ground-alt p-4">
-      <p className="text-xs text-muted">{ordersCopy.handover.title}</p>
+      <p className="text-small text-muted">{ordersCopy.handover.title}</p>
       <p className="mt-1 font-mono text-figure-sm tracking-[0.2em] tabular-nums">
         {formatCode(code)}
       </p>
-      <p className="mt-1 text-sm">{ordersCopy.handover.clientHint}</p>
+      <p className="mt-1 text-body">{ordersCopy.handover.clientHint}</p>
     </div>
   );
 }
@@ -421,9 +421,9 @@ export function ConfirmDelivery({
       <input type="hidden" name="to" value="order_completed" />
 
       <p className="text-body-lg">{ordersCopy.confirm.title}</p>
-      <p className="max-w-[60ch] text-sm">{ordersCopy.confirm.body}</p>
+      <p className="max-w-[60ch] text-body">{ordersCopy.confirm.body}</p>
       {deadline !== null ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           {deadline.passed ? ordersCopy.confirm.passed : ordersCopy.confirm.deadline(deadline.left)}
         </p>
       ) : null}
@@ -453,7 +453,7 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-muted underline underline-offset-4"
+        className="text-body text-muted underline underline-offset-4"
       >
         {ordersCopy.cancel.submit}
       </button>
@@ -463,10 +463,10 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
   return (
     <form action={submit} className="flex flex-col gap-3 rounded-card border border-danger/40 bg-danger/8 p-4">
       <input type="hidden" name="order_id" value={orderId} />
-      <p className="text-sm font-medium">{ordersCopy.cancel.title}</p>
-      <p className="text-sm text-muted">{ordersCopy.cancel.body}</p>
+      <p className="text-body font-medium">{ordersCopy.cancel.title}</p>
+      <p className="text-body text-muted">{ordersCopy.cancel.body}</p>
 
-      <label htmlFor={`${id}-reason`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-reason`} className="flex flex-col gap-1.5 text-body font-medium">
         {ordersCopy.cancel.reason}
         <textarea
           id={`${id}-reason`}
@@ -484,11 +484,11 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
       {/* Only the client is asked. A carrier cancelling cannot decide
           for somebody else whether their car still needs moving. */}
       {side === 'client' ? (
-        <label className="flex items-start gap-2 text-sm">
+        <label className="flex items-start gap-2 text-body">
           <input type="checkbox" name="relist" defaultChecked className="mt-1" />
           <span>
             {ordersCopy.cancel.relist}
-            <span className="block text-xs text-muted">{ordersCopy.cancel.relistHint}</span>
+            <span className="block text-small text-muted">{ordersCopy.cancel.relistHint}</span>
           </span>
         </label>
       ) : (
@@ -531,7 +531,7 @@ export function OpenDispute({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-sm text-muted underline underline-offset-4"
+        className="text-body text-muted underline underline-offset-4"
       >
         {ordersCopy.confirm.disputeInstead}
       </button>
@@ -541,10 +541,10 @@ export function OpenDispute({
   return (
     <form action={submit} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-4">
       <input type="hidden" name="order_id" value={orderId} />
-      <p className="text-sm font-medium">{ordersCopy.dispute.title}</p>
-      <p className="max-w-[60ch] text-sm text-muted">{ordersCopy.dispute.lede}</p>
+      <p className="text-body font-medium">{ordersCopy.dispute.title}</p>
+      <p className="max-w-[60ch] text-body text-muted">{ordersCopy.dispute.lede}</p>
 
-      <label htmlFor={`${id}-cat`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-cat`} className="flex flex-col gap-1.5 text-body font-medium">
         {ordersCopy.dispute.category}
         <select id={`${id}-cat`} name="category" required className={`${CONTROL} font-normal`}>
           <option value="">—</option>
@@ -559,7 +559,7 @@ export function OpenDispute({
         <FormError>{state.fieldErrors.category}</FormError>
       ) : null}
 
-      <label htmlFor={`${id}-why`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-why`} className="flex flex-col gap-1.5 text-body font-medium">
         {ordersCopy.dispute.reason}
         <textarea
           id={`${id}-why`}
@@ -569,7 +569,7 @@ export function OpenDispute({
           maxLength={2000}
           className={`${CONTROL} font-normal`}
         />
-        <span className="text-xs font-normal text-muted">{ordersCopy.dispute.reasonHint}</span>
+        <span className="text-small font-normal text-muted">{ordersCopy.dispute.reasonHint}</span>
       </label>
       {state.fieldErrors?.reason !== undefined ? (
         <FormError>{state.fieldErrors.reason}</FormError>

@@ -23,7 +23,7 @@ export default function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link
             href={ROUTES.adminOnboardings}
             className="text-muted underline-offset-4 hover:underline"
@@ -33,12 +33,12 @@ export default function Page() {
         </p>
         <EyebrowPill>{onboardingCopy.admin.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[68ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[68ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <Card className="p-5">
         <h2 className="text-h3">{c.consent.title}</h2>
-        <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.consent.lede}</p>
+        <p className="mt-1 max-w-[66ch] text-body text-muted">{c.consent.lede}</p>
         <div className="mt-5">
           <ConsentForm />
         </div>

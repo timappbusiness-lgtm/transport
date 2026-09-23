@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 const c = messagesCopy.admin.listings;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -77,7 +77,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[64ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[64ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <nav aria-label={c.title} className="flex flex-wrap gap-2">
@@ -104,7 +104,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       >
         <input type="hidden" name="fel" value={kind} />
 
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.status}
           <select name="stare" defaultValue={one(params, 'stare') ?? ''} className={CONTROL}>
             <option value="">{c.filters.any}</option>
@@ -116,7 +116,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.company}
           <select name="firma" defaultValue={one(params, 'firma') ?? ''} className={CONTROL}>
             <option value="">{c.filters.any}</option>
@@ -128,20 +128,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.from}
           <input type="date" name="de-la" defaultValue={one(params, 'de-la') ?? ''} className={CONTROL} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.to}
           <input type="date" name="pana-la" defaultValue={one(params, 'pana-la') ?? ''} className={CONTROL} />
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-body">
           <input type="checkbox" name="ascunse" value="da" defaultChecked={one(params, 'ascunse') === 'da'} />
           {c.filters.hidden}
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-body">
           <input type="checkbox" name="sesizate" value="da" defaultChecked={one(params, 'sesizate') === 'da'} />
           {c.filters.reported}
         </label>
@@ -153,25 +153,25 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           <Link href={ROUTES.adminListings} className={buttonClasses('secondary', 'sm')}>
             {c.filters.clear}
           </Link>
-          <span className="text-xs text-muted">{c.total(formatNumber(total))}</span>
+          <span className="text-small text-muted">{c.total(formatNumber(total))}</span>
         </div>
       </form>
 
       <ExportModeration />
 
       {error !== null ? (
-        <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-sm">{error}</p>
+        <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>
       ) : rows.length === 0 ? (
         <div className="rounded-card border border-border bg-surface p-6">
           <p className="text-body-lg">{c.empty}</p>
-          <p className="mt-1 text-sm text-muted">{c.emptyBody}</p>
+          <p className="mt-1 text-body text-muted">{c.emptyBody}</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (
             <li key={row.id} className="rounded-card border border-border bg-surface p-5">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-base">{row.title ?? '—'}</span>
+                <span className="text-body">{row.title ?? '—'}</span>
                 <StatusBadge tone="neutral">{row.status}</StatusBadge>
                 {row.hidden_at !== null ? (
                   <StatusBadge tone="danger">{c.hiddenLabel}</StatusBadge>
@@ -181,13 +181,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 ) : null}
               </div>
 
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-small text-muted">
                 {row.company_name ?? row.owner_name ?? '—'} · {formatMoment(row.created_at)}
                 {row.photo_count > 0 ? ` · ${c.photos(row.photo_count)}` : ''}
               </p>
 
               {row.hidden_reason !== null ? (
-                <p className="mt-2 rounded-input border border-border-strong bg-ground-alt px-3 py-2 text-xs">
+                <p className="mt-2 rounded-input border border-border-strong bg-ground-alt px-3 py-2 text-small">
                   {row.hidden_reason}
                 </p>
               ) : null}
@@ -217,7 +217,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       )}
 
       {lastPage > 1 ? (
-        <nav aria-label={c.title} className="flex flex-wrap items-center gap-3 text-sm">
+        <nav aria-label={c.title} className="flex flex-wrap items-center gap-3 text-body">
           {page > 1 ? (
             <Link
               href={`${ROUTES.adminListings}?fel=${kind}&pagina=${page - 1}`}

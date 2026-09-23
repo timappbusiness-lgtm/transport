@@ -65,7 +65,7 @@ export function OrderRatingCard({
             <p className="mt-2 whitespace-pre-line text-body">{state.comment}</p>
           ) : null}
         </div>
-        <p className="mt-3 text-xs text-muted">{c.form.notEditable}</p>
+        <p className="mt-3 text-small text-muted">{c.form.notEditable}</p>
         <Link
           href={`${ROUTES.accountRatings}?cutie=date`}
           className="mt-2 inline-block text-small link-accent"
@@ -83,7 +83,7 @@ export function OrderRatingCard({
   return (
     <Card className="p-5">
       <h2 className="text-h3">{c.form.title}</h2>
-      <p className="mt-2 text-sm text-muted">{why}</p>
+      <p className="mt-2 text-body text-muted">{why}</p>
     </Card>
   );
 }

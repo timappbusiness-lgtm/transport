@@ -74,7 +74,7 @@ export function AlertRow({
                 id={`name-${search.id}`}
                 name="name"
                 defaultValue={search.name}
-                className="rounded-input border border-border-strong bg-surface px-3 py-1.5 text-sm"
+                className="rounded-input border border-border-strong bg-surface px-3 py-1.5 text-body"
               />
               <button type="submit" disabled={updating} className={buttonClasses('secondary', 'sm')}>
                 {c.save}
@@ -82,7 +82,7 @@ export function AlertRow({
               <button
                 type="button"
                 onClick={() => setRenaming(false)}
-                className="text-sm text-muted underline underline-offset-4"
+                className="text-body text-muted underline underline-offset-4"
               >
                 Renunță
               </button>
@@ -93,12 +93,12 @@ export function AlertRow({
 
           <p className="mt-1.5 flex flex-wrap gap-1.5">
             {criteria.length === 0 ? (
-              <span className="text-sm text-muted">Toate cererile de pe panou</span>
+              <span className="text-body text-muted">Toate cererile de pe panou</span>
             ) : (
               criteria.map((part) => (
                 <span
                   key={part}
-                  className="rounded-full border border-border px-2 py-0.5 text-xs text-muted"
+                  className="rounded-full border border-border px-2 py-0.5 text-small text-muted"
                 >
                   {part}
                 </span>
@@ -112,17 +112,17 @@ export function AlertRow({
         </StatusBadge>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+      <dl className="mt-4 grid gap-3 text-body sm:grid-cols-3">
         <div>
-          <dt className="text-xs text-muted">{c.frequency}</dt>
+          <dt className="text-small text-muted">{c.frequency}</dt>
           <dd className="mt-0.5">{FREQUENCY_LABELS[search.frequency]}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">{c.channel}</dt>
+          <dt className="text-small text-muted">{c.channel}</dt>
           <dd className="mt-0.5">{search.notify_email ? c.channelEmail : c.channelNone}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">{c.matches7d}</dt>
+          <dt className="text-small text-muted">{c.matches7d}</dt>
           <dd className="mt-0.5 tabular-nums">
             {activity?.matches ?? 0}
             <span className="text-muted"> · {c.lastMatch.toLowerCase()} {when(activity?.last_match_at ?? null)}</span>
@@ -181,7 +181,7 @@ export function AlertRow({
           <button
             type="submit"
             disabled={deleting}
-            className="text-sm text-danger underline underline-offset-4"
+            className="text-body text-danger underline underline-offset-4"
           >
             {c.delete}
           </button>
@@ -190,26 +190,26 @@ export function AlertRow({
 
       {open ? (
         <div className="mt-4 rounded-card border border-border bg-ground-alt p-4">
-          <h3 className="text-sm font-medium">{c.matchesTitle}</h3>
+          <h3 className="text-body font-medium">{c.matchesTitle}</h3>
           {matches.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">{c.matchesEmpty}</p>
+            <p className="mt-2 text-body text-muted">{c.matchesEmpty}</p>
           ) : (
             <ul className="mt-3 flex flex-col gap-3">
               {matches.map((match) => (
                 <li key={match.id} className="border-t border-border pt-3 first:border-0 first:pt-0">
                   <Link
                     href={requestRoute(match.cargo_listing_id)}
-                    className="text-sm link-accent"
+                    className="text-body link-accent"
                   >
                     {match.title ?? 'Cerere de transport'}
                   </Link>
-                  <p className="mt-0.5 text-xs text-muted">{when(match.created_at)}</p>
+                  <p className="mt-0.5 text-small text-muted">{when(match.created_at)}</p>
                   {match.reasons.length > 0 ? (
                     <>
-                      <p className="mt-2 text-xs text-muted">{c.why}</p>
+                      <p className="mt-2 text-small text-muted">{c.why}</p>
                       <ul className="mt-1 flex flex-col gap-0.5">
                         {match.reasons.map((reason) => (
-                          <li key={reason} className="text-xs">
+                          <li key={reason} className="text-small">
                             · {reason}
                           </li>
                         ))}
@@ -224,17 +224,17 @@ export function AlertRow({
       ) : null}
 
       {updateState.error !== undefined || deleteState.error !== undefined ? (
-        <p role="alert" className="mt-3 text-sm text-danger">
+        <p role="alert" className="mt-3 text-body text-danger">
           {updateState.error ?? deleteState.error}
         </p>
       ) : null}
       {updateState.notice !== undefined ? (
-        <p role="status" className="mt-3 text-sm text-muted">
+        <p role="status" className="mt-3 text-body text-muted">
           {updateState.notice}
         </p>
       ) : null}
       {updateState.quotaReached === true ? (
-        <p className="mt-2 text-sm">
+        <p className="mt-2 text-body">
           <Link href={ROUTES.plans} className="link-accent">
             {alertsCopy.quota.action}
           </Link>

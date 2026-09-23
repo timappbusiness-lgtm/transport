@@ -8,7 +8,7 @@ import { STAFF_ROLES, STAFF_ROLE_LABELS, type StaffMember } from '@/lib/staff';
 
 const EMPTY: TeamState = {};
 const c = teamCopy;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /** Adding somebody, by the address on an account that already exists. */
 export function GrantStaff() {
@@ -17,7 +17,7 @@ export function GrantStaff() {
 
   return (
     <form action={action} className="mt-4 flex flex-col gap-3">
-      <label htmlFor={`${id}-email`} className="flex flex-col gap-1.5 text-sm">
+      <label htmlFor={`${id}-email`} className="flex flex-col gap-1.5 text-body">
         {c.add.email}
         <input
           id={`${id}-email`}
@@ -33,7 +33,7 @@ export function GrantStaff() {
       {/* One value today. The select stays because the day a second role
           exists it is one entry in STAFF_ROLES and nothing else. */}
       {STAFF_ROLES.length > 1 ? (
-        <label htmlFor={`${id}-role`} className="flex flex-col gap-1.5 text-sm">
+        <label htmlFor={`${id}-role`} className="flex flex-col gap-1.5 text-body">
           {c.add.role}
           <select id={`${id}-role`} name="role" defaultValue="admin" className={CONTROL}>
             {STAFF_ROLES.map((role) => (
@@ -47,10 +47,10 @@ export function GrantStaff() {
         <input type="hidden" name="role" value="admin" />
       )}
 
-      <label htmlFor={`${id}-reason`} className="flex flex-col gap-1.5 text-sm">
+      <label htmlFor={`${id}-reason`} className="flex flex-col gap-1.5 text-body">
         {c.add.reason}
         <input id={`${id}-reason`} name="reason" required className={CONTROL} />
-        <span className="text-xs text-muted">{c.add.reasonHint}</span>
+        <span className="text-small text-muted">{c.add.reasonHint}</span>
       </label>
 
       <div>
@@ -60,12 +60,12 @@ export function GrantStaff() {
       </div>
 
       {state.error !== undefined ? (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {state.error}
         </p>
       ) : null}
       {state.notice !== undefined ? (
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-body text-muted">
           {state.notice}
         </p>
       ) : null}
@@ -92,12 +92,12 @@ export function RevokeStaff({ member }: { member: StaffMember }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="text-sm text-danger underline underline-offset-4"
+          className="text-body text-danger underline underline-offset-4"
         >
           {c.list.revoke}
         </button>
         {state.notice !== undefined ? (
-          <p role="status" className="mt-2 text-sm text-muted">
+          <p role="status" className="mt-2 text-body text-muted">
             {state.notice}
           </p>
         ) : null}
@@ -116,7 +116,7 @@ export function RevokeStaff({ member }: { member: StaffMember }) {
       <input type="hidden" name="user_id" value={member.user_id} />
       <input type="hidden" name="name" value={name} />
 
-      <label htmlFor={`${id}-why`} className="flex flex-col gap-1.5 text-sm">
+      <label htmlFor={`${id}-why`} className="flex flex-col gap-1.5 text-body">
         {c.revoke.reason}
         <input id={`${id}-why`} name="reason" required className={CONTROL} />
       </label>
@@ -128,14 +128,14 @@ export function RevokeStaff({ member }: { member: StaffMember }) {
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-sm text-muted underline underline-offset-4"
+          className="text-body text-muted underline underline-offset-4"
         >
           Renunță
         </button>
       </div>
 
       {state.error !== undefined ? (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {state.error}
         </p>
       ) : null}

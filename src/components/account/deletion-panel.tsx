@@ -77,15 +77,15 @@ export function DeletionPanel({
       <h2 id={`${id}-title`} className="text-h3">
         {kind === 'company' ? `${c.companyTitle}: ${confirmWith}` : c.title}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">
+      <p className="mt-2 max-w-[62ch] text-body text-muted">
         {kind === 'company' ? c.companyBody(graceDays) : c.body(graceDays)}
       </p>
 
       {scheduled ? (
         <div className="mt-4 rounded-input border border-warning/45 bg-warning/8 p-4">
-          <p className="text-sm font-medium">{c.scheduledTitle}</p>
-          <p className="mt-1 text-sm">{c.scheduledOn(onDate(request!.scheduled_for))}</p>
-          <p className="mt-1 text-sm text-muted">{c.held}</p>
+          <p className="text-body font-medium">{c.scheduledTitle}</p>
+          <p className="mt-1 text-body">{c.scheduledOn(onDate(request!.scheduled_for))}</p>
+          <p className="mt-1 text-body text-muted">{c.held}</p>
           <form action={cancelAction} className="mt-3">
             <input type="hidden" name="request_id" value={request!.id} />
             <button type="submit" disabled={cancelling} className={buttonClasses('ink', 'sm')}>
@@ -97,13 +97,13 @@ export function DeletionPanel({
 
       {!scheduled && blocked ? (
         <div className="mt-4 rounded-input border border-danger/45 bg-danger/8 p-4">
-          <p className="text-sm font-medium">{c.blockedTitle}</p>
-          <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm">
+          <p className="text-body font-medium">{c.blockedTitle}</p>
+          <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-body">
             {reasons.map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
           </ul>
-          <p className="mt-2 text-sm text-muted">{c.blockedHelp}</p>
+          <p className="mt-2 text-body text-muted">{c.blockedHelp}</p>
         </div>
       ) : null}
 
@@ -111,16 +111,16 @@ export function DeletionPanel({
         <>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <h3 className="text-sm font-medium">{c.whatGoes}</h3>
-              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+              <h3 className="text-body font-medium">{c.whatGoes}</h3>
+              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-body text-muted">
                 {c.whatGoesList.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-medium">{c.whatStays}</h3>
-              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-sm text-muted">
+              <h3 className="text-body font-medium">{c.whatStays}</h3>
+              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-body text-muted">
                 {c.whatStaysList.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
@@ -134,10 +134,10 @@ export function DeletionPanel({
               {companyId !== undefined ? (
                 <input type="hidden" name="company_id" value={companyId} />
               ) : null}
-              <label htmlFor={`${id}-confirm`} className="text-sm font-medium">
+              <label htmlFor={`${id}-confirm`} className="text-body font-medium">
                 {c.confirmLabel}
               </label>
-              <p className="text-sm text-muted">
+              <p className="text-body text-muted">
                 {kind === 'company' ? c.confirmCompany(confirmWith) : c.confirmUser(confirmWith)}
               </p>
               <input

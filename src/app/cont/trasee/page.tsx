@@ -117,7 +117,7 @@ export default async function Page() {
         <div>
           <EyebrowPill>{c.eyebrow}</EyebrowPill>
           <h1 className="mt-2 text-h2">{c.title}</h1>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.lede}</p>
         </div>
         <Link href={ROUTES.accountDepartureNew} className={buttonClasses('primary', 'sm')}>
           {c.add}
@@ -125,16 +125,16 @@ export default async function Page() {
       </div>
 
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="mb-4 text-sm font-medium">{c.pending}</h2>
+        <h2 className="mb-4 text-body font-medium">{c.pending}</h2>
         {pending.length === 0 ? (
-          <p className="text-sm text-muted">{c.noPending}</p>
+          <p className="text-body text-muted">{c.noPending}</p>
         ) : (
           <ul className="divide-y divide-border">
             {pending.map((booking) => (
               <li key={booking.id} className="flex flex-wrap items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{booking.cargo?.title ?? 'Cerere'}</p>
-                  <p className="text-xs text-muted">
+                  <p className="text-body font-medium">{booking.cargo?.title ?? 'Cerere'}</p>
+                  <p className="text-small text-muted">
                     {booking.cargo
                       ? `${booking.cargo.loading_city} → ${booking.cargo.unloading_city} · `
                       : ''}
@@ -151,7 +151,7 @@ export default async function Page() {
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="text-h3">{departuresCopy.series.title}</h2>
-          <p className="mt-1 max-w-[64ch] text-sm text-muted">{departuresCopy.series.lede}</p>
+          <p className="mt-1 max-w-[64ch] text-body text-muted">{departuresCopy.series.lede}</p>
           <p className="mt-2">
             <HelpLink topic="series" />
           </p>
@@ -160,7 +160,7 @@ export default async function Page() {
         {series.length === 0 ? (
           <div className="rounded-card border border-dashed border-border-strong bg-surface p-5">
             <p className="text-body">{departuresCopy.series.empty}</p>
-            <p className="mt-1 max-w-[54ch] text-sm text-muted">
+            <p className="mt-1 max-w-[54ch] text-body text-muted">
               {departuresCopy.series.emptyBody}
             </p>
           </div>
@@ -174,9 +174,9 @@ export default async function Page() {
       </section>
 
       <section className="overflow-hidden rounded-card border border-border bg-surface">
-        <h2 className="border-b border-border px-5 py-3.5 text-sm font-medium">{c.title}</h2>
+        <h2 className="border-b border-border px-5 py-3.5 text-body font-medium">{c.title}</h2>
         {departures.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-muted">{c.empty}</p>
+          <p className="px-5 py-4 text-body text-muted">{c.empty}</p>
         ) : (
           <ul className="divide-y divide-border">
             {departures.map((departure) => {
@@ -186,7 +186,7 @@ export default async function Page() {
               return (
                 <li key={departure.id} className="flex flex-wrap items-start gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="flex flex-wrap items-center gap-x-2 text-sm font-medium">
+                    <p className="flex flex-wrap items-center gap-x-2 text-body font-medium">
                       <span className="inline-flex items-center gap-1.5">
                         <CountryTag cc={departure.from_country} />
                         {departure.from_city}
@@ -199,7 +199,7 @@ export default async function Page() {
                         {departure.to_city}
                       </span>
                     </p>
-                    <p className="mt-1 text-xs text-muted">
+                    <p className="mt-1 text-small text-muted">
                       {DIRECTION_LABELS[departure.direction]} ·{' '}
                       <span className="font-mono tabular-nums">
                         {formatWindow(departure.available_from, departure.available_to)}
@@ -207,7 +207,7 @@ export default async function Page() {
                       {waypoints.length > 0 ? ` · prin ${waypoints.map((w) => w.city).join(', ')}` : ''}
                     </p>
                     {total !== null ? (
-                      <p className="mt-1 text-xs text-muted">{c.seatsTaken(taken, total)}</p>
+                      <p className="mt-1 text-small text-muted">{c.seatsTaken(taken, total)}</p>
                     ) : null}
                     {departure.hidden_at !== null ? (
                       <HiddenNotice reason={departure.hidden_reason} />
@@ -223,7 +223,7 @@ export default async function Page() {
                       <>
                         <Link
                           href={departureRoute(departure.id)}
-                          className="text-xs text-muted underline-offset-4 hover:underline"
+                          className="text-small text-muted underline-offset-4 hover:underline"
                         >
                           Vezi pe bursă
                         </Link>
@@ -231,7 +231,7 @@ export default async function Page() {
                           <input type="hidden" name="departure_id" value={departure.id} />
                           <button
                             type="submit"
-                            className="text-xs text-danger underline-offset-4 hover:underline"
+                            className="text-small text-danger underline-offset-4 hover:underline"
                           >
                             {c.stop}
                           </button>
@@ -243,7 +243,7 @@ export default async function Page() {
                       <input type="hidden" name="departure_id" value={departure.id} />
                       <button
                         type="submit"
-                        className="text-xs text-muted underline-offset-4 hover:underline"
+                        className="text-small text-muted underline-offset-4 hover:underline"
                       >
                         {c.duplicate}
                       </button>

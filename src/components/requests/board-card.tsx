@@ -130,7 +130,7 @@ export function BoardRequestCard({
           </div>
         </div>
       </article>
-      {note === undefined ? null : <div className="mt-1.5 text-xs text-muted">{note}</div>}
+      {note === undefined ? null : <div className="mt-1.5 text-small text-muted">{note}</div>}
     </li>
   );
 }

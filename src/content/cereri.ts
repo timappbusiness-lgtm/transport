@@ -147,11 +147,9 @@ export const requestsCopy = {
     },
 
     contact: {
-      title: 'Cum te găsește transportatorul',
-      lede: 'Numărul tău nu apare pe anunț. Îl vede doar un transportator verificat, după ce îl deschide din abonamentul lui, și fiecare deschidere se înregistrează.',
       name: 'Numele tău',
       phone: 'Telefon',
-      phoneHint: 'Aici te sună transportatorul.',
+      phoneHint: 'Aici te sună transportatorul. Fiecare deschidere a numărului se înregistrează.',
       email: 'E-mail (opțional)',
       description: 'Altceva de spus (opțional)',
       descriptionHint:

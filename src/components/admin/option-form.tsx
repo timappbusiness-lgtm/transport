@@ -50,7 +50,7 @@ export function OptionForm({
       <div className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_5rem]">
         {existing ? (
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{c.code}</span>
+            <span className="text-body font-medium">{c.code}</span>
             <input type="hidden" name="code" value={row.code} />
             <span className="rounded-input border border-border bg-background px-3 py-2 font-mono text-small text-muted">
               {row.code}
@@ -91,7 +91,7 @@ export function OptionForm({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-start gap-2.5 text-sm">
+        <label className="flex items-start gap-2.5 text-body">
           <input
             type="checkbox"
             name="isActive"
@@ -100,7 +100,7 @@ export function OptionForm({
           />
           <span>
             {c.active}
-            <span className="mt-0.5 block text-xs text-muted">{c.inactiveHint}</span>
+            <span className="mt-0.5 block text-small text-muted">{c.inactiveHint}</span>
           </span>
         </label>
         <SubmitButton className="sm:w-auto sm:px-6">

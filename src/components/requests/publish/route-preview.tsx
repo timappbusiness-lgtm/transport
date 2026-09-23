@@ -88,7 +88,7 @@ export function RoutePreview({
             <span data-distance>
               <Figure size="sm">{formatKm(km)}</Figure>
             </span>
-            <span className="w-full text-xs text-muted">{c.distanceNote}</span>
+            <span className="w-full text-small text-muted">{c.distanceNote}</span>
           </p>
         ) : (
           <p className="text-small text-muted">{c.distanceWaiting}</p>

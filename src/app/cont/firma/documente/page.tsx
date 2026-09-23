@@ -72,7 +72,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">
+        <p className="mt-2 max-w-[54ch] text-body text-muted">
           {c.lede}{' '}
           <Link href={ROUTES.accountFleet} className="link-accent">
             {c.vehicleHint}
@@ -87,7 +87,7 @@ export default async function Page() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.required}</h2>
+            <h2 className="text-body font-medium">{c.required}</h2>
             <div className="mt-3">
               <RequirementList rows={requirements} />
             </div>
@@ -105,12 +105,12 @@ export default async function Page() {
 
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="mb-4 text-sm font-medium">{c.upload}</h2>
+            <h2 className="mb-4 text-body font-medium">{c.upload}</h2>
             <DocumentUpload companyId={company.id} kinds={kinds} />
           </section>
 
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="mb-4 text-sm font-medium">{c.history}</h2>
+            <h2 className="mb-4 text-body font-medium">{c.history}</h2>
             <DocumentHistory rows={(historyResult.data ?? []) as HistoryRow[]} labels={labels} />
           </section>
         </div>

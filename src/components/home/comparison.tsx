@@ -27,7 +27,7 @@ function Row({
     >
       <h3
         className={cn(
-          'text-lg font-semibold',
+          'text-h3 font-semibold',
           tone === 'new' ? 'text-white' : 'text-foreground',
         )}
       >

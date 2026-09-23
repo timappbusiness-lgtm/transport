@@ -84,7 +84,7 @@ export function MyRequestCard({
     <li className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body">
             <span className="font-medium">{request.fromCity}</span>
             <CountryTag cc={request.fromCountry} />
             <span className="text-muted">→</span>
@@ -118,9 +118,9 @@ export function MyRequestCard({
 
         {confirming === 'reopen' ? (
           <div className="flex flex-col gap-3 rounded-input border border-border-strong bg-ground-alt p-4">
-            <p className="text-sm font-medium">{c.reopenTitle}</p>
+            <p className="text-body font-medium">{c.reopenTitle}</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1.5 text-xs font-medium">
+              <label className="flex flex-col gap-1.5 text-small font-medium">
                 {c.reopenFrom}
                 <input
                   type="date"
@@ -128,16 +128,16 @@ export function MyRequestCard({
                   min={today}
                   defaultValue={today}
                   required
-                  className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm font-normal"
+                  className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal"
                 />
               </label>
-              <label className="flex flex-col gap-1.5 text-xs font-medium">
+              <label className="flex flex-col gap-1.5 text-small font-medium">
                 {c.reopenTo}
                 <input
                   type="date"
                   name="loading_to"
                   min={today}
-                  className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm font-normal"
+                  className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal"
                 />
               </label>
             </div>
@@ -162,7 +162,7 @@ export function MyRequestCard({
           </div>
         ) : confirming === 'cancel' ? (
           <div className="flex flex-col gap-3 rounded-input border border-danger/40 bg-danger/8 p-4">
-            <p className="text-sm">{c.cancelConfirm}</p>
+            <p className="text-body">{c.cancelConfirm}</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="submit"

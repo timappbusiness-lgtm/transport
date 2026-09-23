@@ -51,7 +51,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
       <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-sm">{children}</dd>
+      <dd className="min-w-0 text-body">{children}</dd>
     </div>
   );
 }
@@ -133,7 +133,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ended the way it was meant to. */}
       {order.status === 'order_completed' ? (
         <SuccessMoment title={successCopy.completed.title} body={successCopy.completed.body}>
-          <Link href={ROUTES.accountTransports} className="link-accent text-sm">
+          <Link href={ROUTES.accountTransports} className="link-accent text-body">
             {successCopy.completed.action}
           </Link>
         </SuccessMoment>
@@ -142,9 +142,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {order.status === 'disputed' ? <DisputeNote order={order} /> : null}
       {order.cancelled_at !== null ? (
         <Card className="border-danger/40 bg-danger/8 p-5">
-          <p className="text-sm font-medium">{orderStatusLabel('cancelled')}</p>
-          <p className="mt-1 text-sm">{order.cancel_reason}</p>
-          <p className="mt-1 text-xs text-muted">{formatMoment(order.cancelled_at)}</p>
+          <p className="text-body font-medium">{orderStatusLabel('cancelled')}</p>
+          <p className="mt-1 text-body">{order.cancel_reason}</p>
+          <p className="mt-1 text-small text-muted">{formatMoment(order.cancelled_at)}</p>
         </Card>
       ) : null}
 
@@ -299,7 +299,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 {order.carrier_slug !== null ? (
                   <Link
                     href={companyRoute(order.carrier_slug)}
-                    className="mt-0.5 block text-xs link-accent"
+                    className="mt-0.5 block text-small link-accent"
                   >
                     {c.profile}
                   </Link>
@@ -313,7 +313,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             ) : null}
           </Card>
 
-          <div className="flex flex-col gap-3 text-sm">
+          <div className="flex flex-col gap-3 text-body">
             {order.request_id !== null ? (
               <div className="flex flex-wrap gap-4">
                 <Link href={requestRoute(order.request_id)} className="link-accent">
@@ -360,18 +360,18 @@ function DisputeNote({
 }) {
   return (
     <Card className="border-warning/45 bg-warning/8 p-5">
-      <p className="text-sm font-medium">{ordersCopy.dispute.openTitle}</p>
-      <p className="mt-1 text-xs text-muted">
+      <p className="text-body font-medium">{ordersCopy.dispute.openTitle}</p>
+      <p className="mt-1 text-small text-muted">
         {ordersCopy.dispute.openedAt} {formatMoment(order.disputed_at)}
       </p>
-      <p className="mt-2 whitespace-pre-line text-sm">{order.dispute_reason}</p>
+      <p className="mt-2 whitespace-pre-line text-body">{order.dispute_reason}</p>
       {order.dispute_resolution !== null ? (
         <>
-          <p className="mt-3 text-sm font-medium">{ordersCopy.dispute.decision}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{order.dispute_resolution}</p>
+          <p className="mt-3 text-body font-medium">{ordersCopy.dispute.decision}</p>
+          <p className="mt-1 whitespace-pre-line text-body">{order.dispute_resolution}</p>
         </>
       ) : null}
-      <p className="mt-2 text-xs text-muted">{ordersCopy.dispute.noMoney}</p>
+      <p className="mt-2 text-small text-muted">{ordersCopy.dispute.noMoney}</p>
     </Card>
   );
 }

@@ -109,7 +109,7 @@ export function SeoPageBody({
 
       {faqEntries.length > 0 ? (
         <section aria-labelledby="intrebari" className="mt-12">
-          <h2 id="intrebari" className="text-xl">
+          <h2 id="intrebari" className="text-h3">
             {c.faq.title}
           </h2>
           <FaqAccordion entries={faqEntries} className="mt-4" />
@@ -199,7 +199,7 @@ function Facts({ data }: { data: SeoPageData }) {
 function Price({ page, data }: { page: SeoPage; data: SeoPageData }) {
   return (
     <section aria-labelledby="pret" className="mt-10">
-      <h2 id="pret" className="text-xl">
+      <h2 id="pret" className="text-h3">
         {c.price.title}
       </h2>
 
@@ -251,7 +251,7 @@ function Requests({
 }) {
   return (
     <section aria-labelledby="cereri" className="mt-12">
-      <h2 id="cereri" className="text-xl">
+      <h2 id="cereri" className="text-h3">
         {c.requests.title}
       </h2>
       <p className="mt-1 text-small text-muted">{c.requests.lede}</p>
@@ -290,7 +290,7 @@ function Departures({ data }: { data: SeoPageData }) {
   const now = new Date();
   return (
     <section aria-labelledby="trasee" className="mt-12">
-      <h2 id="trasee" className="text-xl">
+      <h2 id="trasee" className="text-h3">
         {c.departures.title}
       </h2>
       <p className="mt-1 text-small text-muted">{c.departures.lede}</p>
@@ -325,7 +325,7 @@ function Departures({ data }: { data: SeoPageData }) {
 function Companies({ data }: { data: SeoPageData }) {
   return (
     <section aria-labelledby="firme" className="mt-12">
-      <h2 id="firme" className="text-xl">
+      <h2 id="firme" className="text-h3">
         {c.companies.title}
       </h2>
 

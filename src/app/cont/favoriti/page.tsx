@@ -24,7 +24,7 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <TopBar title={c.title} actions={[]} />
       <div>
-        <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
         <p className="mt-1 max-w-[62ch] text-small text-muted">{c.shared}</p>
         <p className="mt-2">
           <HelpLink topic="favourites" />
@@ -34,8 +34,8 @@ export default async function Page() {
       {rows.length === 0 ? (
         <Card className="p-6">
           <p className="text-body-lg">{c.empty}</p>
-          <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
-          <p className="mt-4 text-sm">
+          <p className="mt-1 max-w-[54ch] text-body text-muted">{c.emptyBody}</p>
+          <p className="mt-4 text-body">
             <Link href={ROUTES.companies} className="link-accent">
               Vezi transportatorii →
             </Link>
@@ -47,7 +47,7 @@ export default async function Page() {
             <li key={row.carrier_company_id}>
               <Card className="flex flex-wrap items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="text-base font-medium">
+                  <p className="text-body font-medium">
                     {row.slug !== null ? (
                       <Link
                         href={companyRoute(row.slug)}
@@ -77,7 +77,7 @@ export default async function Page() {
         </ul>
       )}
 
-      <p className="text-xs text-muted">{c.privacy}</p>
+      <p className="text-small text-muted">{c.privacy}</p>
     </div>
   );
 }

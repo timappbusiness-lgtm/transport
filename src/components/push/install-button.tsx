@@ -57,7 +57,7 @@ export function InstallButton({ className }: { className?: string | undefined })
       >
         {pushCopy.install.action}
       </button>
-      <p className="mt-1.5 text-xs text-muted">{pushCopy.install.hint}</p>
+      <p className="mt-1.5 text-small text-muted">{pushCopy.install.hint}</p>
     </div>
   );
 }

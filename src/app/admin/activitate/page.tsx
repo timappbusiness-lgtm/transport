@@ -37,7 +37,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <section>
@@ -73,7 +73,7 @@ export default async function Page() {
             <p className="mt-3 max-w-[62ch] text-small text-muted">{c.state.cached}</p>
           </>
         ) : (
-          <p className="mt-3 text-sm text-muted">{c.state.unavailable}</p>
+          <p className="mt-3 text-body text-muted">{c.state.unavailable}</p>
         )}
       </section>
 

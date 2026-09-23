@@ -10,7 +10,7 @@ import { VEHICLE_TYPE_LABELS } from '@/lib/vehicles';
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.vehicles;
 const FIELD =
-  'rounded-input border border-border-strong bg-surface px-3 py-2 text-sm font-normal';
+  'rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal';
 
 export function VehicleStep({
   onboardingId,
@@ -30,13 +30,13 @@ export function VehicleStep({
       <input type="hidden" name="company_id" value={companyId} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.plate}
           <input name="plate_number" required className={FIELD} />
           <FormError>{state.fieldErrors?.plate_number}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.type}
           <select name="vehicle_type" required defaultValue="platforma_auto" className={FIELD}>
             {Object.entries(VEHICLE_TYPE_LABELS).map(([value, label]) => (
@@ -48,7 +48,7 @@ export function VehicleStep({
           <FormError>{state.fieldErrors?.vehicle_type}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.weight}
           <input name="max_weight_kg" type="number" min={1} className={FIELD} />
         </label>

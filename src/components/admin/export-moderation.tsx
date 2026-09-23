@@ -33,27 +33,27 @@ export function ExportModeration() {
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4">
       <p className="text-body font-medium">{c.title}</p>
-      <p className="mt-1 text-xs text-muted">{c.hint}</p>
+      <p className="mt-1 text-small text-muted">{c.hint}</p>
 
       <div className="mt-3 flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.from}
           <input
             id={`${id}-from`}
             type="date"
             name="from"
             required
-            className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+            className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.to}
           <input
             id={`${id}-to`}
             type="date"
             name="to"
             required
-            className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+            className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
           />
         </label>
         <button type="submit" disabled={pending} className={buttonClasses('secondary', 'sm')}>

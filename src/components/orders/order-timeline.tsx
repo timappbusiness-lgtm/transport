@@ -87,17 +87,17 @@ export function OrderTimeline({
             <div className="min-w-0 pb-1">
               <p
                 className={cn(
-                  'text-sm',
+                  'text-body',
                   row.state === 'todo' ? 'text-muted' : 'font-medium',
                 )}
               >
                 {row.label}
                 {row.state === 'current' ? (
-                  <span className="ml-2 text-xs font-normal text-muted">{c.waiting}</span>
+                  <span className="ml-2 text-small font-normal text-muted">{c.waiting}</span>
                 ) : null}
               </p>
               {row.at !== null ? (
-                <p className="mt-0.5 text-xs text-muted">
+                <p className="mt-0.5 text-small text-muted">
                   {formatMoment(row.at)}
                   {row.who !== null ? ` · ${row.who}` : ''}
                 </p>
@@ -116,7 +116,7 @@ export function OrderTimeline({
 
       {aside.length > 0 ? (
         <>
-          <h3 className="mt-5 text-sm font-medium">{c.aside}</h3>
+          <h3 className="mt-5 text-body font-medium">{c.aside}</h3>
           <ul className="mt-2 flex flex-col gap-2">
             {aside.map((event) => (
               <li key={event.id} className="text-small">

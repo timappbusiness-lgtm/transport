@@ -30,7 +30,7 @@ export function CheckboxGrid({
     >
       {options.map((option) => (
         <li key={option.code}>
-          <label className="flex items-start gap-2.5 text-sm">
+          <label className="flex items-start gap-2.5 text-body">
             <input
               type="checkbox"
               name={name}
@@ -41,7 +41,7 @@ export function CheckboxGrid({
             <span className="min-w-0">
               {option.label}
               {option.hint ? (
-                <span className="mt-0.5 block text-xs text-muted">{option.hint}</span>
+                <span className="mt-0.5 block text-small text-muted">{option.hint}</span>
               ) : null}
             </span>
           </label>

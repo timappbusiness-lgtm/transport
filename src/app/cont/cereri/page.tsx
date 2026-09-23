@@ -49,8 +49,8 @@ export default async function Page() {
 
       {requests.length === 0 ? (
         <Card className="p-6">
-          <h2 className="text-lg">{c.empty}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
+          <h2 className="text-h3">{c.empty}</h2>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.emptyBody}</p>
           <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} mt-5`}>
             {c.publish}
           </Link>

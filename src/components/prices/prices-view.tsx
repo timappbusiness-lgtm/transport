@@ -39,7 +39,7 @@ export function PricesView({
     <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,25rem)] lg:items-start">
       <section aria-labelledby={`${id}-table`} className="min-w-0">
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <h2 id={`${id}-table`} className="text-lg">
+          <h2 id={`${id}-table`} className="text-h3">
             {pricesCopy.table.title}
           </h2>
           {month ? (
@@ -76,7 +76,7 @@ export function PricesView({
                     ?.focus();
                 }}
                 className={cn(
-                  'rounded-pill px-4 py-2 text-sm transition-[color,background-color] duration-150',
+                  'rounded-pill px-4 py-2 text-body transition-[color,background-color] duration-150',
                   selected ? 'bg-accent text-on-accent' : 'text-muted hover:text-foreground',
                 )}
               >

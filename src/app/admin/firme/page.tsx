@@ -28,7 +28,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       {companies.length > 0 ? (
@@ -46,7 +46,7 @@ export default async function Page() {
                     ? ` · ${pluralRo(company.compliantVehicles, 'vehicul', 'vehicule', 'un')}`
                     : ''}
                 </p>
-                <p className="mt-2 text-sm">
+                <p className="mt-2 text-body">
                   <Link
                     href={companyRoute(company.slug)}
                     className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
@@ -60,7 +60,7 @@ export default async function Page() {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted">{c.empty}</p>
+        <p className="text-body text-muted">{c.empty}</p>
       )}
     </div>
   );

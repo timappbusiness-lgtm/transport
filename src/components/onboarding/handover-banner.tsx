@@ -24,13 +24,13 @@ export function HandoverBanner({ summary }: { summary: HandoverSummary }) {
 
   return (
     <Card className="border-success/45 bg-success/8 p-4">
-      <h2 className="text-base">{c.title}</h2>
-      <p className="mt-1 text-sm text-muted">{c.filled(summary.staff_name)}</p>
+      <h2 className="text-h3">{c.title}</h2>
+      <p className="mt-1 text-body text-muted">{c.filled(summary.staff_name)}</p>
       <ul className="mt-2 flex flex-wrap gap-1.5">
         {filled.map((item) => (
           <li
             key={item}
-            className="rounded-pill border border-border bg-surface px-2.5 py-0.5 text-xs"
+            className="rounded-pill border border-border bg-surface px-2.5 py-0.5 text-small"
           >
             {item}
           </li>

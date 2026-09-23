@@ -87,7 +87,7 @@ export function Thread({
 
       {groups.map((group) => (
         <section key={group.day} aria-label={group.label} className="flex flex-col gap-2">
-          <p className="text-center text-xs text-muted">{group.label}</p>
+          <p className="text-center text-small text-muted">{group.label}</p>
           {group.messages.map((message) => (
             <Bubble key={message.id} message={message} urls={urls} />
           ))}
@@ -100,7 +100,7 @@ export function Thread({
 function Bubble({ message, urls }: { message: Message; urls: Record<string, string> }) {
   if (message.hidden_at !== null) {
     return (
-      <p className="self-center text-xs text-muted">
+      <p className="self-center text-small text-muted">
         <StatusBadge tone="neutral">{c.hidden}</StatusBadge>
       </p>
     );
@@ -116,7 +116,7 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
       )}
     >
       {!message.mine ? (
-        <p className="text-xs text-muted">{message.sender_name ?? '—'}</p>
+        <p className="text-small text-muted">{message.sender_name ?? '—'}</p>
       ) : null}
 
       {message.body !== null && message.body !== '' ? (
@@ -146,7 +146,7 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
 
       <p
         className={cn(
-          'mt-1 text-xs',
+          'mt-1 text-small',
           message.mine ? 'text-ground/70' : 'text-muted',
         )}
       >

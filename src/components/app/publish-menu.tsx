@@ -89,7 +89,7 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
               href={action.href}
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-sm hover:bg-ground-alt"
+              className="block px-4 py-2.5 text-body hover:bg-ground-alt"
             >
               {action.label}
             </Link>

@@ -38,13 +38,13 @@ function Labelled({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
+      <label htmlFor={htmlFor} className="text-body font-medium">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {hint ? <p className="text-small text-muted">{hint}</p> : null}
       {error ? (
-        <p id={`${htmlFor}-error`} className="text-xs text-danger">
+        <p id={`${htmlFor}-error`} className="text-small text-danger">
           {error}
         </p>
       ) : null}
@@ -123,7 +123,7 @@ function SpecFields({
       </div>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-medium">Dimensiuni și greutate</legend>
+        <legend className="mb-1 text-body font-medium">Dimensiuni și greutate</legend>
         <div className="grid gap-3 sm:grid-cols-4">
           {(
             [

@@ -68,7 +68,7 @@ export function ModerateRating({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-small text-muted underline underline-offset-4 hover:text-foreground"
       >
         {words.open}
       </button>
@@ -86,15 +86,15 @@ export function ModerateRating({
       <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {words.title}
       </label>
-      {words.hint !== undefined ? <p className="text-xs text-muted">{words.hint}</p> : null}
+      {words.hint !== undefined ? <p className="text-small text-muted">{words.hint}</p> : null}
       <input
         id={`${id}-reason`}
         name="reason"
         required
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
       />
-      <p className="text-xs text-muted">{ratingsCopy.admin.hide.reasonHint}</p>
+      <p className="text-small text-muted">{ratingsCopy.admin.hide.reasonHint}</p>
       <FormError>{state.fieldErrors?.reason}</FormError>
 
       <div className="flex flex-wrap gap-1.5">

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.pricing;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * The trial length, the VAT line and how billing works.
@@ -26,11 +26,11 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
-      <p className="mt-1 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="mt-1 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <label htmlFor={`${id}-trial`} className="text-sm font-medium">
+          <label htmlFor={`${id}-trial`} className="text-body font-medium">
             {c.trialDays}
           </label>
           <input
@@ -45,14 +45,14 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
             aria-invalid={state.fieldErrors?.trial_days ? true : undefined}
             className={cn(CONTROL, state.fieldErrors?.trial_days && 'border-danger')}
           />
-          <p className="text-xs text-muted">{c.trialDaysHint}</p>
+          <p className="text-small text-muted">{c.trialDaysHint}</p>
           {state.fieldErrors?.trial_days ? (
-            <p className="text-xs text-danger">{state.fieldErrors.trial_days}</p>
+            <p className="text-small text-danger">{state.fieldErrors.trial_days}</p>
           ) : null}
         </div>
 
         <div className="flex min-w-0 flex-col gap-1.5">
-          <label htmlFor={`${id}-vat`} className="text-sm font-medium">
+          <label htmlFor={`${id}-vat`} className="text-body font-medium">
             {c.vatLabel}
           </label>
           <input
@@ -63,11 +63,11 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
             defaultValue={settings.vatLabel ?? ''}
             className={CONTROL}
           />
-          <p className="text-xs text-muted">{c.vatLabelHint}</p>
+          <p className="text-small text-muted">{c.vatLabelHint}</p>
         </div>
 
         <div className="flex min-w-0 flex-col gap-1.5">
-          <label htmlFor={`${id}-email`} className="text-sm font-medium">
+          <label htmlFor={`${id}-email`} className="text-body font-medium">
             {c.billingEmail}
           </label>
           <input
@@ -77,11 +77,11 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
             defaultValue={settings.billingContactEmail ?? ''}
             className={CONTROL}
           />
-          <p className="text-xs text-muted">{c.billingEmailHint}</p>
+          <p className="text-small text-muted">{c.billingEmailHint}</p>
         </div>
 
         <div className="flex flex-col justify-center gap-2">
-          <label className="flex items-center gap-2.5 text-sm">
+          <label className="flex items-center gap-2.5 text-body">
             <input
               type="checkbox"
               name="manual_billing"
@@ -90,7 +90,7 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
             />
             {c.manualBilling}
           </label>
-          <p className="text-xs text-muted">{c.manualBillingHint}</p>
+          <p className="text-small text-muted">{c.manualBillingHint}</p>
         </div>
       </div>
 

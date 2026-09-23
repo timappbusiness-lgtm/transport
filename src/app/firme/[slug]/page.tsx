@@ -76,7 +76,7 @@ export default async function Page({
         lastPage > 1 ? (
           <nav
             aria-label={ratingsCopy.profile.latest}
-            className="mt-4 flex flex-wrap items-center gap-3 text-sm"
+            className="mt-4 flex flex-wrap items-center gap-3 text-body"
           >
             {page > 1 ? (
               <Link

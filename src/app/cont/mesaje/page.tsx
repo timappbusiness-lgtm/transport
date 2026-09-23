@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   return (
     <div className="flex flex-col gap-6">
       <TopBar title={c.title} actions={[]} />
-      <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
       <HelpLink topic="messages" />
 
       <nav aria-label={c.title} className="flex flex-wrap gap-2">
@@ -69,11 +69,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           name="q"
           defaultValue={term ?? ''}
           placeholder={c.search}
-          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
         />
         <button
           type="submit"
-          className="rounded-input border border-border-strong px-3 py-2 text-sm"
+          className="rounded-input border border-border-strong px-3 py-2 text-body"
         >
           {c.searchAction}
         </button>
@@ -82,7 +82,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {rows.length === 0 ? (
         <Card className="p-6">
           <p className="text-body-lg">{c.empty[box]}</p>
-          <p className="mt-1 text-sm text-muted">{c.empty[`${box}Body`]}</p>
+          <p className="mt-1 text-body text-muted">{c.empty[`${box}Body`]}</p>
         </Card>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -93,7 +93,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-4 hover:border-border-strong"
               >
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-base">{row.counterparty_name ?? '—'}</span>
+                  <span className="text-body">{row.counterparty_name ?? '—'}</span>
                   <StatusBadge tone="neutral">{kindLabel(row.kind)}</StatusBadge>
                   {row.unread > 0 ? (
                     <StatusBadge tone="warning">
@@ -103,14 +103,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 </div>
 
                 {row.from_city !== null || row.to_city !== null ? (
-                  <p className="text-xs text-muted">
+                  <p className="text-small text-muted">
                     {row.from_city ?? '—'} → {row.to_city ?? '—'}
                   </p>
                 ) : null}
 
                 <p
                   className={cn(
-                    'text-sm',
+                    'text-body',
                     row.unread > 0 ? 'text-foreground' : 'text-muted',
                   )}
                 >

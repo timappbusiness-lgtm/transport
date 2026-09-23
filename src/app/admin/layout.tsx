@@ -67,7 +67,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center whitespace-nowrap rounded-pill px-3 py-2 text-sm text-muted hover:text-foreground',
+                  'flex items-center whitespace-nowrap rounded-pill px-3 py-2 text-body text-muted hover:text-foreground',
                   ICON_GAP,
                 )}
               >

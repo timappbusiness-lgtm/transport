@@ -62,7 +62,7 @@ export function ReviewQueue({
                   {c.documents.company}: {doc.companyName}
                   {doc.plate ? ` · ${c.documents.vehicle}: ${doc.plate}` : ''}
                 </p>
-                <p className="mt-1 font-mono text-xs text-muted">
+                <p className="mt-1 font-mono text-small text-muted">
                   {doc.valid_until
                     ? `${c.documents.extracted}: ${formatDateRo(doc.valid_until)}`
                     : c.documents.noExtracted}
@@ -128,7 +128,7 @@ function Empty({ text }: { text: string }) {
   return (
     <div className="mt-4 flex flex-col items-center gap-2 rounded-card border border-border bg-surface px-5 py-12 text-center">
       <EmptyFigure kind="document" />
-      <p className="text-sm">{text}</p>
+      <p className="text-body">{text}</p>
     </div>
   );
 }

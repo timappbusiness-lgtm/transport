@@ -50,7 +50,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   return (
     <div className="flex flex-col gap-6">
       <TopBar title={c.title} actions={[]} />
-      <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <form method="get" className="flex flex-wrap gap-2">
         <label htmlFor="q" className="sr-only">
@@ -61,18 +61,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           name="q"
           defaultValue={query ?? ''}
           placeholder={c.search}
-          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
         />
         <button
           type="submit"
-          className="rounded-input border border-border-strong px-3 py-2 text-sm"
+          className="rounded-input border border-border-strong px-3 py-2 text-body"
         >
           {c.searchAction}
         </button>
         {query !== null ? (
           <Link
             href={ROUTES.accountHelp}
-            className="rounded-input border border-border-strong px-3 py-2 text-sm"
+            className="rounded-input border border-border-strong px-3 py-2 text-body"
           >
             {c.clear}
           </Link>
@@ -80,13 +80,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       </form>
 
       {query !== null ? (
-        <p className="text-sm text-muted">{c.results(countAnswers(sections))}</p>
+        <p className="text-body text-muted">{c.results(countAnswers(sections))}</p>
       ) : null}
 
       {sections.length === 0 ? (
         <Card className="p-6">
           <p className="text-body-lg">{c.empty}</p>
-          <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
+          <p className="mt-1 max-w-[54ch] text-body text-muted">{c.emptyBody}</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-6">
@@ -106,12 +106,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                       </summary>
                       <div className="mt-2 flex flex-col gap-2">
                         {answer.answer.map((paragraph) => (
-                          <p key={paragraph} className="max-w-[64ch] text-sm text-muted">
+                          <p key={paragraph} className="max-w-[64ch] text-body text-muted">
                             {paragraph}
                           </p>
                         ))}
                         {answer.link !== undefined ? (
-                          <p className="text-sm">
+                          <p className="text-body">
                             <Link
                               href={answer.link.href}
                               className="link-accent"
@@ -132,9 +132,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       <Card className="p-5">
         <h2 className="text-h3">{c.support.title}</h2>
-        <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.support.lede}</p>
+        <p className="mt-1 max-w-[60ch] text-body text-muted">{c.support.lede}</p>
 
-        <dl className="mt-4 flex flex-col gap-2 text-sm">
+        <dl className="mt-4 flex flex-col gap-2 text-body">
           <div className="flex flex-wrap gap-x-2">
             <dt className="text-muted">{c.support.email}:</dt>
             <dd>

@@ -37,17 +37,17 @@ export function CarrierCount({ count, explain = true, className }: CarrierCountP
         .filter(Boolean)
         .join(' ')}
     >
-      <p className="text-sm">{carrierCountSentence(count)}</p>
+      <p className="text-body">{carrierCountSentence(count)}</p>
       {none ? (
         <Link
           href={ROUTES.routes}
-          className="mt-1 inline-block text-sm underline underline-offset-2"
+          className="mt-1 inline-block text-body underline underline-offset-2"
         >
           {CARRIER_COUNT_COPY.zeroLinkLabel}
         </Link>
       ) : null}
       {explain && !none ? (
-        <p className="mt-1 text-xs text-muted">{CARRIER_COUNT_COPY.how}</p>
+        <p className="mt-1 text-small text-muted">{CARRIER_COUNT_COPY.how}</p>
       ) : null}
     </div>
   );

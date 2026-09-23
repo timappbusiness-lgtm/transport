@@ -97,13 +97,13 @@ function Labelled({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
+      <label htmlFor={htmlFor} className="text-body font-medium">
         {label}
         {auto ? <AutoChip /> : null}
       </label>
       {children}
       {hint ? (
-        <p id={`${htmlFor}-hint`} className="text-xs text-muted">
+        <p id={`${htmlFor}-hint`} className="text-small text-muted">
           {hint}
         </p>
       ) : null}
@@ -131,7 +131,7 @@ function Check({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2.5 text-sm">
+    <label className="flex items-center gap-2.5 text-body">
       <input
         type="checkbox"
         checked={checked}
@@ -692,7 +692,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           </div>
 
           <fieldset className="flex flex-col gap-2.5 rounded-card border border-border bg-background p-4">
-            <legend className="px-1 text-sm font-medium">{c.vehicle.more}</legend>
+            <legend className="px-1 text-body font-medium">{c.vehicle.more}</legend>
             <Check label={c.condition.wheelsTurn} checked={draft.wheelsTurn} onChange={(value) => set('wheelsTurn', value)} />
             <Check
               label={c.condition.steeringWorks}
@@ -739,9 +739,9 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           {photoUrl !== null && signedIn ? (
             <div className="flex flex-col gap-1.5 rounded-card border border-border bg-ground-alt p-4">
               <Check label={importCopy.attach.label} checked={attachPhoto} onChange={onAttachChange} />
-              <p className="pl-7 text-xs text-muted">{importCopy.attach.hint}</p>
+              <p className="pl-7 text-small text-muted">{importCopy.attach.hint}</p>
               {photoNote !== null ? (
-                <p role="status" className="pl-7 text-xs text-muted">
+                <p role="status" className="pl-7 text-small text-muted">
                   {photoNote}
                 </p>
               ) : null}
@@ -973,7 +973,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           </button>
         )}
 
-        <span className="hidden text-xs text-muted sm:inline">{c.stepOf(index + 1, REQUEST_STEPS.length)}</span>
+        <span className="hidden text-small text-muted sm:inline">{c.stepOf(index + 1, REQUEST_STEPS.length)}</span>
       </div>
     </form>
   );
@@ -1119,7 +1119,7 @@ function AccountPanel({ returnTo }: { returnTo: string }) {
   return (
     <section className="rounded-card border border-accent-border bg-accent-subtle p-5">
       <h2 className="text-h3">{c.title}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-foreground">{c.body}</p>
+      <p className="mt-2 max-w-[54ch] text-body text-foreground">{c.body}</p>
       <div className="mt-4 flex flex-wrap gap-3">
         <Link href={`${ROUTES.signUpIndividual}${next}`} className={buttonClasses('primary', 'md')}>
           {c.signUp}
@@ -1163,7 +1163,7 @@ function Result({ state, draft }: { state: PublishRequestState; draft: RequestDr
       ) : (
         <div className="rounded-card border border-border bg-surface p-6">
           <h2 className="text-h3">{c.title}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm">{state.publishError}</p>
+          <p className="mt-2 max-w-[54ch] text-body">{state.publishError}</p>
         </div>
       )}
       <div className="flex flex-wrap gap-3">

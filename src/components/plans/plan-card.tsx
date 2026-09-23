@@ -75,9 +75,9 @@ export function PlanCard({
         </p>
       ) : null}
 
-      <h3 className="text-lg">{plan.name}</h3>
+      <h3 className="text-h3">{plan.name}</h3>
       {plan.description ? (
-        <p className="mt-1.5 text-sm leading-relaxed text-muted">{plan.description}</p>
+        <p className="mt-1.5 text-body leading-relaxed text-muted">{plan.description}</p>
       ) : null}
 
       <div className="mt-5">
@@ -94,7 +94,7 @@ export function PlanCard({
               <span className="text-body text-muted">{c.perMonth}</span>
             </p>
             {price.months > 1 ? (
-              <p className="mt-2 text-sm text-muted">{c.billed(totalLabel(price))}</p>
+              <p className="mt-2 text-body text-muted">{c.billed(totalLabel(price))}</p>
             ) : null}
             {price.freeMonths !== null ? (
               <p className="mt-2 inline-flex rounded-pill border border-success/35 bg-success/8 px-2.5 py-1 text-small">
@@ -104,11 +104,11 @@ export function PlanCard({
               <p className="mt-2 text-small text-muted">{savingLabel(price.saving)}</p>
             ) : null}
             {settings.vatLabel ? (
-              <p className="mt-2 text-xs text-muted">{settings.vatLabel}</p>
+              <p className="mt-2 text-small text-muted">{settings.vatLabel}</p>
             ) : null}
           </>
         ) : (
-          <p className="text-sm text-muted">{c.noPeriod}</p>
+          <p className="text-body text-muted">{c.noPeriod}</p>
         )}
       </div>
 

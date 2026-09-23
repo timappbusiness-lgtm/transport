@@ -65,7 +65,7 @@ export function SkipLink() {
   return (
     <a
       href="#continut"
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-input focus:border focus:border-border-strong focus:bg-surface focus:px-4 focus:py-2 focus:text-sm"
+      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-input focus:border focus:border-border-strong focus:bg-surface focus:px-4 focus:py-2 focus:text-body"
     >
       {c.skipToContent}
     </a>

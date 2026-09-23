@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { openMenu, settled } from './settled';
 
 /**
  * The warmth pass, checked in a browser: where the accent is and is not,
@@ -189,7 +189,10 @@ test.describe('a slow page', () => {
       },
     );
 
-    await page.locator('a[href="/cereri"]:visible').first().click();
+    // The bar's own link: on a phone it is behind „Meniu", and opening
+    // the menu is what brings it on screen and prefetches it.
+    if (await openMenu(page)) await page.waitForLoadState('networkidle');
+    await page.locator('header a[href="/cereri"]:visible').first().click();
     const skeleton = page.locator('[data-skeleton]');
     await expect(skeleton).toBeVisible();
     await expect(skeleton).toHaveAttribute('aria-busy', 'true');

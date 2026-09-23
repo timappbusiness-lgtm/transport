@@ -61,7 +61,7 @@ export function VerificationBody({
 function Steps() {
   return (
     <section aria-labelledby="pasi" className="mt-14">
-      <h2 id="pasi" className="text-lg">
+      <h2 id="pasi" className="text-h3">
         {c.steps.title}
       </h2>
       <ol className="mt-6 flex flex-col gap-6 sm:gap-0">
@@ -70,7 +70,7 @@ function Steps() {
             <div className="flex flex-none flex-col items-center">
               <span
                 aria-hidden="true"
-                className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-mono text-xs tabular-nums"
+                className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-mono text-small tabular-nums"
               >
                 {index + 1}
               </span>
@@ -79,7 +79,7 @@ function Steps() {
               ) : null}
             </div>
             <div className={cn('min-w-0', index < c.steps.items.length - 1 && 'sm:pb-6')}>
-              <h3 className="text-base font-normal">{step.title}</h3>
+              <h3 className="text-h3 font-normal">{step.title}</h3>
               <p className="mt-1.5 max-w-[60ch] text-body leading-relaxed text-muted">
                 {step.body}
               </p>
@@ -101,10 +101,10 @@ function Steps() {
 function Documents({ documents }: { documents: PublicRequirement[] }) {
   return (
     <section aria-labelledby="documente" className="mt-14">
-      <h2 id="documente" className="text-lg">
+      <h2 id="documente" className="text-h3">
         {c.documents.title}
       </h2>
-      <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.documents.lede}</p>
+      <p className="mt-2 max-w-[60ch] text-body text-muted">{c.documents.lede}</p>
 
       <div className="mt-6 hidden overflow-hidden rounded-card border border-border bg-surface sm:block">
         <table className="w-full border-collapse text-body">
@@ -134,7 +134,7 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
                     </span>
                   ) : null}
                 </th>
-                <td className="border-b border-border px-5 py-3.5 align-top text-sm">
+                <td className="border-b border-border px-5 py-3.5 align-top text-body">
                   {scopeText(doc)}
                   {exemptionText(doc) ? (
                     <span className="mt-1 block text-small text-muted">
@@ -142,7 +142,7 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
                     </span>
                   ) : null}
                 </td>
-                <td className="border-b border-border px-5 py-3.5 align-top text-sm text-muted">
+                <td className="border-b border-border px-5 py-3.5 align-top text-body text-muted">
                   {expiryText(doc)}
                 </td>
               </tr>
@@ -206,12 +206,12 @@ function expiryText(doc: PublicRequirement): string {
 function Scope() {
   return (
     <section aria-labelledby="ce-verificam" className="mt-14">
-      <h2 id="ce-verificam" className="text-lg">
+      <h2 id="ce-verificam" className="text-h3">
         {c.scope.title}
       </h2>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <div className="rounded-card border border-border bg-surface p-5">
-          <h3 className="text-base font-normal">{c.scope.weDo.title}</h3>
+          <h3 className="text-h3 font-normal">{c.scope.weDo.title}</h3>
           <ul className="mt-3 flex flex-col gap-2">
             {c.scope.weDo.items.map((item) => (
               <li key={item} className="text-body leading-relaxed text-muted">
@@ -221,7 +221,7 @@ function Scope() {
           </ul>
         </div>
         <div className="rounded-card border border-border bg-surface p-5">
-          <h3 className="text-base font-normal">{c.scope.weDont.title}</h3>
+          <h3 className="text-h3 font-normal">{c.scope.weDont.title}</h3>
           <ul className="mt-3 flex flex-col gap-2">
             {c.scope.weDont.items.map((item) => (
               <li key={item} className="text-body leading-relaxed text-muted">
@@ -240,7 +240,7 @@ function Scope() {
 function Report({ signedIn }: { signedIn: boolean }) {
   return (
     <section aria-labelledby="sesizare" className="mt-14">
-      <h2 id="sesizare" className="text-lg">
+      <h2 id="sesizare" className="text-h3">
         {c.report.title}
       </h2>
       <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-muted">
@@ -267,11 +267,11 @@ function LegalLinks() {
   const l = legalCopy.verification;
   return (
     <section aria-labelledby="documente" className="mt-14 border-t border-border pt-10">
-      <h2 id="documente" className="text-lg">
+      <h2 id="documente" className="text-h3">
         {l.title}
       </h2>
-      <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-muted">{l.body}</p>
-      <nav aria-label="Documente legale" className="mt-4 flex flex-wrap gap-5 text-sm">
+      <p className="mt-3 max-w-[62ch] text-body leading-relaxed text-muted">{l.body}</p>
+      <nav aria-label="Documente legale" className="mt-4 flex flex-wrap gap-5 text-body">
         <Link href={ROUTES.terms} className="link-accent">
           {l.terms}
         </Link>
@@ -289,14 +289,14 @@ function LegalLinks() {
 function Faq({ reviewTimeLabel }: { reviewTimeLabel: string | null }) {
   return (
     <section aria-labelledby="intrebari" className="mt-14 border-t border-border pt-10">
-      <h2 id="intrebari" className="text-lg">
+      <h2 id="intrebari" className="text-h3">
         {c.faq.title}
       </h2>
       <dl className="mt-6 grid gap-6 md:grid-cols-2">
         {reviewTimeLabel ? (
           <div>
             <dt className="font-medium">{c.faq.reviewTime.q}</dt>
-            <dd className="mt-2 text-sm leading-relaxed text-muted">
+            <dd className="mt-2 text-body leading-relaxed text-muted">
               {c.faq.reviewTime.a(reviewTimeLabel)}
             </dd>
           </div>
@@ -304,7 +304,7 @@ function Faq({ reviewTimeLabel }: { reviewTimeLabel: string | null }) {
         {c.faq.items.map((item) => (
           <div key={item.q}>
             <dt className="font-medium">{item.q}</dt>
-            <dd className="mt-2 text-sm leading-relaxed text-muted">{item.a}</dd>
+            <dd className="mt-2 text-body leading-relaxed text-muted">{item.a}</dd>
           </div>
         ))}
       </dl>

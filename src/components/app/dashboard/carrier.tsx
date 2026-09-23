@@ -141,7 +141,7 @@ export function CarrierHome({
             ) : null}
           </div>
         ) : verified ? (
-          <p className="mt-3 text-sm text-muted">{h.nothingToDo}</p>
+          <p className="mt-3 text-body text-muted">{h.nothingToDo}</p>
         ) : null}
       </section>
 
@@ -383,7 +383,7 @@ function MatchReasons({
           {reasons.map((reason) => (
             <li
               key={reason}
-              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-xs text-muted"
+              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-small text-muted"
             >
               {c.matches.reasons[reason] ?? reason}
             </li>
@@ -395,7 +395,7 @@ function MatchReasons({
           a route name, and a pill that wraps to three lines on a phone is
           not a pill. */}
       {detour !== undefined ? (
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-2 text-small text-muted">
           {c.matches.detour(detour.detourKm, detour.toleranceKm, detour.fromCity, detour.toCity)}
         </p>
       ) : null}

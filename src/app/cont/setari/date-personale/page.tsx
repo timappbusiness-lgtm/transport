@@ -57,7 +57,7 @@ export default async function Page() {
       />
 
       {data.supportEmail !== null ? (
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Dacă ceva de aici nu merge, scrie-ne la{' '}
           <a href={`mailto:${data.supportEmail}`} className="underline underline-offset-2">
             {data.supportEmail}

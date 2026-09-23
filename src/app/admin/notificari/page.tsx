@@ -1,6 +1,6 @@
 import { RetryNotification } from '@/components/admin/retry-notification';
 import { TestNotification } from '@/components/admin/test-notification';
-import { EyebrowPill } from '@/components/ui/primitives';
+import { EyebrowPill, Figure } from '@/components/ui/primitives';
 import { loadNotificationsAdminData } from '@/lib/notifications-admin-source';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +57,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">Notificări și joburi</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">
+        <p className="mt-2 max-w-[62ch] text-body text-muted">
           Ce trimitem, ce a eșuat și dacă joburile programate chiar rulează. Un job care nu mai
           rulează nu anunță pe nimeni — de asta se vede aici.
         </p>
@@ -69,7 +69,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         </h2>
 
         {provider.configured === 'nu' ? (
-          <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+          <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
             <strong>Neconfigurat.</strong> Dispecerul a refuzat să pornească pentru că lipsește{' '}
             <code className="font-mono">{provider.missing}</code>
             {provider.reportedAt !== null ? <> (ultima dată {when(provider.reportedAt)})</> : null}.
@@ -77,12 +77,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
             <code className="font-mono">docs/configurare-externa.md</code>.
           </p>
         ) : provider.configured === 'necunoscut' ? (
-          <p className="rounded-card border border-border-strong bg-surface p-4 text-sm text-muted">
+          <p className="rounded-card border border-border-strong bg-surface p-4 text-body text-muted">
             Necunoscut: dispecerul nu a rulat încă niciodată, deci nu a avut ocazia să spună dacă
             îi lipsește ceva. Se va ști după prima rulare — cel mult cinci minute.
           </p>
         ) : (
-          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
+          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-body">
             <strong>Configurat.</strong> Ultima rulare a dispecerului nu a raportat nicio variabilă
             lipsă.
           </p>
@@ -90,20 +90,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Ultimul e-mail trimis</p>
-            <p className="mt-1 text-sm">{when(mail?.last_sent_at ?? null)}</p>
+            <p className="text-small text-muted">Ultimul e-mail trimis</p>
+            <p className="mt-1 text-body">{when(mail?.last_sent_at ?? null)}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Trimise în 24 h</p>
-            <p className="mt-1 font-mono text-xl">{mail?.sent_24h ?? 0}</p>
+            <p className="text-small text-muted">Trimise în 24 h</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{mail?.sent_24h ?? 0}</Figure>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Eșuate în 24 h</p>
-            <p className="mt-1 font-mono text-xl">{mail?.failed_24h ?? 0}</p>
+            <p className="text-small text-muted">Eșuate în 24 h</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{mail?.failed_24h ?? 0}</Figure>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Adrese nelivrabile</p>
-            <p className="mt-1 font-mono text-xl">{mail?.undeliverable_addresses ?? 0}</p>
+            <p className="text-small text-muted">Adrese nelivrabile</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{mail?.undeliverable_addresses ?? 0}</Figure>
           </div>
         </div>
 
@@ -116,7 +116,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         </h2>
 
         {smsProvider.configured === 'nu' ? (
-          <p role="alert" className="rounded-card border border-warning/45 bg-warning/8 p-4 text-sm">
+          <p role="alert" className="rounded-card border border-warning/45 bg-warning/8 p-4 text-body">
             <strong>Neconfigurat.</strong> Funcția <code className="font-mono">sms-verify</code> a
             refuzat să trimită pentru că lipsește{' '}
             <code className="font-mono">{smsProvider.missing}</code>
@@ -128,34 +128,34 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
             <code className="font-mono">docs/configurare-externa.md</code>.
           </p>
         ) : smsProvider.configured === 'necunoscut' ? (
-          <p className="rounded-card border border-border-strong bg-surface p-4 text-sm text-muted">
+          <p className="rounded-card border border-border-strong bg-surface p-4 text-body text-muted">
             Necunoscut: nimeni nu a cerut încă un cod prin SMS, deci funcția nu a avut ocazia să
             spună dacă îi lipsește ceva. Până atunci, numerele se confirmă de mână din{' '}
             <code className="font-mono">/admin/pilot</code>.
           </p>
         ) : (
-          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
+          <p className="rounded-card border border-success/45 bg-success/8 p-4 text-body">
             <strong>Configurat.</strong> Ultima cerere de cod nu a raportat nicio variabilă lipsă.
           </p>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Ultimul SMS trimis</p>
-            <p className="mt-1 text-sm">{when(sms?.last_sent_at ?? null)}</p>
+            <p className="text-small text-muted">Ultimul SMS trimis</p>
+            <p className="mt-1 text-body">{when(sms?.last_sent_at ?? null)}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Coduri trimise în 24 h</p>
-            <p className="mt-1 font-mono text-xl">{sms?.sent_24h ?? 0}</p>
+            <p className="text-small text-muted">Coduri trimise în 24 h</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{sms?.sent_24h ?? 0}</Figure>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Numere confirmate în 24 h</p>
-            <p className="mt-1 font-mono text-xl">{sms?.confirmed_24h ?? 0}</p>
+            <p className="text-small text-muted">Numere confirmate în 24 h</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{sms?.confirmed_24h ?? 0}</Figure>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Conturi cu numărul confirmat</p>
-            <p className="mt-1 font-mono text-xl">{sms?.verified_accounts ?? 0}</p>
-            <p className="mt-1 text-xs text-muted">
+            <p className="text-small text-muted">Conturi cu numărul confirmat</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{sms?.verified_accounts ?? 0}</Figure>
+            <p className="mt-1 text-small text-muted">
               dintre care {sms?.verified_by_staff ?? 0} de mână
             </p>
           </div>
@@ -168,7 +168,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         </h2>
 
         {healthError !== null ? (
-          <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+          <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
             Starea joburilor nu se poate citi: {healthError}
           </p>
         ) : null}
@@ -176,7 +176,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         {late.length > 0 ? (
           <p
             role="alert"
-            className="rounded-card border border-danger/45 bg-danger/8 px-4 py-3 text-sm"
+            className="rounded-card border border-danger/45 bg-danger/8 px-4 py-3 text-body"
           >
             {late.length === 1
               ? `Jobul ${late[0]!.job} nu a mai rulat de prea mult timp.`
@@ -186,8 +186,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         ) : null}
 
         <div className="overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="w-full min-w-[40rem] text-sm">
-            <thead className="border-b border-border text-left text-xs text-muted">
+          <table className="w-full min-w-[40rem] text-body">
+            <thead className="border-b border-border text-left text-small text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Job</th>
                 <th className="px-4 py-3 font-medium">Programat</th>
@@ -206,14 +206,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
               ) : (
                 health.map((job) => (
                   <tr key={job.job}>
-                    <td className="px-4 py-3 font-mono text-xs">{job.job}</td>
+                    <td className="px-4 py-3 font-mono text-small">{job.job}</td>
                     <td className="px-4 py-3">{job.scheduled ? 'da' : 'nu'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{when(job.last_run)}</td>
                     <td className="px-4 py-3">{job.last_status}</td>
                     <td className="px-4 py-3">
                       <span
                         className={cn(
-                          'rounded-full px-2 py-0.5 text-xs',
+                          'rounded-full px-2 py-0.5 text-small',
                           job.is_late
                             ? 'border border-danger/45 bg-danger/10'
                             : 'border border-success/45 bg-success/10',
@@ -231,12 +231,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
 
         {runs.length > 0 ? (
           <details className="rounded-card border border-border bg-surface px-4 py-3">
-            <summary className="cursor-pointer text-sm">Ultimele rulări</summary>
-            <ul className="mt-3 flex flex-col gap-1 text-sm">
+            <summary className="cursor-pointer text-body">Ultimele rulări</summary>
+            <ul className="mt-3 flex flex-col gap-1 text-body">
               {runs.map((run) => (
                 <li key={run.id} className="flex flex-wrap gap-x-3 text-muted">
                   <span className="whitespace-nowrap">{when(run.ran_at)}</span>
-                  <span className="font-mono text-xs">{run.workflow}</span>
+                  <span className="font-mono text-small">{run.workflow}</span>
                   <span>
                     {run.processed} trimise, {run.failed} eșuate
                   </span>
@@ -255,19 +255,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {STATUSES.map((status) => (
             <div key={status} className="rounded-card border border-border bg-surface p-4">
-              <p className="text-xs text-muted">{status}</p>
-              <p className="mt-1 font-mono text-xl">{totals.get(status) ?? 0}</p>
+              <p className="text-small text-muted">{status}</p>
+              <Figure as="p" size="sm" tone="plain" className="mt-1">{totals.get(status) ?? 0}</Figure>
             </div>
           ))}
         </div>
 
         <form className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-ground-alt p-4">
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-body">
             Stare
             <select
               name="stare"
               defaultValue={filters.status ?? ''}
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             >
               <option value="">toate</option>
               {STATUSES.map((status) => (
@@ -277,12 +277,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-body">
             Canal
             <select
               name="canal"
               defaultValue={filters.channel ?? ''}
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             >
               <option value="">toate</option>
               {CHANNELS.map((channel) => (
@@ -292,40 +292,40 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-body">
             Tip
             <input
               name="tip"
               defaultValue={filters.template ?? ''}
               placeholder="company_verified"
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-body">
             Caută
             <input
               name="cauta"
               defaultValue={filters.search ?? ''}
               placeholder="e-mail sau id"
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             />
           </label>
           <button
             type="submit"
-            className="rounded-pill border border-border-strong px-4 py-2 text-sm"
+            className="rounded-pill border border-border-strong px-4 py-2 text-body"
           >
             Filtrează
           </button>
         </form>
 
         {rows.length === 0 ? (
-          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-sm text-muted">
+          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-body text-muted">
             Nicio notificare pentru filtrele astea.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-card border border-border bg-surface">
-            <table className="w-full min-w-[52rem] text-sm">
-              <thead className="border-b border-border text-left text-xs text-muted">
+            <table className="w-full min-w-[52rem] text-body">
+              <thead className="border-b border-border text-left text-small text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Când</th>
                   <th className="px-4 py-3 font-medium">Canal</th>
@@ -342,7 +342,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
                   <tr key={row.id}>
                     <td className="px-4 py-3 whitespace-nowrap">{when(row.created_at)}</td>
                     <td className="px-4 py-3">{row.channel}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{row.template}</td>
+                    <td className="px-4 py-3 font-mono text-small">{row.template}</td>
                     <td className="px-4 py-3">{row.to_email ?? '—'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {row.status}
@@ -354,7 +354,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
                       {row.last_error ?? '—'}
                     </td>
                     <td
-                      className="max-w-[18ch] truncate px-4 py-3 font-mono text-xs text-muted"
+                      className="max-w-[18ch] truncate px-4 py-3 font-mono text-small text-muted"
                       title={row.provider_message_id ?? ''}
                     >
                       {row.provider_message_id ?? '—'}

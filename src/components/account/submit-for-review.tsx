@@ -45,7 +45,7 @@ export function SubmitForReview({
   if (status === 'pending' || state.notice) {
     return (
       <Panel title={c.pendingTitle} tone="neutral">
-        <p className="text-sm text-muted">{c.pendingBody}</p>
+        <p className="text-body text-muted">{c.pendingBody}</p>
       </Panel>
     );
   }
@@ -64,7 +64,7 @@ export function SubmitForReview({
   if (status === 'suspended') {
     return (
       <Panel title={c.suspendedTitle} tone="danger">
-        <p className="text-sm text-muted">{c.suspendedBody}</p>
+        <p className="text-body text-muted">{c.suspendedBody}</p>
       </Panel>
     );
   }
@@ -73,20 +73,20 @@ export function SubmitForReview({
 
   return (
     <section className="rounded-card border border-border bg-surface p-5">
-      <h2 className="text-sm font-medium">{c.title}</h2>
+      <h2 className="text-body font-medium">{c.title}</h2>
 
       {status === 'rejected' ? (
         <div className="mt-3">
           <StatusBadge tone="danger">{c.rejectedTitle}</StatusBadge>
-          <p className="mt-2 text-sm text-muted">{c.rejectedBody}</p>
-          {note ? <p className="mt-2 text-sm">{note}</p> : null}
+          <p className="mt-2 text-body text-muted">{c.rejectedBody}</p>
+          {note ? <p className="mt-2 text-body">{note}</p> : null}
         </div>
       ) : null}
 
-      <p className="mt-3 text-sm text-muted">
+      <p className="mt-3 text-body text-muted">
         {c.progress(String(progress.inPlace), String(progress.total))}
       </p>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-body text-muted">
         {!progress.ready
           ? c.stillMissing
           : needsVehicles && !vehiclesReady

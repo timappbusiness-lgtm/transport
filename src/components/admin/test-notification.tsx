@@ -7,7 +7,7 @@ import { MAIL_TEMPLATES } from '@/content/mail-samples';
 
 const EMPTY: RetryState = {};
 const CONTROL =
-  'rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+  'rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * „Trimite un e-mail de test".
@@ -24,14 +24,14 @@ export function TestNotification() {
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
       <div>
         <h3 className="text-body">Trimite un e-mail de test</h3>
-        <p className="mt-1 max-w-[62ch] text-sm text-muted">
+        <p className="mt-1 max-w-[62ch] text-body text-muted">
           Pune la coadă un șablon cu date de exemplu. Pleacă pe același drum ca o notificare
           adevărată, deci dacă ajunge, ajung și celelalte.
         </p>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <label htmlFor={`${id}-template`} className="flex flex-col gap-1 text-sm">
+        <label htmlFor={`${id}-template`} className="flex flex-col gap-1 text-body">
           Șablon
           <select id={`${id}-template`} name="template" defaultValue="company_verified" className={CONTROL}>
             {MAIL_TEMPLATES.map((template) => (
@@ -42,7 +42,7 @@ export function TestNotification() {
           </select>
         </label>
 
-        <label htmlFor={`${id}-email`} className="flex flex-col gap-1 text-sm">
+        <label htmlFor={`${id}-email`} className="flex flex-col gap-1 text-body">
           Adresa
           <input
             id={`${id}-email`}
@@ -61,12 +61,12 @@ export function TestNotification() {
       </div>
 
       {state.error !== undefined ? (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {state.error}
         </p>
       ) : null}
       {state.notice !== undefined ? (
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-body text-muted">
           {state.notice}
         </p>
       ) : null}

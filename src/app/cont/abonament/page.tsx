@@ -48,14 +48,14 @@ export default async function Page() {
       <div>
         <EyebrowPill>{accountCopy.nav.subscription}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[60ch] text-body text-muted">{c.lede}</p>
       </div>
 
       {hasPlan ? (
         <Current subscription={subscription} plan={plan} />
       ) : (
         <section className="rounded-card border border-border bg-surface p-5">
-          <p className="text-sm text-muted">{c.none}</p>
+          <p className="text-body text-muted">{c.none}</p>
         </section>
       )}
 
@@ -98,7 +98,7 @@ function Current({
         {c.plan}
       </h2>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-lg">{plan?.name ?? subscription.planCode}</p>
+        <p className="text-h3">{plan?.name ?? subscription.planCode}</p>
         <StatusBadge tone={tone}>
           {subscription.isTrial
             ? 'Perioadă gratuită'
@@ -109,7 +109,7 @@ function Current({
       </div>
 
       {plan ? (
-        <p className="mt-1 font-mono text-sm tabular-nums text-muted">
+        <p className="mt-1 font-mono text-body tabular-nums text-muted">
           {formatLei(plan.monthlyPrice)} pe lună
         </p>
       ) : null}
@@ -147,7 +147,7 @@ function Pending({
       <h2 id="cerere" className="text-body font-medium">
         {c.pending.title}
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
+      <p className="mt-2 text-body leading-relaxed text-muted">
         {c.pending.body(plan?.name ?? request.planCode, pluralRo(request.months, 'lună', 'luni'))}
       </p>
       {request.status === 'contacted' ? (

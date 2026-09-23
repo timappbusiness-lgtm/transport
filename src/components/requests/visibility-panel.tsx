@@ -44,18 +44,18 @@ export function VisibilityPanel({
   return (
     <Card className="p-5">
       <h2 className="text-h3">{c.title}</h2>
-      <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.privateLede}</p>
+      <p className="mt-1 max-w-[60ch] text-body text-muted">{c.privateLede}</p>
       <p className="mt-2">
         <HelpLink topic="privateRequests" />
       </p>
 
       {carriers.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">{c.noFavourites}</p>
+        <p className="mt-4 text-body text-muted">{c.noFavourites}</p>
       ) : (
         <form action={inviteAction} className="mt-4 flex flex-col gap-3">
           <input type="hidden" name="request_id" value={requestId} />
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">{c.invited}</legend>
+            <legend className="text-body font-medium">{c.invited}</legend>
             <div className="flex flex-wrap gap-1.5">
               {carriers.map((carrier) => (
                 <label

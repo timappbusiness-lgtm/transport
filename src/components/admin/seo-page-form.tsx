@@ -61,7 +61,7 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="field-intro" className="text-sm font-medium">
+        <label htmlFor="field-intro" className="text-body font-medium">
           Introducere
         </label>
         <textarea
@@ -71,7 +71,7 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
           defaultValue={page.intro}
           className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
         />
-        <p className="text-xs text-muted">
+        <p className="text-small text-muted">
           Două sau trei propoziții despre această rută. Fără cifre: distanța,
           durata și prețul se citesc live și apar singure mai jos pe pagină.
         </p>
@@ -79,8 +79,8 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
       </div>
 
       <fieldset className="flex flex-col gap-4 border-t border-border pt-5">
-        <legend className="mb-1 text-sm font-medium">{seoCopy.faq.title}</legend>
-        <p className="text-xs text-muted">
+        <legend className="mb-1 text-body font-medium">{seoCopy.faq.title}</legend>
+        <p className="text-small text-muted">
           Între trei și cinci întrebări. Apar și ca date structurate, deci o
           întrebare fără răspuns nu se poate salva.
         </p>
@@ -95,7 +95,7 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
               defaultValue={item.q}
             />
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" htmlFor={`faq-a-${index}`}>
+              <label className="text-body font-medium" htmlFor={`faq-a-${index}`}>
                 Răspuns
               </label>
               <textarea

@@ -48,7 +48,7 @@ export function OrdersWidget({
       </h2>
 
       <Card className="mt-3 p-5">
-        <ul className="flex flex-col gap-2 text-sm">
+        <ul className="flex flex-col gap-2 text-body">
           {waiting.length > 0 ? (
             <li>
               <Link

@@ -39,7 +39,7 @@ export default async function Page() {
 
       {groups.map((group) => (
         <section key={group.id} aria-labelledby={group.id} className="mt-12">
-          <h2 id={group.id} className="text-lg">
+          <h2 id={group.id} className="text-h3">
             {group.title}
           </h2>
           <FaqAccordion entries={group.entries} className="mt-5 lg:grid-cols-2" />
@@ -48,7 +48,7 @@ export default async function Page() {
 
       {/* No address configured means no link: a mailto that goes nowhere
           is worse than not offering one. */}
-      <p className="mt-12 text-sm text-muted">
+      <p className="mt-12 text-body text-muted">
         {c.page.stillStuck}{' '}
         {SUPPORT_EMAIL ? (
           <Link

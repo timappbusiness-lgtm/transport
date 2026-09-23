@@ -10,7 +10,7 @@ import { formatNumber } from '@/lib/requests';
 export const dynamic = 'force-dynamic';
 
 const c = auditCopy;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -86,7 +86,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.hero.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
       <form
@@ -94,11 +94,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         action={ROUTES.adminAuditLog}
         className="rounded-card border border-border bg-surface p-5"
       >
-        <h2 className="mb-4 text-sm font-medium">{c.filters.title}</h2>
+        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-action" className="text-xs font-medium">
+            <label htmlFor="ja-action" className="text-small font-medium">
               {c.filters.action}
             </label>
             <select
@@ -117,7 +117,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-entity" className="text-xs font-medium">
+            <label htmlFor="ja-entity" className="text-small font-medium">
               {c.filters.entity}
             </label>
             <select
@@ -136,7 +136,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-actor" className="text-xs font-medium">
+            <label htmlFor="ja-actor" className="text-small font-medium">
               {c.filters.actor}
             </label>
             <input
@@ -144,13 +144,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               name="autor"
               defaultValue={query.actor ?? ''}
               placeholder="00000000-0000-0000-0000-000000000000"
-              className={`${CONTROL} font-mono text-xs`}
+              className={`${CONTROL} font-mono text-small`}
             />
-            <p className="text-xs text-muted">{c.filters.actorHint}</p>
+            <p className="text-small text-muted">{c.filters.actorHint}</p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-from" className="text-xs font-medium">
+            <label htmlFor="ja-from" className="text-small font-medium">
               {c.filters.from}
             </label>
             <input
@@ -163,7 +163,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-to" className="text-xs font-medium">
+            <label htmlFor="ja-to" className="text-small font-medium">
               {c.filters.to}
             </label>
             <input
@@ -189,17 +189,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           {filtered ? (
             <a
               href={ROUTES.adminAuditLog}
-              className="text-sm text-muted underline-offset-4 hover:underline"
+              className="text-body text-muted underline-offset-4 hover:underline"
             >
               {c.filters.clear}
             </a>
           ) : null}
         </div>
-        <p className="mt-2 text-xs text-muted">{c.filters.exportHint}</p>
+        <p className="mt-2 text-small text-muted">{c.filters.exportHint}</p>
       </form>
 
       {page.error !== null ? (
-        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
           Nu se poate citi jurnalul acum.
         </p>
       ) : null}
@@ -207,9 +207,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {page.entries.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
           <h2 className="text-h3">{c.empty.title}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.empty.body}</p>
           {filtered ? (
-            <p className="mt-5 text-sm">
+            <p className="mt-5 text-body">
               <Link href={ROUTES.adminAuditLog} className="underline underline-offset-4">
                 {c.empty.action}
               </Link>
@@ -218,7 +218,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         </div>
       ) : (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             {c.list.total(formatNumber(page.total))} · {c.list.page(query.page, lastPage)}
           </p>
 

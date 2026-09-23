@@ -12,7 +12,7 @@ export function RetryNotification({ id }: { id: string }) {
   const [state, action, pending] = useActionState(retryNotificationAction, EMPTY);
 
   if (state.notice !== undefined) {
-    return <span className="text-xs text-muted">{state.notice}</span>;
+    return <span className="text-small text-muted">{state.notice}</span>;
   }
 
   return (
@@ -26,7 +26,7 @@ export function RetryNotification({ id }: { id: string }) {
         {pending ? 'Se reîncearcă…' : 'Reîncearcă'}
       </button>
       {state.error !== undefined ? (
-        <span role="alert" className="text-xs text-danger">
+        <span role="alert" className="text-small text-danger">
           {state.error}
         </span>
       ) : null}

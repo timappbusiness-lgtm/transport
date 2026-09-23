@@ -262,7 +262,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                 <span
                   aria-hidden="true"
                   data-account-avatar
-                  className="flex size-6 flex-none items-center justify-center rounded-full bg-accent-bright text-xs font-semibold text-on-accent-bright"
+                  className="flex size-6 flex-none items-center justify-center rounded-full bg-accent-bright text-small font-semibold text-on-accent-bright"
                 >
                   {initialOf(user.name)}
                 </span>
@@ -318,7 +318,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                       aria-current={current ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
                       className={cn(
-                        'flex items-center justify-between gap-3 px-4 py-2.5 text-sm',
+                        'flex items-center justify-between gap-3 px-4 py-2.5 text-body',
                         'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
                         current ? 'bg-accent-subtle font-medium text-accent' : 'hover:bg-ground-alt',
                       )}
@@ -339,7 +339,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                   <button
                     type="submit"
                     role="menuitem"
-                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-ground-alt focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground"
+                    className="w-full px-4 py-2.5 text-left text-body text-danger hover:bg-ground-alt focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground"
                   >
                     {accountCopy.nav.signOut}
                   </button>

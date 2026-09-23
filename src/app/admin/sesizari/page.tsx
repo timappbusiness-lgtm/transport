@@ -45,7 +45,7 @@ export default async function Page({
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.hero.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
       <nav aria-label={c.filters.label} className="flex flex-wrap gap-1.5">
@@ -63,9 +63,9 @@ export default async function Page({
       {rows.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
           <h2 className="text-h3">{status === null ? c.empty.title : c.empty.filtered}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.empty.body}</p>
           {status !== null ? (
-            <p className="mt-5 text-sm">
+            <p className="mt-5 text-body">
               <Link href={ROUTES.adminReports} className="underline underline-offset-4">
                 {c.empty.action}
               </Link>
@@ -74,7 +74,7 @@ export default async function Page({
         </div>
       ) : (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             {rows.length} în listă · {openCount(rows)} încă deschise
           </p>
           <ul className="flex flex-col gap-4">
@@ -94,7 +94,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
       href={href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'rounded-pill border px-3.5 py-1.5 text-sm',
+        'rounded-pill border px-3.5 py-1.5 text-body',
         active
           ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',

@@ -46,7 +46,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
       <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-sm">{children}</dd>
+      <dd className="min-w-0 text-body">{children}</dd>
     </div>
   );
 }
@@ -101,7 +101,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="mx-auto w-full max-w-[60rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
-      <p className="text-sm">
+      <p className="text-body">
         <Link href={ROUTES.requests} className="text-muted underline-offset-4 hover:underline">
           ← {c.back}
         </Link>
@@ -155,7 +155,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               ) : null}
               <Row label={c.service}>
                 {SERVICE_TYPE_LABELS[request.service_type]}
-                <span className="block text-xs text-muted">
+                <span className="block text-small text-muted">
                   {SERVICE_TYPE_NOTES[request.service_type]}
                 </span>
               </Row>
@@ -197,12 +197,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {detail?.description ? (
             <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
               <h2 className="text-h3">{c.notes}</h2>
-              <p className="mt-3 whitespace-pre-line text-sm">{detail.description}</p>
+              <p className="mt-3 whitespace-pre-line text-body">{detail.description}</p>
             </div>
           ) : null}
 
           {context === null ? (
-            <p className="max-w-[54ch] text-sm text-muted">{c.anonBody}</p>
+            <p className="max-w-[54ch] text-body text-muted">{c.anonBody}</p>
           ) : null}
         </section>
 

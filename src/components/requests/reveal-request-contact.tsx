@@ -34,17 +34,17 @@ export function RevealRequestContact({
     return (
       <div className="rounded-input border border-success/40 bg-success/8 px-4 py-3">
         {state.contact.name ? (
-          <p className="text-sm font-medium">{state.contact.name}</p>
+          <p className="text-body font-medium">{state.contact.name}</p>
         ) : null}
         {state.contact.phone ? (
-          <p className="font-mono text-sm tabular-nums">
+          <p className="font-mono text-body tabular-nums">
             <a href={`tel:${state.contact.phone}`} className="link-accent">
               {state.contact.phone}
             </a>
           </p>
         ) : null}
         {state.contact.email ? (
-          <p className="text-sm">
+          <p className="text-body">
             <a href={`mailto:${state.contact.email}`} className="link-accent">
               {state.contact.email}
             </a>
@@ -62,7 +62,7 @@ export function RevealRequestContact({
       </button>
       <FormError>{state.error}</FormError>
       {state.error && isQuotaError(state.error) ? (
-        <p className="text-sm">
+        <p className="text-body">
           <Link
             href={ROUTES.plans}
             className="link-accent"

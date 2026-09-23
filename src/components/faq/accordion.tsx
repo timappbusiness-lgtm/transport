@@ -97,7 +97,7 @@ function Item({
             </p>
           ))}
           {entry.link ? (
-            <p className="mt-3 text-sm">
+            <p className="mt-3 text-body">
               <Link
                 href={entry.link.href}
                 className="link-accent"

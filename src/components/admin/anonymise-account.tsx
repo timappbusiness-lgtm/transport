@@ -21,14 +21,14 @@ export function AnonymiseAccount() {
   return (
     <form action={action} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.userId}
           <input name="user_id" required autoComplete="off" className={CONTROL} />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.reason}
           <input name="reason" required autoComplete="off" className={CONTROL} />
-          <span className="text-xs font-normal text-muted">{c.reasonHint}</span>
+          <span className="text-small font-normal text-muted">{c.reasonHint}</span>
         </label>
       </div>
       <div>

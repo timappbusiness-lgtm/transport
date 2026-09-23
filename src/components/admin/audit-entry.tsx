@@ -28,29 +28,29 @@ export function AuditEntryRow({ entry }: { entry: AuditEntry }) {
   return (
     <li className="rounded-card border border-border bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="font-mono text-sm">{entry.action}</p>
-        <p className="text-xs text-muted tabular-nums">{when(entry.created_at)}</p>
+        <p className="font-mono text-body">{entry.action}</p>
+        <p className="text-small text-muted tabular-nums">{when(entry.created_at)}</p>
       </div>
 
-      <p className="mt-1.5 text-sm text-muted">
+      <p className="mt-1.5 text-body text-muted">
         {c.actor}: {entry.actor_name ?? entry.actor_user_id ?? c.system}
         {entry.actor_role === null ? '' : ` (${entry.actor_role})`}
         {entry.entity === null ? '' : ` · ${entry.entity}`}
       </p>
 
       {entry.entity_id === null ? null : (
-        <p className="mt-0.5 break-all font-mono text-xs text-muted">{entry.entity_id}</p>
+        <p className="mt-0.5 break-all font-mono text-small text-muted">{entry.entity_id}</p>
       )}
 
       {entry.reason === null ? null : (
-        <p className="mt-2 text-sm">
+        <p className="mt-2 text-body">
           <span className="text-muted">{c.reason}: </span>
           {entry.reason}
         </p>
       )}
 
       {changes.length === 0 ? (
-        <p className="mt-2 text-xs text-muted">{c.noChanges}</p>
+        <p className="mt-2 text-small text-muted">{c.noChanges}</p>
       ) : (
         <>
           <p className="mt-2">
@@ -58,7 +58,7 @@ export function AuditEntryRow({ entry }: { entry: AuditEntry }) {
               type="button"
               onClick={() => setOpen((value) => !value)}
               aria-expanded={open}
-              className="text-sm text-muted underline underline-offset-4 hover:text-foreground"
+              className="text-body text-muted underline underline-offset-4 hover:text-foreground"
             >
               {open ? c.hide : `${c.show} (${changes.length})`}
             </button>
@@ -68,7 +68,7 @@ export function AuditEntryRow({ entry }: { entry: AuditEntry }) {
             /* Scrolls inside itself rather than pushing the page sideways:
                a JSON value can be longer than a phone is wide. */
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[30rem] text-left text-xs">
+              <table className="w-full min-w-[30rem] text-left text-small">
                 <thead className="text-muted">
                   <tr>
                     <th scope="col" className="py-1 pr-3 font-normal">

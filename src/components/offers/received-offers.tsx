@@ -83,7 +83,7 @@ export function ReceivedOffers({
     return (
       <div className="rounded-card border border-dashed border-border-strong bg-surface p-6">
         <h3 className="text-h3">{c.empty}</h3>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
+        <p className="mt-2 max-w-[54ch] text-body text-muted">{c.emptyBody}</p>
       </div>
     );
   }
@@ -94,12 +94,12 @@ export function ReceivedOffers({
 
       {live.length > 1 ? (
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-body">
             {c.sortBy}
             <select
               value={sort}
               onChange={(event) => setSort(event.target.value as OfferSort)}
-              className="rounded-input border border-border-strong bg-surface px-3 py-1.5 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-1.5 text-body"
             >
               {(Object.keys(SORT_LABELS) as OfferSort[]).map((key) => (
                 <option key={key} value={key}>
@@ -138,14 +138,14 @@ export function ReceivedOffers({
 
       {settled.length > 0 ? (
         <details className="rounded-card border border-border bg-surface p-4">
-          <summary className="cursor-pointer text-sm text-muted">
+          <summary className="cursor-pointer text-body text-muted">
             {settled.length === 1
               ? 'O ofertă închisă'
               : `${settled.length} oferte închise`}
           </summary>
           <ul className="mt-3 flex flex-col gap-2">
             {settled.map((offer) => (
-              <li key={offer.id} className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+              <li key={offer.id} className="flex flex-wrap items-baseline justify-between gap-2 text-body">
                 <span>{offer.company_name ?? 'Transportator'}</span>
                 <span className="text-muted">
                   {formatMoney(offer.price_amount, offer.currency)} ·{' '}
@@ -169,7 +169,7 @@ function AcceptedNote({ offer }: { offer: OfferForRequest }) {
       title={successCopy.offerAccepted.title}
       body={successCopy.offerAccepted.body}
     >
-      <p className="flex flex-wrap items-center gap-2 text-sm">
+      <p className="flex flex-wrap items-center gap-2 text-body">
         <StatusBadge tone="success">{offersCopy.accept.done}</StatusBadge>
         <span>
           {offer.company_name} ·{' '}
@@ -182,10 +182,10 @@ function AcceptedNote({ offer }: { offer: OfferForRequest }) {
         <OrderContacts offerId={offer.id} />
       </div>
 
-      <p className="mt-4 text-sm font-medium">{offersCopy.accept.nextSteps}</p>
+      <p className="mt-4 text-body font-medium">{offersCopy.accept.nextSteps}</p>
       <ol className="mt-2 flex list-decimal flex-col gap-1 pl-5">
         {offersCopy.accept.steps.map((step) => (
-          <li key={step} className="text-sm text-muted">
+          <li key={step} className="text-body text-muted">
             {step}
           </li>
         ))}
@@ -226,7 +226,7 @@ function OfferCard({
               {offer.company_name ?? 'Transportator'}
             </IconLabel>
           </h3>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-small">
             {offer.company_verified === true ? (
               <StatusBadge tone="success">{c.verified}</StatusBadge>
             ) : (
@@ -250,7 +250,7 @@ function OfferCard({
             />
           </p>
           {offer.company_slug !== null ? (
-            <p className="mt-1.5 text-sm">
+            <p className="mt-1.5 text-body">
               <Link
                 href={companyRoute(offer.company_slug)}
                 className="link-accent"
@@ -265,13 +265,13 @@ function OfferCard({
           <p className="font-display text-h2 leading-none tabular-nums">
             {formatMoney(offer.price_amount, offer.currency)}
           </p>
-          <p className={cn('mt-1 text-xs', urgent ? 'text-danger' : 'text-muted')}>
+          <p className={cn('mt-1 text-small', urgent ? 'text-danger' : 'text-muted')}>
             {timeLeft(offer.valid_until, now)}
           </p>
         </div>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+      <dl className="mt-4 grid gap-3 text-body sm:grid-cols-3">
         <Cell label={c.pickup} value={offer.estimated_pickup_date} />
         <Cell label={c.delivery} value={offer.estimated_delivery_date} />
         <div>
@@ -280,7 +280,7 @@ function OfferCard({
               registration number tells them nothing at this point and
               is operational detail. It appears on the order, where it
               is what somebody at the loading point checks against. */}
-          <dt className="text-xs text-muted">{c.vehicle}</dt>
+          <dt className="text-small text-muted">{c.vehicle}</dt>
           <dd className="mt-0.5">
             {offer.vehicle_type === null
               ? '—'
@@ -292,17 +292,17 @@ function OfferCard({
 
       {offer.conditions !== null ? (
         <div className="mt-4">
-          <p className="text-xs text-muted">{c.conditions}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{offer.conditions}</p>
+          <p className="text-small text-muted">{c.conditions}</p>
+          <p className="mt-1 whitespace-pre-line text-body">{offer.conditions}</p>
         </div>
       ) : null}
 
       {offer.payment_term_days !== null ? (
-        <p className="mt-2 text-sm text-muted">{c.paymentTerm(offer.payment_term_days)}</p>
+        <p className="mt-2 text-body text-muted">{c.paymentTerm(offer.payment_term_days)}</p>
       ) : null}
 
       {offer.message !== null ? (
-        <p className="mt-3 whitespace-pre-line text-sm">{offer.message}</p>
+        <p className="mt-3 whitespace-pre-line text-body">{offer.message}</p>
       ) : null}
 
       {canAct ? (
@@ -311,8 +311,8 @@ function OfferCard({
             <form action={accept} className="w-full rounded-card border border-border bg-ground-alt p-4">
               <input type="hidden" name="offer_id" value={offer.id} />
               <input type="hidden" name="listing_id" value={listingId} />
-              <p className="text-sm font-medium">{offersCopy.accept.title}</p>
-              <p className="mt-2 text-sm">
+              <p className="text-body font-medium">{offersCopy.accept.title}</p>
+              <p className="mt-2 text-body">
                 {formatMoney(offer.price_amount, offer.currency)}
                 {offer.estimated_pickup_date !== null
                   ? ` · ridicare ${formatDay(offer.estimated_pickup_date)}`
@@ -322,10 +322,10 @@ function OfferCard({
                   : ''}
               </p>
               {offer.conditions !== null ? (
-                <p className="mt-1 whitespace-pre-line text-sm text-muted">{offer.conditions}</p>
+                <p className="mt-1 whitespace-pre-line text-body text-muted">{offer.conditions}</p>
               ) : null}
-              <p className="mt-2 text-sm text-muted">{offersCopy.accept.body}</p>
-              <p className="mt-1 text-sm text-muted">{offersCopy.accept.others}</p>
+              <p className="mt-2 text-body text-muted">{offersCopy.accept.body}</p>
+              <p className="mt-1 text-body text-muted">{offersCopy.accept.others}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="submit"
@@ -337,7 +337,7 @@ function OfferCard({
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
-                  className="text-sm text-muted underline underline-offset-4"
+                  className="text-body text-muted underline underline-offset-4"
                 >
                   {offersCopy.accept.cancel}
                 </button>
@@ -373,7 +373,7 @@ function OfferCard({
       </div>
 
       {acceptState.error !== undefined || rejectState.error !== undefined ? (
-        <p role="alert" className="mt-3 text-sm text-danger">
+        <p role="alert" className="mt-3 text-body text-danger">
           {acceptState.error ?? rejectState.error}
         </p>
       ) : null}
@@ -384,7 +384,7 @@ function OfferCard({
 function Cell({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
-      <dt className="text-xs text-muted">{label}</dt>
+      <dt className="text-small text-muted">{label}</dt>
       <dd className="mt-0.5">{value === null ? c.noDate : formatDay(value)}</dd>
     </div>
   );
@@ -399,8 +399,8 @@ function Cell({ label, value }: { label: string; value: string | null }) {
 function CompareTable({ offers }: { offers: readonly OfferForRequest[] }) {
   return (
     <div className="overflow-x-auto rounded-card border border-border bg-surface p-4">
-      <p className="mb-3 text-sm font-medium">{offersCopy.received.compareTitle}</p>
-      <table className="w-full min-w-[40rem] text-left text-sm">
+      <p className="mb-3 text-body font-medium">{offersCopy.received.compareTitle}</p>
+      <table className="w-full min-w-[40rem] text-left text-body">
         <thead className="text-muted">
           <tr>
             <th scope="col" className="py-1 pr-3 font-normal">Firmă</th>

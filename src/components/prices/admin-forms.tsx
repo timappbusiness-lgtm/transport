@@ -164,12 +164,12 @@ export function PublishForm({ published }: { published: boolean }) {
 
   return (
     <div className="rounded-card border border-border bg-surface p-4 sm:p-5">
-      <p className="text-sm text-muted">{published ? c.afterPublishWarning : c.draftNote}</p>
+      <p className="text-body text-muted">{published ? c.afterPublishWarning : c.draftNote}</p>
 
       {confirming ? (
         <form action={action} className="mt-4">
           <input type="hidden" name="published" value={published ? 'nu' : 'da'} />
-          <p className="text-sm">{published ? c.confirmUnpublish : c.confirmPublish}</p>
+          <p className="text-body">{published ? c.confirmUnpublish : c.confirmPublish}</p>
           <div className="mt-3 flex flex-wrap gap-3">
             <button type="submit" className={buttonClasses('primary', 'sm')}>
               {c.confirmYes}
@@ -241,12 +241,12 @@ function SmallField({
         inputMode={numeric && type === 'text' ? 'decimal' : undefined}
         aria-invalid={error ? true : undefined}
         className={cn(
-          'w-full rounded-input border bg-surface px-3 py-2 text-sm',
+          'w-full rounded-input border bg-surface px-3 py-2 text-body',
           error ? 'border-danger' : 'border-border-strong',
         )}
       />
-      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {hint ? <p className="text-small text-muted">{hint}</p> : null}
+      {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }

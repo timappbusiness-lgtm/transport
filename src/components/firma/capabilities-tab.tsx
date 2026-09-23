@@ -54,14 +54,14 @@ export function CapabilitiesTab({
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <FormError>{state.error}</FormError>
 
       <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-1 text-sm font-medium">{c.vehicleTypes}</legend>
-        <p className="text-xs text-muted">{c.vehicleTypesHint}</p>
+        <legend className="mb-1 text-body font-medium">{c.vehicleTypes}</legend>
+        <p className="text-small text-muted">{c.vehicleTypesHint}</p>
         <CheckboxGrid
           name="vehicleTypesAccepted"
           columns={3}
@@ -74,14 +74,14 @@ export function CapabilitiesTab({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2.5 border-t border-border pt-5">
-        <legend className="mb-1 text-sm font-medium">{c.services}</legend>
-        <p className="text-xs text-muted">{c.servicesHint}</p>
+        <legend className="mb-1 text-body font-medium">{c.services}</legend>
+        <p className="text-small text-muted">{c.servicesHint}</p>
         <CheckboxGrid name="services" selected={company.services} options={serviceOptions} />
       </fieldset>
 
       <fieldset className="flex flex-col gap-2.5 border-t border-border pt-5">
-        <legend className="mb-1 text-sm font-medium">{c.equipment}</legend>
-        <p className="text-xs text-muted">{c.equipmentHint}</p>
+        <legend className="mb-1 text-body font-medium">{c.equipment}</legend>
+        <p className="text-small text-muted">{c.equipmentHint}</p>
         <CheckboxGrid name="equipment" selected={company.equipment} options={equipmentOptions} />
       </fieldset>
 
@@ -107,19 +107,19 @@ export function CapabilitiesTab({
             error={state.fieldErrors?.indicativeRateNote}
           />
         </div>
-        <p className="mt-1.5 text-xs text-muted">{c.rateHint}</p>
+        <p className="mt-1.5 text-small text-muted">{c.rateHint}</p>
       </div>
 
       <div className="border-t border-border pt-5">
-        <p className="text-sm font-medium">{c.fleet}</p>
-        <p className="mt-1 text-sm text-muted">
+        <p className="text-body font-medium">{c.fleet}</p>
+        <p className="mt-1 text-body text-muted">
           {vehiclesTotal === 0 ? (
             c.fleetEmpty
           ) : (
             <span className="text-foreground">{vehiclesTotal}</span>
           )}
         </p>
-        <p className="mt-1.5 text-xs text-muted">
+        <p className="mt-1.5 text-small text-muted">
           {c.fleetHint}{' '}
           <Link
             href={ROUTES.accountFleet}

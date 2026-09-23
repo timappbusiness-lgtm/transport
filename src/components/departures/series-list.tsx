@@ -46,7 +46,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
           <p className="mt-1 text-small text-muted">
             {rule} · {c.until(row.ends_on)} · {row.plate_number ?? '—'}
           </p>
-          <p className="mt-0.5 text-xs text-muted">{c.published(row.published)}</p>
+          <p className="mt-0.5 text-small text-muted">{c.published(row.published)}</p>
         </div>
 
         {!ended ? (
@@ -66,7 +66,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
               name="action"
               value="oprire"
               disabled={pending}
-              className="text-xs text-danger underline-offset-4 hover:underline"
+              className="text-small text-danger underline-offset-4 hover:underline"
             >
               {c.end}
             </button>
@@ -82,7 +82,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
 
       {upcoming.length > 0 && !row.is_paused ? (
         <div className="mt-3">
-          <p className="text-xs text-muted">{c.next}</p>
+          <p className="text-small text-muted">{c.next}</p>
           <ul className="mt-1 flex flex-wrap gap-1.5">
             {upcoming.map((day) => (
               <li

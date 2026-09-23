@@ -261,7 +261,7 @@ export function LocalityPicker({
                       >
                         <span className="min-w-0">
                           <span className="block truncate">{locality.name}</span>
-                          <span className="block truncate text-xs text-muted">
+                          <span className="block truncate text-small text-muted">
                             {subtitleOf(locality)}
                           </span>
                         </span>

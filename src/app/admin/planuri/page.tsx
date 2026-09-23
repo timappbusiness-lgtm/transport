@@ -31,8 +31,8 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
-        <p className="mt-3 text-sm">
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
+        <p className="mt-3 text-body">
           <Link
             href={ROUTES.plans}
             className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
@@ -51,7 +51,7 @@ export default async function Page() {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted">{c.empty}</p>
+        <p className="text-body text-muted">{c.empty}</p>
       )}
 
       <section aria-labelledby="istoric">
@@ -65,14 +65,14 @@ export default async function Page() {
                 key={entry.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-card border border-border bg-surface px-4 py-2.5 text-small"
               >
-                <span className="font-mono text-xs text-muted">{entry.at}</span>
+                <span className="font-mono text-small text-muted">{entry.at}</span>
                 <span>{entry.action}</span>
                 {entry.reason ? <span className="text-muted">· {entry.reason}</span> : null}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-muted">{c.historyEmpty}</p>
+          <p className="mt-3 text-body text-muted">{c.historyEmpty}</p>
         )}
       </section>
     </div>

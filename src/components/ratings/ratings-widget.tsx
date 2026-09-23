@@ -28,13 +28,13 @@ export function RatingsWidget({ pending }: { pending: readonly PendingRating[] }
       </h2>
 
       <Card className="mt-3 p-5">
-        <p className="text-sm">
+        <p className="text-body">
           <Link href={ROUTES.accountRatings} className="link-accent">
             {c.pending(pending.length)}
           </Link>
         </p>
         {soonest !== null && !soonest.passed ? (
-          <p className="mt-1 text-sm text-muted">{c.soonest(soonest.at)}</p>
+          <p className="mt-1 text-body text-muted">{c.soonest(soonest.at)}</p>
         ) : null}
 
         <Link href={ROUTES.accountRatings} className={`${buttonClasses('secondary', 'sm')} mt-4`}>

@@ -64,7 +64,7 @@ export function SaveSearch({
 
   if (state.notice !== undefined) {
     return (
-      <p role="status" className="text-sm">
+      <p role="status" className="text-body">
         {state.notice}{' '}
         <Link href={ROUTES.accountAlerts} className="link-accent">
           Vezi alertele
@@ -97,12 +97,12 @@ export function SaveSearch({
       <input type="hidden" name="filters" value={JSON.stringify(filters)} />
 
       <div>
-        <p className="text-sm font-medium">{c.title}</p>
-        <p className="mt-1 max-w-[58ch] text-sm text-muted">{c.lede}</p>
-        <p className="mt-2 text-xs text-muted">{describeSearch(filters)}</p>
+        <p className="text-body font-medium">{c.title}</p>
+        <p className="mt-1 max-w-[58ch] text-body text-muted">{c.lede}</p>
+        <p className="mt-2 text-small text-muted">{describeSearch(filters)}</p>
       </div>
 
-      <label htmlFor={`${id}-name`} className="flex flex-col gap-1.5 text-sm">
+      <label htmlFor={`${id}-name`} className="flex flex-col gap-1.5 text-body">
         {c.name}
         <input
           id={`${id}-name`}
@@ -110,14 +110,14 @@ export function SaveSearch({
           required
           defaultValue={suggestName(filters)}
           placeholder={c.namePlaceholder}
-          className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+          className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
         />
       </label>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm">{c.frequency}</legend>
+        <legend className="text-body">{c.frequency}</legend>
         {(['immediate', 'daily'] as const).map((frequency) => (
-          <label key={frequency} className="flex gap-2.5 text-sm">
+          <label key={frequency} className="flex gap-2.5 text-body">
             <input
               type="radio"
               name="frequency"
@@ -127,13 +127,13 @@ export function SaveSearch({
             />
             <span>
               {FREQUENCY_LABELS[frequency]}
-              <span className="block text-xs text-muted">{FREQUENCY_HINTS[frequency]}</span>
+              <span className="block text-small text-muted">{FREQUENCY_HINTS[frequency]}</span>
             </span>
           </label>
         ))}
       </fieldset>
 
-      <label className="flex items-start gap-2.5 text-sm">
+      <label className="flex items-start gap-2.5 text-body">
         <input
           type="checkbox"
           name="notify_email"
@@ -143,7 +143,7 @@ export function SaveSearch({
         />
         <span>
           {c.email}
-          <span className="block text-xs text-muted">{c.emailHint}</span>
+          <span className="block text-small text-muted">{c.emailHint}</span>
         </span>
       </label>
 
@@ -154,14 +154,14 @@ export function SaveSearch({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-sm text-muted underline underline-offset-4"
+          className="text-body text-muted underline underline-offset-4"
         >
           Renunță
         </button>
       </div>
 
       {state.error !== undefined ? (
-        <div role="alert" className={cn('text-sm', 'text-danger')}>
+        <div role="alert" className={cn('text-body', 'text-danger')}>
           <p>{state.error}</p>
           {state.quotaReached === true ? (
             <p className="mt-1 text-foreground">

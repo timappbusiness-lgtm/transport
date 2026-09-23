@@ -41,7 +41,7 @@ export function ProfileStep({
       <input type="hidden" name="company_id" value={companyId} />
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium">{c.scope}</legend>
+        <legend className="text-body font-medium">{c.scope}</legend>
         <div className="flex flex-wrap gap-2">
           {COVERAGE_SCOPES.map((option) => (
             <label
@@ -69,12 +69,12 @@ export function ProfileStep({
 
       {scope === 'judetean' ? (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">{c.counties}</legend>
+          <legend className="text-body font-medium">{c.counties}</legend>
           <div className="flex flex-wrap gap-1.5">
             {COUNTIES.map((county) => (
               <label
                 key={county.code}
-                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-xs"
+                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-small"
               >
                 <input type="checkbox" name="counties" value={county.code} className="mr-1.5" />
                 {county.name}
@@ -86,12 +86,12 @@ export function ProfileStep({
 
       {services !== undefined && services.length > 0 ? (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">{c.services}</legend>
+          <legend className="text-body font-medium">{c.services}</legend>
           <div className="flex flex-wrap gap-1.5">
             {services.map((option) => (
               <label
                 key={option.code}
-                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-xs"
+                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-small"
               >
                 <input type="checkbox" name="services" value={option.code} className="mr-1.5" />
                 {option.label}
@@ -103,12 +103,12 @@ export function ProfileStep({
 
       {equipment !== undefined && equipment.length > 0 ? (
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm font-medium">{c.equipment}</legend>
+          <legend className="text-body font-medium">{c.equipment}</legend>
           <div className="flex flex-wrap gap-1.5">
             {equipment.map((option) => (
               <label
                 key={option.code}
-                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-xs"
+                className="cursor-pointer rounded-pill border border-border px-2.5 py-1 text-small"
               >
                 <input type="checkbox" name="equipment" value={option.code} className="mr-1.5" />
                 {option.label}

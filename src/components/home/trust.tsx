@@ -41,7 +41,7 @@ export function Trust() {
 
         <div className="mt-12 max-w-[30rem]">
           <ExampleCard />
-          <p className="mt-4 text-sm">
+          <p className="mt-4 text-body">
             <Link
               href={ROUTES.verification}
               className="link-accent"
@@ -79,7 +79,7 @@ function ExampleCard() {
                 chip used to sit beside them as a third child. axe calls
                 it `definition-list`; it cost four accessibility points. */}
             <dd className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <span className="font-mono text-xs tabular-nums text-muted">{row.value}</span>
+              <span className="font-mono text-small tabular-nums text-muted">{row.value}</span>
               {/* The word carries the meaning; the colour only repeats it. */}
               <StatusBadge tone={row.tone}>{row.state}</StatusBadge>
             </dd>

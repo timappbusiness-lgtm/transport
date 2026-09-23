@@ -24,11 +24,11 @@ function ReadOnly({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-sm font-medium">{label}</span>
-      <span className="rounded-card border border-border bg-background px-3.5 py-2.5 font-mono text-sm text-muted">
+      <span className="text-body font-medium">{label}</span>
+      <span className="rounded-card border border-border bg-background px-3.5 py-2.5 font-mono text-body text-muted">
         {value}
       </span>
-      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {hint ? <p className="text-small text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -57,7 +57,7 @@ export function IdentityTab({ company }: { company: Company }) {
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <FormError>{state.error}</FormError>
@@ -73,9 +73,9 @@ export function IdentityTab({ company }: { company: Company }) {
             error={state.fieldErrors?.legalName}
           />
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium">{accountCopy.company.type}</legend>
+            <legend className="mb-1 text-body font-medium">{accountCopy.company.type}</legend>
             {TYPES.map((type) => (
-              <label key={type} className="flex items-center gap-2.5 text-sm">
+              <label key={type} className="flex items-center gap-2.5 text-body">
                 <input
                   type="radio"
                   name="companyType"
@@ -136,7 +136,7 @@ export function IdentityTab({ company }: { company: Company }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="field-county" className="text-sm font-medium">
+          <label htmlFor="field-county" className="text-body font-medium">
             {c.county}
           </label>
           <select
@@ -164,7 +164,7 @@ export function IdentityTab({ company }: { company: Company }) {
         defaultValue={company.address ?? ''}
       />
 
-      <label className="flex items-start gap-3 text-sm">
+      <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"
           name="baseAddressHidden"
@@ -173,7 +173,7 @@ export function IdentityTab({ company }: { company: Company }) {
         />
         <span>
           {c.hideAddress}
-          <span className="mt-1 block text-xs text-muted">{c.hideAddressHint}</span>
+          <span className="mt-1 block text-small text-muted">{c.hideAddressHint}</span>
         </span>
       </label>
 
