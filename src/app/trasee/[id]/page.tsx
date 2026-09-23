@@ -179,19 +179,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </section>
         </div>
 
-        <aside className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
+        {/* On a phone the price and the action come first, under the title:
+            three cards of detail above them put the one thing to do a
+            thousand pixels down. From lg they are the right column. */}
+        <aside className="order-first flex flex-col gap-6 lg:order-none lg:sticky lg:top-24 lg:self-start">
           <section className="rounded-card border border-border bg-surface p-5">
             <h2 className="text-body font-medium">
               <IconLabel as={iconForFact('price')} size="sm" tone="strong">
                 {c.price}
               </IconLabel>
             </h2>
-            {/* The key number of the page, with the word that says it is
-                an estimate kept right beside it. */}
+            {/* The key number of the page. The heading above it already
+                says it is an estimate. */}
             {priceAmount(departure) !== null ? (
-              <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
+              <p className="mt-1">
                 <Figure size="sm">{priceAmount(departure)}</Figure>
-                <span className="text-small text-muted">orientativ</span>
               </p>
             ) : (
               <p className="mt-1 text-body text-muted">{departuresCopy.card.noPrice}</p>

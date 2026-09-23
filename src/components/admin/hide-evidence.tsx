@@ -58,7 +58,7 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
       <p className="text-small leading-tight text-muted">{c.hideReasonHint}</p>
 
       <div className="flex flex-wrap gap-1.5">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.hideSubmit}
         </button>
         <button

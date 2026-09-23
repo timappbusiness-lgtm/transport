@@ -148,16 +148,22 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </Card>
       ) : null}
 
+      {/* On a phone the page reads: where the car is, what to do now,
+          the details, then the photographs. The left column dissolves
+          below lg (`contents`) so its pieces can sit either side of the
+          action column; from lg it is a column again and nothing moves. */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <div className="flex flex-col gap-6">
-          <OrderTimeline
-            status={order.status}
-            events={events}
-            autoCompleted={order.auto_completed}
-          />
+        <div className="contents lg:flex lg:flex-col lg:gap-6">
+          <div className="order-1 lg:order-none">
+            <OrderTimeline
+              status={order.status}
+              events={events}
+              autoCompleted={order.auto_completed}
+            />
+          </div>
 
           {capturing ? (
-            <Card className="p-5">
+            <Card className="order-2 p-5 lg:order-none">
               <h2 className="text-h3">{ordersCopy.capture.title}</h2>
               <div className="mt-4 max-w-[26rem]">
                 <PhotoCapture
@@ -176,6 +182,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </Card>
           ) : null}
 
+          <div className="order-4 flex flex-col gap-6 lg:order-none">
           <ComparisonView
             title={ordersCopy.evidence.compareTitle}
             leftLabel={ordersCopy.evidence.fromClient}
@@ -196,9 +203,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           />
 
           <EvidenceGallery rows={evidence} urls={urls} />
+          </div>
         </div>
 
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+        <aside className="order-3 flex flex-col gap-4 lg:order-none lg:sticky lg:top-24 lg:self-start">
           {side === 'client' && order.confirmation_code !== null && !isFinished(order.status) ? (
             <ConfirmationCode code={order.confirmation_code} />
           ) : null}
@@ -364,11 +372,11 @@ function DisputeNote({
       <p className="mt-1 text-small text-muted">
         {ordersCopy.dispute.openedAt} {formatMoment(order.disputed_at)}
       </p>
-      <p className="mt-2 whitespace-pre-line text-body">{order.dispute_reason}</p>
+      <p className="mt-2 whitespace-pre-line break-words text-body">{order.dispute_reason}</p>
       {order.dispute_resolution !== null ? (
         <>
           <p className="mt-3 text-body font-medium">{ordersCopy.dispute.decision}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{order.dispute_resolution}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{order.dispute_resolution}</p>
         </>
       ) : null}
       <p className="mt-2 text-small text-muted">{ordersCopy.dispute.noMoney}</p>

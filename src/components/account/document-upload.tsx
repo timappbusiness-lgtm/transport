@@ -126,7 +126,8 @@ export function DocumentUpload({
 
           <label
             htmlFor={`${id}-camera`}
-            className={`${buttonClasses('primary', 'md')} w-full cursor-pointer justify-center sm:w-auto`}
+            // The file input after it is hidden; the label draws its focus.
+            className={`${buttonClasses('primary', 'md')} w-full cursor-pointer justify-center sm:w-auto [&:has(+input:focus-visible)]:outline-2 [&:has(+input:focus-visible)]:outline-offset-2 [&:has(+input:focus-visible)]:outline-foreground`}
           >
             {onboardingCopy.documents.camera}
           </label>
@@ -144,7 +145,7 @@ export function DocumentUpload({
 
           <label
             htmlFor={`${id}-file`}
-            className="cursor-pointer text-small text-muted underline underline-offset-4"
+            className="cursor-pointer text-small text-muted underline underline-offset-4 hover:text-foreground [&:has(+input:focus-visible)]:outline-2 [&:has(+input:focus-visible)]:outline-offset-2 [&:has(+input:focus-visible)]:outline-foreground"
           >
             {onboardingCopy.documents.file}
           </label>

@@ -44,7 +44,7 @@ export function ModerateMessage({ messageId }: { messageId: string }) {
       />
       <FormError>{state.fieldErrors?.reason}</FormError>
       <div className="flex flex-wrap gap-1.5">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.hide}
         </button>
         <button

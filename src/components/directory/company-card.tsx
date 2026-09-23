@@ -56,7 +56,7 @@ export function CompanyCard({
                 : company.city}
             </p>
           ) : null}
-          <p className="mt-1 truncate font-medium leading-snug">{company.name}</p>
+          <p className="mt-1 line-clamp-2 break-words font-medium leading-snug">{company.name}</p>
         </div>
       </div>
 

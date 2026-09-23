@@ -94,10 +94,12 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
       href={href}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'rounded-pill border px-3.5 py-1.5 text-body',
+        'rounded-pill border px-3.5 py-1.5 text-small',
+        // Ink, like the filters on the other admin lists: a report is not
+        // a place for the accent.
         active
-          ? 'border-accent bg-accent text-white'
-          : 'border-border text-muted hover:border-border-strong',
+          ? 'border-transparent bg-foreground text-white'
+          : 'border-border-strong text-muted hover:text-foreground',
       )}
     >
       {label}

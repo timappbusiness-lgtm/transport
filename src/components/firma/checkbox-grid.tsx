@@ -25,7 +25,7 @@ export function CheckboxGrid({
     <ul
       className={cn(
         'grid gap-x-4 gap-y-2.5',
-        columns === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-2',
+        columns === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2',
       )}
     >
       {options.map((option) => (

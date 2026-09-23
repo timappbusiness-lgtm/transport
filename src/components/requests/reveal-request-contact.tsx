@@ -23,9 +23,12 @@ const EMPTY: RevealRequestState = {};
 export function RevealRequestContact({
   requestId,
   signedIn,
+  variant = 'primary',
 }: {
   requestId: string;
   signedIn: boolean;
+  /** Secondary when an offer form sits above it: one primary per column. */
+  variant?: 'primary' | 'secondary';
 }) {
   const [state, action] = useActionState(revealRequestContactAction, EMPTY);
   const c = requestsCopy.detail;
@@ -57,7 +60,7 @@ export function RevealRequestContact({
   return (
     <form action={action} className="flex flex-col gap-3">
       <input type="hidden" name="request_id" value={requestId} />
-      <button type="submit" className={buttonClasses('primary', 'md')}>
+      <button type="submit" className={buttonClasses(variant, 'md')}>
         {signedIn ? c.contact : c.contactHidden}
       </button>
       <FormError>{state.error}</FormError>

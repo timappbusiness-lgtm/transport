@@ -54,7 +54,8 @@ export default async function Page() {
           Cereri
         </h2>
         {rows.length === 0 ? (
-          <p className="text-body text-muted">{c.empty}</p>
+          // Deletions: words only, no drawing.
+          <p className="rounded-card border border-border bg-surface p-6 text-body text-muted">{c.empty}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {rows.map((row) => (

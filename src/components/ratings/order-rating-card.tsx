@@ -62,7 +62,7 @@ export function OrderRatingCard({
         <div className="mt-3">
           {state.score !== null ? <Stars score={state.score} /> : null}
           {state.comment !== null ? (
-            <p className="mt-2 whitespace-pre-line text-body">{state.comment}</p>
+            <p className="mt-2 whitespace-pre-line break-words text-body">{state.comment}</p>
           ) : null}
         </div>
         <p className="mt-3 text-small text-muted">{c.form.notEditable}</p>

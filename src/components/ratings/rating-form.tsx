@@ -113,7 +113,7 @@ export function RatingForm({
             <div className="mt-2">
               {score !== null ? <Stars score={score} /> : null}
               {comment.trim() !== '' ? (
-                <p className="mt-2 whitespace-pre-line text-body">{comment}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{comment}</p>
               ) : null}
             </div>
           </div>

@@ -269,7 +269,7 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
         ))}
       </ul>
 
-      <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'sm')} mt-5`}>
+      <Link href={ROUTES.newRequest} className={`${buttonClasses('secondary', 'sm')} mt-5`}>
         {c.noRequests.action}
       </Link>
     </Card>

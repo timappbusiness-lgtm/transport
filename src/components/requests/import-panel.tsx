@@ -113,7 +113,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
       <div
         role="tablist"
         aria-label={c.title}
-        className="flex w-fit gap-1 rounded-input bg-ground p-1"
+        className="flex w-fit gap-1 rounded-input bg-background p-1"
       >
         <button
           type="button"
@@ -172,7 +172,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
               ref={fileInput}
               type="file"
               accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2 text-body file:mr-3 file:rounded-input file:border-0 file:bg-ground file:px-3 file:py-1.5 file:text-body"
+              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2 text-body file:mr-3 file:rounded-input file:border-0 file:bg-ground-alt file:px-3 file:py-1.5 file:text-body"
             />
             <button
               type="button"

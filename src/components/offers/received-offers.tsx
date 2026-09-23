@@ -12,7 +12,7 @@ import {
 import { OfferThread } from '@/components/offers/offer-thread';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import { buttonClasses } from '@/components/ui/button';
-import { StatusBadge } from '@/components/ui/primitives';
+import { Figure, StatusBadge } from '@/components/ui/primitives';
 import { IconLabel } from '@/components/ui/icon';
 import { iconForContent } from '@/lib/icons';
 import { ReputationInline } from '@/components/ratings/reputation-block';
@@ -35,6 +35,7 @@ import {
 import type { OfferForRequest, ThreadMessage } from '@/lib/offers-source';
 import { VEHICLE_TYPE_LABELS } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.received;
@@ -81,10 +82,7 @@ export function ReceivedOffers({
 
   if (offers.length === 0) {
     return (
-      <div className="rounded-card border border-dashed border-border-strong bg-surface p-6">
-        <h3 className="text-h3">{c.empty}</h3>
-        <p className="mt-2 max-w-[54ch] text-body text-muted">{c.emptyBody}</p>
-      </div>
+      <EmptyState title={c.empty} body={c.emptyBody} />
     );
   }
 
@@ -262,9 +260,11 @@ function OfferCard({
         </div>
 
         <div className="text-right">
-          <p className="font-display text-h2 leading-none tabular-nums">
+          {/* The key number of the comparison: accent while the offer can
+              still be taken, ink once it is history. */}
+          <Figure as="p" size="md" tone={isLive(offer.status) || offer.status === 'accepted' ? 'accent' : 'plain'}>
             {formatMoney(offer.price_amount, offer.currency)}
-          </p>
+          </Figure>
           <p className={cn('mt-1 text-small', urgent ? 'text-danger' : 'text-muted')}>
             {timeLeft(offer.valid_until, now)}
           </p>
@@ -293,7 +293,7 @@ function OfferCard({
       {offer.conditions !== null ? (
         <div className="mt-4">
           <p className="text-small text-muted">{c.conditions}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{offer.conditions}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{offer.conditions}</p>
         </div>
       ) : null}
 
@@ -302,7 +302,7 @@ function OfferCard({
       ) : null}
 
       {offer.message !== null ? (
-        <p className="mt-3 whitespace-pre-line text-body">{offer.message}</p>
+        <p className="mt-3 whitespace-pre-line break-words text-body">{offer.message}</p>
       ) : null}
 
       {canAct ? (
@@ -322,7 +322,7 @@ function OfferCard({
                   : ''}
               </p>
               {offer.conditions !== null ? (
-                <p className="mt-1 whitespace-pre-line text-body text-muted">{offer.conditions}</p>
+                <p className="mt-1 whitespace-pre-line break-words text-body text-muted">{offer.conditions}</p>
               ) : null}
               <p className="mt-2 text-body text-muted">{offersCopy.accept.body}</p>
               <p className="mt-1 text-body text-muted">{offersCopy.accept.others}</p>

@@ -94,7 +94,7 @@ export function ReportRow({ row }: { row: Row }) {
       {row.details !== null ? (
         <div className="mt-4">
           <p className="text-small text-muted">{c.row.details}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{row.details}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.details}</p>
         </div>
       ) : null}
 
@@ -107,14 +107,14 @@ export function ReportRow({ row }: { row: Row }) {
       {row.internal_notes !== null ? (
         <div className="mt-4 rounded-card border border-border bg-ground-alt p-3">
           <p className="text-small text-muted">{c.row.notes}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{row.internal_notes}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.internal_notes}</p>
         </div>
       ) : null}
 
       {row.resolution !== null ? (
         <div className="mt-4">
           <p className="text-small text-muted">{c.row.resolution}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{row.resolution}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.resolution}</p>
           <p className="mt-1.5 text-small text-muted">
             {row.reporter_notified_at === null
               ? c.row.notNotified
@@ -191,7 +191,7 @@ export function ReportRow({ row }: { row: Row }) {
               name="status"
               value="resolved"
               disabled={pending}
-              className={buttonClasses('primary', 'sm')}
+              className={buttonClasses('ink', 'sm')}
             >
               {c.form.resolve}
             </button>

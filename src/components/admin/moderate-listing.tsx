@@ -75,7 +75,7 @@ export function ModerateListing({
       <FormError>{state.fieldErrors?.reason}</FormError>
 
       <div className="flex flex-wrap gap-1.5">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {hidden ? c.restoreSubmit : c.hideSubmit}
         </button>
         <button

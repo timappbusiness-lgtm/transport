@@ -105,7 +105,7 @@ export function OfferThread({
               <p className="text-small text-muted">
                 {message.is_mine ? 'Tu' : message.sender_name} · {when(message.created_at)}
               </p>
-              <p className={cn('mt-1 whitespace-pre-line text-body', message.is_hidden && 'text-muted')}>
+              <p className={cn('mt-1 whitespace-pre-line break-words text-body', message.is_hidden && 'text-muted')}>
                 {message.body}
               </p>
               {message.was_masked && message.is_mine ? (

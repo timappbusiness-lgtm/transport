@@ -54,7 +54,7 @@ export function GrantStaff() {
       </label>
 
       <div>
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {pending ? c.add.submitting : c.add.submit}
         </button>
       </div>

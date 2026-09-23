@@ -48,6 +48,8 @@ export function ProfileStep({
               key={option}
               className={cn(
                 'cursor-pointer rounded-pill border px-3.5 py-1.5 text-small',
+                // The radio is hidden, so the pill carries its focus ring.
+                'has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-foreground',
                 scope === option
                   ? 'border-transparent bg-accent text-on-accent'
                   : 'border-border-strong text-muted hover:border-accent-border hover:bg-accent-subtle',

@@ -13,6 +13,7 @@ import {
 } from '@/lib/ratings-source';
 import { loadAdminOrderCompanies } from '@/lib/orders-source';
 import { formatNumber } from '@/lib/requests';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -142,10 +143,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {error !== null ? (
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-body-lg">{c.empty.title}</p>
-          <p className="mt-1 text-body text-muted">{c.empty.body}</p>
-        </div>
+        <EmptyState figure="search" title={c.empty.title} body={c.empty.body} />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (
@@ -168,7 +166,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               </div>
 
               {row.comment !== null ? (
-                <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{row.comment}</p>
               ) : null}
               {row.was_masked ? (
                 <p className="mt-1 text-small text-muted">{c.list.masked}</p>
@@ -186,7 +184,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                     {ratingsCopy.reply.label}
                     {row.reply_hidden_at !== null ? ` · ${c.list.hiddenLabel}` : ''}
                   </p>
-                  <p className="mt-1 whitespace-pre-line text-body">{row.reply_body}</p>
+                  <p className="mt-1 whitespace-pre-line break-words text-body">{row.reply_body}</p>
                   {row.reply_id !== null && row.reply_hidden_at === null ? (
                     <div className="mt-1.5">
                       <ModerateRating kind="hideReply" replyId={row.reply_id} />

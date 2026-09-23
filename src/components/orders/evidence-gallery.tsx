@@ -78,7 +78,7 @@ export function EvidenceGallery({
                     {group.kind === 'condition_report' && !row.is_hidden ? (
                       <ChecklistCard payload={row.payload} note={row.note} />
                     ) : (
-                      <p className="mt-1.5 whitespace-pre-line text-body">{row.note}</p>
+                      <p className="mt-1.5 whitespace-pre-line break-words text-body">{row.note}</p>
                     )}
                     {children?.(row)}
                   </li>
@@ -147,7 +147,7 @@ function ChecklistCard({
           </div>
         ))}
       </dl>
-      {note !== null ? <p className="mt-2 whitespace-pre-line text-body">{note}</p> : null}
+      {note !== null ? <p className="mt-2 whitespace-pre-line break-words text-body">{note}</p> : null}
     </div>
   );
 }

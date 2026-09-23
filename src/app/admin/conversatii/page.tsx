@@ -5,6 +5,7 @@ import { messagesCopy } from '@/content/mesaje';
 import { kindLabel } from '@/lib/messages';
 import { loadAdminConversations } from '@/lib/messages-source';
 import { formatMoment } from '@/lib/orders';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,10 +41,7 @@ export default async function Page({
       {error !== null ? (
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-body-lg">{c.empty}</p>
-          <p className="mt-1 text-body text-muted">{c.emptyBody}</p>
-        </div>
+        <EmptyState title={c.empty} body={c.emptyBody} />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (

@@ -7,10 +7,11 @@ import { CarrierCount } from '@/components/requests/carrier-count';
 import { RevealRequestContact } from '@/components/requests/reveal-request-contact';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, StatusBadge } from '@/components/ui/primitives';
-import { ROUTES } from '@/config/routes';
+import { ROUTES, requestRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { offersCopy } from '@/content/oferte';
 import { getAccountContext } from '@/lib/auth/account';
+import { signInUrlFor } from '@/lib/auth/next-path';
 import {
   CARGO_CATEGORY_LABELS,
   SERVICE_TYPE_LABELS,
@@ -197,7 +198,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {detail?.description ? (
             <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
               <h2 className="text-h3">{c.notes}</h2>
-              <p className="mt-3 whitespace-pre-line text-body">{detail.description}</p>
+              <p className="mt-3 whitespace-pre-line break-words text-body">{detail.description}</p>
             </div>
           ) : null}
 
@@ -210,7 +211,27 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {/* The offer comes first: a carrier who opened this page came to
               bid, and the contact is what they buy when bidding is not
               what they want. */}
-          {offering !== null ? (
+          {/* A visitor gets one card and one primary action. The offer
+              box and the contact button used to each ask them to sign in,
+              in two different shapes, one above the other. */}
+          {context === null ? (
+            <section className="rounded-card border border-border bg-surface p-5">
+              <p className="text-body">{offersCopy.entry.visitor.body}</p>
+              <Link
+                href={signInUrlFor(requestRoute(request.id))}
+                className={`${buttonClasses('primary', 'md')} mt-4 w-full`}
+              >
+                {offersCopy.entry.visitor.signIn}
+              </Link>
+              <p className="mt-4 border-t border-border pt-4 text-small text-muted">
+                {offersCopy.entry.visitor.join}{' '}
+                <Link href={ROUTES.carrierSignup} className="link-accent">
+                  {offersCopy.entry.visitor.joinAction}
+                </Link>
+              </p>
+            </section>
+          ) : null}
+          {offering !== null && context !== null ? (
             <section aria-label={offersCopy.form.title}>
               <SendOffer
                 request={{ id: request.id, loading_from: request.loading_from }}
@@ -223,18 +244,24 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               />
             </section>
           ) : null}
+          {context !== null ? (
           <div className="rounded-card border border-border bg-surface p-5">
-            <RevealRequestContact requestId={request.id} signedIn={context !== null} />
+            <RevealRequestContact
+              requestId={request.id}
+              signedIn
+              variant={offering !== null ? 'secondary' : 'primary'}
+            />
             {/* Aceeași poartă ca la contact, și o spune înainte de apăsare:
                 o conversație este un contact, și se numără o singură dată
                 pe anunț. Vizitatorii neautentificați văd butonul de
                 contact de deasupra, care îi trimite la autentificare. */}
-            {context !== null && FEATURES.messages ? (
+            {FEATURES.messages ? (
               <div className="mt-4 border-t border-border pt-4">
                 <StartConversation requestId={request.id} />
               </div>
             ) : null}
           </div>
+          ) : null}
           <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
             {requestsCopy.board.publish}
           </Link>

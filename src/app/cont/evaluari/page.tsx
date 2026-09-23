@@ -143,13 +143,13 @@ function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }
       </p>
 
       {row.comment !== null ? (
-        <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
+        <p className="mt-2 whitespace-pre-line break-words text-body">{row.comment}</p>
       ) : null}
 
       {row.reply_body !== null ? (
         <div className="mt-3 border-l-2 border-border-strong pl-3">
           <p className="text-small font-medium text-muted">{ratingsCopy.reply.label}</p>
-          <p className="mt-1 whitespace-pre-line text-body">{row.reply_body}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.reply_body}</p>
         </div>
       ) : null}
 

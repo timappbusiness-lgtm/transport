@@ -14,6 +14,7 @@ import {
 } from '@/lib/messages-source';
 import { formatNumber } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,7 +90,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             className={cn(
               'rounded-pill border px-3.5 py-1.5 text-small',
               k === kind
-                ? 'border-transparent bg-foreground text-ground'
+                ? 'border-transparent bg-foreground text-white'
                 : 'border-border-strong text-muted hover:text-foreground',
             )}
           >
@@ -162,10 +163,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {error !== null ? (
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-body-lg">{c.empty}</p>
-          <p className="mt-1 text-body text-muted">{c.emptyBody}</p>
-        </div>
+        <EmptyState figure="search" title={c.empty} body={c.emptyBody} />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (

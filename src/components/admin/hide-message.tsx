@@ -56,7 +56,7 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
       <p className="text-small text-muted">{c.hideReasonHint}</p>
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.hideSubmit}
         </button>
         <button

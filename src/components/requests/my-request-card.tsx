@@ -117,7 +117,7 @@ export function MyRequestCard({
         <input type="hidden" name="request_id" value={request.id} />
 
         {confirming === 'reopen' ? (
-          <div className="flex flex-col gap-3 rounded-input border border-border-strong bg-ground-alt p-4">
+          <div className="flex flex-col gap-3 rounded-card border border-border-strong bg-ground-alt p-4">
             <p className="text-body font-medium">{c.reopenTitle}</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5 text-small font-medium">
@@ -161,7 +161,7 @@ export function MyRequestCard({
             </div>
           </div>
         ) : confirming === 'cancel' ? (
-          <div className="flex flex-col gap-3 rounded-input border border-danger/40 bg-danger/8 p-4">
+          <div className="flex flex-col gap-3 rounded-card border border-danger/40 bg-danger/8 p-4">
             <p className="text-body">{c.cancelConfirm}</p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -169,7 +169,8 @@ export function MyRequestCard({
                 name="intent"
                 value="cancel"
                 disabled={pending}
-                className={buttonClasses('primary', 'sm')}
+                // Ink, never the accent: this withdraws the request.
+                className={buttonClasses('ink', 'sm')}
               >
                 {c.confirm}
               </button>

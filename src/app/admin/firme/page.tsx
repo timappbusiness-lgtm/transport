@@ -7,6 +7,7 @@ import { toCompany, type PublicCompany } from '@/lib/directory';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { pluralRo } from '@/lib/requests';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const c = adminDirectoryCopy.companies;
 
@@ -60,7 +61,7 @@ export default async function Page() {
           ))}
         </ul>
       ) : (
-        <p className="text-body text-muted">{c.empty}</p>
+        <EmptyState title={c.empty} />
       )}
     </div>
   );

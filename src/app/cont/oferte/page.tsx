@@ -8,7 +8,7 @@ import { OfferThread } from '@/components/offers/offer-thread';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import { WithdrawOffer } from '@/components/offers/withdraw-offer';
 import { buttonClasses } from '@/components/ui/button';
-import { Card, Figure, StatusBadge } from '@/components/ui/primitives';
+import { Figure, StatusBadge } from '@/components/ui/primitives';
 import { HelpLink } from '@/components/help/help-link';
 import { favouritesCopy } from '@/content/favoriti';
 import { loadFavouriteIds } from '@/lib/favourites-source';
@@ -27,6 +27,7 @@ import {
 } from '@/lib/offers';
 import { loadMyOffers, loadOfferThread, type MyOffer, type OfferBox } from '@/lib/offers-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: offersCopy.meta.title };
 export const dynamic = 'force-dynamic';
@@ -160,19 +161,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       ) : null}
 
       {offers.length === 0 ? (
-        <Card className="p-6">
-          <h2 className="text-h3">
-            {box === 'trimise' ? offersCopy.sent.empty : offersCopy.received.empty}
-          </h2>
-          <p className="mt-2 max-w-[54ch] text-body text-muted">
-            {box === 'trimise' ? offersCopy.sent.emptyBody : offersCopy.received.emptyBody}
-          </p>
-          {box === 'trimise' ? (
-            <Link href={ROUTES.requests} className={`${buttonClasses('primary', 'md')} mt-5`}>
-              {offersCopy.sent.emptyAction}
-            </Link>
-          ) : null}
-        </Card>
+        <EmptyState
+          figure={box === 'trimise' ? 'search' : 'list'}
+          title={box === 'trimise' ? offersCopy.sent.empty : offersCopy.received.empty}
+          body={box === 'trimise' ? offersCopy.sent.emptyBody : offersCopy.received.emptyBody}
+          action={
+            box === 'trimise' ? (
+              <Link href={ROUTES.requests} className={buttonClasses('primary', 'md')}>
+                {offersCopy.sent.emptyAction}
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-4">
           {offers.map((offer) => (

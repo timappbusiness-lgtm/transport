@@ -111,7 +111,7 @@ export default async function Page({
             className={cn(
               'rounded-pill border px-3.5 py-1.5 text-small',
               option === step
-                ? 'border-transparent bg-foreground text-ground'
+                ? 'border-transparent bg-foreground text-white'
                 : state[option]
                   ? 'border-success/45 bg-success/8 text-foreground'
                   : 'border-border-strong text-muted hover:text-foreground',
@@ -126,7 +126,7 @@ export default async function Page({
           className={cn(
             'rounded-pill border px-3.5 py-1.5 text-small',
             step === 'link'
-              ? 'border-transparent bg-foreground text-ground'
+              ? 'border-transparent bg-foreground text-white'
               : 'border-border-strong text-muted hover:text-foreground',
           )}
         >

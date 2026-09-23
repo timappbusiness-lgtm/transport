@@ -61,7 +61,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
     <form
       ref={formRef}
       action={action}
-      className="sticky bottom-0 border-t border-border bg-ground px-3 py-3 sm:px-0"
+      className="sticky bottom-0 border-t border-border bg-background px-3 py-3 sm:px-0"
     >
       <input type="hidden" name="conversation_id" value={conversationId} />
 

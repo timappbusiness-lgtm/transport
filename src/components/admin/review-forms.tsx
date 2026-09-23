@@ -97,7 +97,7 @@ export function DocumentReview({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={buttonClasses('primary', 'sm')}>
+        <button type="submit" className={buttonClasses('ink', 'sm')}>
           {c.documents.approve}
         </button>
         <button
@@ -163,7 +163,7 @@ export function CompanyReview({ companyId }: { companyId: string }) {
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="company_id" value={companyId} />
       <input type="hidden" name="decision" value="approve" />
-      <button type="submit" className={buttonClasses('primary', 'sm')}>
+      <button type="submit" className={buttonClasses('ink', 'sm')}>
         {c.companies.approve}
       </button>
       <button

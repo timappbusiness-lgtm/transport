@@ -65,7 +65,7 @@ export function ExportModeration() {
         <button
           type="button"
           onClick={() => download(state.notice ?? '')}
-          className={`${buttonClasses('primary', 'sm')} mt-3`}
+          className={`${buttonClasses('ink', 'sm')} mt-3`}
         >
           {c.submit}
         </button>

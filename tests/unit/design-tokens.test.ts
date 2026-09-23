@@ -97,6 +97,22 @@ describe('components use tokens, not values', () => {
   });
 });
 
+describe('text somebody typed', () => {
+  it('may always break, so a long link cannot push a phone screen sideways', () => {
+    // `whitespace-pre-line` keeps the writer's line breaks — and keeps a
+    // pasted URL on one line. Thirty places showed messages, notes,
+    // conditions and dispute reasons that way with nothing to let them
+    // break, each one a sideways scroll at 390px waiting for its link.
+    const offenders = FILES.flatMap((f) =>
+      readFileSync(f, 'utf8')
+        .split('\n')
+        .filter((line) => /whitespace-pre-(?:line|wrap)/.test(line) && !/break-(?:words|all)/.test(line))
+        .map((line) => `${f}: ${line.trim()}`),
+    );
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+});
+
 describe('cn keeps a size and a colour apart', () => {
   /**
    * The regression. `twMerge` groups utilities by name, and it had never
@@ -224,6 +240,20 @@ describe('where the accent may not go', () => {
       }
       expect(body, `${file} uses the accent`).not.toMatch(/\b(?:text|bg|border|ring)-accent\b/);
     }
+  });
+
+  it('nor on a staff decision', () => {
+    // Approve, hide, restore, resolve, grant access, activate: every
+    // button in src/components/admin is a decision somebody on staff takes
+    // about somebody else, and the accent would make it read as the happy
+    // path. Ten of them were filled accent until this pass.
+    const dir = 'src/components/admin';
+    const offenders = readdirSync(dir)
+      .filter((f) => f.endsWith('.tsx'))
+      .filter((f) => /buttonClasses\('primary'|\b(?:bg|border)-accent\b/.test(readFileSync(`${dir}/${f}`, 'utf8')));
+    expect(offenders, `the accent on a staff decision in: ${offenders.join(', ')}`).toEqual([]);
+    const reports = readFileSync('src/app/admin/sesizari/page.tsx', 'utf8');
+    expect(reports).not.toMatch(/\b(?:bg|border)-accent\b/);
   });
 
   it('nor on a suspension, a rejection or a deletion', () => {

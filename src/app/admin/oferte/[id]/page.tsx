@@ -88,12 +88,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
           {offer.conditions !== null ? (
             <Row label={offersCopy.received.conditions}>
-              <span className="whitespace-pre-line">{offer.conditions}</span>
+              <span className="whitespace-pre-line break-words">{offer.conditions}</span>
             </Row>
           ) : null}
           {offer.message !== null ? (
             <Row label={offersCopy.form.message}>
-              <span className="whitespace-pre-line">{offer.message}</span>
+              <span className="whitespace-pre-line break-words">{offer.message}</span>
             </Row>
           ) : null}
         </dl>
@@ -180,7 +180,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                     <StatusBadge tone="danger">{c.hiddenBadge}</StatusBadge>
                   ) : null}
                 </p>
-                <p className="mt-2 whitespace-pre-line text-body">{message.body}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{message.body}</p>
                 {message.is_hidden ? null : (
                   <div className="mt-2">
                     <HideMessage messageId={message.id} offerId={offer.id} />

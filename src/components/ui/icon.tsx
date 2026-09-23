@@ -88,19 +88,26 @@ export function IconLabel({
   as,
   size = 'md',
   tone = 'strong',
+  wrap = false,
   className,
   children,
 }: {
   as: LucideIcon;
   size?: IconSize | undefined;
   tone?: IconTone | undefined;
+  /**
+   * Let a long label run onto a second line instead of ending in „…".
+   * For names that have to be read whole — a document, a company — in a
+   * column a phone makes narrow.
+   */
+  wrap?: boolean | undefined;
   className?: string | undefined;
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex min-w-0 items-center', ICON_GAP, className)}>
-      <Icon as={as} size={size} tone={tone} />
-      <span className="min-w-0 truncate">{children}</span>
+    <span className={cn('inline-flex min-w-0', wrap ? 'items-start' : 'items-center', ICON_GAP, className)}>
+      <Icon as={as} size={size} tone={tone} className={wrap ? 'mt-[0.2em]' : undefined} />
+      <span className={cn('min-w-0', wrap ? 'break-words' : 'truncate')}>{children}</span>
     </span>
   );
 }

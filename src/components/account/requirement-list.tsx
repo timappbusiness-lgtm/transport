@@ -57,7 +57,7 @@ export function RequirementList({ rows }: { rows: RequirementRow[] }) {
             >
               <div className="min-w-0">
                 <p className="text-body font-medium">
-                  <IconLabel as={iconForContent('document')} size="sm" tone="strong">
+                  <IconLabel as={iconForContent('document')} size="sm" tone="strong" wrap>
                     {row.label_ro}
                   </IconLabel>
                 </p>

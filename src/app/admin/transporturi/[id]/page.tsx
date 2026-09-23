@@ -89,7 +89,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               {ordersCopy.dispute.openedAt} {formatMoment(order.disputed_at)} ·{' '}
               {order.dispute_category}
             </p>
-            <p className="mt-2 whitespace-pre-line text-body">{order.dispute_reason}</p>
+            <p className="mt-2 whitespace-pre-line break-words text-body">{order.dispute_reason}</p>
           </section>
           <ResolveDispute orderId={order.id} />
         </>
@@ -101,7 +101,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <p className="mt-1 text-small text-muted">
             {ordersCopy.dispute.resolvedAt} {formatMoment(order.dispute_resolved_at)}
           </p>
-          <p className="mt-2 whitespace-pre-line text-body">{order.dispute_resolution}</p>
+          <p className="mt-2 whitespace-pre-line break-words text-body">{order.dispute_resolution}</p>
         </section>
       ) : null}
 

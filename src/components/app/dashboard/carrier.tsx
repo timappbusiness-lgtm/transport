@@ -218,7 +218,9 @@ export function CarrierHome({
         <div className="mt-3 flex flex-wrap gap-2">
           <Link
             href={`${ROUTES.accountDepartureNew}?directie=tur`}
-            className={buttonClasses('primary', 'sm')}
+            // The bar's „Publică" is this screen's primary; a second
+            // filled button for the same thing splits the eye.
+            className={buttonClasses('secondary', 'sm')}
           >
             {c.actions.tur}
           </Link>

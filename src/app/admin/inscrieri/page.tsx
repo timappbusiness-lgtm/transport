@@ -18,6 +18,7 @@ import {
 } from '@/lib/onboarding';
 import { loadOnboardings, stepsOf } from '@/lib/onboarding-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: onboardingCopy.admin.meta.title };
 export const dynamic = 'force-dynamic';
@@ -75,7 +76,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             className={cn(
               'rounded-pill border px-3.5 py-1.5 text-small',
               option === status
-                ? 'border-transparent bg-foreground text-ground'
+                ? 'border-transparent bg-foreground text-white'
                 : 'border-border-strong text-muted hover:text-foreground',
             )}
           >
@@ -85,12 +86,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       </nav>
 
       {rows.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-body-lg">{status === null ? c.empty : c.emptyFiltered}</p>
-          <p className="mt-1 max-w-[56ch] text-body text-muted">
-            {status === null ? c.emptyBody : c.emptyFilteredBody}
-          </p>
-        </Card>
+        <EmptyState
+          figure={status === null ? 'document' : 'search'}
+          title={status === null ? c.empty : c.emptyFiltered}
+          body={status === null ? c.emptyBody : c.emptyFilteredBody}
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => {

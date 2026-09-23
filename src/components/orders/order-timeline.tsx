@@ -44,7 +44,7 @@ export function OrderTimeline({
 
       <ol className="mt-4 flex flex-col">
         {rows.map((row) => (
-          <li key={row.status} className="flex gap-3 pb-4 last:pb-0">
+          <li key={row.status} className="group flex gap-3 pb-4 last:pb-0">
             {/* The rail: the step's own icon rather than a dot, which is
                 what `ORDER_STEP_ICONS` was written for — seven steps read
                 from top to bottom are exactly the case where recognising
@@ -79,7 +79,10 @@ export function OrderTimeline({
                 className={cn(
                   'w-px flex-1',
                   row.state === 'done' ? 'bg-success/40' : 'bg-border',
-                  'last:hidden',
+                  // The rail runs between steps and stops at the last one.
+                  // `last:` here matched the line itself, which is always
+                  // the last thing in its column, so it was never drawn.
+                  'group-last:hidden',
                 )}
               />
             </div>
@@ -103,7 +106,7 @@ export function OrderTimeline({
                 </p>
               ) : null}
               {row.note !== null ? (
-                <p className="mt-1 whitespace-pre-line text-small">{row.note}</p>
+                <p className="mt-1 whitespace-pre-line break-words text-small">{row.note}</p>
               ) : null}
             </div>
           </li>
@@ -128,7 +131,7 @@ export function OrderTimeline({
                     : ''}
                 </span>
                 {event.note !== null ? (
-                  <span className="block whitespace-pre-line text-muted">{event.note}</span>
+                  <span className="block whitespace-pre-line break-words text-muted">{event.note}</span>
                 ) : null}
               </li>
             ))}

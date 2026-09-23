@@ -100,7 +100,7 @@ export function CompanyProfileBody({
       <header className="mt-6 flex flex-wrap items-start gap-5">
         <Logo company={company} logoUrl={companyLogoUrl(company.logoPath)} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-h2 leading-tight">{company.name}</h1>
+          <h1 className="text-h2 leading-tight break-words">{company.name}</h1>
           <p className="mt-2 text-body text-muted">
             {[company.city, company.county, COMPANY_TYPE_LABELS[company.companyType]]
               .filter(Boolean)
@@ -115,6 +115,11 @@ export function CompanyProfileBody({
             ) : null}
           </div>
         </div>
+        {/* The one thing a visitor came to do, where they arrive rather
+            than after five sections. It repeats, quieter, at the end. */}
+        <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} w-full sm:w-auto`}>
+          {c.cta.quote}
+        </Link>
       </header>
 
       {company.description ? (
@@ -161,7 +166,7 @@ export function CompanyProfileBody({
           {c.cta.quote}
         </h2>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+          <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
             {c.cta.quote}
           </Link>
           {/* The reveal is tied to a departure, because that is what the

@@ -16,6 +16,7 @@ import {
   type AdminOfferQuery,
 } from '@/lib/offers-admin-source';
 import { formatNumber } from '@/lib/requests';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -190,18 +191,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         </p>
       ) : null}
 
-      {page.rows.length === 0 ? (
-        <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
-          <h2 className="text-h3">{c.empty.title}</h2>
-          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.empty.body}</p>
-          {filtered ? (
-            <p className="mt-5 text-body">
-              <Link href={ROUTES.adminOffers} className="underline underline-offset-4">
+      {/* A failed read already says so above; an empty state under it
+          would claim there is nothing, which nobody knows. */}
+      {page.error !== null ? null : page.rows.length === 0 ? (
+        <EmptyState
+          figure={filtered ? 'search' : 'list'}
+          title={c.empty.title}
+          body={c.empty.body}
+          action={
+            filtered ? (
+              <Link href={ROUTES.adminOffers} className={buttonClasses('secondary', 'sm')}>
                 {c.filters.clear}
               </Link>
-            </p>
-          ) : null}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           <p className="text-body text-muted">

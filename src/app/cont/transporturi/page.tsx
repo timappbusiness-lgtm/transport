@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { buttonClasses } from '@/components/ui/button';
-import { Card, Figure, StatusBadge } from '@/components/ui/primitives';
+import { Figure, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, transportRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -18,6 +18,7 @@ import {
 } from '@/lib/orders';
 import { loadMyOrders, type OrderRow } from '@/lib/orders-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: ordersCopy.list.title };
 export const dynamic = 'force-dynamic';
@@ -88,14 +89,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       ) : null}
 
       {orders.length === 0 ? (
-        <Card className="p-6">
-          <h2 className="text-h3">
-            {isDriver && box === 'active' ? ordersCopy.driver.none : c.empty[box]}
-          </h2>
-          <p className="mt-2 max-w-[54ch] text-body text-muted">
-            {isDriver && box === 'active' ? ordersCopy.driver.noneBody : c.empty[`${box}Body`]}
-          </p>
-        </Card>
+        <EmptyState
+          figure="route"
+          title={isDriver && box === 'active' ? ordersCopy.driver.none : c.empty[box]}
+          body={isDriver && box === 'active' ? ordersCopy.driver.noneBody : c.empty[`${box}Body`]}
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (
