@@ -166,6 +166,8 @@ describe('where the new accent classes may not go', () => {
     'src/components/account/status-banner.tsx',
     'src/components/account/deletion-panel.tsx',
     'src/components/app/account-notices.tsx',
+    'src/app/not-found.tsx',
+    'src/app/error.tsx',
   ];
 
   function walk(dir: string): string[] {
@@ -197,6 +199,23 @@ describe('where the new accent classes may not go', () => {
       return /\blink-accent\b|\bTabLink\b|accent-on-dark|accent-subtle/.test(body);
     });
     expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
+  it('an error screen and a legal page carry no accent at all', () => {
+    // Not a link, not a button, not a number. The way out of an error is
+    // an ink button; a legal page is something to read.
+    for (const file of [
+      'src/app/not-found.tsx',
+      'src/app/error.tsx',
+      'src/app/termeni/page.tsx',
+      'src/app/confidentialitate/page.tsx',
+      'src/app/cookies/page.tsx',
+    ]) {
+      const body = readFileSync(file, 'utf8');
+      expect(body, file).not.toMatch(/-accent\b|-accent-|'primary'|variant="primary"/);
+      // `<Button>` with no variant is a primary one.
+      expect(body, file).not.toMatch(/<Button(?![^>]*variant=)/);
+    }
   });
 
   it('and inside an error the link is ink', () => {

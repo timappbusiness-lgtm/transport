@@ -97,7 +97,7 @@ test.describe('a private person can publish again', () => {
     await expect(page.getByLabel('Marca')).toHaveValue('Volkswagen');
     await page.getByRole('button', { name: /Publică/ }).click();
 
-    await expect(page.getByText(/Cererea ta este pe panou|este publicată/i)).toBeVisible({
+    await expect(page.getByText(/cererea ta e pe panou/i)).toBeVisible({
       timeout: 15_000,
     });
   });

@@ -273,7 +273,7 @@ test.describe('after acceptance the contacts open, and cost nothing', () => {
   test('the carrier reads the client, and reaches the order', async ({ page }) => {
     await signInAsCarrier(page);
     await page.goto('/cont/oferte');
-    await expect(page.getByText('Oferta ta a fost acceptată')).toBeVisible();
+    await expect(page.getByText('Clientul ți-a acceptat oferta.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Vezi datele de contact' }).click();
     await expect(page.getByText('Nu consumă din abonament: aveți o comandă confirmată.')).toBeVisible();

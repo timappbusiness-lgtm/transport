@@ -101,6 +101,6 @@ test.describe('the staff side', () => {
 
     await signIn(page, CARRIER_EMAIL, CARRIER_PASSWORD);
     await page.goto('/cont/firma/documente');
-    await expect(page.getByText('Firma ta este verificată')).toBeVisible();
+    await expect(page.getByText('Firma ta e verificată.')).toBeVisible();
   });
 });

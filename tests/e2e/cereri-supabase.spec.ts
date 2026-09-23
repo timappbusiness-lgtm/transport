@@ -68,7 +68,7 @@ test.describe('publishing a request end to end', () => {
     await fillForm(page, city);
     await page.getByRole('button', { name: 'Publică cererea' }).click();
 
-    await expect(page.getByText('Cererea ta este publicată')).toBeVisible();
+    await expect(page.getByText('Gata, cererea ta e pe panou.')).toBeVisible();
     await page.getByRole('link', { name: 'Vezi panoul de cereri' }).click();
     await expect(page.getByText(city).first()).toBeVisible();
   });

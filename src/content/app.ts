@@ -187,16 +187,23 @@ export const appCopy = {
       'Aici vei vedea transporturile care îți sunt repartizate: traseul, vehiculul și datele de contact. Deocamdată repartizarea se face de către dispecerul firmei, în afara platformei.',
   },
 
+  /**
+   * The two error screens, for every page on the site. Formal and short:
+   * no drawing, no accent, no exclamation, and the same words for a page
+   * that never existed and one the visitor may not see — a 404 that
+   * sounded different for the second would confirm it.
+   */
   errors: {
     notFound: {
       title: 'Pagina nu există',
-      body: 'Verifică adresa sau întoarce-te în cont.',
-      action: 'Înapoi în cont',
+      body: 'Verifică adresa sau pornește din nou de la prima pagină.',
+      action: 'Prima pagină',
     },
     failed: {
       title: 'Ceva nu a mers',
       body: 'Încearcă din nou. Dacă se repetă, scrie-ne și ne uităm.',
       action: 'Încearcă din nou',
+      home: 'Prima pagină',
     },
   },
 } as const;
