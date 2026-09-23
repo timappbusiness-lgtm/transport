@@ -199,7 +199,7 @@ export function AlertRow({
                 <li key={match.id} className="border-t border-border pt-3 first:border-0 first:pt-0">
                   <Link
                     href={requestRoute(match.cargo_listing_id)}
-                    className="text-sm underline underline-offset-4"
+                    className="text-sm link-accent"
                   >
                     {match.title ?? 'Cerere de transport'}
                   </Link>
@@ -235,7 +235,7 @@ export function AlertRow({
       ) : null}
       {updateState.quotaReached === true ? (
         <p className="mt-2 text-sm">
-          <Link href={ROUTES.plans} className="underline underline-offset-4">
+          <Link href={ROUTES.plans} className="link-accent">
             {alertsCopy.quota.action}
           </Link>
         </p>

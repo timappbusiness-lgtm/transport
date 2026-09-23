@@ -1,5 +1,7 @@
 'use client';
 
+import { successCopy } from '@/content/success';
+import { SuccessMoment } from '@/components/ui/success-moment';
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -159,14 +161,22 @@ export function ReceivedOffers({
 }
 
 function AcceptedNote({ offer }: { offer: OfferForRequest }) {
+  // The third moment, on the client's side. The next action is the
+  // telephone, so the contacts are the first thing under the sentence.
   return (
-    <div className="rounded-card border border-success/45 bg-success/8 p-5">
-      <p>
+    <SuccessMoment
+      as="h3"
+      title={successCopy.offerAccepted.title}
+      body={successCopy.offerAccepted.body}
+    >
+      <p className="flex flex-wrap items-center gap-2 text-sm">
         <StatusBadge tone="success">{offersCopy.accept.done}</StatusBadge>
-      </p>
-      <p className="mt-2 max-w-[62ch] text-sm">{offersCopy.accept.doneBody}</p>
-      <p className="mt-2 text-sm">
-        {offer.company_name} · {formatMoney(offer.price_amount, offer.currency)}
+        <span>
+          {offer.company_name} ·{' '}
+          <span className="font-mono font-medium tabular-nums text-accent">
+            {formatMoney(offer.price_amount, offer.currency)}
+          </span>
+        </span>
       </p>
       <div className="mt-4 max-w-[26rem]">
         <OrderContacts offerId={offer.id} />
@@ -180,7 +190,7 @@ function AcceptedNote({ offer }: { offer: OfferForRequest }) {
           </li>
         ))}
       </ol>
-    </div>
+    </SuccessMoment>
   );
 }
 
@@ -243,7 +253,7 @@ function OfferCard({
             <p className="mt-1.5 text-sm">
               <Link
                 href={companyRoute(offer.company_slug)}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {c.profile}
               </Link>

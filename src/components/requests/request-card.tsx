@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { RelativeTime } from '@/components/requests/relative-time';
+import { Badge } from '@/components/ui/badge';
+import { requestsCopy } from '@/content/cereri';
+import { isNew } from '@/lib/badges';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
 import { homeCopy } from '@/content/home';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
-import { IconLabel } from '@/components/ui/icon';
-import { iconForCategory } from '@/lib/icons';
+import { CategoryTile } from '@/components/ui/category-art';
+import { CARD_INTERACTIVE } from '@/components/ui/interactive';
 import {
   SCOPE_LABELS,
   formatKm,
@@ -27,38 +30,46 @@ const c = homeCopy.activity.feed;
  *
  * No hooks of its own, so it renders to static markup in a test — which is
  * how "the card never shows a note" is checked without a browser.
+ *
+ * It is its own list item on the homepage feed. The dashboard and the
+ * landing pages wrap it in a `<li>` of their own, and pass `as="div"`:
+ * a `<li>` inside a `<li>` is closed early by the HTML parser, and the
+ * page that arrives is not the page React hydrates.
  */
 export function RequestCard({
   request,
   now,
   className,
+  as: Item = 'li',
 }: {
   request: PublicRequest;
   /** Passed in so the server and the test agree on what "now" means. */
   now: Date;
   className?: string | undefined;
+  as?: 'li' | 'div';
 }) {
   const scope = scopeOf(request.from_country, request.to_country);
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
 
   return (
-    <li className={cn('min-w-0', className)}>
+    <Item className={cn('min-w-0', className)}>
       <Link
         href={requestRoute(request.id)}
-        className={cn(
-          'flex h-full flex-col rounded-card border border-border bg-surface p-4 sm:p-5',
-          'transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised',
-        )}
+        className={cn(CARD_INTERACTIVE, 'flex h-full flex-col p-4 sm:p-5')}
       >
-        <p className="flex items-center justify-between gap-3 font-mono text-label uppercase tracking-[0.12em] text-muted">
-          <IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
-            {CARGO_CATEGORY_LABELS[request.category]}
-          </IconLabel>
-          <span className="flex-none">{SCOPE_LABELS[scope]}</span>
-        </p>
+        <div className="flex items-center gap-3">
+          <CategoryTile category={request.category} size="sm" />
+          <p className="flex min-w-0 flex-1 items-center justify-between gap-3 font-mono text-label uppercase tracking-[0.12em] text-muted">
+            <span className="min-w-0 truncate text-foreground">
+              {CARGO_CATEGORY_LABELS[request.category]}
+            </span>
+            <span className="flex-none">{SCOPE_LABELS[scope]}</span>
+          </p>
+        </div>
 
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-body">
+        {/* The route is the biggest line on the card. */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-h3">
           <span className="sr-only">{c.routeLabel(request.from_city, request.to_city)}</span>
           <span aria-hidden="true" className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium">{request.from_city}</span>
@@ -71,7 +82,7 @@ export function RequestCard({
 
         <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-muted">
           {km ? (
-            <span className="rounded-pill border border-border px-2 py-0.5 font-mono tabular-nums">
+            <span className="rounded-pill border border-accent-border bg-accent-subtle px-2 py-0.5 font-mono font-medium tabular-nums text-accent">
               {km}
             </span>
           ) : null}
@@ -82,18 +93,21 @@ export function RequestCard({
           <StatusBadge tone={request.is_running ? 'success' : 'warning'}>
             {request.is_running ? c.running : c.notRunning}
           </StatusBadge>
-          {request.service_type === 'expres' ? (
-            <StatusBadge tone="neutral">{c.express}</StatusBadge>
-          ) : null}
+          {request.service_type === 'expres' ? <Badge kind="express">{c.express}</Badge> : null}
         </div>
 
-        <p className="mt-4 pt-1 font-mono text-label text-muted">
-          <RelativeTime
-            publishedAt={request.published_at}
-            initial={relativeTimeRo(request.published_at, now)}
-          />
+        <p className="mt-4 flex items-center gap-1.5 pt-1">
+          {isNew(request.published_at, now) ? (
+            <Badge kind="new">{requestsCopy.card.isNew}</Badge>
+          ) : null}
+          <Badge kind="time">
+            <RelativeTime
+              publishedAt={request.published_at}
+              initial={relativeTimeRo(request.published_at, now)}
+            />
+          </Badge>
         </p>
       </Link>
-    </li>
+    </Item>
   );
 }

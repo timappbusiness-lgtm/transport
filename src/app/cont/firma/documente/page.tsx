@@ -74,7 +74,7 @@ export default async function Page() {
         <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">
           {c.lede}{' '}
-          <Link href={ROUTES.accountFleet} className="underline underline-offset-4">
+          <Link href={ROUTES.accountFleet} className="link-accent">
             {c.vehicleHint}
           </Link>
         </p>

@@ -81,7 +81,7 @@ export default async function Page({
             {page > 1 ? (
               <Link
                 href={`${ROUTES.companies}/${slug}?pagina=${page - 1}#evaluari`}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {ratingsCopy.profile.previous}
               </Link>
@@ -90,7 +90,7 @@ export default async function Page({
             {page < lastPage ? (
               <Link
                 href={`${ROUTES.companies}/${slug}?pagina=${page + 1}#evaluari`}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {ratingsCopy.profile.next}
               </Link>

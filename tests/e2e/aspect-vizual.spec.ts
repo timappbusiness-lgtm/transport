@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * The visual contract, checked on every screen that renders without a
@@ -51,6 +52,7 @@ for (const [width, height, label] of [
     for (const path of SCREENS) {
       test(`${path} sits inside its viewport and has one h1`, async ({ page }) => {
         await page.goto(path);
+        await settled(page);
         const { overflow, h1 } = await pageSurface(page);
         expect(overflow, `${path} overflows by ${overflow}px`).toBeLessThanOrEqual(1);
         expect(h1, `${path} has ${h1} <h1> elements`).toBe(1);
@@ -91,6 +93,7 @@ test.describe('the type scale reaches the page', () => {
 test.describe('the accent is spent where it should be', () => {
   test('on the primary button', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     const button = page.getByRole('button', { name: /caută/i }).first();
     await expect(button).toBeVisible();
     const bg = await button.evaluate((n) => getComputedStyle(n).backgroundColor);
@@ -109,6 +112,7 @@ test.describe('the accent is spent where it should be', () => {
   test('but never on a legal page', async ({ page }) => {
     for (const path of ['/termeni', '/confidentialitate', '/cookies']) {
       await page.goto(path);
+      await settled(page);
       const used = await page
         .locator('main *')
         .evaluateAll((ns, accent) => ns.some((n) => {
@@ -125,6 +129,7 @@ test.describe('the focus ring is unchanged', () => {
     // The palette moved; this did not. A focus indicator that changes
     // with a repaint is one somebody has to re-learn.
     await page.goto('/cereri');
+    await settled(page);
     const link = page.locator('main a').first();
     await link.focus();
     const ring = await link.evaluate((n) => {

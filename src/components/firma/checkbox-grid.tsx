@@ -36,7 +36,7 @@ export function CheckboxGrid({
               name={name}
               value={option.code}
               defaultChecked={chosen.has(option.code.toUpperCase())}
-              className="mt-0.5 size-4 shrink-0 accent-[#1C262B]"
+              className="mt-0.5 size-4 shrink-0 accent-foreground"
             />
             <span className="min-w-0">
               {option.label}

@@ -87,7 +87,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
                 type="checkbox"
                 name="is_public"
                 defaultChecked={plan.isPublic}
-                className="size-4 accent-[#1C262B]"
+                className="size-4 accent-foreground"
               />
               {c.columns.visible}
             </label>
@@ -96,7 +96,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
                 type="checkbox"
                 name="highlight"
                 defaultChecked={plan.highlight}
-                className="size-4 accent-[#1C262B]"
+                className="size-4 accent-foreground"
               />
               {c.highlight}
             </label>
@@ -194,7 +194,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
           type="checkbox"
           name="is_public"
           defaultChecked={current?.isPublic ?? true}
-          className="size-3.5 accent-[#1C262B]"
+          className="size-3.5 accent-foreground"
         />
         {c.periodPublic}
       </label>

@@ -1,8 +1,9 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useActionState } from 'react';
 import { updateCompanyIdentityAction, type ActionState } from '@/app/cont/actions';
-import { Field, FormError, FormNotice } from '@/components/auth/form';
+import { Field, FormError } from '@/components/auth/form';
 import { SaveBar } from '@/components/firma/save-bar';
 import { COMPANY_TYPE_LABELS, accountCopy } from '@/content/account';
 import { firmaCopy } from '@/content/firma';
@@ -46,6 +47,9 @@ function ReadOnly({
  */
 export function IdentityTab({ company }: { company: Company }) {
   const [state, action] = useActionState(updateCompanyIdentityAction, EMPTY);
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const c = firmaCopy.identity;
   const isDraft = company.verification_status === 'draft';
 
@@ -57,7 +61,6 @@ export function IdentityTab({ company }: { company: Company }) {
       </div>
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       <ReadOnly label={accountCopy.company.cui} value={company.cui} />
 
@@ -78,7 +81,7 @@ export function IdentityTab({ company }: { company: Company }) {
                   name="companyType"
                   value={type}
                   defaultChecked={company.company_type === type}
-                  className="size-4 accent-[#1C262B]"
+                  className="size-4 accent-foreground"
                 />
                 {COMPANY_TYPE_LABELS[type]}
               </label>
@@ -166,7 +169,7 @@ export function IdentityTab({ company }: { company: Company }) {
           type="checkbox"
           name="baseAddressHidden"
           defaultChecked={company.base_address_hidden}
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.hideAddress}

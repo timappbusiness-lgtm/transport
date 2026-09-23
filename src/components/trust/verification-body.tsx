@@ -272,13 +272,13 @@ function LegalLinks() {
       </h2>
       <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-muted">{l.body}</p>
       <nav aria-label="Documente legale" className="mt-4 flex flex-wrap gap-5 text-sm">
-        <Link href={ROUTES.terms} className="underline underline-offset-4">
+        <Link href={ROUTES.terms} className="link-accent">
           {l.terms}
         </Link>
-        <Link href={ROUTES.privacy} className="underline underline-offset-4">
+        <Link href={ROUTES.privacy} className="link-accent">
           {l.privacy}
         </Link>
-        <Link href={ROUTES.cookies} className="underline underline-offset-4">
+        <Link href={ROUTES.cookies} className="link-accent">
           {l.cookies}
         </Link>
       </nav>

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * Ce se poate verifica fără o bază de date.
@@ -23,6 +24,7 @@ test.describe('ecranele din cont sunt închise unui vizitator', () => {
   for (const path of ACCOUNT_PAGES) {
     test(`${path} trimite la autentificare`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       await expect(page).toHaveURL(new RegExp('/autentificare'));
       // Și îl duce înapoi unde voia să ajungă.
       await expect(page).toHaveURL(new RegExp(`next=${encodeURIComponent(path)}`, 'i'));
@@ -33,17 +35,20 @@ test.describe('ecranele din cont sunt închise unui vizitator', () => {
 test.describe('panoul public nu suflă o vorbă despre cereri private', () => {
   test('nu apare niciun cuvânt despre vizibilitate', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await expect(page.getByText(/cerere privată|doar transportatorii pe care/i)).toHaveCount(0);
     await expect(page.getByText('Privată')).toHaveCount(0);
   });
 
   test('nici despre favoriți', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await expect(page.getByText(/favoriț/i)).toHaveCount(0);
   });
 
   test('și nici despre serii de plecări', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await expect(page.getByText(/se repetă|serie de plecări/i)).toHaveCount(0);
   });
 });
@@ -67,6 +72,7 @@ test.describe('pe telefon', () => {
 
   test('panoul de cereri încape', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -75,6 +81,7 @@ test.describe('pe telefon', () => {
 
   test('și panoul de trasee', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
@@ -91,6 +98,7 @@ test.describe('consola', () => {
     page.on('pageerror', (e) => errors.push(e.message));
 
     await page.goto('/cereri');
+    await settled(page);
     await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);
   });

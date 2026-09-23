@@ -44,7 +44,7 @@ export function AccountNav({
             aria-current={active ? 'page' : undefined}
             className={cn(
               'whitespace-nowrap rounded-pill px-3 py-2 text-sm',
-              active ? 'bg-surface text-foreground' : 'text-muted hover:text-foreground',
+              active ? 'bg-surface font-medium text-accent' : 'text-muted hover:text-foreground',
             )}
           >
             {item.label}
@@ -82,7 +82,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
       </select>
       <button
         type="submit"
-        className="self-start text-xs text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+        className="self-start text-xs link-accent"
       >
         Schimbă firma
       </button>

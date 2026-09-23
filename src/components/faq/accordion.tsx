@@ -100,7 +100,7 @@ function Item({
             <p className="mt-3 text-sm">
               <Link
                 href={entry.link.href}
-                className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+                className="link-accent"
               >
                 {entry.link.label}
               </Link>

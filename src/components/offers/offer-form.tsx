@@ -53,7 +53,7 @@ export function OfferForm({
     return (
       <p role="status" className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
         {state.notice}{' '}
-        <Link href={ROUTES.accountOffers} className="underline underline-offset-4">
+        <Link href={ROUTES.accountOffers} className="link-accent">
           Vezi ofertele trimise
         </Link>
       </p>
@@ -89,7 +89,7 @@ export function OfferForm({
       {noVehicle ? (
         <p className="rounded-card border border-warning/45 bg-warning/8 p-3 text-sm">
           {c.vehicleNone}{' '}
-          <Link href={ROUTES.accountFleet} className="underline underline-offset-4">
+          <Link href={ROUTES.accountFleet} className="link-accent">
             Deschide Flota
           </Link>
         </p>
@@ -254,7 +254,7 @@ export function OfferForm({
           <p>{state.error}</p>
           {state.quotaReached === true ? (
             <p className="mt-1 text-foreground">
-              <Link href={ROUTES.plans} className="underline underline-offset-4">
+              <Link href={ROUTES.plans} className="link-ink">
                 {offersCopy.quota.action}
               </Link>
             </p>

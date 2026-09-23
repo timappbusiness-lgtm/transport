@@ -258,7 +258,7 @@ function Choice({
               value={option}
               checked={value === option}
               onChange={() => onChange(option)}
-              className="size-4 accent-[#1C262B]"
+              className="size-4 accent-foreground"
             />
             {label}
           </label>

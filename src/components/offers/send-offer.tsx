@@ -89,7 +89,7 @@ export function SendOffer({
         <p className="mt-1 text-muted">
           {offersCopy.quota.body(quota.planName, quota.allowed)}
         </p>
-        <Link href={ROUTES.plans} className="mt-3 inline-block underline underline-offset-4">
+        <Link href={ROUTES.plans} className="mt-3 inline-block link-accent">
           {offersCopy.quota.action}
         </Link>
       </div>

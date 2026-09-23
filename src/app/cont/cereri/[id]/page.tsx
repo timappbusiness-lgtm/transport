@@ -101,7 +101,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </StatusBadge>
         </div>
         <p className="mt-4 text-sm">
-          <Link href={requestRoute(request.id)} className="underline underline-offset-4">
+          <Link href={requestRoute(request.id)} className="link-accent">
             Vezi cum o văd transportatorii
           </Link>
         </p>

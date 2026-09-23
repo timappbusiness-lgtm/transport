@@ -127,7 +127,7 @@ test.describe('a carrier sends an offer', () => {
   test('a matching request on the dashboard offers the same button', async ({ page }) => {
     await signInAsCarrier(page);
     await page.goto('/cont');
-    const matches = page.getByRole('region', { name: /Cereri potrivite/ });
+    const matches = page.getByRole('region', { name: /Cereri pentru tine/ });
     test.skip((await matches.count()) === 0, 'This firm has no matching requests seeded.');
     await expect(
       matches.getByRole('button', { name: 'Trimite ofertă' }).first(),
@@ -273,7 +273,7 @@ test.describe('after acceptance the contacts open, and cost nothing', () => {
   test('the carrier reads the client, and reaches the order', async ({ page }) => {
     await signInAsCarrier(page);
     await page.goto('/cont/oferte');
-    await expect(page.getByText('Oferta ta a fost acceptată')).toBeVisible();
+    await expect(page.getByText('Clientul ți-a acceptat oferta.')).toBeVisible();
 
     await page.getByRole('button', { name: 'Vezi datele de contact' }).click();
     await expect(page.getByText('Nu consumă din abonament: aveți o comandă confirmată.')).toBeVisible();

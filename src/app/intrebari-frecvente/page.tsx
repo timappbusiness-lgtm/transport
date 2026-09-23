@@ -53,14 +53,14 @@ export default async function Page() {
         {SUPPORT_EMAIL ? (
           <Link
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             {c.page.contact}
           </Link>
         ) : (
           <Link
             href={ROUTES.contact}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             {c.page.contact}
           </Link>

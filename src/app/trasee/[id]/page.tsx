@@ -229,7 +229,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 {c.carrierHidden}{' '}
                 <Link
                   href={ROUTES.signIn}
-                  className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+                  className="link-accent"
                 >
                   Autentificare
                 </Link>

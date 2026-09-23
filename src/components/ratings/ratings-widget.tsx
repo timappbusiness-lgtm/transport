@@ -29,7 +29,7 @@ export function RatingsWidget({ pending }: { pending: readonly PendingRating[] }
 
       <Card className="mt-3 p-5">
         <p className="text-sm">
-          <Link href={ROUTES.accountRatings} className="underline underline-offset-4">
+          <Link href={ROUTES.accountRatings} className="link-accent">
             {c.pending(pending.length)}
           </Link>
         </p>

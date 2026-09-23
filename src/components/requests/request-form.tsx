@@ -1,5 +1,8 @@
 'use client';
 
+import { successCopy } from '@/content/success';
+import { SuccessMoment } from '@/components/ui/success-moment';
+import { CategoryTile } from '@/components/ui/category-art';
 import { useActionState, useEffect, useId, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { attachListingPhotoAction } from '@/app/cerere/import-actions';
@@ -105,7 +108,7 @@ function Check({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-4 accent-[#1C262B]"
+        className="size-4 accent-foreground"
       />
       {label}
     </label>
@@ -433,20 +436,27 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             error={fieldError('category')}
             auto={auto.has('category')}
           >
-            <select
-              id={`${id}-category`}
-              value={draft.category}
-              onChange={(event) =>
-                set('category', event.target.value as RequestDraft['category'])
-              }
-              className={CONTROL}
-            >
-              {OFFERED_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {CARGO_CATEGORY_LABELS[category]}
-                </option>
-              ))}
-            </select>
+            {/* The drawing follows the choice: a person picking „Rulotă"
+                from a list sees a caravan appear beside it, which is the
+                quickest confirmation there is that they picked the right
+                line. Same row, no new step. */}
+            <div className="flex items-center gap-3">
+              <CategoryTile category={draft.category} size="sm" />
+              <select
+                id={`${id}-category`}
+                value={draft.category}
+                onChange={(event) =>
+                  set('category', event.target.value as RequestDraft['category'])
+                }
+                className={CONTROL}
+              >
+                {OFFERED_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {CARGO_CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </Labelled>
 
           {/* A suggestion, not a rule. The request goes out either way;
@@ -610,7 +620,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                   value={value}
                   checked={draft.serviceType === value}
                   onChange={() => set('serviceType', value)}
-                  className="mt-0.5 size-4 accent-[#1C262B]"
+                  className="mt-0.5 size-4 accent-foreground"
                 />
                 <span>
                   {label}
@@ -849,16 +859,17 @@ function Result({ state }: { state: PublishRequestState }) {
   const published = state.status === 'active';
   return (
     <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-xl">{published ? c.published : c.title}</h2>
       {published ? (
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.publishedBody}</p>
+        // The first of the four moments worth marking.
+        <SuccessMoment title={successCopy.published.title} body={successCopy.published.body}>
+          <CarrierCount count={state.matchingCarriers ?? null} className="max-w-[54ch]" />
+        </SuccessMoment>
       ) : (
-        <p className="mt-2 max-w-[54ch] text-sm">{state.publishError}</p>
+        <>
+          <h2 className="text-xl">{c.title}</h2>
+          <p className="mt-2 max-w-[54ch] text-sm">{state.publishError}</p>
+        </>
       )}
-
-      {published ? (
-        <CarrierCount count={state.matchingCarriers ?? null} className="mt-4 max-w-[54ch]" />
-      ) : null}
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href={ROUTES.accountRequests} className={buttonClasses('primary', 'md')}>
           {c.seeRequests}

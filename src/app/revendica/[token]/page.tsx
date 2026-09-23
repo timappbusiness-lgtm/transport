@@ -40,7 +40,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
         <h1 className="text-h2">{c.invalid}</h1>
         <p className="text-sm text-muted">{c.invalidBody}</p>
         <p className="text-sm">
-          <Link href={ROUTES.contact} className="underline underline-offset-4">
+          <Link href={ROUTES.contact} className="link-accent">
             Scrie-ne
           </Link>
         </p>

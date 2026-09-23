@@ -36,7 +36,7 @@ export default async function Page() {
           <p className="text-body-lg">{c.empty}</p>
           <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
           <p className="mt-4 text-sm">
-            <Link href={ROUTES.companies} className="underline underline-offset-4">
+            <Link href={ROUTES.companies} className="link-accent">
               Vezi transportatorii →
             </Link>
           </p>

@@ -56,7 +56,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
             type="checkbox"
             name="publicProfileEnabled"
             defaultChecked={company.public_profile_enabled}
-            className="mt-0.5 size-4 accent-[#1C262B]"
+            className="mt-0.5 size-4 accent-foreground"
           />
           <span>
             {c.enable}
@@ -96,7 +96,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
           ) : isLive && company.slug ? (
             <Link
               href={companyRoute(company.slug)}
-              className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="link-accent"
             >
               {c.live}
             </Link>

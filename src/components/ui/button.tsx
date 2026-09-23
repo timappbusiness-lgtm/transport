@@ -9,7 +9,7 @@ const VARIANTS: Record<Variant, string> = {
   // the accent is 7.09:1, and on the hover shade 9.18:1.
   // This used to be an ink pill, which meant the one action a screen
   // wanted you to take looked like every other dark thing on it.
-  primary: 'bg-accent text-white hover:bg-accent-hover',
+  primary: 'bg-accent text-on-accent hover:bg-accent-hover',
   // Ink pill, kept for the rare screen where a second filled button sits
   // beside the primary one and must not compete with it.
   ink: 'bg-foreground text-white hover:bg-ink-hover',
@@ -31,7 +31,11 @@ export const buttonClasses = (variant: Variant = 'primary', size: Size = 'md') =
     // Never `transition-colors`: in Tailwind v4 that list includes
     // outline-color, which makes the focus ring fade in from the element's
     // own text colour. A focus indicator has to be there on the first frame.
-    'transition-[color,background-color,border-color] duration-150',
+    //
+    // The press is a 2% scale, the one motion a button makes — transform
+    // only, and nothing under prefers-reduced-motion.
+    'transition-[color,background-color,border-color,transform] duration-(--duration-quick) ease-(--ease-soft)',
+    'motion-safe:active:scale-[0.98]',
     'disabled:pointer-events-none disabled:opacity-50',
     VARIANTS[variant],
     SIZES[size],

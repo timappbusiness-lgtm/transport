@@ -66,7 +66,7 @@ export function SaveSearch({
     return (
       <p role="status" className="text-sm">
         {state.notice}{' '}
-        <Link href={ROUTES.accountAlerts} className="underline underline-offset-4">
+        <Link href={ROUTES.accountAlerts} className="link-accent">
           Vezi alertele
         </Link>
       </p>
@@ -123,7 +123,7 @@ export function SaveSearch({
               name="frequency"
               value={frequency}
               defaultChecked={frequency === 'immediate'}
-              className="mt-0.5 size-4 accent-[#1C262B]"
+              className="mt-0.5 size-4 accent-foreground"
             />
             <span>
               {FREQUENCY_LABELS[frequency]}
@@ -139,7 +139,7 @@ export function SaveSearch({
           name="notify_email"
           value="yes"
           defaultChecked
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.email}
@@ -165,7 +165,7 @@ export function SaveSearch({
           <p>{state.error}</p>
           {state.quotaReached === true ? (
             <p className="mt-1 text-foreground">
-              <Link href={ROUTES.plans} className="underline underline-offset-4">
+              <Link href={ROUTES.plans} className="link-ink">
                 {alertsCopy.quota.action}
               </Link>{' '}
               <span className="text-muted">{alertsCopy.quota.hint}</span>

@@ -4,17 +4,25 @@
  * Rules that hold throughout: no invented numbers presented as real data,
  * every demonstration card labelled "Exemplu", every price labelled
  * orientativ. No exclamation marks, no superlatives, no social proof counts.
+ *
+ * The voice is a person talking to somebody who has a car to move or a
+ * platform to fill: second person, short sentences, the words used on the
+ * telephone. Warm is not the same as promising. Nothing here says an
+ * offer will come, a transport will be cheaper or a return will be full —
+ * the platform enforces none of those, so the copy does not say them.
  */
+import { BRAND_NAME } from '@/config/brand';
+
 
 export type CountryCode = 'RO' | 'DE' | 'IT' | 'NL' | 'ES' | 'FR' | 'BE' | 'AT' | 'HU';
 
 export const homeCopy = {
   hero: {
     eyebrow: 'Transport auto · România și Europa',
-    strong: 'Transport auto',
-    soft: 'cu firme verificate.',
+    strong: 'Găsești cine îți duce mașina,',
+    soft: 'dintre firme verificate.',
     subtitle:
-      'Publici cererea gratuit și primești oferte doar de la transportatori cu documente valabile.',
+      'Spui ce ai de mutat și de unde, gratuit. Îți pot trimite oferte doar firmele cu documentele în regulă.',
     primary: 'Publică o cerere',
     secondary: 'Trasee disponibile',
     photoAlt: 'Platformă auto încărcată, pe un drum european',
@@ -22,10 +30,10 @@ export const homeCopy = {
 
   panel: {
     eyebrow: 'Ce vezi despre un transportator',
-    strong: 'Datele care contează,',
+    strong: 'Vezi cu cine vorbești',
     soft: 'înainte să dai telefon.',
     lede:
-      'Fiecare firmă are documentele urmărite zilnic. Cardurile de mai jos arată forma informației, cu date demonstrative.',
+      'Urmărim zilnic când expiră actele fiecărei firme. Cardurile de mai jos sunt exemple, ca să vezi cum arată.',
     documents: {
       title: 'Documentele firmei',
       subtitle: 'Autotrans Exemplu SRL · Timiș',
@@ -67,8 +75,8 @@ export const homeCopy = {
    */
   activity: {
     eyebrow: 'Activitate pe platformă',
-    strong: 'Cereri noi',
-    soft: 'de transport auto.',
+    strong: 'Cereri noi,',
+    soft: 'care așteaptă un transportator.',
 
     stats: {
       sparklineLabel: 'Cereri publicate în ultimele 30 de zile',
@@ -100,8 +108,8 @@ export const homeCopy = {
      */
     categories: {
       eyebrow: 'Ce se transportă',
-      strong: 'Pe categorii',
-      soft: 'de vehicule.',
+      strong: 'Mașini, dube, rulote',
+      soft: 'și tot ce urcă pe o platformă.',
       /** Takes „90 de zile". */
       note: (window: string) => `Cereri publicate în ultimele ${window}.`,
       /** Takes „12 cereri" and the category name. */
@@ -109,7 +117,7 @@ export const homeCopy = {
     },
 
     empty: {
-      body: 'Primele cereri apar aici imediat ce sunt publicate. Până atunci, panoul e deschis: poți vedea singur ce e pe el.',
+      body: 'Aici apar cererile, pe măsură ce oamenii le publică. Panoul e deschis, te poți uita oricând.',
       primary: 'Publică o cerere',
       board: 'Vezi panoul de cereri',
       secondary: 'Trasee disponibile',
@@ -120,21 +128,21 @@ export const homeCopy = {
       soft: 'gratuit.',
       stepsTitle: 'Cum funcționează',
       steps: [
-        'Completezi traseul și detaliile vehiculului, în două minute.',
-        'Transportatorii verificați văd cererea și îți trimit oferte.',
-        'Compari ofertele și alegi. Datele tale de contact rămân ascunse până decizi tu.',
+        'Scrii de unde, până unde și ce mașină. Durează cam două minute.',
+        'Transportatorii verificați o văd și îți pot trimite oferte.',
+        'Compari și alegi tu. Datele tale de contact rămân ascunse până atunci.',
       ],
       button: 'Publică o cerere gratuit',
-      note: 'Fără abonament pentru clienți. Contul se creează la final.',
+      note: 'Nu plătești abonament. Contul îl faci la final, după ce ai completat.',
     },
   },
 
   comparison: {
     eyebrow: 'Cum se schimbă',
     strong: 'Ce faci azi',
-    soft: 'și ce faci cu Coridor.',
-    oldTitle: 'Vechea metodă',
-    newTitle: 'Cu Coridor',
+    soft: `și ce faci cu ${BRAND_NAME}.`,
+    oldTitle: 'Cum era',
+    newTitle: `Cu ${BRAND_NAME}`,
     old: [
       'Grupuri de Facebook',
       'Zeci de telefoane',
@@ -146,8 +154,8 @@ export const homeCopy = {
       'Publici o singură dată',
       'Oferte de la firme verificate',
       'Documente urmărite zilnic',
-      'Comandă în platformă',
-      'Retur plin',
+      'Comanda rămâne scrisă',
+      'Returul se vede pe panou',
     ],
     stepLabel: 'Pasul',
   },
@@ -170,7 +178,7 @@ export const homeCopy = {
   finalCta: {
     strong: 'Ai o mașină de mutat',
     soft: 'sau un loc liber pe platformă?',
-    lede: 'Publică o cerere de transport sau anunță un traseu disponibil.',
+    lede: 'Publici o cerere sau anunți un traseu. Formularul te duce pas cu pas.',
     primary: 'Publică o cerere',
     secondary: 'Anunță un traseu',
   },

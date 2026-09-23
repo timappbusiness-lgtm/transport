@@ -162,7 +162,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   ) : null}
 
                   {row.solo_reviews > 0 ? (
-                    <p className="mt-2 text-xs text-warning">{c.soloReviews(row.solo_reviews)}</p>
+                    <p className="mt-2 text-xs font-medium text-foreground">{c.soloReviews(row.solo_reviews)}</p>
                   ) : null}
                 </Card>
               </li>

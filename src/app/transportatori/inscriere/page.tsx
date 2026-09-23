@@ -71,7 +71,7 @@ export default function Page() {
 
       <p className="mt-6 text-small text-muted">
         {c.hasAccount}{' '}
-        <Link href={ROUTES.signIn} className="text-foreground underline underline-offset-4">
+        <Link href={ROUTES.signIn} className="link-accent">
           {c.signIn}
         </Link>
       </p>

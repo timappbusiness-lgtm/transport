@@ -197,8 +197,6 @@ export const accountCopy = {
     pendingTitle: 'Documentele sunt în verificare',
     pendingBody:
       'Te anunțăm pe e-mail când firma este aprobată. Poți încărca în continuare documente noi.',
-    verifiedTitle: 'Firma ta este verificată',
-    verifiedBody: 'Poți publica trasee și poți trimite oferte la cereri.',
     rejectedTitle: 'Verificarea a fost respinsă',
     rejectedBody: 'Corectează ce este mai jos și trimite din nou.',
     suspendedTitle: 'Contul este suspendat',

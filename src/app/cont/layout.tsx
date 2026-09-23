@@ -15,7 +15,7 @@ import { isDriverAllowed, isOpenWithoutTerms } from '@/lib/auth/guards';
 import { pickBanner } from '@/lib/banners';
 import { EXPIRY_WINDOW_DAYS } from '@/lib/dashboard-source';
 import { loadNavCounts } from '@/lib/nav-counts';
-import { activeHref, bottomNav, buildNav } from '@/lib/navigation';
+import { activeHref, bottomNav, buildNav, withBadges } from '@/lib/navigation';
 import { loadCompanySubscription } from '@/lib/subscription-source';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
@@ -114,7 +114,13 @@ export default async function AccountLayout({ children }: { children: React.Reac
         </div>
       </Container>
 
-      <MobileNav bar={bar} more={more} current={current} />
+      {/* The same counts the sidebar and the header show: one call, one
+          number, on every surface that has a menu. */}
+      <MobileNav
+        bar={withBadges(bar, counts)}
+        more={withBadges(more, counts)}
+        current={current}
+      />
     </>
   );
 }

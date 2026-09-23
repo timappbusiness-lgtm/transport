@@ -64,7 +64,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </span>
           ) : null}
           {href !== null ? (
-            <Link href={href} className="underline underline-offset-4">
+            <Link href={href} className="link-accent">
               {c.context[conversation.kind]}
             </Link>
           ) : null}

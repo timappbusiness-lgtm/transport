@@ -63,7 +63,7 @@ export function PhotoSlot({
       aria-label={label}
       className={cn(
         'relative overflow-hidden rounded-card border border-white/15',
-        'bg-[linear-gradient(160deg,#41525a,#7e8d94)]',
+        'bg-linear-160 from-photo-from to-photo-to',
         className,
       )}
     >
@@ -77,19 +77,19 @@ export function PhotoSlot({
           {/* The ground shadow. Soft, wide and short — a high sun, which
               is what keeps it from reading as a drop shadow on a sticker. */}
           <radialGradient id="ps-shadow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(20,28,32,.45)" />
-            <stop offset="100%" stopColor="rgba(20,28,32,0)" />
+            <stop offset="0%" className="[stop-color:var(--color-foreground)]" stopOpacity=".45" />
+            <stop offset="100%" className="[stop-color:var(--color-foreground)]" stopOpacity="0" />
           </radialGradient>
           {/* The road fading out to the left. */}
           <linearGradient id="ps-road" x1="0" x2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,.04)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,.26)" />
+            <stop offset="0%" className="[stop-color:var(--color-surface)]" stopOpacity=".04" />
+            <stop offset="100%" className="[stop-color:var(--color-surface)]" stopOpacity=".26" />
           </linearGradient>
         </defs>
 
         {/* road */}
         <path d="M0 214h400" stroke="url(#ps-road)" strokeWidth="1.5" />
-        <g stroke="rgba(255,255,255,.14)" strokeLinecap="round">
+        <g className="stroke-surface/14" strokeLinecap="round">
           <path d="M22 226h34" strokeWidth="2.2" opacity=".45" />
           <path d="M98 226h42" strokeWidth="2.6" opacity=".6" />
           <path d="M176 226h46" strokeWidth="3" opacity=".75" />
@@ -127,7 +127,7 @@ export function PhotoSlot({
           <circle cx="300" cy="204" r="9" />
           <circle cx="340" cy="204" r="9" />
         </g>
-        <g fill="none" stroke="rgba(20,28,32,.35)" strokeWidth="2.4">
+        <g fill="none" className="stroke-foreground/35" strokeWidth="2.4">
           <circle cx="52" cy="204" r="4" />
           <circle cx="300" cy="204" r="4" />
           <circle cx="340" cy="204" r="4" />

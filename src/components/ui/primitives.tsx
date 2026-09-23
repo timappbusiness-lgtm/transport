@@ -5,7 +5,7 @@ import { IconLabel } from '@/components/ui/icon';
 /**
  * Two-tone headline: the claim in ink, the qualifier in the soft tone.
  *
- * `soft` is #7b8b93, which measures 3.28:1 on the ground — enough for large
+ * `soft` is `--color-ink-soft`, 3.28:1 on the ground — enough for large
  * text and not enough for body, so this component is the only place it is
  * allowed to appear.
  */
@@ -248,15 +248,29 @@ export function DataRow({
   label,
   value,
   trailing,
+  tone = 'ink',
 }: {
   label: string;
   value: string;
   trailing?: React.ReactNode;
+  /**
+   * `accent` for a count the row exists to show — the dashboard's routes,
+   * seats and contacts. Ink everywhere else: a plate or an id is data to
+   * read, not a number to notice.
+   */
+  tone?: 'ink' | 'accent';
 }) {
   return (
     <div className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0">
       <span className="min-w-0 flex-1 truncate text-small text-muted">{label}</span>
-      <span className="font-mono text-small tabular-nums text-foreground">{value}</span>
+      <span
+        className={cn(
+          'font-mono text-small tabular-nums',
+          tone === 'accent' ? 'font-medium text-accent' : 'text-foreground',
+        )}
+      >
+        {value}
+      </span>
       {trailing}
     </div>
   );

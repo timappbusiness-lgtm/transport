@@ -159,7 +159,7 @@ export function CarrierHome({
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {data.matches.map((request) => (
               <li key={request.id} className="flex min-w-0 flex-col">
-                <RequestCard request={request} now={now} />
+                <RequestCard request={request} now={now} as="div" />
                 <MatchReasons
                   reasons={data.matchReasons[request.id] ?? []}
                   detour={data.detours[request.id]}
@@ -189,11 +189,13 @@ export function CarrierHome({
             {h.activity}
           </h2>
           <Card className="mt-3 px-5 py-2">
-            <DataRow label={c.activity.routes} value={formatNumber(data.activeRoutes)} />
+            {/* The three counts this card is for, in the accent. */}
+            <DataRow label={c.activity.routes} value={formatNumber(data.activeRoutes)} tone="accent" />
             {data.seatsTotal > 0 ? (
               <DataRow
                 label={c.activity.seats}
                 value={`${formatNumber(data.seatsTaken)} / ${formatNumber(data.seatsTotal)}`}
+                tone="accent"
               />
             ) : null}
             <DataRow
@@ -203,6 +205,7 @@ export function CarrierHome({
                   ? formatNumber(data.contactsThisMonth)
                   : `${formatNumber(data.contactsThisMonth)} / ${formatNumber(contactsLimit)}`
               }
+              tone="accent"
             />
           </Card>
         </section>
@@ -271,7 +274,7 @@ function Attention({
       <p className="mt-3">
         <Link
           href={href}
-          className="text-small text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-small link-accent"
         >
           {action}
         </Link>
@@ -305,7 +308,10 @@ function Countdown({ expiresAt, now }: { expiresAt: string | null; now: Date }) 
       : pluralRo(Math.max(Math.floor(left / 60_000), 1), 'minut', 'minute', 'un');
 
   return (
-    <span className={cn(hours < 3 ? 'text-warning' : 'text-muted')}>
+    // Under three hours it is ink and heavier, not amber: the warning
+    // colour measures 3.64:1 as text on white, under AA. The weight
+    // says „soon"; the words say how soon.
+    <span className={cn(hours < 3 ? 'font-medium text-foreground' : 'text-muted')}>
       {c.bookings.expiresIn(label)}
     </span>
   );

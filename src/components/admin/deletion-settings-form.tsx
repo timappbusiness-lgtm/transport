@@ -68,7 +68,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
+          <button type="submit" className={buttonClasses('ink', 'sm')}>
             {c.save}
           </button>
         </div>

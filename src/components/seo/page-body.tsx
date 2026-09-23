@@ -220,7 +220,7 @@ function Price({ page, data }: { page: SeoPage; data: SeoPageData }) {
       <p className="mt-4">
         <Link
           href={`${ROUTES.prices}${priceQuery(page)}`}
-          className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-body link-accent"
         >
           {c.price.calculator}
         </Link>
@@ -261,14 +261,14 @@ function Requests({
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
             {data.requests.map((request) => (
               <li key={request.id} className="min-w-0">
-                <RequestCard request={request} now={now} />
+                <RequestCard request={request} now={now} as="div" />
               </li>
             ))}
           </ul>
           <p className="mt-4">
             <Link
               href={boardHref(page, ROUTES.requests)}
-              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body link-accent"
             >
               {c.requests.all}
             </Link>
@@ -305,7 +305,7 @@ function Departures({ data }: { data: SeoPageData }) {
           <p className="mt-4">
             <Link
               href={ROUTES.routes}
-              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body link-accent"
             >
               {c.departures.all}
             </Link>
@@ -337,7 +337,7 @@ function Companies({ data }: { data: SeoPageData }) {
           <p className="mt-4">
             <Link
               href={ROUTES.companies}
-              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body link-accent"
             >
               {c.companies.all}
             </Link>
@@ -387,7 +387,7 @@ function Summary({
       <p className="mt-3">
         <Link
           href={href}
-          className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-body link-accent"
         >
           {link}
         </Link>

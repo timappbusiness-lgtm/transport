@@ -372,6 +372,12 @@ export interface NavCounts {
   messages: number;
   /** Offers received and still unanswered. */
   offers: number;
+  /**
+   * Blocking documents the firm still has to upload: missing, rejected
+   * or expired. Optional, because only a firm has any — a private
+   * person's menu has no documents item for it to sit on.
+   */
+  documents?: number;
 }
 
 export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
@@ -379,7 +385,7 @@ export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
 /**
  * The badge for one item, or 0 when it carries none.
  *
- * Only two items take one. An item that is a shortcut to a board — Cereri
+ * Three items take one. An item that is a shortcut to a board — Cereri
  * de transport, Trasee disponibile — has nothing waiting on it: everything
  * there is somebody else's, and a number that never reaches zero is
  * furniture.
@@ -387,6 +393,7 @@ export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
 export function badgeFor(href: string, counts: NavCounts = NO_NAV_COUNTS): number {
   if (href === ROUTES.accountMessages) return Math.max(0, counts.messages);
   if (href === ROUTES.accountOffers) return Math.max(0, counts.offers);
+  if (href === ROUTES.accountDocuments) return Math.max(0, counts.documents ?? 0);
   return 0;
 }
 

@@ -40,14 +40,14 @@ export function OrderContacts({ offerId, label }: { offerId: string; label?: str
         ) : null}
         {phone ? (
           <p className="font-mono text-sm tabular-nums">
-            <a href={`tel:${phone}`} className="underline underline-offset-4">
+            <a href={`tel:${phone}`} className="link-accent">
               {phone}
             </a>
           </p>
         ) : null}
         {email ? (
           <p className="text-sm">
-            <a href={`mailto:${email}`} className="underline underline-offset-4">
+            <a href={`mailto:${email}`} className="link-accent">
               {email}
             </a>
           </p>
@@ -55,7 +55,7 @@ export function OrderContacts({ offerId, label }: { offerId: string; label?: str
         <p className="mt-2 text-xs text-muted">{c.free}</p>
         {transportId !== null ? (
           <p className="mt-2 text-sm">
-            <Link href={transportRoute(transportId)} className="underline underline-offset-4">
+            <Link href={transportRoute(transportId)} className="link-accent">
               {offersCopy.sent.seeOrder}
             </Link>
           </p>

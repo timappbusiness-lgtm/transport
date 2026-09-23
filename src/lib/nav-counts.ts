@@ -1,11 +1,13 @@
 import 'server-only';
 import { cache } from 'react';
+import { getAccountContext } from './auth/account';
+import { pendingDocumentCount } from './badges';
 import { NO_NAV_COUNTS, type NavCounts } from './navigation';
 import { isSupabaseConfigured } from './supabase/env';
 import { createClient } from './supabase/server';
 
 /**
- * The numbers on the two menu badges.
+ * The numbers on the three menu badges.
  *
  * Read once per request — `cache()` — and handed to the header and the
  * sidebar from the same call, because two counts of the same thing is how
@@ -26,17 +28,33 @@ export const loadNavCounts = cache(async (): Promise<NavCounts> => {
   if (!isSupabaseConfigured()) return NO_NAV_COUNTS;
 
   const supabase = await createClient();
-  const [messages, offers] = await Promise.all([
+  // The active firm, from the same cached context the page already read.
+  // No firm, no documents count — and no extra round trip for it.
+  const companyId = (await getAccountContext())?.activeCompany?.id ?? null;
+
+  const [messages, offers, documents] = await Promise.all([
     supabase.rpc('unread_message_count'),
     supabase.rpc('unanswered_offer_count'),
+    companyId === null
+      ? Promise.resolve({ data: [], error: null })
+      : // The rows the documents page reads, under the same RLS: a member
+        // sees their own firm's requirements and nobody else's.
+        supabase
+          .from('v_company_missing_documents')
+          .select('is_blocking, state')
+          .eq('company_id', companyId),
   ]);
 
   if (messages.error) console.error('[meniu] unread_message_count', messages.error.message);
   if (offers.error) console.error('[meniu] unanswered_offer_count', offers.error.message);
+  if (documents.error) console.error('[meniu] documents', documents.error.message);
 
   return {
     messages: toCount(messages.data),
     offers: toCount(offers.data),
+    documents: pendingDocumentCount(
+      (documents.data ?? []) as { is_blocking: boolean | null; state: string | null }[],
+    ),
   };
 });
 

@@ -1,3 +1,6 @@
+import { successCopy } from '@/content/success';
+import { SuccessMoment } from '@/components/ui/success-moment';
+import { TabLink } from '@/components/ui/tab';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
@@ -150,7 +153,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {only !== null && offers.length > 0 ? (
         <p className="text-sm">
-          <Link href={`${ROUTES.accountOffers}?cutie=${box}`} className="underline underline-offset-4">
+          <Link href={`${ROUTES.accountOffers}?cutie=${box}`} className="link-accent">
             Vezi toate ofertele
           </Link>
         </p>
@@ -205,7 +208,7 @@ function Row({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-h3">
-            <Link href={requestRoute(offer.request_id)} className="underline underline-offset-4">
+            <Link href={requestRoute(offer.request_id)} className="link-accent">
               {offer.request_title ?? `${offer.from_city} — ${offer.to_city}`}
             </Link>
           </h2>
@@ -218,7 +221,15 @@ function Row({
         </div>
 
         <div className="text-right">
-          <p className="font-display text-xl leading-none tabular-nums">
+          {/* The price is the key number while the offer is alive or won;
+              on one that was refused, withdrawn or ran out it is history,
+              and history is ink. */}
+          <p
+            className={cn(
+              'font-display text-xl leading-none tabular-nums',
+              isLive(offer.status) || offer.status === 'accepted' ? 'text-accent' : 'text-foreground',
+            )}
+          >
             {formatMoney(offer.price_amount, offer.currency)}
           </p>
           <p className="mt-1.5">
@@ -235,23 +246,24 @@ function Row({
       </div>
 
       {offer.status === 'accepted' ? (
-        <div className="mt-4 rounded-card border border-success/45 bg-success/8 p-4">
-          <p className="text-sm font-medium">{offersCopy.sent.accepted}</p>
-          <p className="mt-1 max-w-[62ch] text-sm">{offersCopy.sent.acceptedBody}</p>
-          <div className="mt-3 max-w-[26rem]">
+        // The third moment, on the carrier's side.
+        <SuccessMoment
+          as="h3"
+          className="mt-4"
+          title={successCopy.offerWon.title}
+          body={successCopy.offerWon.body}
+        >
+          <div className="max-w-[26rem]">
             <OrderContacts offerId={offer.id} />
           </div>
           {offer.transport_id !== null ? (
             <p className="mt-3 text-sm">
-              <Link
-                href={transportRoute(offer.transport_id)}
-                className="underline underline-offset-4"
-              >
+              <Link href={transportRoute(offer.transport_id)} className="link-accent">
                 {offersCopy.sent.seeOrder}
               </Link>
             </p>
           ) : null}
-        </div>
+        </SuccessMoment>
       ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -289,18 +301,8 @@ function Tab({
   small?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'rounded-pill border',
-        small ? 'px-3 py-1 text-xs' : 'px-3.5 py-1.5 text-sm',
-        active
-          ? 'border-accent bg-accent text-white'
-          : 'border-border text-muted hover:border-border-strong',
-      )}
-    >
+    <TabLink href={href} active={active} size={small ? 'sm' : 'md'}>
       {label}
-    </Link>
+    </TabLink>
   );
 }

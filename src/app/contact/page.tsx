@@ -142,7 +142,7 @@ function Channel({
         {href === null ? (
           <span className="text-muted">{value}</span>
         ) : (
-          <a href={href} className="underline underline-offset-4">
+          <a href={href} className="link-accent">
             {value}
           </a>
         )}
@@ -164,7 +164,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 function SelfServe({ href, label, hint }: { href: string; label: string; hint: string }) {
   return (
     <li className="rounded-card border border-border bg-surface p-4">
-      <Link href={href} className="underline underline-offset-4">
+      <Link href={href} className="link-accent">
         {label}
       </Link>
       <p className="mt-1 max-w-[54ch] text-sm text-muted">{hint}</p>

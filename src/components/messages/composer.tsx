@@ -65,7 +65,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
     >
       <input type="hidden" name="conversation_id" value={conversationId} />
 
-      {offline ? <p className="mb-2 text-xs text-warning">{c.offline}</p> : null}
+      {offline ? <p className="mb-2 text-xs font-medium text-foreground">{c.offline}</p> : null}
 
       {files.length > 0 ? (
         <ul className="mb-2 flex flex-wrap gap-1.5 text-xs text-muted">
@@ -104,7 +104,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <label className="cursor-pointer text-small underline underline-offset-4">
+        <label className="cursor-pointer text-small link-accent">
           {c.attach}
           <input
             ref={fileRef}

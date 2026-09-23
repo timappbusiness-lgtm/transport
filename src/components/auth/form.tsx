@@ -135,7 +135,7 @@ export function SubmitButton({
 
 export function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground">
+    <Link href={href} className="link-accent">
       {children}
     </Link>
   );

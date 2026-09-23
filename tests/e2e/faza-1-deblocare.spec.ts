@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * What the Faza 1 unblocking changed, from a browser and with no database.
@@ -41,6 +42,7 @@ test.describe('the boards are findable', () => {
 
   test('the request board opens for a visitor with no account', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await expect(page).toHaveURL(/\/cereri$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
@@ -52,6 +54,7 @@ test.describe('empty states offer somewhere to go', () => {
     // click down: an empty board is the screen where a person has the
     // least to go on, and five things to choose between is the problem.
     await page.goto('/cereri');
+    await settled(page);
     const main = page.locator('main');
     await expect(main.getByRole('link', { name: /Publică/ }).first()).toBeVisible();
     await main.getByText('Altceva de făcut de aici').click();
@@ -60,6 +63,7 @@ test.describe('empty states offer somewhere to go', () => {
 
   test('the departures board offers somewhere too', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await expect(page.locator('main').getByRole('link').first()).toBeVisible();
   });
 });
@@ -67,6 +71,7 @@ test.describe('empty states offer somewhere to go', () => {
 test.describe('the filters cover what the board holds', () => {
   test('every category of the niche can be filtered for, not only six', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     const options = page.locator('#rf-category option');
     // The ten offered categories plus the „any" option.
     expect(await options.count()).toBe(11);
@@ -80,6 +85,7 @@ test.describe('the filters cover what the board holds', () => {
 
   test('and nothing outside it', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     // This used to assert the opposite: that camion and ambarcatiune
     // were filterable, back when the filter mirrored the competitor's
     // thirteen categories. They need different equipment and different
@@ -93,12 +99,14 @@ test.describe('the filters cover what the board holds', () => {
     // Inside „Mai multe filtre" now; `toHaveCount` reads the markup
     // rather than the pixels, so it does not need opening.
     await page.goto('/cereri');
+    await settled(page);
     await expect(page.locator('#rf-service option[value="expres"]')).toHaveCount(1);
     await expect(page.locator('#rf-service option[value="tractare"]')).toHaveCount(0);
   });
 
   test('a chosen filter survives into the address bar', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await page.getByText('Mai multe filtre').click();
     await page.locator('#rf-service').selectOption('expres');
     await page.getByRole('button', { name: /Caută|Filtrează/ }).first().click();
@@ -195,6 +203,7 @@ test.describe('on a phone', () => {
   for (const path of ['/', '/cereri', '/trasee', '/contact', '/cerere/noua']) {
     test(`${path} does not scroll sideways at 390px`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -213,6 +222,7 @@ test.describe('nothing shouts in the console', () => {
       page.on('pageerror', (error) => problems.push(error.message));
 
       await page.goto(path);
+      await settled(page);
       await page.waitForLoadState('networkidle');
 
       // A failed request to a Supabase that is not configured is expected

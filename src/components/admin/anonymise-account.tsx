@@ -32,7 +32,7 @@ export function AnonymiseAccount() {
         </label>
       </div>
       <div>
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.anonymise}
         </button>
       </div>

@@ -12,6 +12,8 @@ export const appCopy = {
     moreLabel: 'Mai mult',
     moreTitle: 'Restul meniului',
     close: 'Închide',
+    /** After a count on a menu item, for a screen reader: „3 care așteaptă". */
+    waiting: 'care așteaptă',
     skipToContent: 'Sari la conținut',
     help: 'Ajutor',
     publish: 'Publică',
@@ -58,7 +60,7 @@ export const appCopy = {
     // opening the application wants the answer to one question, and
     // „Necesită atenție" is a heading for a report, not an answer.
     needsAttention: 'Ce ai de făcut acum',
-    nothingToDo: 'Nimic acum. Panoul de cereri este deschis.',
+    nothingToDo: 'Nimic de făcut acum. Panoul de cereri e deschis oricând.',
     quickActions: 'Ce poți face',
     activity: 'Activitate',
   },
@@ -66,7 +68,7 @@ export const appCopy = {
   carrier: {
     checklist: {
       title: 'Ce mai ai de făcut',
-      lede: 'Firma poate trimite oferte după ce echipa noastră aprobă documentele.',
+      lede: 'Poți trimite oferte după ce ne uităm peste documente și le aprobăm.',
     },
     bookings: {
       title: 'Rezervări de confirmat',
@@ -89,10 +91,9 @@ export const appCopy = {
       action: 'Vezi flota',
     },
     matches: {
-      title: 'Cereri potrivite',
-      lede:
-        'Potrivite cu acoperirea, categoriile și dotările din profilul firmei, și cu traseele publicate.',
-      empty: 'Nicio cerere nouă pentru profilul firmei.',
+      title: 'Cereri pentru tine',
+      lede: 'Alese după unde circuli, ce transporți și traseele pe care le-ai publicat.',
+      empty: 'Deocamdată nimic nou pe rutele tale.',
       action: 'Vezi toate cererile',
       /** Why a card is here. Codes come from `matchReasons`. */
       reasons: {
@@ -104,7 +105,7 @@ export const appCopy = {
         tractare: 'Faci tractări',
       } as Record<string, string>,
       /** Shown when the profile is empty enough that matching says little. */
-      completeProfile: 'Completează profilul firmei ca să primești potriviri mai bune.',
+      completeProfile: 'Spune-ne unde circuli și ce transporți, și potrivirile se strâng pe ce faci tu.',
       /**
        * The detour, in the words a dispatcher uses: extra kilometres to
        * pick the vehicle up and drop it off, not how near the request
@@ -123,7 +124,7 @@ export const appCopy = {
         n === 1 ? 'O comandă așteaptă un pas de la tine' : `${n} comenzi așteaptă un pas de la tine`,
       disputes: (n: number) => (n === 1 ? 'O comandă în dispută' : `${n} comenzi în dispută`),
       action: 'Vezi transporturile',
-      none: 'Niciun transport în lucru.',
+      none: 'Niciun transport în lucru acum.',
     },
 
     activity: {
@@ -186,16 +187,23 @@ export const appCopy = {
       'Aici vei vedea transporturile care îți sunt repartizate: traseul, vehiculul și datele de contact. Deocamdată repartizarea se face de către dispecerul firmei, în afara platformei.',
   },
 
+  /**
+   * The two error screens, for every page on the site. Formal and short:
+   * no drawing, no accent, no exclamation, and the same words for a page
+   * that never existed and one the visitor may not see — a 404 that
+   * sounded different for the second would confirm it.
+   */
   errors: {
     notFound: {
       title: 'Pagina nu există',
-      body: 'Verifică adresa sau întoarce-te în cont.',
-      action: 'Înapoi în cont',
+      body: 'Verifică adresa sau pornește din nou de la prima pagină.',
+      action: 'Prima pagină',
     },
     failed: {
       title: 'Ceva nu a mers',
       body: 'Încearcă din nou. Dacă se repetă, scrie-ne și ne uităm.',
       action: 'Încearcă din nou',
+      home: 'Prima pagină',
     },
   },
 } as const;

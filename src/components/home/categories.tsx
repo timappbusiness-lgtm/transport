@@ -7,6 +7,9 @@ import { REQUEST_FILTER_KEYS } from '@/lib/request-filters';
 import { formatNumber, pluralRo, showCategories, type CategoryCount } from '@/lib/requests';
 import { loadHomepageActivity, type HomepageActivity } from '@/lib/requests-source';
 import { iconForFact } from '@/lib/icons';
+import { CategoryTile } from '@/components/ui/category-art';
+import { CARD_INTERACTIVE } from '@/components/ui/interactive';
+import { cn } from '@/lib/utils';
 
 const c = homeCopy.activity.categories;
 
@@ -67,12 +70,17 @@ function CategoryCard({ row }: { row: CategoryCount }) {
       <Link
         href={`${ROUTES.requests}?${REQUEST_FILTER_KEYS.category}=${row.category}`}
         aria-label={c.linkLabel(count, row.label)}
-        className="flex h-full flex-col justify-between gap-2 rounded-card border border-border bg-surface p-4 shadow-card transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised"
+        className={cn(CARD_INTERACTIVE, 'flex h-full flex-col gap-3 p-4')}
       >
-        <span className="font-display text-h2 leading-none tabular-nums">
-          {formatNumber(row.requests)}
+        {/* The competitor's best idea, kept honest: a large drawing per
+            kind of vehicle, and under it a count that is a real count. */}
+        <CategoryTile category={row.category} size="lg" className="w-full" />
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-small font-medium">{row.label}</span>
+          <span className="font-display text-h2 leading-none tabular-nums text-accent">
+            {formatNumber(row.requests)}
+          </span>
         </span>
-        <span className="text-small text-muted">{row.label}</span>
       </Link>
     </li>
   );

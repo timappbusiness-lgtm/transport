@@ -5,7 +5,9 @@ test.describe('homepage', () => {
   test('serves one h1 and the brand in the header', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toContainText('cu firme verificate');
+    // The promise the headline may make is the one the platform keeps:
+    // the firms are verified. It says nothing about delivery.
+    await expect(page.locator('h1')).toContainText('firme verificate');
     await expect(page.locator('header')).toContainText('Coridor');
   });
 

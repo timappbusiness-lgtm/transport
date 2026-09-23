@@ -115,7 +115,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
               </>
             ) : null}
             {' · '}
-            <Link href={ROUTES.accountFleet} className="underline underline-offset-4">
+            <Link href={ROUTES.accountFleet} className="link-accent">
               {c.backToFleet}
             </Link>
           </p>

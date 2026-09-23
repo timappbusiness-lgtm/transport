@@ -87,7 +87,7 @@ test.describe('a saved search, from the board to the alert', () => {
 test.describe('the detour tolerance decides what a carrier is shown', () => {
   test('a request inside the tolerance appears, with the ocol spelled out', async ({ page }) => {
     await page.goto('/cont');
-    const matches = page.getByRole('region', { name: 'Cereri potrivite' });
+    const matches = page.getByRole('region', { name: 'Cereri pentru tine' });
     await expect(matches.getByText(/Ocol de \d+ km .* \(toleranță \d+ km\)/).first()).toBeVisible();
   });
 

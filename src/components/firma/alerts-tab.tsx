@@ -1,9 +1,10 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { updateAlertsAction, type ActionState } from '@/app/cont/actions';
-import { Field, FormError, FormNotice } from '@/components/auth/form';
+import { Field, FormError } from '@/components/auth/form';
 import { SaveBar } from '@/components/firma/save-bar';
 import { ROUTES } from '@/config/routes';
 import { firmaCopy } from '@/content/firma';
@@ -29,6 +30,9 @@ const EMPTY: ActionState = {};
  */
 export function AlertsTab({ company }: { company: Company }) {
   const [state, action] = useActionState(updateAlertsAction, EMPTY);
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const c = firmaCopy.alerts;
   const verified = company.verification_status === 'verified';
 
@@ -40,14 +44,13 @@ export function AlertsTab({ company }: { company: Company }) {
       </div>
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       <label className="flex items-start gap-3 text-sm">
         <input
           type="checkbox"
           name="alertsEnabled"
           defaultChecked={company.alerts_enabled}
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.enable}
@@ -88,7 +91,7 @@ export function AlertsTab({ company }: { company: Company }) {
         <p className="text-sm font-medium">{c.savedTitle}</p>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.savedLede}</p>
         <p className="mt-2.5 text-sm">
-          <Link href={ROUTES.accountAlerts} className="underline underline-offset-4">
+          <Link href={ROUTES.accountAlerts} className="link-accent">
             {c.savedAction}
           </Link>
         </p>

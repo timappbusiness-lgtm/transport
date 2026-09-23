@@ -96,7 +96,7 @@ export function PhoneVerification({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-4 text-sm text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="mt-4 text-sm link-accent"
         >
           {c.action}
         </button>

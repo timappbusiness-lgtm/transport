@@ -53,7 +53,7 @@ export function OrdersWidget({
             <li>
               <Link
                 href={`${ROUTES.accountTransports}?cutie=active&ale-mele=da`}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {side === 'carrier'
                   ? appCopy.carrier.orders.awaiting(waiting.length)
@@ -66,6 +66,7 @@ export function OrdersWidget({
 
           {disputed.length > 0 ? (
             <li className="text-danger">
+              {/* A dispute keeps the colour of its row, never the accent. */}
               <Link
                 href={`${ROUTES.accountTransports}?cutie=anulate`}
                 className="underline underline-offset-4"
@@ -82,7 +83,7 @@ export function OrdersWidget({
           {nextPickup !== undefined ? (
             <li className="text-muted">
               {appCopy.carrier.orders.nextPickup}:{' '}
-              <Link href={transportRoute(nextPickup.id)} className="underline underline-offset-4">
+              <Link href={transportRoute(nextPickup.id)} className="link-accent">
                 {nextPickup.from_city ?? '—'} → {nextPickup.to_city ?? '—'}
               </Link>
               {' · '}

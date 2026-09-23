@@ -38,7 +38,7 @@ export function FaqBody({ entries }: { entries: FaqEntry[] }) {
         <p className="mt-8 text-sm">
           <Link
             href={ROUTES.faq}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             {c.seeAll}
           </Link>

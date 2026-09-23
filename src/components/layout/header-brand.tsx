@@ -19,7 +19,10 @@ export function HeaderBrand({ signedIn }: { signedIn: boolean }) {
   return (
     <Link
       href={brandHref(signedIn, pathname)}
-      className="mr-auto flex items-center gap-2.5 font-display text-body-lg font-medium tracking-[-0.02em]"
+      // The brand is the one place on the dark bar that carries the
+      // accent: its pale step, 5.37:1 over the bar even with a white page
+      // behind it. Everything else on the bar stays white.
+      className="mr-auto flex items-center gap-2.5 font-display text-body-lg font-medium tracking-[-0.02em] text-accent-on-dark"
     >
       <BrandMark className="flex-none" />
       {/* Below `sm` the word is read but not drawn. The bar is brand,

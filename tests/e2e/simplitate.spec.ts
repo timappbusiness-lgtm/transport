@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * The boards, as a dispatcher who is not comfortable with software meets
@@ -35,6 +36,7 @@ test.describe('three filters on screen, the rest one click down', () => {
   for (const [path, from, to, kind] of BOARDS) {
     test(`${path} asks three questions and hides the other ten`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
 
       for (const label of [from, to, kind]) {
         await expect(page.getByLabel(label, { exact: true })).toBeVisible();
@@ -54,6 +56,7 @@ test.describe('three filters on screen, the rest one click down', () => {
 
     test(`${path} opens the panel and everything in it`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       await page.getByText('Mai multe filtre').click();
       const panel = page.locator('main details').first();
       expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
@@ -68,6 +71,7 @@ test.describe('a link somebody saved last month still works', () => {
     // board narrowed by four things somebody else chose says which four
     // rather than looking arbitrarily empty.
     await page.goto('/cereri?cine=curse&serviciu=expres&stare=nu-ruleaza&greutate=2500');
+    await settled(page);
 
     const panel = page.locator('main details').first();
     expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
@@ -83,6 +87,7 @@ test.describe('a link somebody saved last month still works', () => {
 
   test('the routes board keeps its own keys too', async ({ page }) => {
     await page.goto('/trasee?directie=retur&locuri=3&capacitate=1800');
+    await settled(page);
     const panel = page.locator('main details').first();
     expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
     await expect(page.getByLabel('Direcția')).toHaveValue('retur');
@@ -93,6 +98,7 @@ test.describe('a link somebody saved last month still works', () => {
     // „locuri" belongs to the other board. It comes out of a query
     // string, which is to say from anyone.
     await page.goto('/cereri?ordine=locuri');
+    await settled(page);
     await expect(page.getByLabel('Ordonează')).toHaveValue('noi');
   });
 });
@@ -103,6 +109,7 @@ test.describe('an empty board says what will be here, and offers one thing', () 
       // CI has no database, so both boards render their empty state —
       // which is the case this checks, and the common one at launch.
       await page.goto(path);
+      await settled(page);
       const empty = page.locator('main').getByText(/Încă nu este nici/).first();
       await expect(empty).toBeVisible();
 
@@ -131,6 +138,7 @@ test.describe('an empty board says what will be here, and offers one thing', () 
 
   test('and a search that found nothing offers the filters, not a form', async ({ page }) => {
     await page.goto('/cereri?oras-plecare=Vaslui&categorie=autoturism');
+    await settled(page);
     await expect(page.getByText(/Nicio cerere pentru această căutare/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Vezi toate cererile' })).toBeVisible();
   });
@@ -159,6 +167,7 @@ test.describe('at 390px', () => {
   for (const path of ['/cereri', '/trasee', '/transportatori/inscriere'] as const) {
     test(`${path} fits, with the three filters still on screen`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -168,6 +177,7 @@ test.describe('at 390px', () => {
 
   test('the filters are still three, not a wall', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     expect(await visibleFields(page)).toBe(4);
   });
 });

@@ -30,7 +30,7 @@ export function QuietHoursForm({ quiet }: { quiet: QuietHours }) {
           type="checkbox"
           name="quietHoursEnabled"
           defaultChecked={quiet.enabled}
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         {c.enable}
       </label>

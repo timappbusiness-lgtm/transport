@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * Radius and weight, on both boards, without a database.
@@ -28,6 +29,7 @@ async function openFilters(page: Page): Promise<void> {
 test.describe('the request board', () => {
   test('offers a locality, a radius and a maximum weight', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await openFilters(page);
     await expect(page.getByLabel('Lângă localitatea')).toBeVisible();
     await expect(page.getByLabel('Pe o rază de')).toBeVisible();
@@ -36,18 +38,21 @@ test.describe('the request board', () => {
 
   test('says what the radius is measured between', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await openFilters(page);
     await expect(page.getByText(/Distanța în linie dreaptă între localități/)).toBeVisible();
   });
 
   test('says that requests with no weight stay in the list', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await openFilters(page);
     await expect(page.getByText(/Cererile fără greutate trecută rămân în listă/)).toBeVisible();
   });
 
   test('puts both criteria in the URL, so the search can be shared', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     await openFilters(page);
     await page.getByLabel('Lângă localitatea').selectOption('Cluj-Napoca|RO');
     await page.getByLabel('Pe o rază de').selectOption('100');
@@ -61,6 +66,7 @@ test.describe('the request board', () => {
 
   test('a shared link comes back with the form already filled in', async ({ page }) => {
     await page.goto('/cereri?langa=Cluj-Napoca%7CRO&raza=200&greutate=1800');
+    await settled(page);
     await expect(page.getByLabel('Lângă localitatea')).toHaveValue('Cluj-Napoca|RO');
     await expect(page.getByLabel('Pe o rază de')).toHaveValue('200');
     await expect(page.getByLabel('Greutate maximă (kg)')).toHaveValue('1800');
@@ -68,6 +74,7 @@ test.describe('the request board', () => {
 
   test('„șterge filtrele" takes the radius and the weight with it', async ({ page }) => {
     await page.goto('/cereri?langa=Cluj-Napoca%7CRO&raza=200&greutate=1800');
+    await settled(page);
     await page.getByRole('link', { name: 'Șterge filtrele' }).click();
     await expect(page).not.toHaveURL(/langa=/);
     await expect(page).not.toHaveURL(/raza=/);
@@ -78,6 +85,7 @@ test.describe('the request board', () => {
   // dropped rather than carried around doing nothing.
   test('a radius with no locality does not survive the round trip', async ({ page }) => {
     await page.goto('/cereri?raza=100');
+    await settled(page);
     await expect(page.getByLabel('Lângă localitatea')).toHaveValue('');
   });
 });
@@ -85,6 +93,7 @@ test.describe('the request board', () => {
 test.describe('the departures board', () => {
   test('offers a locality, a radius and a minimum free capacity', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await openFilters(page);
     await expect(page.getByLabel('Pleacă de lângă')).toBeVisible();
     await expect(page.getByLabel('Pe o rază de')).toBeVisible();
@@ -93,6 +102,7 @@ test.describe('the departures board', () => {
 
   test('puts all three in the URL', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await openFilters(page);
     await page.getByLabel('Pleacă de lângă').selectOption('Timișoara|RO');
     await page.getByLabel('Pe o rază de').selectOption('25');
@@ -106,6 +116,7 @@ test.describe('the departures board', () => {
 
   test('a shared link comes back with the form already filled in', async ({ page }) => {
     await page.goto('/trasee?langa=Timi%C8%99oara%7CRO&raza=100&capacitate=7000');
+    await settled(page);
     await expect(page.getByLabel('Pleacă de lângă')).toHaveValue('Timișoara|RO');
     await expect(page.getByLabel('Pe o rază de')).toHaveValue('100');
     await expect(page.getByLabel('Capacitate liberă, minimum (kg)')).toHaveValue('7000');
@@ -135,6 +146,7 @@ test.describe('on a phone', () => {
   for (const path of ['/cereri', '/trasee']) {
     test(`${path} fits 390px with no sideways scroll`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
@@ -145,6 +157,7 @@ test.describe('on a phone', () => {
       // One tap, and it is on screen — which is the deal: hidden, not
       // removed, and hidden behind something a thumb can hit.
       await page.goto(path);
+      await settled(page);
       await expect(page.getByLabel('Pe o rază de')).toBeHidden();
       await openFilters(page);
       await expect(page.getByLabel('Pe o rază de')).toBeVisible();

@@ -57,7 +57,7 @@ export function ReturnLeg({
       </p>
 
       {vehicleId === null ? (
-        <p className="mt-3 text-small text-warning">{c.noVehicle}</p>
+        <p className="mt-3 text-small font-medium text-foreground">{c.noVehicle}</p>
       ) : (
         <Link
           href={`${ROUTES.accountDepartureNew}?${returnQuery(prefill)}`}

@@ -56,8 +56,8 @@ export function ProfileTabs({
                     'inline-flex whitespace-nowrap px-3 py-2.5 text-body',
                     'border-b-2 -mb-px',
                     current
-                      ? 'border-foreground font-medium text-foreground'
-                      : 'border-transparent text-muted hover:text-foreground',
+                      ? 'border-accent font-medium text-accent'
+                      : 'border-transparent text-muted hover:border-accent-border hover:text-foreground',
                   )}
                 >
                   {firmaCopy.tabs[tab]}
