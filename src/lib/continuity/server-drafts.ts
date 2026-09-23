@@ -25,3 +25,23 @@ export async function readServerDraft(
   if (!data || !isDraftPayload(data.payload)) return null;
   return { payload: data.payload, step: data.step, savedAt: Date.parse(data.updated_at) };
 }
+
+/**
+ * The account's copy of a draft, removed once the form it belonged to has
+ * done its job. Called by the action, before it redirects; never throws,
+ * because a draft left behind is a nuisance and a failed publish is not.
+ */
+export async function deleteServerDraft(userId: string, form: string, scope = ''): Promise<void> {
+  if (!isDraftForm(form) || !isDraftScope(scope)) return;
+  try {
+    const supabase = await createClient();
+    await supabase
+      .from('form_drafts')
+      .delete()
+      .eq('user_id', userId)
+      .eq('form_key', form)
+      .eq('scope', scope);
+  } catch {
+    /* see above */
+  }
+}

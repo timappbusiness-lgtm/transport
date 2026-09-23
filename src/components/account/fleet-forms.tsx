@@ -1,6 +1,9 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef, useState } from 'react';
+import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status';
+import { useFormDirty, useFormDraft } from '@/lib/continuity/use-form-draft';
+import { useLeaveGuard } from '@/lib/continuity/use-leave-guard';
 import type { ActionState } from '@/app/cont/actions';
 import {
   addRouteAction,
@@ -158,10 +161,18 @@ function SpecFields({
 
 export function NewVehicleForm() {
   const [state, action] = useKeptActionState(createVehicleAction, EMPTY);
+  // Kept on every change, on the account too: a plate, a VIN and nine
+  // specifications are a lot to type twice. Cleared by the redirect to
+  // the new vehicle (`?gata=vehicul`).
+  const formRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(formRef, { form: 'vehicul', signedIn: true });
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm ref={formRef} action={action} className="flex flex-col gap-3" noValidate>
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <Labelled
           label="Număr de înmatriculare"
@@ -207,6 +218,7 @@ export function NewVehicleForm() {
 
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
+      <DraftStatus status={draft.status} />
 
       <div>
         <Submit pendingLabel="Se adaugă…">Adaugă vehiculul</Submit>
@@ -227,10 +239,20 @@ export function EditVehicleForm({
   drivers: { id: string; full_name: string }[];
 }) {
   const [state, action] = useKeptActionState(updateVehicleAction, EMPTY);
+  // An edit is a change, not a draft: leaving with one unsaved asks once,
+  // and a save takes the question away.
+  const formRef = useRef<HTMLFormElement>(null);
+  const { dirty, markSaved } = useFormDirty(formRef);
+  useLeaveGuard(dirty);
+  const [handled, setHandled] = useState(state);
+  if (handled !== state) {
+    setHandled(state);
+    if (state.notice !== undefined) markSaved();
+  }
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm ref={formRef} action={action} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="vehicle_id" value={vehicleId} />
       <SpecFields fieldErrors={state.fieldErrors} defaults={specs} prefix={`${id}-edit`} />
 
@@ -269,7 +291,7 @@ export function NewDriverForm() {
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} resetOn={state.notice !== undefined ? state : null} className="flex flex-col gap-3" noValidate>
       <div className="grid gap-3 sm:grid-cols-2">
         <Labelled label="Nume" htmlFor={`${id}-name`} error={state.fieldErrors?.full_name}>
           <input
@@ -311,7 +333,7 @@ export function AddRouteForm({ vehicleId }: { vehicleId: string }) {
   );
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm action={action} resetOn={state.notice !== undefined ? state : null} className="flex flex-col gap-3" noValidate>
       <input type="hidden" name="vehicle_id" value={vehicleId} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Labelled label="Din țara" htmlFor={`${id}-from_country`}>

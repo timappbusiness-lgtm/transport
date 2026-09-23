@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
+import { doneUrl } from '@/lib/continuity/drafts';
+import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import {
   ACCEPTED_DOCUMENT_TYPES,
   MAX_DOCUMENT_BYTES,
@@ -104,7 +106,7 @@ export async function createVehicleAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const { company } = await requireCompany();
+  const { context, company } = await requireCompany();
 
   const plate = normalizePlate(String(formData.get('plate_number') ?? ''));
   const type = String(formData.get('vehicle_type') ?? '') as VehicleType;
@@ -137,7 +139,9 @@ export async function createVehicleAction(
   }
 
   revalidatePath(ROUTES.accountFleet);
-  redirect(vehicleRoute(data.id));
+  // The vehicle exists: the form's draft goes, here and in the browser.
+  await deleteServerDraft(context.user.id, 'vehicul');
+  redirect(doneUrl(vehicleRoute(data.id), 'vehicul'));
 }
 
 export async function updateVehicleAction(

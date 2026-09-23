@@ -1,5 +1,8 @@
 'use client';
 
+import { useRef } from 'react';
+import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 import {
   createCompanyAction,
   lookupCuiAction,
@@ -26,6 +29,12 @@ const TYPES = ['transport', 'expeditie', 'both'] as const;
 export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
   const [lookup, lookupAction] = useKeptActionState(lookupCuiAction, EMPTY_LOOKUP);
   const [create, createAction] = useKeptActionState(createCompanyAction, EMPTY);
+  // The company's details are kept on every change, on the account too:
+  // a carrier who stops here to find the CUI, or finishes on the phone,
+  // does not type them again. Cleared by the redirect once the company
+  // exists (`?gata=firma`).
+  const formRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(formRef, { form: 'firma', signedIn: true });
 
   const found = lookup.company;
 
@@ -57,7 +66,10 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
 
       <section className="rounded-card border border-border bg-surface p-5">
         <h2 className="text-h3">Datele firmei</h2>
-        <KeepingForm action={createAction} className="mt-4 flex flex-col gap-4" noValidate>
+        <KeepingForm ref={formRef} action={createAction} className="mt-4 flex flex-col gap-4" noValidate>
+          {draft.restored !== null ? (
+            <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+          ) : null}
           <FormError>{create.error}</FormError>
 
           <Field
@@ -117,6 +129,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
           </div>
 
           <SubmitButton>Creează firma</SubmitButton>
+          <DraftStatus status={draft.status} />
         </KeepingForm>
       </section>
     </div>

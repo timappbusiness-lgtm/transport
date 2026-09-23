@@ -183,3 +183,28 @@ export function isDraftPayload(value: unknown): value is Record<string, unknown>
     return false;
   }
 }
+
+/**
+ * The parameter an action puts on the page it redirects to after the form
+ * it came from has done its job: `?gata=traseu`. The page clears the
+ * browser's copy of that draft (`DraftDone`); the action has already
+ * cleared the account's. Without it, a departure published and redirected
+ * away from would greet the next „Publică un traseu" with the old one.
+ */
+export const DONE_PARAM = 'gata';
+
+export function doneUrl(path: string, form: DraftForm, scope?: string | null): string {
+  const value = scope ? `${form}.${scope}` : form;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}${DONE_PARAM}=${encodeURIComponent(value)}`;
+}
+
+/** The draft a `?gata=` names, or null when it names nothing real. */
+export function parseDone(raw: string | null): { form: DraftForm; scope: string | null } | null {
+  if (raw === null) return null;
+  const [form, ...rest] = raw.split('.');
+  const scope = rest.length === 0 ? null : rest.join('.');
+  if (!isDraftForm(form)) return null;
+  if (scope !== null && !isDraftScope(scope)) return null;
+  return { form, scope };
+}

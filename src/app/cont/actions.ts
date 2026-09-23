@@ -5,6 +5,8 @@ import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager, redirectToSignIn } from '@/lib/auth/account';
+import { doneUrl } from '@/lib/continuity/drafts';
+import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { MAX_PUBLIC_DESCRIPTION } from '@/lib/directory';
 import { toAppError } from '@/lib/errors';
@@ -164,7 +166,7 @@ export async function createCompanyAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireContext();
+  const context = await requireContext();
 
   const cui = text(formData, 'cui');
   const legalName = text(formData, 'legalName').trim();
@@ -204,7 +206,9 @@ export async function createCompanyAction(
   }
 
   revalidatePath('/cont', 'layout');
-  redirect(ROUTES.accountCompany);
+  // The company exists: the form's draft goes, here and in the browser.
+  await deleteServerDraft(context.user.id, 'firma');
+  redirect(doneUrl(ROUTES.accountCompany, 'firma'));
 }
 
 // ---------------------------------------------------------------------

@@ -67,6 +67,13 @@ export function useFormDraft(
       initial.current ??= readFields(fieldsOf(element), skip.current);
       writeFields(fieldsOf(element), found.payload, skip.current);
       onRestore?.(found.payload);
+      // Fields that only exist once the restored state is drawn — the
+      // weekdays of a series appear when „repeats" is ticked — get their
+      // values on the next frame, when they are there.
+      requestAnimationFrame(() => {
+        const node = formRef.current;
+        if (node !== null) writeFields(fieldsOf(node), found.payload, skip.current);
+      });
       setDirty(!sameFieldValues(readFields(fieldsOf(element), skip.current), initial.current ?? {}));
     },
   });

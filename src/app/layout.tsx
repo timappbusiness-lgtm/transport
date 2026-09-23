@@ -3,6 +3,8 @@ import { THEME_COLOR } from '@/config/theme';
 import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { Suspense } from 'react';
+import { DraftDone } from '@/components/continuity/draft-done';
 import { SessionNotice } from '@/components/continuity/session-notice';
 import { ToastProvider } from '@/components/ui/toast';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
@@ -133,6 +135,10 @@ export default function RootLayout({
         {/* A session that ends while a form is open: the way back,
             without leaving the page that holds the form. */}
         <SessionNotice />
+        {/* A form that finished and redirected here: its browser draft goes. */}
+        <Suspense fallback={null}>
+          <DraftDone />
+        </Suspense>
       </body>
     </html>
   );
