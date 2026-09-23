@@ -2,6 +2,9 @@
 
 import { useId, useRef, useState, useTransition } from 'react';
 import { extractFromLinkAction, extractFromPhotoAction } from '@/app/cerere/import-actions';
+import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
+import { announceSessionExpired } from '@/lib/continuity/session-store';
+import { shrinkPhoto } from '@/lib/photo-shrink';
 import { buttonClasses } from '@/components/ui/button';
 import { importCopy } from '@/content/import-anunt';
 import {
@@ -78,7 +81,14 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
       return;
     }
     startTransition(async () => {
-      handle(await extractFromLinkAction(url));
+      try {
+        handle(await extractFromLinkAction(url));
+      } catch (error) {
+        const kind = failureKind(error);
+        if (kind === null) throw error;
+        if (kind === 'session') announceSessionExpired();
+        setError(FAILURE_MESSAGES[kind]);
+      }
     });
   }
 
@@ -88,10 +98,20 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
       setError(refusalFor('bad_request').message);
       return;
     }
-    const data = new FormData();
-    data.set('photo', file);
     startTransition(async () => {
-      handle(await extractFromPhotoAction(data));
+      // Drawn down first: a phone photograph is several megabytes, over
+      // what a request may carry, and it failed with an error page.
+      const data = new FormData();
+      data.set('photo', await shrinkPhoto(file));
+      try {
+        handle(await extractFromPhotoAction(data));
+      } catch (error) {
+        // The photo stays chosen; pressing again sends it again.
+        const kind = failureKind(error);
+        if (kind === null) throw error;
+        if (kind === 'session') announceSessionExpired();
+        setError(FAILURE_MESSAGES[kind]);
+      }
     });
   }
 

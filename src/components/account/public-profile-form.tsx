@@ -23,6 +23,8 @@ import { createClient } from '@/lib/supabase/client';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
+import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
+import { announceSessionExpired } from '@/lib/continuity/session-store';
 
 const EMPTY: ActionState = {};
 const c = accountCopy.publicProfile;
@@ -126,6 +128,10 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
   const inputId = useId();
   const [state, setState] = useState<ActionState>({});
   const [pending, startTransition] = useTransition();
+  // The file whose upload failed, kept so „Încearcă din nou" sends it
+  // again: the picker is emptied on every choice (so the same file can be
+  // chosen twice), and a failure used to leave nothing to retry with.
+  const [failed, setFailed] = useState<File | null>(null);
 
   function upload(file: File) {
     if (!(ACCEPTED_LOGO_TYPES as readonly string[]).includes(file.type) || file.size > MAX_LOGO_BYTES) {
@@ -135,17 +141,30 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
 
     startTransition(async () => {
       setState({});
+      setFailed(null);
       const path = logoStoragePath(company.id, file.type);
       const { error } = await createClient()
         .storage.from('company-logos')
         .upload(path, file, { contentType: file.type, upsert: true });
 
       if (error) {
-        setState({ error: 'Fișierul nu a putut fi încărcat. Încearcă din nou.' });
+        setState({ error: 'Fișierul nu a putut fi încărcat. A rămas ales — încearcă din nou.' });
+        setFailed(file);
         return;
       }
 
-      setState(await setCompanyLogoAction(path));
+      try {
+        const result = await setCompanyLogoAction(path);
+        setState(result);
+        if (result.error !== undefined) setFailed(file);
+      } catch (thrown) {
+        const kind = failureKind(thrown);
+        if (kind === null) throw thrown;
+        if (kind === 'session') announceSessionExpired();
+        setState({ error: FAILURE_MESSAGES[kind] });
+        setFailed(file);
+        return;
+      }
       router.refresh();
     });
   }
@@ -154,6 +173,13 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
     <div className="flex flex-col gap-3 border-t border-border pt-5">
       <p className="text-body font-medium">{c.logo}</p>
       <FormError>{state.error}</FormError>
+      {failed !== null && !pending ? (
+        <div>
+          <button type="button" onClick={() => upload(failed)} className={buttonClasses('secondary', 'sm')}>
+            Încearcă din nou
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-4">
         {logoUrl ? (
