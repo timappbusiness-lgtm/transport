@@ -71,9 +71,10 @@ test.describe('the steps', () => {
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     await fillVehicle(page);
+    await expect(page.getByRole('radio', { name: 'Pornește și se deplasează' })).toBeChecked();
     await page.getByRole('button', { name: 'Continuă' }).click();
 
-    await expect(page.getByLabel('Pornește și se deplasează')).toBeChecked();
+    await expect(page.getByRole('radio', { name: 'Standard' })).toBeChecked();
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     await expect(page.getByLabel('Telefon')).toBeVisible();
@@ -89,8 +90,9 @@ test.describe('the steps', () => {
     await fillRoute(page);
     await page.getByRole('button', { name: 'Continuă' }).click();
 
-    await expect(page.getByRole('button', { name: 'Contact' })).toBeDisabled();
-    await page.getByRole('button', { name: 'Ruta' }).click();
+    // A step still ahead is not a button: going forward runs the checks.
+    await expect(page.getByRole('button', { name: /Contact/ })).toHaveCount(0);
+    await page.getByRole('button', { name: /Traseu/ }).click();
     await expect(page.getByLabel('Oraș de plecare')).toHaveValue('München');
   });
 
@@ -99,10 +101,9 @@ test.describe('the steps', () => {
     await fillRoute(page);
     await page.getByRole('button', { name: 'Continuă' }).click();
     await fillVehicle(page);
-    await page.getByRole('button', { name: 'Continuă' }).click();
 
     await expect(page.getByText('Transportatorul vine pregătit cu troliu.')).toHaveCount(0);
-    await page.getByLabel('Pornește și se deplasează').uncheck();
+    await page.getByText('Nu pornește sau nu se deplasează').click();
     await expect(page.getByText('Transportatorul vine pregătit cu troliu.')).toBeVisible();
   });
 
@@ -111,7 +112,6 @@ test.describe('the steps', () => {
     await fillRoute(page);
     await page.getByRole('button', { name: 'Continuă' }).click();
     await fillVehicle(page);
-    await page.getByRole('button', { name: 'Continuă' }).click();
 
     await expect(page.getByLabel('Ce este avariat')).toHaveCount(0);
     await page.getByLabel('Are avarii').check();

@@ -17,8 +17,18 @@ import { settled } from './settled';
 /** The tokens, as the stylesheet defines them. */
 const ACCENT = 'rgb(21, 97, 109)';
 const ACCENT_ON_DARK = 'rgb(163, 220, 227)';
-/** Every step of the scale that could read as „accent" on a light page. */
-const ACCENT_FAMILY = [ACCENT, 'rgb(17, 79, 89)', 'rgb(230, 241, 242)', 'rgb(156, 197, 203)', ACCENT_ON_DARK];
+/** The bright step, for interactive things on the dark surfaces only. */
+const ACCENT_BRIGHT = 'rgb(79, 209, 216)';
+/** Every step of the scale that could read as „accent" anywhere. */
+const ACCENT_FAMILY = [
+  ACCENT,
+  'rgb(17, 79, 89)',
+  'rgb(230, 241, 242)',
+  'rgb(156, 197, 203)',
+  ACCENT_ON_DARK,
+  ACCENT_BRIGHT,
+  'rgb(127, 223, 227)',
+];
 
 /** Elements inside `root` whose text, fill or border is in the accent family. */
 async function accentedIn(page: Page, root: string): Promise<string[]> {
@@ -72,7 +82,9 @@ test.describe('the accent', () => {
     await settled(page);
     const current = page.locator('header a[aria-current="page"]');
     await expect(current).toHaveCount(1);
-    await expect(current).toHaveCSS('color', ACCENT_ON_DARK);
+    // The bright step, underlined: the pale one was 3:1 on the old bar
+    // and read as one more grey link.
+    await expect(current).toHaveCSS('color', ACCENT_BRIGHT);
   });
 
   test('the detector below finds it where it is', async ({ page }) => {
@@ -137,15 +149,16 @@ for (const [width, height] of [
       await page.getByLabel('Poate fi încărcat de la').fill(loadingDate);
       await page.getByRole('button', { name: 'Continuă' }).click();
 
-      const tile = page.locator('[data-category-tile]').first();
-      await expect(tile).toBeVisible();
-      await expect(tile).toHaveAttribute('data-category-tile', 'autoturism');
-      const art = tile.locator('svg[data-category-art]');
-      const box = await art.boundingBox();
+      // Every category is a card with its drawing; the chosen one is
+      // marked, and choosing another moves the mark.
+      const chosen = page.locator('[data-choice][data-checked] [data-category-tile]');
+      await expect(chosen).toHaveCount(1);
+      await expect(chosen).toHaveAttribute('data-category-tile', 'autoturism');
+      const box = await chosen.locator('svg[data-category-art]').boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(40);
 
-      await page.getByLabel('Categoria', { exact: true }).selectOption('rulota');
-      await expect(tile).toHaveAttribute('data-category-tile', 'rulota');
+      await page.locator('[data-choice="rulota"]').click();
+      await expect(chosen).toHaveAttribute('data-category-tile', 'rulota');
       expect(await overflow(page)).toBeLessThanOrEqual(1);
     });
 

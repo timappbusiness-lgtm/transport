@@ -176,8 +176,8 @@ test.describe('the contact page', () => {
 test.describe('the request form', () => {
   test('lets the client choose how long it stays up', async ({ page }) => {
     await page.goto('/cerere/noua');
-    // The control is on the last step; walking there is the only way to
-    // see it, and walking there is what a person does.
+    // The control is on the service step; walking there is the only way
+    // to see it, and walking there is what a person does.
     await page.getByLabel('Oraș de plecare').fill('München');
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByLabel('Oraș de destinație').fill('Cluj-Napoca');
@@ -186,7 +186,6 @@ test.describe('the request form', () => {
     await page.getByLabel('Marca').fill('Volkswagen');
     await page.getByLabel('Modelul').fill('Golf');
     await page.getByLabel('Anul fabricației').fill('2018');
-    await page.getByRole('button', { name: 'Continuă' }).click();
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     const duration = page.getByLabel('Cât timp stă pe panou');

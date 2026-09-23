@@ -43,28 +43,38 @@ async function toVehicleStep(page: import('@playwright/test').Page) {
   await expect(page.getByLabel('Marca')).toBeVisible();
 }
 
+/** The categories are cards over native radios, in a group named „Categoria". */
+function categories(page: import('@playwright/test').Page) {
+  return page.getByRole('radiogroup', { name: 'Categoria', exact: true });
+}
+
+async function chooseCategory(page: import('@playwright/test').Page, code: string) {
+  await categories(page).locator(`[data-choice="${code}"]`).click();
+  await expect(categories(page).locator(`input[value="${code}"]`)).toBeChecked();
+}
+
 test.describe('the categories on the publish form', () => {
   test('offers all ten of the niche', async ({ page }) => {
     await toVehicleStep(page);
-    const select = page.getByLabel('Categoria', { exact: true });
+    const group = categories(page);
     for (const [code, label] of OFFERED) {
-      await expect(select.locator(`option[value="${code}"]`), code).toHaveCount(1);
-      await expect(select.locator(`option[value="${code}"]`)).toContainText(label);
+      await expect(group.locator(`input[value="${code}"]`), code).toHaveCount(1);
+      await expect(group.getByRole('radio', { name: label })).toHaveCount(1);
     }
   });
 
   test('and nothing that needs another kind of lorry', async ({ page }) => {
     await toVehicleStep(page);
-    const select = page.getByLabel('Categoria', { exact: true });
+    const group = categories(page);
     for (const code of RETIRED) {
-      await expect(select.locator(`option[value="${code}"]`), code).toHaveCount(0);
+      await expect(group.locator(`input[value="${code}"]`), code).toHaveCount(0);
     }
   });
 
   test('every one of them can be chosen and carried to the next step', async ({ page }) => {
     for (const [code] of OFFERED) {
       await toVehicleStep(page);
-      await page.getByLabel('Categoria', { exact: true }).selectOption(code);
+      await chooseCategory(page, code);
       await page.getByLabel('Marca').fill('Volkswagen');
       await page.getByLabel('Modelul').fill('Golf');
       await page.getByLabel('Anul fabricației').fill('2018');
@@ -72,24 +82,26 @@ test.describe('the categories on the publish form', () => {
         await page.getByLabel('Ce transporți').fill('Un generator pe remorcă, 400 kg.');
       }
       await page.getByRole('button', { name: 'Continuă' }).click();
-      // The third step is „Starea", which only appears once the second
+      // The third step is „Serviciu", which only opens once the second
       // one is accepted.
-      await expect(page.getByRole('button', { name: 'Starea' })).toBeEnabled();
+      await expect(page.locator('[data-step="serviciu"][data-state="current"]')).toBeVisible();
     }
   });
 
   test('the weight hint follows the category', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('motocicleta');
-    await expect(page.getByText(/între 120 și 350 kg/)).toBeVisible();
+    // Every card carries its own range; the weight field's hint is the
+    // chosen one's.
+    await chooseCategory(page, 'motocicleta');
+    await expect(page.getByLabel(/Greutatea/)).toHaveAccessibleDescription(/între 120 și 350 kg/);
 
-    await page.getByLabel('Categoria', { exact: true }).selectOption('microbuz');
-    await expect(page.getByText(/între 2\.200 și 3\.500 kg/)).toBeVisible();
+    await chooseCategory(page, 'microbuz');
+    await expect(page.getByLabel(/Greutatea/)).toHaveAccessibleDescription(/între 2\.200 și 3\.500 kg/);
   });
 
   test('and so does the placeholder in the weight field', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('motocicleta');
+    await chooseCategory(page, 'motocicleta');
     await expect(page.getByLabel(/Greutatea/)).toHaveAttribute('placeholder', '200');
     // A placeholder, never a value: nothing is written into the field.
     await expect(page.getByLabel(/Greutatea/)).toHaveValue('');
@@ -99,7 +111,7 @@ test.describe('the categories on the publish form', () => {
 test.describe('a historic vehicle', () => {
   test('is offered closed transport, as a suggestion', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('istoric');
+    await chooseCategory(page, 'istoric');
     await expect(page.getByText(/remorcă închisă/)).toBeVisible();
     // A suggestion, not a gate: the step still continues.
     await expect(page.getByText(/Poți alege și platformă deschisă/)).toBeVisible();
@@ -107,7 +119,7 @@ test.describe('a historic vehicle', () => {
 
   test('and no other category is', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('autoturism');
+    await chooseCategory(page, 'autoturism');
     await expect(page.getByText(/remorcă închisă/)).toHaveCount(0);
   });
 });
@@ -115,7 +127,7 @@ test.describe('a historic vehicle', () => {
 test.describe('„Altceva"', () => {
   test('asks what it is, and will not continue without an answer', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('altele');
+    await chooseCategory(page, 'altele');
     await page.getByLabel('Marca').fill('Honda');
     await page.getByLabel('Modelul').fill('EU22i');
     await page.getByLabel('Anul fabricației').fill('2020');
@@ -127,19 +139,19 @@ test.describe('„Altceva"', () => {
 
   test('and continues once there is one', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('altele');
+    await chooseCategory(page, 'altele');
     await page.getByLabel('Marca').fill('Honda');
     await page.getByLabel('Modelul').fill('EU22i');
     await page.getByLabel('Anul fabricației').fill('2020');
     await page.getByLabel('Ce transporți').fill('Un generator de curent, aproximativ 400 kg.');
 
     await page.getByRole('button', { name: 'Continuă' }).click();
-    await expect(page.getByRole('button', { name: 'Starea' })).toBeEnabled();
+    await expect(page.locator('[data-step="serviciu"][data-state="current"]')).toBeVisible();
   });
 
   test('and the field is not there for any other category', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('rulota');
+    await chooseCategory(page, 'rulota');
     await expect(page.getByLabel('Ce transporți')).toHaveCount(0);
   });
 });
@@ -192,7 +204,7 @@ test.describe('at 390px', () => {
 
   test('the vehicle step fits too', async ({ page }) => {
     await toVehicleStep(page);
-    await page.getByLabel('Categoria', { exact: true }).selectOption('altele');
+    await chooseCategory(page, 'altele');
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );

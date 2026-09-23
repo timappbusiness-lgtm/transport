@@ -144,10 +144,12 @@ function Check({
 }
 
 /** A group inside a step: a small heading and what belongs under it. */
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="font-mono text-label uppercase tracking-[0.12em] text-muted">{title}</h3>
+      <h3 id={id} className="font-mono text-label uppercase tracking-[0.12em] text-muted">
+        {title}
+      </h3>
       {children}
     </section>
   );
@@ -372,7 +374,9 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
     setEditing(null);
     setStep(next);
     // Back to the top of the step, where its heading says what it asks.
-    formRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    // A jump, not a glide, for anybody who asked the system for less motion.
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    formRef.current?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
   }
 
   /**
@@ -541,10 +545,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
           </>
         )}
 
-        <Group title={c.vehicle.category}>
-          <p id={legendId} className="sr-only">
-            {c.vehicle.category}
-          </p>
+        <Group title={c.vehicle.category} id={legendId}>
           <p className="-mt-1 text-small text-muted">
             {c.vehicle.categoryHint}
             {auto.has('category') ? <AutoChip /> : null}
@@ -568,7 +569,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                 description={categoryMeta(category)?.weightHint}
                 layout="stack"
                 className="p-3"
-                art={<CategoryTile category={category} size="sm" />}
+                art={<CategoryTile category={category} size="card" />}
               />
             ))}
           </div>
