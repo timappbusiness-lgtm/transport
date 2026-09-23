@@ -239,7 +239,9 @@ A new screen follows these:
    `requireAccountContext` / `redirectToSignIn`, which throw the
    session-expired error inside an action; the form keeps its fields and
    offers a sign-in in a new tab. The middleware does not redirect server
-   actions.
+   actions. The notice with that link comes with `KeepingForm` and the
+   `/cont` and `/admin` shells — never the root layout, where one more
+   client component left the 404 page blank one load in a few hundred.
 7. **An upload that fails keeps the file** and offers „Încearcă din nou";
    a retry does not upload twice. Photos are drawn down with
    `shrinkPhoto` before a server action (4 MB ceiling); a photo taken in
