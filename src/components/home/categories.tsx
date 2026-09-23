@@ -67,7 +67,7 @@ function CategoryCard({ row }: { row: CategoryCount }) {
       <Link
         href={`${ROUTES.requests}?${REQUEST_FILTER_KEYS.category}=${row.category}`}
         aria-label={c.linkLabel(count, row.label)}
-        className="flex h-full flex-col justify-between gap-2 rounded-card border border-border bg-surface p-4 transition-[border-color] duration-150 hover:border-border-strong"
+        className="flex h-full flex-col justify-between gap-2 rounded-card border border-border bg-surface p-4 shadow-card transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised"
       >
         <span className="font-display text-h2 leading-none tabular-nums">
           {formatNumber(row.requests)}

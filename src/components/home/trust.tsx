@@ -74,9 +74,15 @@ function ExampleCard() {
             className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border py-2.5 last:border-b-0"
           >
             <dt className="min-w-0 flex-1 text-small">{row.label}</dt>
-            <dd className="font-mono text-xs tabular-nums text-muted">{row.value}</dd>
-            {/* The word carries the meaning; the colour only repeats it. */}
-            <StatusBadge tone={row.tone}>{row.state}</StatusBadge>
+            {/* Both the date and the chip live in the `dd`: a `div` inside
+                a `dl` may hold `dt` and `dd` and nothing else, and the
+                chip used to sit beside them as a third child. axe calls
+                it `definition-list`; it cost four accessibility points. */}
+            <dd className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="font-mono text-xs tabular-nums text-muted">{row.value}</span>
+              {/* The word carries the meaning; the colour only repeats it. */}
+              <StatusBadge tone={row.tone}>{row.state}</StatusBadge>
+            </dd>
           </div>
         ))}
       </dl>

@@ -43,7 +43,7 @@ export function CompanyCard({
       href={companyRoute(company.slug)}
       className={cn(
         'group flex min-w-0 flex-col rounded-card border border-border bg-surface p-5',
-        'hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
+        'hover:border-border-strong hover:shadow-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
       )}
     >
       <div className="flex items-start gap-3">

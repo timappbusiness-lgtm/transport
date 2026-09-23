@@ -43,7 +43,7 @@ export function BoardRequestCard({
         href={requestRoute(request.id)}
         className={cn(
           'flex flex-col gap-3 rounded-card border border-border bg-surface p-4 sm:p-5',
-          'transition-[border-color] duration-150 hover:border-border-strong',
+          'transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised',
         )}
       >
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-label uppercase tracking-[0.12em] text-muted">

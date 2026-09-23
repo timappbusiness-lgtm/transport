@@ -100,7 +100,13 @@
   --text-h1--letter-spacing: -0.03em;
   --text-h1--font-weight: 600;
 
-  --text-h2: clamp(1.45rem, 2.6vw, 2rem);
+  /* The minimum is 1.5rem and not a hair less, because 24px is where
+     WCAG stops asking 4.5:1 and starts asking 3:1. `--color-ink-soft` is
+     3.28:1 — fine for large text and nothing else — so an h2 that clamps
+     to 23.2px turns the soft half of every two-tone headline on it into
+     a contrast failure. It did: axe found it at 23.2px on the
+     alternating band, measuring 3.1 against a 4.5 requirement. */
+  --text-h2: clamp(1.5rem, 2.6vw, 2rem);
   --text-h2--line-height: 1.12;
   --text-h2--letter-spacing: -0.022em;
   --text-h2--font-weight: 600;

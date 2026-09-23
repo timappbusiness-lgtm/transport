@@ -151,10 +151,28 @@ describe('every text-on-surface pair the system uses', () => {
   });
 
   it('the soft half of a headline clears the large-text floor and no more', () => {
-    // 3.28:1. It is allowed at headline sizes and nowhere else, which is
-    // why `Headline` is the only component that may reach for it.
-    expect(contrast(INK_SOFT, GROUND)).toBeGreaterThanOrEqual(LARGE);
+    // 3.28:1 on the ground and 3.10:1 on the alternating band. Allowed at
+    // headline sizes and nowhere else, which is why `Headline` is the
+    // only component that may reach for it.
+    for (const [name, bg] of Object.entries({ GROUND, ALT, SURFACE })) {
+      expect(contrast(INK_SOFT, bg), `ink-soft on ${name}`).toBeGreaterThanOrEqual(LARGE);
+    }
     expect(contrast(INK_SOFT, GROUND)).toBeLessThan(BODY);
+  });
+
+  it('so every heading that may carry it starts at the large-text threshold', () => {
+    // The trap, found by axe and not by eye: „large text" begins at 24px,
+    // and an h2 whose minimum is 23.2px is ordinary text as far as WCAG
+    // is concerned — which turns the soft half of every two-tone headline
+    // on it into a 3.1-against-4.5 failure. The minimum of every step
+    // that may hold `text-ink-soft` is therefore >= 1.5rem.
+    for (const step of ['h1', 'h2', 'display']) {
+      const decl = new RegExp(`--text-${step}: clamp\\(([\\d.]+)rem`);
+      const min = Number(decl.exec(CSS)?.[1]);
+      expect(min, `--text-${step} has no clamp minimum`).toBeGreaterThan(0);
+      expect(min, `--text-${step} starts at ${min}rem, under the 1.5rem large-text floor`)
+        .toBeGreaterThanOrEqual(1.5);
+    }
   });
 
   it('the accent is distinguishable from ink, or it is not an accent', () => {
