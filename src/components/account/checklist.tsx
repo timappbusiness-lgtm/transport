@@ -34,7 +34,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
               className={cn(
                 'flex size-6 flex-none items-center justify-center rounded-full font-mono text-label',
                 step.state === 'done' && 'bg-success/15 text-success',
-                step.state === 'current' && 'bg-foreground text-white',
+                step.state === 'current' && 'bg-accent text-on-accent',
                 step.state === 'soon' && 'border border-border text-muted',
               )}
             >

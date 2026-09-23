@@ -77,7 +77,7 @@ export function PricesView({
                 }}
                 className={cn(
                   'rounded-pill px-4 py-2 text-sm transition-[color,background-color] duration-150',
-                  selected ? 'bg-foreground text-white' : 'text-muted hover:text-foreground',
+                  selected ? 'bg-accent text-on-accent' : 'text-muted hover:text-foreground',
                 )}
               >
                 {tab.label}

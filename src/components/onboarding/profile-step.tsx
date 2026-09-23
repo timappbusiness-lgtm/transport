@@ -49,8 +49,8 @@ export function ProfileStep({
               className={cn(
                 'cursor-pointer rounded-pill border px-3.5 py-1.5 text-small',
                 scope === option
-                  ? 'border-transparent bg-foreground text-ground'
-                  : 'border-border-strong text-muted',
+                  ? 'border-transparent bg-accent text-on-accent'
+                  : 'border-border-strong text-muted hover:border-accent-border hover:bg-accent-subtle',
               )}
             >
               <input

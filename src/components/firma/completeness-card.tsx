@@ -37,7 +37,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
         className="mt-3 h-1.5 overflow-hidden rounded-pill bg-ground-alt"
       >
         <div
-          className="h-full rounded-pill bg-foreground"
+          className="h-full rounded-pill bg-accent"
           style={{ width: `${completeness.percent}%` }}
         />
       </div>
