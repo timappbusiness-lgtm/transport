@@ -1,3 +1,5 @@
+import { successCopy } from '@/content/success';
+import { SuccessMoment } from '@/components/ui/success-moment';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -125,6 +127,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <StatusBadge tone="warning">{ordersCopy.list.flagged}</StatusBadge>
         ) : null}
       </div>
+
+      {/* The fourth moment. A dispute and a cancellation keep their own
+          formal notes below; this appears only for a transport that
+          ended the way it was meant to. */}
+      {order.status === 'order_completed' ? (
+        <SuccessMoment title={successCopy.completed.title} body={successCopy.completed.body}>
+          <Link href={ROUTES.accountTransports} className="link-accent text-sm">
+            {successCopy.completed.action}
+          </Link>
+        </SuccessMoment>
+      ) : null}
 
       {order.status === 'disputed' ? <DisputeNote order={order} /> : null}
       {order.cancelled_at !== null ? (

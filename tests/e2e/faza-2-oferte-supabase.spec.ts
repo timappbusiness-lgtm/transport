@@ -127,7 +127,7 @@ test.describe('a carrier sends an offer', () => {
   test('a matching request on the dashboard offers the same button', async ({ page }) => {
     await signInAsCarrier(page);
     await page.goto('/cont');
-    const matches = page.getByRole('region', { name: /Cereri potrivite/ });
+    const matches = page.getByRole('region', { name: /Cereri pentru tine/ });
     test.skip((await matches.count()) === 0, 'This firm has no matching requests seeded.');
     await expect(
       matches.getByRole('button', { name: 'Trimite ofertă' }).first(),

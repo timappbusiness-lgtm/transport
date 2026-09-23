@@ -60,7 +60,7 @@ export const appCopy = {
     // opening the application wants the answer to one question, and
     // „Necesită atenție" is a heading for a report, not an answer.
     needsAttention: 'Ce ai de făcut acum',
-    nothingToDo: 'Nimic acum. Panoul de cereri este deschis.',
+    nothingToDo: 'Nimic de făcut acum. Panoul de cereri e deschis oricând.',
     quickActions: 'Ce poți face',
     activity: 'Activitate',
   },
@@ -68,7 +68,7 @@ export const appCopy = {
   carrier: {
     checklist: {
       title: 'Ce mai ai de făcut',
-      lede: 'Firma poate trimite oferte după ce echipa noastră aprobă documentele.',
+      lede: 'Poți trimite oferte după ce ne uităm peste documente și le aprobăm.',
     },
     bookings: {
       title: 'Rezervări de confirmat',
@@ -91,10 +91,9 @@ export const appCopy = {
       action: 'Vezi flota',
     },
     matches: {
-      title: 'Cereri potrivite',
-      lede:
-        'Potrivite cu acoperirea, categoriile și dotările din profilul firmei, și cu traseele publicate.',
-      empty: 'Nicio cerere nouă pentru profilul firmei.',
+      title: 'Cereri pentru tine',
+      lede: 'Alese după unde circuli, ce transporți și traseele pe care le-ai publicat.',
+      empty: 'Deocamdată nimic nou pe rutele tale.',
       action: 'Vezi toate cererile',
       /** Why a card is here. Codes come from `matchReasons`. */
       reasons: {
@@ -106,7 +105,7 @@ export const appCopy = {
         tractare: 'Faci tractări',
       } as Record<string, string>,
       /** Shown when the profile is empty enough that matching says little. */
-      completeProfile: 'Completează profilul firmei ca să primești potriviri mai bune.',
+      completeProfile: 'Spune-ne unde circuli și ce transporți, și potrivirile se strâng pe ce faci tu.',
       /**
        * The detour, in the words a dispatcher uses: extra kilometres to
        * pick the vehicle up and drop it off, not how near the request
@@ -125,7 +124,7 @@ export const appCopy = {
         n === 1 ? 'O comandă așteaptă un pas de la tine' : `${n} comenzi așteaptă un pas de la tine`,
       disputes: (n: number) => (n === 1 ? 'O comandă în dispută' : `${n} comenzi în dispută`),
       action: 'Vezi transporturile',
-      none: 'Niciun transport în lucru.',
+      none: 'Niciun transport în lucru acum.',
     },
 
     activity: {

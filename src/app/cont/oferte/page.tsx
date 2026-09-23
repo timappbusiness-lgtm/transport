@@ -1,3 +1,5 @@
+import { successCopy } from '@/content/success';
+import { SuccessMoment } from '@/components/ui/success-moment';
 import { TabLink } from '@/components/ui/tab';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -236,23 +238,24 @@ function Row({
       </div>
 
       {offer.status === 'accepted' ? (
-        <div className="mt-4 rounded-card border border-success/45 bg-success/8 p-4">
-          <p className="text-sm font-medium">{offersCopy.sent.accepted}</p>
-          <p className="mt-1 max-w-[62ch] text-sm">{offersCopy.sent.acceptedBody}</p>
-          <div className="mt-3 max-w-[26rem]">
+        // The third moment, on the carrier's side.
+        <SuccessMoment
+          as="h3"
+          className="mt-4"
+          title={successCopy.offerWon.title}
+          body={successCopy.offerWon.body}
+        >
+          <div className="max-w-[26rem]">
             <OrderContacts offerId={offer.id} />
           </div>
           {offer.transport_id !== null ? (
             <p className="mt-3 text-sm">
-              <Link
-                href={transportRoute(offer.transport_id)}
-                className="link-accent"
-              >
+              <Link href={transportRoute(offer.transport_id)} className="link-accent">
                 {offersCopy.sent.seeOrder}
               </Link>
             </p>
           ) : null}
-        </div>
+        </SuccessMoment>
       ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

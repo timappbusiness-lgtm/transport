@@ -82,8 +82,6 @@ export const offersCopy = {
     withdrawConfirm: 'Retragi oferta? Clientul va fi anunțat. Poți trimite alta după.',
     withdrawn: 'Oferta a fost retrasă.',
     again: 'Trimite ofertă nouă',
-    accepted: 'Oferta ta a fost acceptată',
-    acceptedBody: 'Ai transportul. Datele de contact ale clientului sunt mai jos și nu consumă din abonament.',
     seeOrder: 'Vezi comanda',
   },
 
@@ -120,7 +118,6 @@ export const offersCopy = {
     confirming: 'Se confirmă…',
     cancel: 'Nu încă',
     done: 'Ai ales transportatorul',
-    doneBody: 'Comanda este creată. Datele de contact sunt mai jos și nu consumă din abonament.',
     nextSteps: 'Ce urmează',
     steps: [
       'Sunați transportatorul ca să stabiliți ora exactă a încărcării.',

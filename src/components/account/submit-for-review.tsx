@@ -1,5 +1,9 @@
 'use client';
 
+import { successCopy } from '@/content/success';
+import Link from 'next/link';
+import { SuccessMoment } from '@/components/ui/success-moment';
+import { ROUTES } from '@/config/routes';
 import { useActionState } from 'react';
 import { submitCompanyForReviewAction } from '@/app/cont/actions';
 import type { ActionState } from '@/app/cont/actions';
@@ -47,10 +51,13 @@ export function SubmitForReview({
   }
 
   if (status === 'verified') {
+    // The second moment: the firm can work. Its next action is the board.
     return (
-      <Panel title={c.verifiedTitle} tone="success">
-        <p className="text-sm text-muted">{c.verifiedBody}</p>
-      </Panel>
+      <SuccessMoment title={successCopy.verified.title} body={successCopy.verified.body}>
+        <Link href={ROUTES.requests} className={buttonClasses('primary', 'sm')}>
+          {successCopy.verified.action}
+        </Link>
+      </SuccessMoment>
     );
   }
 

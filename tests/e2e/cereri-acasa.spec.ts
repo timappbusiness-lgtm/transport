@@ -25,7 +25,7 @@ test.describe('the activity section, with nothing published', () => {
     await page.goto('/');
     const section = page.locator('#cereri');
     await expect(
-      section.getByText('Primele cereri apar aici imediat ce sunt publicate.'),
+      section.getByText(/Aici apar cererile, pe măsură ce oamenii le publică/),
     ).toBeVisible();
   });
 
@@ -80,7 +80,7 @@ test.describe('the free posting card', () => {
   test('leads to the form, and says what it costs', async ({ page }) => {
     await page.goto('/');
     const section = page.locator('#cereri');
-    await expect(section).toContainText('Fără abonament pentru clienți');
+    await expect(section).toContainText('Nu plătești abonament');
     await section.getByRole('link', { name: 'Publică o cerere gratuit' }).click();
     await expect(page).toHaveURL(/\/cerere\/noua/);
   });
