@@ -1,3 +1,4 @@
+import { straightLineKm, type LatLng } from './pricing';
 import { cityLabel, findCity, type City } from './cities';
 import type { CargoCategory } from './departures';
 import { OFFERED_CATEGORIES, needsDescription } from './vehicle-categories';
@@ -15,7 +16,13 @@ import { validateEmail, validatePhone, type FieldErrors } from './validation/aut
  * wins and its message is shown as it is.
  */
 
-export const REQUEST_STEPS = ['ruta', 'vehicul', 'stare', 'contact'] as const;
+/**
+ * Traseu, Vehicul, Serviciu, Contact — in the order a person thinks about
+ * a move: where, what, how, and how to reach me. The vehicle's condition
+ * sits with the vehicle, and the service, how long it stays up and who
+ * sees it sit together as „how", which leaves the last step short.
+ */
+export const REQUEST_STEPS = ['ruta', 'vehicul', 'serviciu', 'contact'] as const;
 export type RequestStep = (typeof REQUEST_STEPS)[number];
 
 /** Only these two are offered. `tractare` stays in the schema, hidden. */
@@ -210,21 +217,24 @@ export const STEP_FIELDS: Record<RequestStep, readonly RequestField[]> = {
   // description is asked on this step, and a step that lets somebody
   // walk past a rule the database enforces only tells them at the end,
   // three steps later, about a field they have stopped looking at.
-  vehicul: ['category', 'make', 'model', 'year', 'weightKg', 'description'],
-  stare: ['isRunning', 'wheelsTurn', 'steeringWorks', 'hasKeys', 'isDamaged', 'damageNotes'],
-  contact: [
-    'serviceType',
-    'durationDays',
-    // Unde apare cererea stă lângă cât timp stă: amândouă răspund la
-    // „unde ajunge asta și pentru cât timp", și amândouă se aleg în
-    // același pas.
-    'isPrivate',
-    'invitedCarriers',
+  vehicul: [
+    'category',
+    'make',
+    'model',
+    'year',
+    'weightKg',
     'description',
-    'contactName',
-    'contactPhone',
-    'contactEmail',
+    'isRunning',
+    'wheelsTurn',
+    'steeringWorks',
+    'hasKeys',
+    'isDamaged',
+    'damageNotes',
   ],
+  // How it travels, how long it stays up and who sees it: three answers
+  // to „how", chosen together.
+  serviciu: ['serviceType', 'durationDays', 'isPrivate', 'invitedCarriers'],
+  contact: ['description', 'contactName', 'contactPhone', 'contactEmail'],
 };
 
 /**
@@ -405,4 +415,18 @@ export function coordinatesFor(city: string, country: string): City | null {
 export function cityDisplay(city: string, country: string): string {
   const known = findCity(city, country);
   return known ? cityLabel(known) : city;
+}
+
+/**
+ * The distance the board will show for this route, in whole kilometres,
+ * or null while either end is a place we have no coordinates for.
+ *
+ * The same number `v_requests_public.estimated_km` will hold: the
+ * great-circle distance between the two city centres, rounded — no road
+ * factor, because the board does not use one, and a form that promised
+ * 1.350 km for a card that then says 1.080 would be a form nobody trusts.
+ */
+export function estimatedKm(from: LatLng | null, to: LatLng | null): number | null {
+  if (from === null || to === null) return null;
+  return Math.round(straightLineKm(from, to));
 }

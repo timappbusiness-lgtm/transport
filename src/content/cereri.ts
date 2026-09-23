@@ -35,11 +35,38 @@ export const requestsCopy = {
     title: 'Spune-ne ce ai de transportat',
     lede: 'Patru pași, sub două minute. Publicarea este gratuită, iar datele tale de contact le vede doar un transportator verificat.',
     steps: {
-      ruta: 'Ruta',
-      vehicul: 'Vehiculul',
-      stare: 'Starea',
+      ruta: 'Traseu',
+      vehicul: 'Vehicul',
+      serviciu: 'Serviciu',
       contact: 'Contact',
     },
+    /**
+     * Each step's heading, in the words somebody would use on the phone,
+     * and one line on why it is asked. Nothing here promises what the
+     * platform does not do.
+     */
+    stepHeads: {
+      ruta: {
+        title: 'De unde până unde?',
+        why: 'Transportatorii caută după rută. Cu cât e mai precisă, cu atât îți răspunde mai repede cineva care merge oricum încolo.',
+      },
+      vehicul: {
+        title: 'Ce trebuie mutat?',
+        why: 'Categoria și starea îi spun transportatorului ce platformă și ce echipament îi trebuie.',
+      },
+      serviciu: {
+        title: 'Cum vrei să meargă?',
+        why: 'Asta schimbă cel mai mult prețul: un loc pe o platformă care trece oricum pe acolo, sau o cursă doar pentru tine.',
+      },
+      contact: {
+        title: 'Unde te găsim?',
+        why: 'Numărul tău nu apare pe cerere. Îl vede doar transportatorul verificat care o deschide.',
+      },
+    } as const,
+    /** Read before the stepper, for a screen reader: where you are. */
+    stepCurrent: (label: string, current: number, total: number) =>
+      `Pasul ${current} din ${total}: ${label}`,
+    stepDone: 'gata',
     stepOf: (current: number, total: number) => `Pasul ${current} din ${total}`,
     next: 'Continuă',
     back: 'Înapoi',
@@ -58,6 +85,19 @@ export const requestsCopy = {
       loadingTo: 'Până la (opțional)',
       windowHint:
         'Un interval găsește mai repede un transportator decât o singură zi: platformele își fac ruta cu o săptămână înainte.',
+      places: 'Localitățile',
+      dates: 'Când poate fi încărcat',
+      mapLabel: (from: string, to: string) =>
+        from !== '' && to !== ''
+          ? `Traseul: de la ${from} la ${to}`
+          : from !== ''
+            ? `Traseul: de la ${from}, destinația încă nealeasă`
+            : 'Traseul, încă neales',
+      mapFrom: 'Plecare',
+      mapTo: 'Destinație',
+      distance: 'Distanță estimată',
+      distanceNote: 'în linie dreaptă, între centrele localităților — la fel ca pe panou',
+      distanceWaiting: 'Alege ambele localități din listă și îți arătăm distanța.',
     },
 
     vehicle: {
@@ -76,6 +116,16 @@ export const requestsCopy = {
       otherDescriptionHint:
         'Obligatoriu pentru „Altceva": scrie ce este și cât cântărește, ca transportatorii să știe dacă pot.',
       otherDescriptionPlaceholder: 'Un generator de curent pe remorcă, aproximativ 400 kg.',
+      categoryHint: 'Alege ce seamănă cel mai mult. Greutatea de sub fiecare e orientativă.',
+      details: 'Marca, modelul și anul',
+      conditionTitle: 'În ce stare este',
+      running: {
+        yesNote: 'Urcă singur pe platformă. Cel mai simplu de transportat.',
+        no: 'Nu pornește sau nu se deplasează',
+        noNote: 'Transportatorul vine cu troliu și, de obicei, cu un om în plus.',
+      },
+      more: 'Mai sunt de știut',
+      photosTitle: 'Poze',
     },
 
     condition: {
@@ -124,6 +174,42 @@ export const requestsCopy = {
       seeBoard: 'Vezi panoul de cereri',
     },
 
+    service: {
+      label: 'Felul transportului',
+      standard: {
+        title: 'Standard',
+        means: 'Un loc pe o platformă care merge oricum pe ruta ta. Pleacă atunci când se umple.',
+        price: 'Cel mai mic preț',
+      },
+      expres: {
+        title: 'Expres',
+        means: 'Cursă doar pentru vehiculul tău, la data pe care o alegi tu.',
+        price: 'Costă mai mult',
+      },
+      pricePrefix: 'Preț:',
+    },
+
+    summary: {
+      title: 'Verifică înainte să publici',
+      lede: 'Tot ce ai completat, pe scurt. Schimbi orice fără să pleci de aici.',
+      edit: 'Modifică',
+      done: 'Gata',
+      route: 'Traseu',
+      vehicle: 'Vehicul',
+      service: 'Serviciu',
+      noEnd: 'fără dată de sfârșit',
+      from: 'de la',
+      photos: (count: number) => (count === 1 ? 'o poză' : `${count} poze`),
+      running: 'pornește și se deplasează',
+      notRunning: 'nu pornește sau nu se deplasează',
+      damaged: 'are avarii',
+      publicLabel: 'pe panou',
+      privateLabel: 'privată',
+    },
+
+    fixBefore: (count: number) =>
+      count === 1 ? 'Mai e un lucru de completat mai sus.' : `Mai sunt ${count} lucruri de completat mai sus.`,
+
     duration: {
       label: 'Cât timp stă pe panou',
       hint: 'Îți scriem cu două zile înainte să iasă, ca să o prelungești sau să o închizi. O poți prelungi oricând.',
@@ -132,10 +218,14 @@ export const requestsCopy = {
     },
 
     photos: {
-      title: 'Pozele vehiculului',
+      drop: 'Trage pozele aici sau alege-le din telefon',
+      dropHint: 'JPG, PNG sau HEIC. Până la 6 poze.',
+      signedOut:
+        'Pozele le poți adăuga după ce intri în cont. Contul ți-l cerem abia la ultimul pas, iar tot ce ai scris până atunci rămâne aici.',
+      removeVisible: 'Scoate',
+      removeOf: (index: number) => `Scoate poza ${index}`,
       hint: 'Până la 6 poze. Ajută cel mai mult dacă mașina e avariată sau nu pornește — un transportator care vede exact ce ridică dă un preț ferm din prima. Ștergem datele de localizare din poză înainte să o salvăm.',
       add: 'Adaugă poze',
-      remove: 'Șterge poza',
       fromImport: 'din anunț',
       uploading: 'Se încarcă…',
       remaining: (left: number, max: number) =>

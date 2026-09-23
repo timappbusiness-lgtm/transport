@@ -135,10 +135,36 @@ test.describe('photographs on a request', () => {
       buffer: TINY_PNG,
     });
 
-    await expect(page.getByRole('button', { name: 'Șterge poza' })).toBeVisible({
+    await expect(page.getByRole('button', { name: 'Scoate poza 1' })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText(/Mai poți adăuga 5 poze/)).toBeVisible();
+  });
+
+  test('the photo is still there when the form is sent from the last step', async ({ page }) => {
+    // The hidden fields used to live inside the photo panel, which is
+    // drawn only on the vehicle step — so the form sent from the contact
+    // step carried none, and every photo was dropped without a word.
+    await page.goto('/cerere/noua');
+    await page.getByLabel('Oraș de plecare').fill('Milano');
+    await page.getByLabel('Țara de plecare').selectOption('IT');
+    await page.getByLabel('Oraș de destinație').fill('Timișoara');
+    await page.getByLabel('Poate fi încărcat de la').fill(FUTURE);
+    await page.getByRole('button', { name: 'Continuă' }).click();
+
+    await page.setInputFiles('input[type="file"][multiple]', {
+      name: 'masina.png',
+      mimeType: 'image/png',
+      buffer: TINY_PNG,
+    });
+    await expect(page.getByRole('button', { name: 'Scoate poza 1' })).toBeVisible({ timeout: 15_000 });
+    await page.getByRole('button', { name: 'Continuă' }).click();
+    await page.getByRole('button', { name: 'Continuă' }).click();
+
+    await expect(page.locator('form input[name="photo_paths"]')).toHaveCount(1);
+    await page.getByLabel('Numele tău').fill('Test Poze');
+    await page.getByRole('button', { name: 'Publică cererea' }).click();
+    await expect(page.locator('[data-publish-result]')).toBeVisible({ timeout: 15_000 });
   });
 
   test('stops at six', async ({ page }) => {
