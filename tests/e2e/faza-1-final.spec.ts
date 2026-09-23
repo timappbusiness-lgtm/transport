@@ -27,14 +27,19 @@ test.describe('saving a search is offered where somebody would want one', () => 
   });
 
   test('in the empty state of the requests board', async ({ page }) => {
+    // One level down now: an empty board is one sentence and one button,
+    // and „anunță-mă" is under „Altceva de făcut de aici" rather than
+    // beside it. Still there, still one click.
     await page.goto('/cereri');
     const main = page.locator('main');
+    await main.getByText('Altceva de făcut de aici').click();
     await expect(main.getByRole('link', { name: 'Anunță-mă când apare ceva' })).toBeVisible();
   });
 
   test('in the empty state of the departures board, aimed at carriers', async ({ page }) => {
     await page.goto('/trasee');
     const main = page.locator('main');
+    await main.getByText('Altceva de făcut de aici').click();
     await expect(main.getByRole('link', { name: 'Salvează căutarea de cereri' })).toBeVisible();
     // The alert a client wants is still there beside it, in its
     // signed-out wording.
@@ -109,9 +114,9 @@ test.describe('at 390px', () => {
 
   test('the save-search control is reachable on the requests board', async ({ page }) => {
     await page.goto('/cereri');
-    await expect(
-      page.locator('main').getByRole('link', { name: 'Anunță-mă când apare ceva' }),
-    ).toBeVisible();
+    const main = page.locator('main');
+    await main.getByText('Altceva de făcut de aici').click();
+    await expect(main.getByRole('link', { name: 'Anunță-mă când apare ceva' })).toBeVisible();
   });
 });
 

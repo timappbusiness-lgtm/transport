@@ -164,7 +164,8 @@ export const requestsCopy = {
       retur: 'De la persoane fizice',
     },
     count: (n: number) => (n === 1 ? 'O cerere' : `${n} cereri`),
-    signedOutNote: 'Datele de contact se deschid după ce firma este verificată.',
+    signedOutNote:
+      'Ruta și starea vehiculului sunt publice. Contactul se deschide dintr-un cont de transportator verificat.',
     publish: 'Publică o cerere',
   },
 

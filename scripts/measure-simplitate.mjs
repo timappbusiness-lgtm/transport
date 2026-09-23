@@ -11,7 +11,8 @@
  *     says so in the output.
  *
  * Run it on main and again on the branch; the two outputs are the
- * before/after table in docs/15-simplitate.md.
+ * before/after table in docs/15-simplitate.md. Both sides must be
+ * measured with the same copy of this file — see the note on `vis`.
  */
 import { chromium } from '@playwright/test';
 import { existsSync, readFileSync } from 'node:fs';
@@ -53,7 +54,11 @@ for (const [journey, route] of LIVE) {
   await page.waitForTimeout(300);
   const m = await page.evaluate(() => {
     const main = document.querySelector('main') ?? document.body;
-    const vis = (n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    // `checkVisibility` rather than a bounding box. A closed <details>
+    // in Chromium keeps the last layout of its contents, so a rect test
+    // counts ten hidden filters as if they were on screen — which is
+    // exactly the number this file exists to measure.
+    const vis = (n) => n.checkVisibility();
     const fields = [...main.querySelectorAll('input:not([type=hidden]), select, textarea')].filter(vis);
     // "Above the fold" = inside the first viewport height.
     const above = fields.filter((n) => n.getBoundingClientRect().top < window.innerHeight);

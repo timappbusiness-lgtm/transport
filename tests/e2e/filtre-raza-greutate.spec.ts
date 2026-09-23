@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * Radius and weight, on both boards, without a database.
@@ -9,13 +9,26 @@ import { expect, test } from '@playwright/test';
  * them away. Whether the rows returned are actually inside the circle
  * is a database question, and `supabase/tests/rls_test.sql` answers it
  * — from both sides, including a listing whose town has no coordinates.
+ *
+ * All of these live under „Mai multe filtre" now. A radius is what
+ * somebody reaches for deliberately, and three questions on screen was
+ * the whole point of that change; what must not change is that they
+ * still work and still write the same keys.
  */
 
 const MOBILE = { width: 390, height: 844 };
 
+/** Idempotent: an inherited link opens the panel by itself. */
+async function openFilters(page: Page): Promise<void> {
+  const panel = page.locator('main details').first();
+  if (await panel.evaluate((n: HTMLDetailsElement) => n.open)) return;
+  await page.getByText('Mai multe filtre').click();
+}
+
 test.describe('the request board', () => {
   test('offers a locality, a radius and a maximum weight', async ({ page }) => {
     await page.goto('/cereri');
+    await openFilters(page);
     await expect(page.getByLabel('Lângă localitatea')).toBeVisible();
     await expect(page.getByLabel('Pe o rază de')).toBeVisible();
     await expect(page.getByLabel('Greutate maximă (kg)')).toBeVisible();
@@ -23,16 +36,19 @@ test.describe('the request board', () => {
 
   test('says what the radius is measured between', async ({ page }) => {
     await page.goto('/cereri');
+    await openFilters(page);
     await expect(page.getByText(/Distanța în linie dreaptă între localități/)).toBeVisible();
   });
 
   test('says that requests with no weight stay in the list', async ({ page }) => {
     await page.goto('/cereri');
+    await openFilters(page);
     await expect(page.getByText(/Cererile fără greutate trecută rămân în listă/)).toBeVisible();
   });
 
   test('puts both criteria in the URL, so the search can be shared', async ({ page }) => {
     await page.goto('/cereri');
+    await openFilters(page);
     await page.getByLabel('Lângă localitatea').selectOption('Cluj-Napoca|RO');
     await page.getByLabel('Pe o rază de').selectOption('100');
     await page.getByLabel('Greutate maximă (kg)').fill('2400');
@@ -69,6 +85,7 @@ test.describe('the request board', () => {
 test.describe('the departures board', () => {
   test('offers a locality, a radius and a minimum free capacity', async ({ page }) => {
     await page.goto('/trasee');
+    await openFilters(page);
     await expect(page.getByLabel('Pleacă de lângă')).toBeVisible();
     await expect(page.getByLabel('Pe o rază de')).toBeVisible();
     await expect(page.getByLabel('Capacitate liberă, minimum (kg)')).toBeVisible();
@@ -76,6 +93,7 @@ test.describe('the departures board', () => {
 
   test('puts all three in the URL', async ({ page }) => {
     await page.goto('/trasee');
+    await openFilters(page);
     await page.getByLabel('Pleacă de lângă').selectOption('Timișoara|RO');
     await page.getByLabel('Pe o rază de').selectOption('25');
     await page.getByLabel('Capacitate liberă, minimum (kg)').fill('3500');
@@ -123,8 +141,12 @@ test.describe('on a phone', () => {
       expect(overflow).toBeLessThanOrEqual(1);
     });
 
-    test(`${path} shows the new filters on a phone`, async ({ page }) => {
+    test(`${path} keeps the radius reachable on a phone`, async ({ page }) => {
+      // One tap, and it is on screen — which is the deal: hidden, not
+      // removed, and hidden behind something a thumb can hit.
       await page.goto(path);
+      await expect(page.getByLabel('Pe o rază de')).toBeHidden();
+      await openFilters(page);
       await expect(page.getByLabel('Pe o rază de')).toBeVisible();
     });
   }
