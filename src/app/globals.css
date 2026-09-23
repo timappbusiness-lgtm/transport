@@ -39,18 +39,20 @@
   --color-ink-soft: #7b8b93; /* 3.28:1 — large headlines only, never body */
 
   /* --- dark sections ---
-     The brief specified #6f7f87 -> #a9b6bc. White text on the light end of
-     that gradient measures 2.08:1, below even the 3:1 large-text floor, so
-     the hero and the closing CTA would have been unreadable. Same hue
-     family, darkened until white is body-safe at both ends. */
-  --color-dark-from: #33434b; /* white 10.27:1 */
-  --color-dark-to: #69787f; /* white  4.57:1 */
+     A deep petrol ink, from the same blue-green family as the accent.
+     They were blue-grey — #33434b to #69787f — and the accent's luminance
+     sat between the two ends, so on a dark section it measured 1.45:1 and
+     ΔE00 14: the same grey as the ground it stood on. Darker, and white on
+     them rises to 16.15:1 and 11.58:1, and the bright step below has room
+     to be seen. `tests/unit/accent-dark.test.ts` measures every pair. */
+  --color-dark-from: #132329; /* white 16.15:1 */
+  --color-dark-to: #1f3d46; /* white 11.58:1 */
   /* The ground of the hero's photograph slot, which is a drawing until a
      real photograph replaces it. Nothing is written on it in text — the
-     slot is `role="img"` with a label — so these are chosen to sit under
-     white/60 line-work, not to carry type. */
-  --color-photo-from: #41525a;
-  --color-photo-to: #7e8d94;
+     slot is `role="img"` with a label — so these sit under line-work, one
+     step lighter than the section so the slot reads as a picture. */
+  --color-photo-from: #1c3139;
+  --color-photo-to: #34535d;
 
   /* --- status ---
      The hexes are the brief's. As text on white they measure 4.04 and 3.64,
@@ -66,10 +68,9 @@
      6.60:1 on the ground, 7.09:1 on white, and white on it is 7.09:1, so
      the same token serves the figure, the link and the filled button.
 
-     It is a LIGHT-SURFACE token. On the dark gradient it would need a
-     pale tint, and a pale teal measures 2.9:1 against the light end of
-     that gradient — under every floor there is. Dark sections keep white
-     and white/60 for emphasis, which already work. */
+     It is a LIGHT-SURFACE token. On a dark surface its role is taken by
+     --color-accent-bright below: the same family, bright enough to stand
+     off the dark as clearly as this one stands off white. */
   --color-accent: #15616d;
   /* One step darker, for the pressed and hovered states of a filled
      accent button. White on it is 9.18:1, so hovering can only improve
@@ -85,13 +86,21 @@
   --color-accent-border: #9cc5cb;
   /* What sits on a filled accent surface. 7.09:1 on the base. */
   --color-on-accent: #ffffff;
-  /* The one step for a DARK surface: the floating header, which is ink
-     at 80% over whatever scrolls behind it. Worst case is white behind
-     it, #495155, and this measures 5.37:1 there — body-safe. It is NOT
-     for the dark gradient sections: against their light end, #69787f,
-     it is 3.03:1, which is large-text only, and text on a gradient
-     crosses both ends. Those sections keep white. */
+  /* The pale step, for text on a DARK surface that is not a control: the
+     wordmark and the soft half of a headline. 7.44:1 on the header even
+     with a white page behind it, 7.66:1 on the light end of the dark
+     gradient. */
   --color-accent-on-dark: #a3dce3;
+  /* The bright step: what is interactive or key on a DARK surface — the
+     primary button, the current page, a key number, a link, the focus
+     ring. 8.80:1 on --color-dark-from, 6.31:1 on --color-dark-to, 6.12:1
+     on the header, and ΔE00 above 55 against all three, where the
+     petrol base was 14. It is a DARK-SURFACE token only: on white it is
+     1.83:1, and a test keeps it off every light surface. */
+  --color-accent-bright: #4fd1d8;
+  --color-accent-bright-hover: #7fdfe3;
+  /* What sits on a filled bright surface: the dark ink, 8.80:1. */
+  --color-on-accent-bright: #132329;
   /* The same idea for the ink pill. */
   --color-ink-hover: #2a3740;
 
@@ -263,8 +272,10 @@
     text-wrap: balance;
   }
 
-  /* Focus is ink on light ground and white on the dark sections. Both are
-     well past the 3:1 a focus indicator needs. */
+  /* Focus is ink on light ground and the bright accent on dark surfaces:
+     14.37:1 and at least 6.12:1, both well past the 3:1 a focus indicator
+     needs. Ink stays on light surfaces because a focus ring appears on
+     every screen, including the formal ones the accent may not touch. */
   :focus-visible {
     outline: 2px solid var(--color-foreground);
     outline-offset: 2px;
@@ -277,7 +288,7 @@
 
   .on-dark :focus-visible,
   [data-surface='dark'] :focus-visible {
-    outline-color: #ffffff;
+    outline-color: var(--color-accent-bright);
   }
 }
 
@@ -313,6 +324,12 @@
 
   &:hover {
     text-decoration-color: var(--color-accent);
+  }
+
+  /* The same link on a dark section takes the bright step. */
+  [data-surface='dark'] & {
+    color: var(--color-accent-bright);
+    text-decoration-color: var(--color-accent-bright);
   }
 }
 

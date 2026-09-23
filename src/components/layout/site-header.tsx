@@ -5,6 +5,7 @@ import { loadNavCounts } from '@/lib/nav-counts';
 import { headerMenu } from '@/lib/navigation';
 import { HeaderNav, type HeaderUser } from './header-menu';
 import { HeaderBrand } from './header-brand';
+import { HEADER_BAR, HEADER_OUTER } from './header-shell';
 
 /**
  * The half of the header that needs the session.
@@ -57,15 +58,14 @@ function SignedOutHeader() {
  * The bar sits inside the page rather than spanning it, so the ground shows
  * through on both sides and the page reads as a sheet the nav rests on.
  *
- * Ink at 80%, not the 72% it was. The brand mark and wordmark carry the
- * accent's dark step now, and over a white page 72% leaves that at 4.05:1
- * — under body text. At 80% it is 5.37:1 and white rises to 8.10:1.
- * `tests/unit/accent-scale.test.ts` measures both and reads this class.
+ * It is a dark surface, and says so with `data-surface="dark"`: the focus
+ * ring on it is the bright accent rather than ink on ink, and anything in
+ * it that takes the accent takes the step made for a dark ground.
  */
 export function SiteHeader() {
   return (
-    <div className="pointer-events-none sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
-      <header className="pointer-events-auto mx-auto flex h-14 w-full max-w-[72rem] items-center gap-3 rounded-pill border border-white/25 bg-foreground/80 px-3 text-white backdrop-blur-xl sm:gap-4 sm:px-5">
+    <div className={HEADER_OUTER}>
+      <header data-surface="dark" className={HEADER_BAR}>
         <Suspense fallback={<SignedOutHeader />}>
           <HeaderAuth />
         </Suspense>

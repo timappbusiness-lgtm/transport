@@ -17,11 +17,11 @@ export function FinalCta() {
         <Headline
           strong={c.strong}
           soft={c.soft}
-          className="mx-auto max-w-[24ch] text-white [&_span:last-child]:text-white/60"
+          className="mx-auto max-w-[24ch] text-white"
         />
         <p className="mx-auto mt-5 max-w-[48ch] text-body-lg text-white/80">{c.lede}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href={ROUTES.newRequest} className={buttonClasses('onDark', 'md')}>
+          <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
             {c.primary}
           </Link>
           <Link href={`${ROUTES.signUpCompany}?tip=transport`} className={buttonClasses('onDarkGhost', 'md')}>
