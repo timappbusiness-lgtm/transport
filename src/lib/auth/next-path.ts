@@ -90,3 +90,19 @@ export function signInUrlFor(pathname: string, search?: string): string {
   if (safe === '' || safe === DEFAULT_NEXT) return '/autentificare';
   return `/autentificare?next=${encodeURIComponent(safe)}`;
 }
+
+/**
+ * A link to an authentication page that carries the place to come back to.
+ *
+ * Every page on the way — sign-in, the switch to sign-up, the confirmation
+ * screen, the password reset and the page that sets the new password —
+ * passes `next` along, so a person who started signing in from step four
+ * of a form lands on step four, whichever way they went. A `next` that is
+ * not a safe internal path, or is the default anyway, is left off.
+ */
+export function withNext(path: string, next: string | null | undefined): string {
+  const safe = safeNextPath(next, '');
+  if (safe === '' || safe === DEFAULT_NEXT) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}next=${encodeURIComponent(safe)}`;
+}
