@@ -69,7 +69,7 @@ describe('a card without an icon is a bug', () => {
   it('the board card draws one', () => {
     const html = renderToStaticMarkup(
       <ul>
-        <BoardRequestCard request={request()} />
+        <BoardRequestCard request={request()} now={NOW} />
       </ul>,
     );
     expect(glyphs(html).length, 'the board card rendered no svg at all').toBeGreaterThan(0);
@@ -90,7 +90,7 @@ describe('a card without an icon is a bug', () => {
     for (const category of CARGO_CATEGORIES) {
       const html = renderToStaticMarkup(
         <ul>
-          <BoardRequestCard request={request({ category })} />
+          <BoardRequestCard request={request({ category })} now={NOW} />
         </ul>,
       );
       expect(glyphs(html).length, `${category}: no icon on the card`).toBeGreaterThan(0);
@@ -100,7 +100,7 @@ describe('a card without an icon is a bug', () => {
   it('at a size somebody can see, not the 13px that started this', () => {
     const html = renderToStaticMarkup(
       <ul>
-        <BoardRequestCard request={request()} />
+        <BoardRequestCard request={request()} now={NOW} />
       </ul>,
     );
     for (const glyph of glyphs(html)) {
@@ -114,7 +114,7 @@ describe('a card without an icon is a bug', () => {
     // is what makes it readable.
     const html = renderToStaticMarkup(
       <ul>
-        <BoardRequestCard request={request()} />
+        <BoardRequestCard request={request()} now={NOW} />
       </ul>,
     );
     expect(html).toContain('text-foreground');

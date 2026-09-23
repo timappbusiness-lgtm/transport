@@ -87,6 +87,8 @@ export default async function Page({
   const applyMine = filters.mine && canFilterByCompany;
   const mine = applyMine ? await onlyForCompany(all, company) : null;
   const requests = sortRequests(mine?.requests ?? all, sort).slice(0, BOARD_LIMIT);
+  // One „now" for the whole page, so every card on it agrees.
+  const now = new Date();
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -140,6 +142,7 @@ export default async function Page({
                   <BoardRequestCard
                     key={request.id}
                     request={request}
+                    now={now}
                     // The tolerance is what decided this card was here, so
                     // it says so rather than leaving the carrier to wonder
                     // why a Hamburg run is on their list.

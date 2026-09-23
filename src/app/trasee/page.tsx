@@ -54,6 +54,8 @@ export default async function Page({
 
   const [loaded, context] = await Promise.all([loadDepartures(filters), getAccountContext()]);
   const departures = sortDepartures(loaded, sort);
+  // One „now" for the whole page, so every card on it agrees.
+  const now = new Date();
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -74,7 +76,7 @@ export default async function Page({
               <p className="mb-4 text-small text-muted">{c.count(departures.length)}</p>
               <ul className="flex flex-col gap-4">
                 {departures.map((departure) => (
-                  <DepartureCard key={departure.truck_listing_id} departure={departure} />
+                  <DepartureCard key={departure.truck_listing_id} departure={departure} now={now} />
                 ))}
               </ul>
             </>
