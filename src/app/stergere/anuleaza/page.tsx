@@ -43,8 +43,8 @@ export default async function Page({
 
   return (
     <main className="mx-auto flex w-full max-w-[52ch] flex-col gap-4 px-4 py-16">
-      <h1 className="text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
-      <p className="text-[0.9375rem]">{cancelled ? c.ok : c.gone}</p>
+      <h1 className="text-h2">{c.title}</h1>
+      <p className="text-body">{cancelled ? c.ok : c.gone}</p>
       <div className="mt-2 flex flex-wrap gap-3">
         <Link href={ROUTES.signIn} className={buttonClasses('primary', 'md')}>
           {c.signIn}

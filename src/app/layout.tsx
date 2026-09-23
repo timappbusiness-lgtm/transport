@@ -15,9 +15,19 @@ import './globals.css';
  * drop the IBM Plex Mono 500 face, which was fetched on every visit and
  * never rendered: mono is eyebrow labels and tabular data, always at 400.
  */
+/*
+ * 600 is the headline weight. It is the one face added to this list since
+ * the system was built, and it is here because 300 at 4rem read as
+ * unfinished rather than as elegant — see the note on `h1,h2,h3` in
+ * globals.css. 300 stays: it is the soft half of a two-tone headline.
+ *
+ * Display only. The body keeps 400 and 500, which is all „bold where it
+ * carries meaning" needs, so this costs one file on one family rather
+ * than a heavier weight everywhere.
+ */
 const interTight = Inter_Tight({
   subsets: ['latin', 'latin-ext'],
-  weight: ['300', '400', '500'],
+  weight: ['300', '400', '500', '600'],
   variable: '--font-inter-tight',
   display: 'swap',
 });

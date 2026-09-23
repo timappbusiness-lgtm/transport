@@ -94,7 +94,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[66ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -191,7 +191,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {page.rows.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
-          <h2 className="text-[1.0625rem]">{c.empty.title}</h2>
+          <h2 className="text-h3">{c.empty.title}</h2>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
           {filtered ? (
             <p className="mt-5 text-sm">
@@ -217,12 +217,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-[0.9375rem]">
+                    <p className="text-body">
                       {row.from_city ?? '—'} → {row.to_city ?? '—'}
                       <span className="text-muted"> · </span>
                       {formatMoney(row.agreed_price, row.currency as never)}
                     </p>
-                    <p className="mt-1 text-[0.8125rem] text-muted">
+                    <p className="mt-1 text-small text-muted">
                       {row.carrier_name ?? '—'}
                       {' → '}
                       {row.client_name ?? '—'}
@@ -231,7 +231,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                         ? c.list.evidence(row.evidence_count)
                         : c.list.noEvidence}
                     </p>
-                    <p className="mt-1 font-mono text-[0.6875rem] text-muted">
+                    <p className="mt-1 font-mono text-label text-muted">
                       {formatMoment(row.created_at)}
                       {row.disputed_at !== null
                         ? ` · ${ordersCopy.dispute.openedAt} ${formatMoment(row.disputed_at)}`

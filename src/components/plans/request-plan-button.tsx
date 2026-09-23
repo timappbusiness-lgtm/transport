@@ -69,19 +69,19 @@ export function RequestPlanButton({
 
       {open ? (
         <div id={dialogId} className="rounded-card border border-border-strong bg-ground-alt p-4">
-          <h4 ref={headingRef} tabIndex={-1} className="text-[0.9375rem] font-medium">
+          <h4 ref={headingRef} tabIndex={-1} className="text-body font-medium">
             {c.title}
           </h4>
-          <p className="mt-2 text-[0.875rem] text-muted">
+          <p className="mt-2 text-sm text-muted">
             {c.summary(plan.name, pluralRo(months, 'lună', 'luni'))}
           </p>
           {price ? (
-            <p className="mt-1 font-mono text-[0.875rem] tabular-nums">
+            <p className="mt-1 font-mono text-sm tabular-nums">
               {c.total(price.months === 1 ? totalLabel(price) : formatLei(price.total))}
             </p>
           ) : null}
           {settings.manualBilling ? (
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-muted">{c.manual}</p>
+            <p className="mt-3 text-small leading-relaxed text-muted">{c.manual}</p>
           ) : null}
 
           <form action={action} className="mt-4 flex flex-col gap-3">
@@ -89,14 +89,14 @@ export function RequestPlanButton({
             <input type="hidden" name="planCode" value={plan.code} />
             <input type="hidden" name="months" value={months} />
 
-            <label className="flex flex-col gap-1.5 text-[0.8125rem]">
+            <label className="flex flex-col gap-1.5 text-small">
               {c.notes}
               <textarea
                 name="notes"
                 rows={2}
                 maxLength={500}
                 placeholder={c.notesPlaceholder}
-                className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.875rem]"
+                className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
               />
             </label>
 

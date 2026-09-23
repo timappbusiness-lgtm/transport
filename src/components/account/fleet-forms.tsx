@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: ActionState = {};
 
 const CONTROL =
-  'w-full rounded-input border bg-surface px-3.5 py-2.5 text-[0.9375rem] border-border-strong';
+  'w-full rounded-input border bg-surface px-3.5 py-2.5 text-body border-border-strong';
 
 /**
  * The shared `Field` renders its own input, which these forms cannot use:

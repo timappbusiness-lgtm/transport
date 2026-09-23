@@ -52,7 +52,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             href={b === 'toate' ? ROUTES.accountMessages : `${ROUTES.accountMessages}?cutie=${b}`}
             aria-current={b === box ? 'page' : undefined}
             className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+              'rounded-pill border px-3.5 py-1.5 text-small',
               b === box
                 ? 'border-transparent bg-foreground text-ground'
                 : 'border-border-strong text-muted hover:text-foreground',
@@ -85,7 +85,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {rows.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[1.0625rem]">{c.empty[box]}</p>
+          <p className="text-body-lg">{c.empty[box]}</p>
           <p className="mt-1 text-sm text-muted">{c.empty[`${box}Body`]}</p>
         </Card>
       ) : (
@@ -97,7 +97,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-4 hover:border-border-strong"
               >
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-[1rem]">{row.counterparty_name ?? '—'}</span>
+                  <span className="text-base">{row.counterparty_name ?? '—'}</span>
                   <StatusBadge tone="neutral">{kindLabel(row.kind)}</StatusBadge>
                   {row.unread > 0 ? (
                     <StatusBadge tone="warning">
@@ -114,7 +114,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
                 <p
                   className={cn(
-                    'text-[0.875rem]',
+                    'text-sm',
                     row.unread > 0 ? 'text-foreground' : 'text-muted',
                   )}
                 >

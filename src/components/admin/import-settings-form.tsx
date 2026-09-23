@@ -11,7 +11,7 @@ import type { ImportSettings } from '@/lib/import-settings-source';
 
 const EMPTY: ImportSettingsState = {};
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 function Field({
   label,

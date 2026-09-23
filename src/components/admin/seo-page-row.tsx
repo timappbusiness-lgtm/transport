@@ -28,8 +28,8 @@ export function SeoPageRow({ page }: { page: SeoPage }) {
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.9375rem]">{pageSubject(page)}</p>
-        <p className="truncate font-mono text-[0.6875rem] text-muted">{pageHref(page)}</p>
+        <p className="truncate text-body">{pageSubject(page)}</p>
+        <p className="truncate font-mono text-label text-muted">{pageHref(page)}</p>
       </div>
 
       <StatusBadge tone={page.isPublished ? 'success' : 'neutral'}>
@@ -50,7 +50,7 @@ export function SeoPageRow({ page }: { page: SeoPage }) {
               ? pageHref(page)
               : `${ROUTES.adminPages}/${page.slug}/previzualizare`
           }
-          className="text-[0.8125rem] text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
+          className="text-small text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
         >
           {page.isPublished ? 'Vezi' : 'Previzualizează'}
         </Link>

@@ -47,7 +47,7 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{accountCopy.nav.subscription}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -98,7 +98,7 @@ function Current({
         {c.plan}
       </h2>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[1.125rem]">{plan?.name ?? subscription.planCode}</p>
+        <p className="text-lg">{plan?.name ?? subscription.planCode}</p>
         <StatusBadge tone={tone}>
           {subscription.isTrial
             ? 'Perioadă gratuită'
@@ -109,20 +109,20 @@ function Current({
       </div>
 
       {plan ? (
-        <p className="mt-1 font-mono text-[0.875rem] tabular-nums text-muted">
+        <p className="mt-1 font-mono text-sm tabular-nums text-muted">
           {formatLei(plan.monthlyPrice)} pe lună
         </p>
       ) : null}
 
       {end ? (
-        <p className="mt-4 text-[0.9375rem] text-muted">
+        <p className="mt-4 text-body text-muted">
           {subscription.isTrial ? c.trialUntil(formatDateRo(end)) : c.renewsOn(formatDateRo(end))}
           {subscription.daysLeft > 0 ? (
-            <span className="block text-[0.8125rem]">
+            <span className="block text-small">
               {c.endsIn(pluralRo(subscription.daysLeft, 'zi', 'zile'))}
             </span>
           ) : (
-            <span className="block text-[0.8125rem]">{c.ended}</span>
+            <span className="block text-small">{c.ended}</span>
           )}
         </p>
       ) : null}
@@ -144,14 +144,14 @@ function Pending({
       aria-labelledby="cerere"
       className="rounded-card border border-warning/40 bg-warning/8 p-5"
     >
-      <h2 id="cerere" className="text-[0.9375rem] font-medium">
+      <h2 id="cerere" className="text-body font-medium">
         {c.pending.title}
       </h2>
-      <p className="mt-2 text-[0.875rem] leading-relaxed text-muted">
+      <p className="mt-2 text-sm leading-relaxed text-muted">
         {c.pending.body(plan?.name ?? request.planCode, pluralRo(request.months, 'lună', 'luni'))}
       </p>
       {request.status === 'contacted' ? (
-        <p className="mt-2 text-[0.8125rem] text-muted">{c.pending.contacted}</p>
+        <p className="mt-2 text-small text-muted">{c.pending.contacted}</p>
       ) : null}
     </section>
   );
@@ -178,7 +178,7 @@ function Usage({ usage, plan }: { usage: SubscriptionUsage; plan: Plan }) {
 
   return (
     <section aria-labelledby="consum">
-      <h2 id="consum" className="text-[1.0625rem]">
+      <h2 id="consum" className="text-h3">
         {c.usage.title}
       </h2>
       <div className="mt-3 rounded-card border border-border bg-surface px-5 py-2">

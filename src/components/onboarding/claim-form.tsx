@@ -10,7 +10,7 @@ import { onboardingCopy } from '@/content/inscrieri';
 const EMPTY: ClaimState = {};
 const c = onboardingCopy.claim;
 const FIELD =
-  'rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.9375rem] font-normal';
+  'rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal';
 
 /**
  * Unde își alege omul parola.
@@ -72,7 +72,7 @@ export function ClaimForm({
       </label>
       <FormError>{state.fieldErrors?.password_again}</FormError>
 
-      <label className="flex items-start gap-2.5 text-[0.8125rem]">
+      <label className="flex items-start gap-2.5 text-small">
         <input type="checkbox" name="terms" className="mt-0.5" />
         <span>
           Am citit și accept{' '}

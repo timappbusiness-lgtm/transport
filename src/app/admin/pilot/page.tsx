@@ -62,7 +62,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.hero.title}</h1>
+        <h1 className="mt-2 text-h2">{c.hero.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
       </div>
 
@@ -101,7 +101,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
 
       <section aria-labelledby="criterii" className="flex flex-col gap-3">
         <div>
-          <h2 id="criterii" className="text-[1.0625rem]">
+          <h2 id="criterii" className="text-h3">
             {c.criteria.title}
           </h2>
           <p className="mt-1 max-w-[70ch] text-sm text-muted">{c.criteria.lede}</p>
@@ -124,7 +124,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="inscrisi" className="flex flex-col gap-3">
-        <h2 id="inscrisi" className="text-[1.0625rem]">
+        <h2 id="inscrisi" className="text-h3">
           {c.verified.title}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -135,7 +135,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="flux" className="flex flex-col gap-3">
-        <h2 id="flux" className="text-[1.0625rem]">
+        <h2 id="flux" className="text-h3">
           {c.flow.title}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -164,7 +164,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
 
       <section aria-labelledby="asistate" className="flex flex-col gap-3">
         <div>
-          <h2 id="asistate" className="text-[1.0625rem]">
+          <h2 id="asistate" className="text-h3">
             {c.assisted.title}
           </h2>
           <p className="mt-1 max-w-[70ch] text-sm text-muted">{c.assisted.lede}</p>
@@ -193,14 +193,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="unelte" className="flex flex-col gap-3">
-        <h2 id="unelte" className="text-[1.0625rem]">
+        <h2 id="unelte" className="text-h3">
           Unelte de pilot
         </h2>
         <PilotTools />
       </section>
 
       <section aria-labelledby="saptamani" className="flex flex-col gap-3">
-        <h2 id="saptamani" className="text-[1.0625rem]">
+        <h2 id="saptamani" className="text-h3">
           {c.weekly.title}
         </h2>
 
@@ -235,9 +235,9 @@ function Criterion({
   return (
     <div className="rounded-card border border-border bg-surface p-5">
       <p className="text-xs text-muted">{label}</p>
-      <p className="mt-2 font-mono text-[1.75rem] leading-none tabular-nums">
+      <p className="mt-2 font-mono text-figure-sm tabular-nums">
         {p.current}
-        <span className="text-[1rem] text-muted"> / {p.target}</span>
+        <span className="text-base text-muted"> / {p.target}</span>
       </p>
 
       <div
@@ -285,7 +285,7 @@ function Figure({
       )}
     >
       <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 font-mono text-[1.25rem] tabular-nums">{text ?? value ?? 0}</p>
+      <p className="mt-1 font-mono text-xl tabular-nums">{text ?? value ?? 0}</p>
       {note !== undefined ? (
         <p className="mt-2 max-w-[42ch] text-xs text-muted">{note}</p>
       ) : null}

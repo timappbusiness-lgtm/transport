@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.375rem,4vw,1.875rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[64ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -143,7 +143,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-sm">{error}</p>
       ) : rows.length === 0 ? (
         <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-[1.0625rem]">{c.empty.title}</p>
+          <p className="text-body-lg">{c.empty.title}</p>
           <p className="mt-1 text-sm text-muted">{c.empty.body}</p>
         </div>
       ) : (
@@ -168,7 +168,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               </div>
 
               {row.comment !== null ? (
-                <p className="mt-2 whitespace-pre-line text-[0.9375rem]">{row.comment}</p>
+                <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
               ) : null}
               {row.was_masked ? (
                 <p className="mt-1 text-xs text-muted">{c.list.masked}</p>
@@ -186,7 +186,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                     {ratingsCopy.reply.label}
                     {row.reply_hidden_at !== null ? ` · ${c.list.hiddenLabel}` : ''}
                   </p>
-                  <p className="mt-1 whitespace-pre-line text-[0.875rem]">{row.reply_body}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm">{row.reply_body}</p>
                   {row.reply_id !== null && row.reply_hidden_at === null ? (
                     <div className="mt-1.5">
                       <ModerateRating kind="hideReply" replyId={row.reply_id} />
@@ -195,7 +195,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 </div>
               ) : null}
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem]">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-small">
                 <Link
                   href={adminOrderRoute(row.order_id)}
                   className="underline underline-offset-4"

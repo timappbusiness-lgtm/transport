@@ -56,7 +56,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">Notificări și joburi</h1>
+        <h1 className="mt-2 text-h2">Notificări și joburi</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">
           Ce trimitem, ce a eșuat și dacă joburile programate chiar rulează. Un job care nu mai
           rulează nu anunță pe nimeni — de asta se vede aici.
@@ -64,7 +64,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </div>
 
       <section aria-labelledby="furnizor" className="flex flex-col gap-3">
-        <h2 id="furnizor" className="text-[1.0625rem]">
+        <h2 id="furnizor" className="text-h3">
           Furnizorul de e-mail
         </h2>
 
@@ -95,15 +95,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Trimise în 24 h</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{mail?.sent_24h ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{mail?.sent_24h ?? 0}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Eșuate în 24 h</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{mail?.failed_24h ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{mail?.failed_24h ?? 0}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Adrese nelivrabile</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{mail?.undeliverable_addresses ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{mail?.undeliverable_addresses ?? 0}</p>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="sms" className="flex flex-col gap-3">
-        <h2 id="sms" className="text-[1.0625rem]">
+        <h2 id="sms" className="text-h3">
           Furnizorul de SMS
         </h2>
 
@@ -146,15 +146,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Coduri trimise în 24 h</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{sms?.sent_24h ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{sms?.sent_24h ?? 0}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Numere confirmate în 24 h</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{sms?.confirmed_24h ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{sms?.confirmed_24h ?? 0}</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Conturi cu numărul confirmat</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{sms?.verified_accounts ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{sms?.verified_accounts ?? 0}</p>
             <p className="mt-1 text-xs text-muted">
               dintre care {sms?.verified_by_staff ?? 0} de mână
             </p>
@@ -163,7 +163,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="joburi" className="flex flex-col gap-3">
-        <h2 id="joburi" className="text-[1.0625rem]">
+        <h2 id="joburi" className="text-h3">
           Joburi programate
         </h2>
 
@@ -248,7 +248,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       </section>
 
       <section aria-labelledby="coada" className="flex flex-col gap-3">
-        <h2 id="coada" className="text-[1.0625rem]">
+        <h2 id="coada" className="text-h3">
           Coada
         </h2>
 
@@ -256,7 +256,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           {STATUSES.map((status) => (
             <div key={status} className="rounded-card border border-border bg-surface p-4">
               <p className="text-xs text-muted">{status}</p>
-              <p className="mt-1 font-mono text-[1.25rem]">{totals.get(status) ?? 0}</p>
+              <p className="mt-1 font-mono text-xl">{totals.get(status) ?? 0}</p>
             </div>
           ))}
         </div>

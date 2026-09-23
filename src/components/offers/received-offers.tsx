@@ -80,7 +80,7 @@ export function ReceivedOffers({
   if (offers.length === 0) {
     return (
       <div className="rounded-card border border-dashed border-border-strong bg-surface p-6">
-        <h3 className="text-[1.0625rem]">{c.empty}</h3>
+        <h3 className="text-h3">{c.empty}</h3>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
       </div>
     );
@@ -207,7 +207,7 @@ function OfferCard({
     <li className="rounded-card border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[1.0625rem]">
+          <h3 className="text-h3">
             {/* A firm, not a seal: `iconForContent('firma')` is a plain
                 building. The verification badge below is a word, which
                 is what `docs/13-iconuri.md` requires — nothing beside a
@@ -252,7 +252,7 @@ function OfferCard({
         </div>
 
         <div className="text-right">
-          <p className="font-display text-[clamp(1.25rem,3vw,1.625rem)] leading-none tabular-nums">
+          <p className="font-display text-h2 leading-none tabular-nums">
             {formatMoney(offer.price_amount, offer.currency)}
           </p>
           <p className={cn('mt-1 text-xs', urgent ? 'text-danger' : 'text-muted')}>

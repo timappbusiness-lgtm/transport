@@ -17,11 +17,11 @@ export function HelpLink({ topic, label }: { topic: ContextHelpKey; label?: stri
   return (
     <Link
       href={helpHref(topic)}
-      className="inline-flex items-center gap-1 text-[0.8125rem] text-muted underline-offset-4 hover:text-foreground hover:underline"
+      className="inline-flex items-center gap-1 text-small text-muted underline-offset-4 hover:text-foreground hover:underline"
     >
       <span
         aria-hidden="true"
-        className="inline-flex size-4 items-center justify-center rounded-full border border-border-strong text-[0.625rem] leading-none"
+        className="inline-flex size-4 items-center justify-center rounded-full border border-border-strong text-xs leading-none"
       >
         ?
       </span>

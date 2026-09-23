@@ -19,7 +19,7 @@ export interface ChecklistStep {
 export function Checklist({ title, steps }: { title: string; steps: ChecklistStep[] }) {
   return (
     <section className="rounded-card border border-border bg-surface">
-      <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">{title}</h2>
+      <h2 className="border-b border-border px-5 py-4 text-h3">{title}</h2>
       <ol className="divide-y divide-border">
         {steps.map((step, index) => (
           <li
@@ -32,7 +32,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
             <span
               aria-hidden="true"
               className={cn(
-                'flex size-6 flex-none items-center justify-center rounded-full font-mono text-[0.6875rem]',
+                'flex size-6 flex-none items-center justify-center rounded-full font-mono text-label',
                 step.state === 'done' && 'bg-success/15 text-success',
                 step.state === 'current' && 'bg-foreground text-white',
                 step.state === 'soon' && 'border border-border text-muted',
@@ -42,12 +42,12 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
             </span>
             <span className="min-w-0 flex-1 text-sm">{step.label}</span>
             {step.state === 'done' ? (
-              <span className="font-mono text-[0.6875rem] text-success">
+              <span className="font-mono text-label text-success">
                 {accountCopy.checklist.done}
               </span>
             ) : null}
             {step.state === 'soon' ? (
-              <span className="flex items-center gap-1.5 font-mono text-[0.6875rem] text-muted">
+              <span className="flex items-center gap-1.5 font-mono text-label text-muted">
                 <Icon as={uiIcon('locked')} size="sm" />
                 {accountCopy.checklist.soon}
               </span>

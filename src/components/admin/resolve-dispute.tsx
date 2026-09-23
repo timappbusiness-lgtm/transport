@@ -29,7 +29,7 @@ export function ResolveDispute({ orderId }: { orderId: string }) {
     <form action={action} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-5">
       <input type="hidden" name="order_id" value={orderId} />
 
-      <h2 className="text-[1.0625rem]">{c.title}</h2>
+      <h2 className="text-h3">{c.title}</h2>
       <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
 
       <fieldset className="flex flex-col gap-2">

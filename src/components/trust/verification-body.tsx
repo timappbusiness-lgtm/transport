@@ -61,7 +61,7 @@ export function VerificationBody({
 function Steps() {
   return (
     <section aria-labelledby="pasi" className="mt-14">
-      <h2 id="pasi" className="text-[1.125rem]">
+      <h2 id="pasi" className="text-lg">
         {c.steps.title}
       </h2>
       <ol className="mt-6 flex flex-col gap-6 sm:gap-0">
@@ -70,7 +70,7 @@ function Steps() {
             <div className="flex flex-none flex-col items-center">
               <span
                 aria-hidden="true"
-                className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-mono text-[0.75rem] tabular-nums"
+                className="flex size-8 items-center justify-center rounded-full border border-border-strong bg-surface font-mono text-xs tabular-nums"
               >
                 {index + 1}
               </span>
@@ -79,8 +79,8 @@ function Steps() {
               ) : null}
             </div>
             <div className={cn('min-w-0', index < c.steps.items.length - 1 && 'sm:pb-6')}>
-              <h3 className="text-[1rem] font-normal">{step.title}</h3>
-              <p className="mt-1.5 max-w-[60ch] text-[0.9375rem] leading-relaxed text-muted">
+              <h3 className="text-base font-normal">{step.title}</h3>
+              <p className="mt-1.5 max-w-[60ch] text-body leading-relaxed text-muted">
                 {step.body}
               </p>
             </div>
@@ -101,13 +101,13 @@ function Steps() {
 function Documents({ documents }: { documents: PublicRequirement[] }) {
   return (
     <section aria-labelledby="documente" className="mt-14">
-      <h2 id="documente" className="text-[1.125rem]">
+      <h2 id="documente" className="text-lg">
         {c.documents.title}
       </h2>
       <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.documents.lede}</p>
 
       <div className="mt-6 hidden overflow-hidden rounded-card border border-border bg-surface sm:block">
-        <table className="w-full border-collapse text-[0.9375rem]">
+        <table className="w-full border-collapse text-body">
           <thead>
             <tr>
               {[c.documents.columns.document, c.documents.columns.scope, c.documents.columns.expiry].map(
@@ -115,7 +115,7 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
                   <th
                     key={heading}
                     scope="col"
-                    className="border-b border-border px-5 py-3.5 text-left font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted"
+                    className="border-b border-border px-5 py-3.5 text-left font-mono text-label font-normal uppercase tracking-[0.12em] text-muted"
                   >
                     {heading}
                   </th>
@@ -129,20 +129,20 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
                 <th scope="row" className="border-b border-border px-5 py-3.5 text-left font-normal">
                   {doc.label_ro}
                   {doc.has_expiry && remindersLabel(doc.reminder_days) ? (
-                    <span className="mt-1 block text-[0.8125rem] text-muted">
+                    <span className="mt-1 block text-small text-muted">
                       {c.documents.reminders(remindersLabel(doc.reminder_days) ?? '')}
                     </span>
                   ) : null}
                 </th>
-                <td className="border-b border-border px-5 py-3.5 align-top text-[0.875rem]">
+                <td className="border-b border-border px-5 py-3.5 align-top text-sm">
                   {scopeText(doc)}
                   {exemptionText(doc) ? (
-                    <span className="mt-1 block text-[0.8125rem] text-muted">
+                    <span className="mt-1 block text-small text-muted">
                       {exemptionText(doc)}
                     </span>
                   ) : null}
                 </td>
-                <td className="border-b border-border px-5 py-3.5 align-top text-[0.875rem] text-muted">
+                <td className="border-b border-border px-5 py-3.5 align-top text-sm text-muted">
                   {expiryText(doc)}
                 </td>
               </tr>
@@ -155,13 +155,13 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
         {documents.map((doc) => (
           <li key={`${doc.scope}-${doc.kind}`} className="rounded-card border border-border bg-surface p-4">
             <p className="font-medium">{doc.label_ro}</p>
-            <p className="mt-1 text-[0.8125rem] text-muted">{scopeText(doc)}</p>
+            <p className="mt-1 text-small text-muted">{scopeText(doc)}</p>
             {exemptionText(doc) ? (
-              <p className="mt-1 text-[0.8125rem] text-muted">{exemptionText(doc)}</p>
+              <p className="mt-1 text-small text-muted">{exemptionText(doc)}</p>
             ) : null}
-            <p className="mt-2 text-[0.8125rem]">{expiryText(doc)}</p>
+            <p className="mt-2 text-small">{expiryText(doc)}</p>
             {doc.has_expiry && remindersLabel(doc.reminder_days) ? (
-              <p className="mt-1 text-[0.8125rem] text-muted">
+              <p className="mt-1 text-small text-muted">
                 {c.documents.reminders(remindersLabel(doc.reminder_days) ?? '')}
               </p>
             ) : null}
@@ -206,33 +206,33 @@ function expiryText(doc: PublicRequirement): string {
 function Scope() {
   return (
     <section aria-labelledby="ce-verificam" className="mt-14">
-      <h2 id="ce-verificam" className="text-[1.125rem]">
+      <h2 id="ce-verificam" className="text-lg">
         {c.scope.title}
       </h2>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <div className="rounded-card border border-border bg-surface p-5">
-          <h3 className="text-[1rem] font-normal">{c.scope.weDo.title}</h3>
+          <h3 className="text-base font-normal">{c.scope.weDo.title}</h3>
           <ul className="mt-3 flex flex-col gap-2">
             {c.scope.weDo.items.map((item) => (
-              <li key={item} className="text-[0.9375rem] leading-relaxed text-muted">
+              <li key={item} className="text-body leading-relaxed text-muted">
                 {item}
               </li>
             ))}
           </ul>
         </div>
         <div className="rounded-card border border-border bg-surface p-5">
-          <h3 className="text-[1rem] font-normal">{c.scope.weDont.title}</h3>
+          <h3 className="text-base font-normal">{c.scope.weDont.title}</h3>
           <ul className="mt-3 flex flex-col gap-2">
             {c.scope.weDont.items.map((item) => (
-              <li key={item} className="text-[0.9375rem] leading-relaxed text-muted">
+              <li key={item} className="text-body leading-relaxed text-muted">
                 {item}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[0.8125rem] text-muted">{c.scope.weDont.note}</p>
+          <p className="mt-3 text-small text-muted">{c.scope.weDont.note}</p>
         </div>
       </div>
-      <p className="mt-5 max-w-[68ch] text-[0.9375rem]">{c.scope.caveat}</p>
+      <p className="mt-5 max-w-[68ch] text-body">{c.scope.caveat}</p>
     </section>
   );
 }
@@ -240,10 +240,10 @@ function Scope() {
 function Report({ signedIn }: { signedIn: boolean }) {
   return (
     <section aria-labelledby="sesizare" className="mt-14">
-      <h2 id="sesizare" className="text-[1.125rem]">
+      <h2 id="sesizare" className="text-lg">
         {c.report.title}
       </h2>
-      <p className="mt-2 max-w-[60ch] text-[0.9375rem] leading-relaxed text-muted">
+      <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-muted">
         {c.report.body}
       </p>
       <ReportButton signedIn={signedIn} supportEmail={SUPPORT_EMAIL} />
@@ -267,7 +267,7 @@ function LegalLinks() {
   const l = legalCopy.verification;
   return (
     <section aria-labelledby="documente" className="mt-14 border-t border-border pt-10">
-      <h2 id="documente" className="text-[1.125rem]">
+      <h2 id="documente" className="text-lg">
         {l.title}
       </h2>
       <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-muted">{l.body}</p>
@@ -289,7 +289,7 @@ function LegalLinks() {
 function Faq({ reviewTimeLabel }: { reviewTimeLabel: string | null }) {
   return (
     <section aria-labelledby="intrebari" className="mt-14 border-t border-border pt-10">
-      <h2 id="intrebari" className="text-[1.125rem]">
+      <h2 id="intrebari" className="text-lg">
         {c.faq.title}
       </h2>
       <dl className="mt-6 grid gap-6 md:grid-cols-2">

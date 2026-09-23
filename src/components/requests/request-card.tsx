@@ -48,17 +48,17 @@ export function RequestCard({
         href={requestRoute(request.id)}
         className={cn(
           'flex h-full flex-col rounded-card border border-border bg-surface p-4 sm:p-5',
-          'transition-[border-color] duration-150 hover:border-border-strong',
+          'transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised',
         )}
       >
-        <p className="flex items-center justify-between gap-3 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+        <p className="flex items-center justify-between gap-3 font-mono text-label uppercase tracking-[0.12em] text-muted">
           <IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
             {CARGO_CATEGORY_LABELS[request.category]}
           </IconLabel>
           <span className="flex-none">{SCOPE_LABELS[scope]}</span>
         </p>
 
-        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.9375rem]">
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-body">
           <span className="sr-only">{c.routeLabel(request.from_city, request.to_city)}</span>
           <span aria-hidden="true" className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium">{request.from_city}</span>
@@ -69,7 +69,7 @@ export function RequestCard({
           </span>
         </p>
 
-        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-muted">
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-muted">
           {km ? (
             <span className="rounded-pill border border-border px-2 py-0.5 font-mono tabular-nums">
               {km}
@@ -87,7 +87,7 @@ export function RequestCard({
           ) : null}
         </div>
 
-        <p className="mt-4 pt-1 font-mono text-[0.6875rem] text-muted">
+        <p className="mt-4 pt-1 font-mono text-label text-muted">
           <RelativeTime
             publishedAt={request.published_at}
             initial={relativeTimeRo(request.published_at, now)}

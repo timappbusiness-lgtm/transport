@@ -30,7 +30,7 @@ export async function SeoLinkCloud({
 
   return (
     <section aria-labelledby="pagini-seo" className={className}>
-      <h2 id="pagini-seo" className="text-[1.0625rem]">
+      <h2 id="pagini-seo" className="text-h3">
         {title}
       </h2>
       <ul className="mt-4 flex flex-wrap gap-2">
@@ -38,7 +38,7 @@ export async function SeoLinkCloud({
           <li key={page.slug}>
             <Link
               href={pageHref(page)}
-              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-[0.8125rem] text-muted hover:border-border-strong hover:text-foreground"
+              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-small text-muted hover:border-border-strong hover:text-foreground"
             >
               {pageSubject(page)}
             </Link>

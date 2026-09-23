@@ -129,12 +129,12 @@ export function PhotoCapture({
             <button
               type="button"
               onClick={askLocation}
-              className="text-left text-[0.8125rem] text-muted underline underline-offset-4"
+              className="text-left text-small text-muted underline underline-offset-4"
             >
               {c.location}
             </button>
           ) : (
-            <p className="text-[0.8125rem] text-muted">
+            <p className="text-small text-muted">
               {geoDenied ? c.locationDenied : c.location}
             </p>
           )}

@@ -95,7 +95,7 @@ function SimpleStep({
         {action.label}
       </button>
       {blocked ? (
-        <p className="text-[0.8125rem] text-muted">{ordersCopy.actions.missing([...gaps])}</p>
+        <p className="text-small text-muted">{ordersCopy.actions.missing([...gaps])}</p>
       ) : null}
       <FormError>{state.error}</FormError>
     </form>
@@ -129,7 +129,7 @@ function ScheduleForm({
           {action.label}
         </button>
         {pickup && needsCrew ? (
-          <p className="text-[0.8125rem] text-muted">{ordersCopy.detail.assign}</p>
+          <p className="text-small text-muted">{ordersCopy.detail.assign}</p>
         ) : null}
       </div>
     );
@@ -371,7 +371,7 @@ export function HandoverForm({ orderId }: { orderId: string }) {
           value={code}
           onChange={(event) => setCode(normaliseCode(event.target.value))}
           placeholder="000 000"
-          className={`${CONTROL} text-center font-mono text-[1.5rem] tracking-[0.3em]`}
+          className={`${CONTROL} text-center font-mono text-figure-sm tracking-[0.3em]`}
         />
       </label>
 
@@ -392,7 +392,7 @@ export function ConfirmationCode({ code }: { code: string }) {
   return (
     <div className="rounded-card border border-foreground/35 bg-ground-alt p-4">
       <p className="text-xs text-muted">{ordersCopy.handover.title}</p>
-      <p className="mt-1 font-mono text-[1.75rem] tracking-[0.2em] tabular-nums">
+      <p className="mt-1 font-mono text-figure-sm tracking-[0.2em] tabular-nums">
         {formatCode(code)}
       </p>
       <p className="mt-1 text-sm">{ordersCopy.handover.clientHint}</p>
@@ -420,7 +420,7 @@ export function ConfirmDelivery({
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value="order_completed" />
 
-      <p className="text-[1.0625rem]">{ordersCopy.confirm.title}</p>
+      <p className="text-body-lg">{ordersCopy.confirm.title}</p>
       <p className="max-w-[60ch] text-sm">{ordersCopy.confirm.body}</p>
       {deadline !== null ? (
         <p className="text-sm text-muted">

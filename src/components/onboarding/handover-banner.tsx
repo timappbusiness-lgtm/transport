@@ -24,7 +24,7 @@ export function HandoverBanner({ summary }: { summary: HandoverSummary }) {
 
   return (
     <Card className="border-success/45 bg-success/8 p-4">
-      <h2 className="text-[1rem]">{c.title}</h2>
+      <h2 className="text-base">{c.title}</h2>
       <p className="mt-1 text-sm text-muted">{c.filled(summary.staff_name)}</p>
       <ul className="mt-2 flex flex-wrap gap-1.5">
         {filled.map((item) => (
@@ -36,7 +36,7 @@ export function HandoverBanner({ summary }: { summary: HandoverSummary }) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 max-w-[64ch] text-[0.8125rem]">{c.editable}</p>
+      <p className="mt-3 max-w-[64ch] text-small">{c.editable}</p>
     </Card>
   );
 }

@@ -46,11 +46,17 @@ describe('homepage copy rules', () => {
   });
 
   it('keeps the seat deck internally consistent', () => {
+    // The caption was one string, „3 locuri libere din 8", and is now
+    // split so the figure can carry the accent. The invariant is the
+    // same and is now checked directly rather than by substring: a card
+    // that draws five taken seats out of eight and says four are free is
+    // the failure this guards.
     const { taken, total, caption } = homeCopy.panel.seats;
     expect(taken).toBeGreaterThan(0);
     expect(taken).toBeLessThan(total);
-    expect(caption).toContain(String(total - taken));
-    expect(caption).toContain(String(total));
+    expect(caption.free).toBe(total - taken);
+    expect(caption.total).toBe(total);
+    expect(caption.suffix).toContain(String(total));
   });
 
   it('gives the comparison five steps on each side', () => {

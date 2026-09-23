@@ -100,8 +100,8 @@ export function CompanyProfileBody({
       <header className="mt-6 flex flex-wrap items-start gap-5">
         <Logo company={company} logoUrl={companyLogoUrl(company.logoPath)} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-[clamp(1.5rem,3vw,2.25rem)] leading-tight">{company.name}</h1>
-          <p className="mt-2 text-[0.9375rem] text-muted">
+          <h1 className="text-h2 leading-tight">{company.name}</h1>
+          <p className="mt-2 text-body text-muted">
             {[company.city, company.county, COMPANY_TYPE_LABELS[company.companyType]]
               .filter(Boolean)
               .join(' · ')}
@@ -109,7 +109,7 @@ export function CompanyProfileBody({
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <StatusBadge tone="success">{directoryCopy.card.verified}</StatusBadge>
             {verifiedSinceLabel(company.verifiedSince) ? (
-              <span className="text-[0.8125rem] text-muted">
+              <span className="text-small text-muted">
                 {verifiedSinceLabel(company.verifiedSince)}
               </span>
             ) : null}
@@ -119,10 +119,10 @@ export function CompanyProfileBody({
 
       {company.description ? (
         <section aria-labelledby="despre" className="mt-10">
-          <h2 id="despre" className="text-[1.125rem]">
+          <h2 id="despre" className="text-lg">
             {c.about}
           </h2>
-          <p className="mt-2 max-w-[62ch] text-[0.9375rem] leading-relaxed text-muted">
+          <p className="mt-2 max-w-[62ch] text-body leading-relaxed text-muted">
             {company.description}
           </p>
         </section>
@@ -142,7 +142,7 @@ export function CompanyProfileBody({
 
       {ratings.length > 0 ? (
         <section aria-labelledby="evaluari" className="mt-8">
-          <h2 id="evaluari" className="text-[1.125rem]">
+          <h2 id="evaluari" className="text-lg">
             {ratingsCopy.profile.latest}
           </h2>
           <div className="mt-2">
@@ -173,17 +173,17 @@ export function CompanyProfileBody({
                 truckListingId={routes[0].truckListingId}
                 signedIn={signedIn}
               />
-              <p className="mt-2 text-[0.8125rem] text-muted">{c.cta.contactNote}</p>
+              <p className="mt-2 text-small text-muted">{c.cta.contactNote}</p>
             </div>
           ) : null}
         </div>
       </section>
 
       <section aria-labelledby="raportare" className="mt-12 border-t border-border pt-8">
-        <h2 id="raportare" className="text-[1.125rem]">
+        <h2 id="raportare" className="text-lg">
           {c.report.title}
         </h2>
-        <p className="mt-2 max-w-[60ch] text-[0.9375rem] leading-relaxed text-muted">
+        <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-muted">
           {c.report.body}
         </p>
         <ReportButton signedIn={signedIn} supportEmail={SUPPORT_EMAIL} />
@@ -257,7 +257,7 @@ function Capabilities({
 
   return (
     <section aria-labelledby="capabilitati" className="mt-10">
-      <h2 id="capabilitati" className="text-[1.125rem]">
+      <h2 id="capabilitati" className="text-lg">
         {cc.title}
       </h2>
 
@@ -267,18 +267,18 @@ function Capabilities({
             key={row.label}
             className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border py-3 last:border-b-0"
           >
-            <span className="w-[9rem] flex-none text-[0.8125rem] text-muted">{row.label}</span>
-            <span className="min-w-0 flex-1 text-[0.9375rem]">{row.value}</span>
+            <span className="w-[9rem] flex-none text-small text-muted">{row.label}</span>
+            <span className="min-w-0 flex-1 text-body">{row.value}</span>
           </div>
         ))}
         {company.website ? (
           <div className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border py-3 last:border-b-0">
-            <span className="w-[9rem] flex-none text-[0.8125rem] text-muted">{cc.website}</span>
+            <span className="w-[9rem] flex-none text-small text-muted">{cc.website}</span>
             <a
               href={company.website}
               rel="nofollow noopener noreferrer external"
               target="_blank"
-              className="min-w-0 flex-1 break-all text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="min-w-0 flex-1 break-all text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
             >
               {company.website.replace(/^https:\/\//, '')}
             </a>
@@ -287,7 +287,7 @@ function Capabilities({
       </Card>
 
       {company.indicativeRate !== null ? (
-        <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">{cc.rateNote}</p>
+        <p className="mt-3 max-w-[62ch] text-small text-muted">{cc.rateNote}</p>
       ) : null}
     </section>
   );
@@ -313,7 +313,7 @@ function Shield({
 }) {
   return (
     <section aria-labelledby="conformitate" className="mt-10">
-      <h2 id="conformitate" className="text-[1.125rem]">
+      <h2 id="conformitate" className="text-lg">
         {c.shield.title}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.shield.lede}</p>
@@ -326,9 +326,9 @@ function Shield({
                 key={document.kind}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border pb-3 last:border-b-0 last:pb-0"
               >
-                <span className="min-w-0 flex-1 text-[0.9375rem]">{document.label}</span>
+                <span className="min-w-0 flex-1 text-body">{document.label}</span>
                 {document.validMonth ? (
-                  <span className="text-[0.8125rem] text-muted">
+                  <span className="text-small text-muted">
                     {c.shield.until(monthYear(new Date(document.validMonth)))}
                   </span>
                 ) : null}
@@ -342,8 +342,8 @@ function Shield({
 
         <dl className="mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
           <div className="flex flex-col gap-1">
-            <dt className="text-[0.8125rem] text-muted">{c.shield.vehicles}</dt>
-            <dd className="font-mono text-[0.9375rem] tabular-nums">
+            <dt className="text-small text-muted">{c.shield.vehicles}</dt>
+            <dd className="font-mono text-body tabular-nums">
               {company.compliantVehicles > 0
                 ? pluralRo(company.compliantVehicles, 'platformă', 'platforme')
                 : c.shield.noVehicles}
@@ -351,13 +351,13 @@ function Shield({
           </div>
           {scope ? (
             <div className="flex flex-col gap-1">
-              <dt className="text-[0.8125rem] text-muted">{c.scope}</dt>
-              <dd className="text-[0.9375rem]">{scope}</dd>
+              <dt className="text-small text-muted">{c.scope}</dt>
+              <dd className="text-body">{scope}</dd>
             </div>
           ) : null}
         </dl>
 
-        <p className="mt-5 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+        <p className="mt-5 font-mono text-label uppercase tracking-[0.12em] text-muted">
           {company.lastCheckedAt
             ? c.shield.lastCheck(formatDateRo(company.lastCheckedAt))
             : c.shield.noCheck}
@@ -376,7 +376,7 @@ const TONES: Record<DocumentState, StatusTone> = {
 function Routes({ routes }: { routes: CompanyRoute[] }) {
   return (
     <section aria-labelledby="trasee" className="mt-10">
-      <h2 id="trasee" className="text-[1.125rem]">
+      <h2 id="trasee" className="text-lg">
         {c.routes.title}
       </h2>
       <p className="mt-2 text-sm text-muted">
@@ -394,16 +394,16 @@ function Routes({ routes }: { routes: CompanyRoute[] }) {
                   'hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
                 )}
               >
-                <p className="text-[0.9375rem]">
+                <p className="text-body">
                   <CountryTag cc={route.fromCountry} /> {route.fromCity}
                   <span className="mx-2 text-muted">→</span>
                   <CountryTag cc={route.toCountry} /> {route.toCity}
                 </p>
-                <p className="mt-2 text-[0.8125rem] text-muted">
+                <p className="mt-2 text-small text-muted">
                   {formatDateRo(route.availableFrom)}
                   {route.availableTo ? ` – ${formatDateRo(route.availableTo)}` : ''}
                 </p>
-                <p className="mt-1 text-[0.8125rem] text-muted">
+                <p className="mt-1 text-small text-muted">
                   {route.slotsFree > 0
                     ? c.routes.free(pluralRo(route.slotsFree, 'loc', 'locuri', 'un'))
                     : c.routes.full}

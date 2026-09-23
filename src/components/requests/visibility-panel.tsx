@@ -43,7 +43,7 @@ export function VisibilityPanel({
 
   return (
     <Card className="p-5">
-      <h2 className="text-[1.0625rem]">{c.title}</h2>
+      <h2 className="text-h3">{c.title}</h2>
       <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.privateLede}</p>
       <p className="mt-2">
         <HelpLink topic="privateRequests" />
@@ -60,7 +60,7 @@ export function VisibilityPanel({
               {carriers.map((carrier) => (
                 <label
                   key={carrier.id}
-                  className="cursor-pointer rounded-pill border border-border px-3 py-1 text-[0.8125rem]"
+                  className="cursor-pointer rounded-pill border border-border px-3 py-1 text-small"
                 >
                   <input
                     type="checkbox"
@@ -87,7 +87,7 @@ export function VisibilityPanel({
 
       <form action={openAction} className="mt-5 border-t border-border pt-4">
         <input type="hidden" name="request_id" value={requestId} />
-        <p className="max-w-[60ch] text-[0.8125rem] text-muted">{c.openHint}</p>
+        <p className="max-w-[60ch] text-small text-muted">{c.openHint}</p>
         <button
           type="submit"
           disabled={opening}

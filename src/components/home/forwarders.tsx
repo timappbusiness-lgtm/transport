@@ -20,9 +20,9 @@ export function Forwarders() {
           {c.points.map((point, index) => (
             <li
               key={point}
-              className="rounded-card border border-border bg-surface p-5 text-[0.9375rem]"
+              className="rounded-card border border-border bg-surface p-5 text-body"
             >
-              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+              <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                 {String(index + 1).padStart(2, '0')}
               </span>
               <p className="mt-2 leading-snug">{point}</p>

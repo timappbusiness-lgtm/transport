@@ -111,7 +111,7 @@ export function SendOffer({
       {/* Only once it is worth saying. „Îți mai rămân 47 de oferte" is
           noise; „Îți mai rămâne o ofertă" changes what somebody does. */}
       {left !== null && left <= 3 ? (
-        <p className="text-[0.8125rem] text-muted">{offersCopy.quota.left(left)}</p>
+        <p className="text-small text-muted">{offersCopy.quota.left(left)}</p>
       ) : null}
     </div>
   );

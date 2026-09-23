@@ -31,7 +31,7 @@ export function DevicePanel({ devices }: { devices: DeviceRow[] }) {
 
   return (
     <section aria-labelledby="dispozitive" className="rounded-card border border-border bg-surface p-5">
-      <h2 id="dispozitive" className="text-[1.0625rem]">
+      <h2 id="dispozitive" className="text-h3">
         {c.title}
       </h2>
 
@@ -115,7 +115,7 @@ export function DevicePanel({ devices }: { devices: DeviceRow[] }) {
                       setError(result.error ?? null);
                     })
                   }
-                  className="text-[0.8125rem] text-muted underline underline-offset-4 hover:text-foreground"
+                  className="text-small text-muted underline underline-offset-4 hover:text-foreground"
                 >
                   {c.remove}
                 </button>

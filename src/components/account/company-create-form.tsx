@@ -31,7 +31,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-[1.0625rem]">Caută firma după CUI</h2>
+        <h2 className="text-h3">Caută firma după CUI</h2>
         <p className="mt-1 text-sm text-muted">
           Verificăm la ANAF că firma există și este activă, apoi completăm ce putem.
         </p>
@@ -55,7 +55,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
       </section>
 
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-[1.0625rem]">Datele firmei</h2>
+        <h2 className="text-h3">Datele firmei</h2>
         <form action={createAction} className="mt-4 flex flex-col gap-4" noValidate>
           <FormError>{create.error}</FormError>
 

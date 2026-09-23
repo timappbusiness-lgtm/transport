@@ -53,7 +53,7 @@ export function ActivitySection({
         {withStats && stats ? (
           <dl className="mt-8 grid gap-6 rounded-card border border-border bg-surface p-5 sm:grid-cols-3 sm:p-6">
             <div className="min-w-0">
-              <dt className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+              <dt className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                 {c.stats.sparklineCaption}
               </dt>
               <dd className="mt-3">
@@ -104,8 +104,8 @@ export function ActivitySection({
 function Figure({ value, note }: { value: string; note: string }) {
   return (
     <div className="flex min-w-0 flex-col-reverse justify-end">
-      <dt className="mt-2 text-[0.8125rem] text-muted">{note}</dt>
-      <dd className="font-display text-[clamp(1.25rem,3vw,1.625rem)] leading-tight tabular-nums">
+      <dt className="mt-2 text-small text-muted">{note}</dt>
+      <dd className="font-display text-h2 leading-tight tabular-nums">
         {value}
       </dd>
     </div>
@@ -121,7 +121,7 @@ function Figure({ value, note }: { value: string; note: string }) {
 function Empty() {
   return (
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <p className="max-w-[54ch] text-[1.0625rem]">{c.empty.body}</p>
+      <p className="max-w-[54ch] text-body-lg">{c.empty.body}</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
           {c.empty.primary}
@@ -153,19 +153,19 @@ function Cta() {
   return (
     <div className="mt-8 grid gap-8 rounded-card border border-border bg-ground-alt p-6 sm:p-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-12">
       <div className="min-w-0">
-        <h3 className="text-[clamp(1.5rem,3.6vw,2rem)]">
+        <h3 className="text-h2">
           {c.cta.strong} <span className="text-ink-soft">{c.cta.soft}</span>
         </h3>
         <div className="mt-6">
           <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
             {c.cta.button}
           </Link>
-          <p className="mt-3 max-w-[38ch] text-[0.8125rem] text-muted">{c.cta.note}</p>
+          <p className="mt-3 max-w-[38ch] text-small text-muted">{c.cta.note}</p>
         </div>
       </div>
 
       <div className="min-w-0">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+        <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
           {c.cta.stepsTitle}
         </p>
         <ol className="mt-4 flex flex-col gap-4">
@@ -173,11 +173,11 @@ function Cta() {
             <li key={step} className="flex gap-4">
               <span
                 aria-hidden="true"
-                className="flex size-7 flex-none items-center justify-center rounded-full border border-border-strong font-mono text-[0.75rem] tabular-nums"
+                className="flex size-7 flex-none items-center justify-center rounded-full border border-border-strong font-mono text-xs tabular-nums"
               >
                 {index + 1}
               </span>
-              <span className="min-w-0 max-w-[52ch] text-[0.9375rem] leading-relaxed">{step}</span>
+              <span className="min-w-0 max-w-[52ch] text-body leading-relaxed">{step}</span>
             </li>
           ))}
         </ol>

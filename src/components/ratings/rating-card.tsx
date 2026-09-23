@@ -35,7 +35,7 @@ export function RatingCard({
       </div>
 
       {rating.comment !== null ? (
-        <p className="mt-2 whitespace-pre-line text-[0.9375rem]">{rating.comment}</p>
+        <p className="mt-2 whitespace-pre-line text-body">{rating.comment}</p>
       ) : null}
 
       <SubScoreRow rating={rating} />
@@ -45,7 +45,7 @@ export function RatingCard({
           <p className="text-xs font-medium text-muted">
             {c.reply.label} · {formatDate(rating.reply_at)}
           </p>
-          <p className="mt-1 whitespace-pre-line text-[0.875rem]">{rating.reply_body}</p>
+          <p className="mt-1 whitespace-pre-line text-sm">{rating.reply_body}</p>
         </div>
       ) : null}
 

@@ -106,7 +106,7 @@ function Field({
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
         className={cn(
-          'w-full rounded-input border bg-surface px-3 py-2 text-[0.875rem]',
+          'w-full rounded-input border bg-surface px-3 py-2 text-sm',
           error ? 'border-danger' : 'border-border-strong',
         )}
       />

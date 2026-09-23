@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 const c = pricesCopy.calculator;
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 /**
  * The calculator.
@@ -75,7 +75,7 @@ export function Calculator({
 
   return (
     <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-      <h2 className="text-[1.125rem]">{c.title}</h2>
+      <h2 className="text-lg">{c.title}</h2>
       <p className="mt-2 text-sm text-muted">{c.lede}</p>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -135,13 +135,13 @@ export function Calculator({
       >
         {result ? (
           <>
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+            <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
               {c.result}
             </p>
-            <p className="mt-1 font-display text-[clamp(1.6rem,5vw,2.25rem)] tabular-nums">
+            <p className="mt-1 font-display text-h2 tabular-nums">
               {formatRange(result)}
             </p>
-            <p className="mt-2 text-[0.8125rem] text-muted">
+            <p className="mt-2 text-small text-muted">
               {c.distance(new Intl.NumberFormat('ro-RO').format(result.roadKm))} ·{' '}
               {c.zone}: {ZONE_LABELS[result.zone]}
             </p>
@@ -273,7 +273,7 @@ function Tag({ children }: { children: React.ReactNode }) {
     <li
       className={cn(
         'inline-flex items-center rounded-pill border border-border-strong/45 bg-surface px-2.5 py-1',
-        'font-mono text-[0.625rem] uppercase tracking-[0.1em] text-muted',
+        'font-mono text-label uppercase tracking-[0.1em] text-muted',
       )}
     >
       {children}

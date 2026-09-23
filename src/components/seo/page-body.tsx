@@ -64,11 +64,11 @@ export function SeoPageBody({
       <Breadcrumbs trail={trail} />
 
       <header className="mt-6">
-        <h1 className="text-[clamp(1.75rem,4.5vw,2.75rem)] leading-tight">
+        <h1 className="text-h1 leading-tight">
           {page.h1}
           {page.h1Soft ? <span className="text-ink-soft"> {page.h1Soft}</span> : null}
         </h1>
-        <p className="mt-4 max-w-[64ch] text-[1.0625rem] leading-relaxed text-muted">
+        <p className="mt-4 max-w-[64ch] text-body-lg leading-relaxed text-muted">
           {page.intro}
         </p>
 
@@ -83,7 +83,7 @@ export function SeoPageBody({
             {c.cta.departures}
           </Link>
         </div>
-        <p className="mt-3 text-[0.8125rem] text-muted">{c.cta.publishNote}</p>
+        <p className="mt-3 text-small text-muted">{c.cta.publishNote}</p>
       </header>
 
       <Facts data={data} />
@@ -109,7 +109,7 @@ export function SeoPageBody({
 
       {faqEntries.length > 0 ? (
         <section aria-labelledby="intrebari" className="mt-12">
-          <h2 id="intrebari" className="text-[1.25rem]">
+          <h2 id="intrebari" className="text-xl">
             {c.faq.title}
           </h2>
           <FaqAccordion entries={faqEntries} className="mt-4" />
@@ -137,7 +137,7 @@ function JsonLdScript({ json }: { json: object }) {
 
 function Breadcrumbs({ trail }: { trail: { label: string; href: string | null }[] }) {
   return (
-    <nav aria-label="Navigare" className="text-[0.8125rem]">
+    <nav aria-label="Navigare" className="text-small">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {trail.map((step, index) => (
           <li key={step.label} className="flex items-center gap-2">
@@ -176,18 +176,18 @@ function Facts({ data }: { data: SeoPageData }) {
       </h2>
       <Card className="flex flex-wrap gap-x-10 gap-y-4 px-5 py-4 sm:px-6">
         <div>
-          <p className="text-[0.8125rem] text-muted">{c.facts.distance}</p>
-          <p className="mt-0.5 font-display text-[1.375rem] font-light tabular-nums">
+          <p className="text-small text-muted">{c.facts.distance}</p>
+          <p className="mt-0.5 font-display text-figure-sm tabular-nums text-accent">
             {c.facts.distanceValue(`${formatNumber(f.km)} km`)}
           </p>
         </div>
         <div>
-          <p className="text-[0.8125rem] text-muted">{c.facts.duration}</p>
-          <p className="mt-0.5 font-display text-[1.375rem] font-light tabular-nums">
+          <p className="text-small text-muted">{c.facts.duration}</p>
+          <p className="mt-0.5 font-display text-figure-sm tabular-nums text-accent">
             {c.facts.durationValue(String(f.hours))}
           </p>
         </div>
-        <p className="w-full max-w-[60ch] text-[0.8125rem] text-muted">
+        <p className="w-full max-w-[60ch] text-small text-muted">
           {f.isExample ? `${f.fromName} — ${f.toName}, ${c.facts.example}. ` : ''}
           {c.facts.durationNote}
         </p>
@@ -199,28 +199,28 @@ function Facts({ data }: { data: SeoPageData }) {
 function Price({ page, data }: { page: SeoPage; data: SeoPageData }) {
   return (
     <section aria-labelledby="pret" className="mt-10">
-      <h2 id="pret" className="text-[1.25rem]">
+      <h2 id="pret" className="text-xl">
         {c.price.title}
       </h2>
 
       {data.price ? (
         <Card className="mt-4 px-5 py-5 sm:px-6">
-          <p className="font-display text-[clamp(1.75rem,4vw,2.5rem)] leading-none font-light">
+          <p className="font-display text-h1 leading-none font-light">
             {c.price.from(formatAmount(data.price.low, data.price.currency))}
           </p>
-          <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">
+          <p className="mt-3 max-w-[62ch] text-small text-muted">
             {data.facts?.isExample ? `${c.price.example} ` : ''}
             {c.price.note}
           </p>
         </Card>
       ) : (
-        <p className="mt-3 max-w-[62ch] text-[0.9375rem] text-muted">{c.price.unpublished}</p>
+        <p className="mt-3 max-w-[62ch] text-body text-muted">{c.price.unpublished}</p>
       )}
 
       <p className="mt-4">
         <Link
           href={`${ROUTES.prices}${priceQuery(page)}`}
-          className="text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
         >
           {c.price.calculator}
         </Link>
@@ -251,10 +251,10 @@ function Requests({
 }) {
   return (
     <section aria-labelledby="cereri" className="mt-12">
-      <h2 id="cereri" className="text-[1.25rem]">
+      <h2 id="cereri" className="text-xl">
         {c.requests.title}
       </h2>
-      <p className="mt-1 text-[0.8125rem] text-muted">{c.requests.lede}</p>
+      <p className="mt-1 text-small text-muted">{c.requests.lede}</p>
 
       {data.requests.length > 0 ? (
         <>
@@ -268,7 +268,7 @@ function Requests({
           <p className="mt-4">
             <Link
               href={boardHref(page, ROUTES.requests)}
-              className="text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
             >
               {c.requests.all}
             </Link>
@@ -288,10 +288,10 @@ function Requests({
 function Departures({ data }: { data: SeoPageData }) {
   return (
     <section aria-labelledby="trasee" className="mt-12">
-      <h2 id="trasee" className="text-[1.25rem]">
+      <h2 id="trasee" className="text-xl">
         {c.departures.title}
       </h2>
-      <p className="mt-1 text-[0.8125rem] text-muted">{c.departures.lede}</p>
+      <p className="mt-1 text-small text-muted">{c.departures.lede}</p>
 
       {data.departures.length > 0 ? (
         <>
@@ -303,7 +303,7 @@ function Departures({ data }: { data: SeoPageData }) {
           <p className="mt-4">
             <Link
               href={ROUTES.routes}
-              className="text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
             >
               {c.departures.all}
             </Link>
@@ -323,26 +323,26 @@ function Departures({ data }: { data: SeoPageData }) {
 function Companies({ data }: { data: SeoPageData }) {
   return (
     <section aria-labelledby="firme" className="mt-12">
-      <h2 id="firme" className="text-[1.25rem]">
+      <h2 id="firme" className="text-xl">
         {c.companies.title}
       </h2>
 
       {data.companies > 0 ? (
         <>
-          <p className="mt-2 max-w-[62ch] text-[0.9375rem] text-muted">
+          <p className="mt-2 max-w-[62ch] text-body text-muted">
             {c.companies.count(pluralRo(data.companies, 'firmă verificată', 'firme verificate'))}
           </p>
           <p className="mt-4">
             <Link
               href={ROUTES.companies}
-              className="text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
             >
               {c.companies.all}
             </Link>
           </p>
         </>
       ) : (
-        <p className="mt-2 max-w-[62ch] text-[0.9375rem] text-muted">{c.companies.empty}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.companies.empty}</p>
       )}
     </section>
   );
@@ -359,7 +359,7 @@ function EmptyBlock({
 }) {
   return (
     <div className="mt-5 rounded-card border border-dashed border-border-strong bg-ground-alt px-5 py-6">
-      <p className="max-w-[56ch] text-[0.9375rem] text-muted">{body}</p>
+      <p className="max-w-[56ch] text-body text-muted">{body}</p>
       <Link href={href} className={`${buttonClasses('secondary', 'sm')} mt-4`}>
         {action}
       </Link>
@@ -380,12 +380,12 @@ function Summary({
 }) {
   return (
     <section className="rounded-card border border-border bg-surface p-5">
-      <h2 className="text-[1.0625rem]">{title}</h2>
-      <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted">{body}</p>
+      <h2 className="text-h3">{title}</h2>
+      <p className="mt-2 text-body leading-relaxed text-muted">{body}</p>
       <p className="mt-3">
         <Link
           href={href}
-          className="text-[0.9375rem] underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
         >
           {link}
         </Link>
@@ -399,7 +399,7 @@ function Related({ page, related }: { page: SeoPage; related: SeoPage[] }) {
 
   return (
     <section aria-labelledby="legaturi" className="mt-12 border-t border-border pt-8">
-      <h2 id="legaturi" className="text-[1.0625rem]">
+      <h2 id="legaturi" className="text-h3">
         {c.related[page.type] ?? 'Vezi și'}
       </h2>
       <ul className="mt-4 flex flex-wrap gap-2">
@@ -407,7 +407,7 @@ function Related({ page, related }: { page: SeoPage; related: SeoPage[] }) {
           <li key={other.slug}>
             <Link
               href={pageHref(other)}
-              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-[0.8125rem] text-muted hover:border-border-strong hover:text-foreground"
+              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-small text-muted hover:border-border-strong hover:text-foreground"
             >
               {pageSubject(other)}
             </Link>

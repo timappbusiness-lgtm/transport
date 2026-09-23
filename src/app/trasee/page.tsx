@@ -23,6 +23,7 @@ import { boundingBox, withinRadius } from '@/lib/radius';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { cn } from '@/lib/utils';
+import { EmptyFigure } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = {
   title: 'Trasee disponibile',
@@ -77,7 +78,7 @@ export default async function Page({
               className={cn(
                 'rounded-pill border px-4 py-1.5 text-sm',
                 active
-                  ? 'border-foreground bg-foreground text-white'
+                  ? 'border-accent bg-accent text-white'
                   : 'border-border text-muted hover:border-border-strong',
               )}
             >
@@ -128,8 +129,9 @@ function EmptyState({
 }) {
   const c = departuresCopy.empty;
   return (
-    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-[1.125rem]">{c.title}</h2>
+    <div className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8">
+      <EmptyFigure kind="route" className="mb-4" />
+      <h2 className="text-lg">{c.title}</h2>
       <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
 
       <div className="mt-6 flex flex-wrap gap-3">

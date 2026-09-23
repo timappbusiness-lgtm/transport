@@ -1,5 +1,4 @@
-import { Icon } from '@/components/ui/icon';
-import { uiIcon } from '@/lib/icons';
+import { EmptyFigure } from '@/components/ui/empty-state';
 import { CompanyReview, DocumentReview } from '@/components/admin/review-forms';
 import { StatusBadge } from '@/components/ui/primitives';
 import { adminReviewCopy } from '@/content/admin';
@@ -48,22 +47,22 @@ export function ReviewQueue({
   return (
     <>
       <section>
-        <h2 className="text-[1.0625rem]">{c.documents.title}</h2>
+        <h2 className="text-h3">{c.documents.title}</h2>
         {documents.length > 0 ? (
           <ul className="mt-4 flex flex-col gap-3">
             {documents.map((doc) => (
               <li key={doc.id} className="rounded-card border border-border bg-surface p-4 sm:p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <p className="font-medium">{doc.label}</p>
-                  <p className="font-mono text-[0.6875rem] text-muted">
+                  <p className="font-mono text-label text-muted">
                     {c.documents.uploaded(formatDateRo(doc.created_at))}
                   </p>
                 </div>
-                <p className="mt-1 text-[0.8125rem] text-muted">
+                <p className="mt-1 text-small text-muted">
                   {c.documents.company}: {doc.companyName}
                   {doc.plate ? ` · ${c.documents.vehicle}: ${doc.plate}` : ''}
                 </p>
-                <p className="mt-1 font-mono text-[0.75rem] text-muted">
+                <p className="mt-1 font-mono text-xs text-muted">
                   {doc.valid_until
                     ? `${c.documents.extracted}: ${formatDateRo(doc.valid_until)}`
                     : c.documents.noExtracted}
@@ -84,7 +83,7 @@ export function ReviewQueue({
       </section>
 
       <section>
-        <h2 className="text-[1.0625rem]">{c.companies.title}</h2>
+        <h2 className="text-h3">{c.companies.title}</h2>
         {companies.length > 0 ? (
           <ul className="mt-4 flex flex-col gap-3">
             {companies.map((company) => (
@@ -94,9 +93,9 @@ export function ReviewQueue({
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <p className="font-medium">{company.legal_name}</p>
-                  <p className="font-mono text-[0.6875rem] text-muted">CUI {company.cui}</p>
+                  <p className="font-mono text-label text-muted">CUI {company.cui}</p>
                 </div>
-                <p className="mt-1 text-[0.8125rem] text-muted">
+                <p className="mt-1 text-small text-muted">
                   {c.companies.documents(
                     String(company.documentsIn),
                     String(company.documentsTotal),
@@ -128,7 +127,7 @@ export function ReviewQueue({
 function Empty({ text }: { text: string }) {
   return (
     <div className="mt-4 flex flex-col items-center gap-2 rounded-card border border-border bg-surface px-5 py-12 text-center">
-      <Icon as={uiIcon('empty')} size="lg" tone="muted" />
+      <EmptyFigure kind="document" />
       <p className="text-sm">{text}</p>
     </div>
   );

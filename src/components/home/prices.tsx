@@ -52,7 +52,7 @@ export async function Prices() {
                     <span className="block font-medium">
                       {VEHICLE_CLASS_LABELS[rate.vehicle_class]}
                     </span>
-                    <span className="block text-[0.8125rem] text-muted">{rate.weight_label}</span>
+                    <span className="block text-small text-muted">{rate.weight_label}</span>
                   </span>
                 </p>
                 <dl className="mt-4 flex flex-col">
@@ -65,13 +65,13 @@ export async function Prices() {
                     value={formatRatePerKm(rate.international_eur_per_km, 'EUR')}
                   />
                 </dl>
-                <p className="mt-3 text-[0.75rem] text-muted">{formatMinimums(rate)}</p>
+                <p className="mt-3 text-xs text-muted">{formatMinimums(rate)}</p>
               </li>
             ))}
           </ul>
         ) : null}
 
-        <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem]">
+        <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-small">
           <Link
             href={ROUTES.prices}
             className="inline-flex items-center gap-2 text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
@@ -80,7 +80,7 @@ export async function Prices() {
             <ArrowRight />
           </Link>
           {month ? (
-            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-muted">
+            <span className="font-mono text-label uppercase tracking-[0.1em] text-muted">
               {pricesCopy.table.updated(month)}
             </span>
           ) : null}
@@ -93,8 +93,8 @@ export async function Prices() {
 function Line({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 border-b border-border py-2 last:border-b-0">
-      <dt className="min-w-0 flex-1 text-[0.8125rem] text-muted">{label}</dt>
-      <dd className="font-mono text-[0.8125rem] tabular-nums">{value}</dd>
+      <dt className="min-w-0 flex-1 text-small text-muted">{label}</dt>
+      <dd className="font-mono text-small tabular-nums">{value}</dd>
     </div>
   );
 }

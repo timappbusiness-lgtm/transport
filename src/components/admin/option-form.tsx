@@ -52,7 +52,7 @@ export function OptionForm({
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">{c.code}</span>
             <input type="hidden" name="code" value={row.code} />
-            <span className="rounded-input border border-border bg-background px-3 py-2 font-mono text-[0.8125rem] text-muted">
+            <span className="rounded-input border border-border bg-background px-3 py-2 font-mono text-small text-muted">
               {row.code}
             </span>
           </div>

@@ -76,7 +76,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.375rem,4vw,1.875rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[64ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -87,7 +87,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             href={k === 'cereri' ? ROUTES.adminListings : `${ROUTES.adminListings}?fel=trasee`}
             aria-current={k === kind ? 'page' : undefined}
             className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+              'rounded-pill border px-3.5 py-1.5 text-small',
               k === kind
                 ? 'border-transparent bg-foreground text-ground'
                 : 'border-border-strong text-muted hover:text-foreground',
@@ -163,7 +163,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-sm">{error}</p>
       ) : rows.length === 0 ? (
         <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-[1.0625rem]">{c.empty}</p>
+          <p className="text-body-lg">{c.empty}</p>
           <p className="mt-1 text-sm text-muted">{c.emptyBody}</p>
         </div>
       ) : (
@@ -171,7 +171,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           {rows.map((row) => (
             <li key={row.id} className="rounded-card border border-border bg-surface p-5">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="text-[1rem]">{row.title ?? '—'}</span>
+                <span className="text-base">{row.title ?? '—'}</span>
                 <StatusBadge tone="neutral">{row.status}</StatusBadge>
                 {row.hidden_at !== null ? (
                   <StatusBadge tone="danger">{c.hiddenLabel}</StatusBadge>
@@ -192,7 +192,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 </p>
               ) : null}
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.8125rem]">
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-small">
                 {kind === 'cereri' ? (
                   <Link href={requestRoute(row.id)} className="underline underline-offset-4">
                     {c.openListing}

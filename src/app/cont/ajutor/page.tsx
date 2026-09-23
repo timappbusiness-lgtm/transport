@@ -85,14 +85,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {sections.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[1.0625rem]">{c.empty}</p>
+          <p className="text-body-lg">{c.empty}</p>
           <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-6">
           {sections.map((section) => (
             <section key={section.id} className="flex flex-col gap-2">
-              <h2 className="text-[1.0625rem]">{section.title}</h2>
+              <h2 className="text-h3">{section.title}</h2>
               <ul className="flex flex-col gap-2">
                 {section.answers.map((answer) => (
                   <li key={answer.id}>
@@ -101,7 +101,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                       open={answer.id === wanted || query !== null}
                       className="rounded-card border border-border bg-surface p-4"
                     >
-                      <summary className="cursor-pointer text-[0.9375rem] font-medium">
+                      <summary className="cursor-pointer text-body font-medium">
                         {answer.question}
                       </summary>
                       <div className="mt-2 flex flex-col gap-2">
@@ -131,7 +131,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       )}
 
       <Card className="p-5">
-        <h2 className="text-[1.0625rem]">{c.support.title}</h2>
+        <h2 className="text-h3">{c.support.title}</h2>
         <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.support.lede}</p>
 
         <dl className="mt-4 flex flex-col gap-2 text-sm">
@@ -165,7 +165,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             arată un e-mail inventat este mai rea decât una care spune
             că nu are încă unul. */}
         {!has('email') || !has('phone') ? (
-          <p className="mt-3 max-w-[60ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-[0.8125rem]">
+          <p className="mt-3 max-w-[60ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
             {c.support.missingHint}{' '}
             <Link href={ROUTES.contact} className="underline underline-offset-4">
               {c.support.contactPage}

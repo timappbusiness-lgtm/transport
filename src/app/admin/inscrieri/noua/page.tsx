@@ -32,12 +32,12 @@ export default function Page() {
           </Link>
         </p>
         <EyebrowPill>{onboardingCopy.admin.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[68ch] text-sm text-muted">{c.lede}</p>
       </div>
 
       <Card className="p-5">
-        <h2 className="text-[1.0625rem]">{c.consent.title}</h2>
+        <h2 className="text-h3">{c.consent.title}</h2>
         <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.consent.lede}</p>
         <div className="mt-5">
           <ConsentForm />

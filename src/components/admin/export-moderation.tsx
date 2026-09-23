@@ -32,7 +32,7 @@ export function ExportModeration() {
 
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4">
-      <p className="text-[0.9375rem] font-medium">{c.title}</p>
+      <p className="text-body font-medium">{c.title}</p>
       <p className="mt-1 text-xs text-muted">{c.hint}</p>
 
       <div className="mt-3 flex flex-wrap items-end gap-2">

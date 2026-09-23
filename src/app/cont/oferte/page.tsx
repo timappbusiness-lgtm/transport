@@ -158,7 +158,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {offers.length === 0 ? (
         <Card className="p-6">
-          <h2 className="text-[1.0625rem]">
+          <h2 className="text-h3">
             {box === 'trimise' ? offersCopy.sent.empty : offersCopy.received.empty}
           </h2>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">
@@ -204,7 +204,7 @@ function Row({
     <li className="rounded-card border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[1.0625rem]">
+          <h2 className="text-h3">
             <Link href={requestRoute(offer.request_id)} className="underline underline-offset-4">
               {offer.request_title ?? `${offer.from_city} — ${offer.to_city}`}
             </Link>
@@ -218,7 +218,7 @@ function Row({
         </div>
 
         <div className="text-right">
-          <p className="font-display text-[1.25rem] leading-none tabular-nums">
+          <p className="font-display text-xl leading-none tabular-nums">
             {formatMoney(offer.price_amount, offer.currency)}
           </p>
           <p className="mt-1.5">
@@ -296,7 +296,7 @@ function Tab({
         'rounded-pill border',
         small ? 'px-3 py-1 text-xs' : 'px-3.5 py-1.5 text-sm',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

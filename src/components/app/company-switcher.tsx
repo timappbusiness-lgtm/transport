@@ -21,10 +21,10 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
   if (context.memberships.length < 2) {
     return (
       <div className="min-w-0">
-        <p className="truncate font-display text-[0.9375rem] font-medium">
+        <p className="truncate font-display text-body font-medium">
           {companyDisplayName(company)}
         </p>
-        <p className="mt-0.5 truncate font-mono text-[0.6875rem] text-muted">
+        <p className="mt-0.5 truncate font-mono text-label text-muted">
           CUI {company.cui} · {COMPANY_TYPE_LABELS[company.company_type] ?? company.company_type}
         </p>
       </div>
@@ -35,7 +35,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
     <form action={setActiveCompanyAction} className="flex flex-col gap-1.5">
       <label
         htmlFor="company-switcher"
-        className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted"
+        className="font-mono text-label uppercase tracking-[0.12em] text-muted"
       >
         {c.switcher}
       </label>
@@ -44,7 +44,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
           id="company-switcher"
           name="companyId"
           defaultValue={company.id}
-          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-[0.8125rem]"
+          className="min-w-0 flex-1 rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-small"
         >
           {context.memberships.map((membership) => (
             <option key={membership.company.id} value={membership.company.id}>
@@ -54,7 +54,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
         </select>
         <button
           type="submit"
-          className="rounded-input border border-border-strong px-2.5 text-[0.8125rem] text-muted hover:text-foreground"
+          className="rounded-input border border-border-strong px-2.5 text-small text-muted hover:text-foreground"
         >
           {c.switcherAction}
         </button>

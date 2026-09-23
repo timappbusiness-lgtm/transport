@@ -28,11 +28,11 @@ export function Trust() {
         <ol className="mt-10 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {c.items.map((item, index) => (
             <li key={item.title} className="min-w-0">
-              <p className="font-mono text-[0.6875rem] tabular-nums text-muted">
+              <p className="font-mono text-label tabular-nums text-muted">
                 {String(index + 1).padStart(2, '0')}
               </p>
-              <h3 className="mt-2 text-[1.0625rem] font-normal">{item.title}</h3>
-              <p className="mt-2 max-w-[42ch] text-[0.9375rem] leading-relaxed text-muted">
+              <h3 className="mt-2 text-h3 font-normal">{item.title}</h3>
+              <p className="mt-2 max-w-[42ch] text-body leading-relaxed text-muted">
                 {item.body}
               </p>
             </li>
@@ -61,8 +61,8 @@ function ExampleCard() {
     <div className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[1.0625rem] font-normal">{e.title}</h3>
-          <p className="mt-0.5 truncate font-mono text-[0.6875rem] text-muted">{e.company}</p>
+          <h3 className="text-h3 font-normal">{e.title}</h3>
+          <p className="mt-0.5 truncate font-mono text-label text-muted">{e.company}</p>
         </div>
         <SampleTag />
       </div>
@@ -73,15 +73,21 @@ function ExampleCard() {
             key={row.label}
             className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border py-2.5 last:border-b-0"
           >
-            <dt className="min-w-0 flex-1 text-[0.8125rem]">{row.label}</dt>
-            <dd className="font-mono text-[0.75rem] tabular-nums text-muted">{row.value}</dd>
-            {/* The word carries the meaning; the colour only repeats it. */}
-            <StatusBadge tone={row.tone}>{row.state}</StatusBadge>
+            <dt className="min-w-0 flex-1 text-small">{row.label}</dt>
+            {/* Both the date and the chip live in the `dd`: a `div` inside
+                a `dl` may hold `dt` and `dd` and nothing else, and the
+                chip used to sit beside them as a third child. axe calls
+                it `definition-list`; it cost four accessibility points. */}
+            <dd className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="font-mono text-xs tabular-nums text-muted">{row.value}</span>
+              {/* The word carries the meaning; the colour only repeats it. */}
+              <StatusBadge tone={row.tone}>{row.state}</StatusBadge>
+            </dd>
           </div>
         ))}
       </dl>
 
-      <p className="mt-4 font-mono text-[0.6875rem] text-muted">{e.footer}</p>
+      <p className="mt-4 font-mono text-label text-muted">{e.footer}</p>
     </div>
   );
 }

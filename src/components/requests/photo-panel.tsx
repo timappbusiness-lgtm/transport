@@ -149,7 +149,7 @@ export function PhotoPanel({
                 ✕
               </button>
               {photo.fromImport === true ? (
-                <span className="absolute bottom-1 left-1 rounded-full bg-surface/90 px-2 py-0.5 text-[0.625rem]">
+                <span className="absolute bottom-1 left-1 rounded-full bg-surface/90 px-2 py-0.5 text-xs">
                   {c.fromImport}
                 </span>
               ) : null}

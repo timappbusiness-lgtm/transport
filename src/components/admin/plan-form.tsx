@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.plans;
 
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.875rem]';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
 
 export interface EditablePlan extends Plan {
   isPublic: boolean;
@@ -41,8 +41,8 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
         <input type="hidden" name="code" value={plan.code} />
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-[1rem]">{plan.name}</h3>
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+          <h3 className="text-base">{plan.name}</h3>
+          <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
             {plan.code}
           </p>
         </div>
@@ -112,7 +112,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
               name="features"
               rows={7}
               defaultValue={featuresToText(plan.features)}
-              className={cn(CONTROL, 'font-mono text-[0.8125rem]')}
+              className={cn(CONTROL, 'font-mono text-small')}
             />
             <p className="text-xs text-muted">{c.featuresHelp}</p>
             <p className="text-xs text-muted">{c.featuresHint}</p>

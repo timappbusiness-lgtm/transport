@@ -44,8 +44,8 @@ export const metadata: Metadata = { title: 'Cerere de transport' };
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
-      <dt className="text-[0.8125rem] text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-[0.875rem]">{children}</dd>
+      <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
@@ -108,7 +108,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       <header className="mt-6">
         <EyebrowPill>{CARGO_CATEGORY_LABELS[request.category]}</EyebrowPill>
-        <h1 className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[clamp(1.5rem,4vw,2rem)]">
+        <h1 className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-h2">
           <span>{request.from_city}</span>
           <CountryTag cc={request.from_country} />
           <span className="text-muted">→</span>
@@ -132,7 +132,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <section className="flex flex-col gap-4">
           <CarrierCount count={carrierCount} />
           <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-            <h2 className="text-[1.0625rem]">
+            <h2 className="text-h3">
               <IconLabel as={iconForFact('route')} size="md" tone="strong">
                 {c.route}
               </IconLabel>
@@ -152,7 +152,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </div>
 
           <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-            <h2 className="text-[1.0625rem]">
+            <h2 className="text-h3">
               <IconLabel as={iconForFact('vehicle')} size="md" tone="strong">
                 {c.vehicle}
               </IconLabel>
@@ -185,7 +185,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
           {detail?.description ? (
             <div className="rounded-card border border-border bg-surface p-5 sm:p-6">
-              <h2 className="text-[1.0625rem]">{c.notes}</h2>
+              <h2 className="text-h3">{c.notes}</h2>
               <p className="mt-3 whitespace-pre-line text-sm">{detail.description}</p>
             </div>
           ) : null}

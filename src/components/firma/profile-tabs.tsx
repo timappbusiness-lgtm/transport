@@ -36,7 +36,7 @@ export function ProfileTabs({
                 href={tab === 'identitate' ? ROUTES.accountCompany : `${ROUTES.accountCompany}?sectiune=${tab}`}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'inline-flex whitespace-nowrap px-3 py-2.5 text-[0.9375rem]',
+                  'inline-flex whitespace-nowrap px-3 py-2.5 text-body',
                   'border-b-2 -mb-px',
                   current
                     ? 'border-foreground font-medium text-foreground'

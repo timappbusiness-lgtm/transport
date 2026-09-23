@@ -80,7 +80,7 @@ export function Thread({
   return (
     <div className="flex flex-col gap-4">
       {anyMasked ? (
-        <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-[0.8125rem] text-muted">
+        <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-small text-muted">
           {c.masked}
         </p>
       ) : null}
@@ -116,11 +116,11 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
       )}
     >
       {!message.mine ? (
-        <p className="text-[0.6875rem] text-muted">{message.sender_name ?? '—'}</p>
+        <p className="text-xs text-muted">{message.sender_name ?? '—'}</p>
       ) : null}
 
       {message.body !== null && message.body !== '' ? (
-        <p className="whitespace-pre-line text-[0.9375rem]">{message.body}</p>
+        <p className="whitespace-pre-line text-body">{message.body}</p>
       ) : null}
 
       {message.attachments.length > 0 ? (
@@ -146,7 +146,7 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
 
       <p
         className={cn(
-          'mt-1 text-[0.6875rem]',
+          'mt-1 text-xs',
           message.mine ? 'text-ground/70' : 'text-muted',
         )}
       >

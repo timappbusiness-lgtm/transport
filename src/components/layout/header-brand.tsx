@@ -19,7 +19,7 @@ export function HeaderBrand({ signedIn }: { signedIn: boolean }) {
   return (
     <Link
       href={brandHref(signedIn, pathname)}
-      className="mr-auto flex items-center gap-2.5 font-display text-[1.0625rem] font-medium tracking-[-0.02em]"
+      className="mr-auto flex items-center gap-2.5 font-display text-body-lg font-medium tracking-[-0.02em]"
     >
       <BrandMark className="flex-none" />
       {BRAND_NAME}

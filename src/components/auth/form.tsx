@@ -20,7 +20,7 @@ export function AuthCard({
   return (
     <div className="mx-auto flex w-full max-w-[28rem] flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
       {eyebrow ? <EyebrowPill>{eyebrow}</EyebrowPill> : null}
-      <h1 className="mt-2.5 text-[clamp(1.75rem,5vw,2.25rem)]">{title}</h1>
+      <h1 className="mt-2.5 text-h2">{title}</h1>
       {lede ? <p className="mt-3 text-sm text-muted sm:text-base">{lede}</p> : null}
       <div className="mt-8">{children}</div>
       {footer ? (
@@ -75,7 +75,7 @@ export function Field({
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy === '' ? undefined : describedBy}
         className={cn(
-          'w-full rounded-input border bg-surface px-3.5 py-2.5 text-[0.9375rem]',
+          'w-full rounded-input border bg-surface px-3.5 py-2.5 text-body',
           'placeholder:text-muted/70',
           error ? 'border-danger' : 'border-border-strong',
         )}

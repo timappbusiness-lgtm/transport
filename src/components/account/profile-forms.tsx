@@ -17,7 +17,7 @@ const EMPTY: ActionState = {};
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-card border border-border bg-surface">
-      <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">{title}</h2>
+      <h2 className="border-b border-border px-5 py-4 text-h3">{title}</h2>
       <div className="p-5">{children}</div>
     </section>
   );

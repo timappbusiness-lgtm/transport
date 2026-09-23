@@ -66,7 +66,7 @@ export function MessageActions({
       action={action}
       className="mt-2 flex w-full flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
-      <label htmlFor={`${id}-message`} className="text-[0.8125rem] font-medium">
+      <label htmlFor={`${id}-message`} className="text-small font-medium">
         {c.reportTitle}
       </label>
       <select
@@ -164,7 +164,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
       className="mt-2 flex w-full flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
       <input type="hidden" name="user_id" value={userId} />
-      <p className="text-[0.8125rem] font-medium">{c.blockTitle}</p>
+      <p className="text-small font-medium">{c.blockTitle}</p>
       <p className="max-w-[52ch] text-xs text-muted">{c.blockHint}</p>
 
       <label htmlFor={`${id}-reason`} className="sr-only">

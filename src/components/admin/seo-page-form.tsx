@@ -69,7 +69,7 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
           name="intro"
           rows={4}
           defaultValue={page.intro}
-          className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+          className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
         />
         <p className="text-xs text-muted">
           Două sau trei propoziții despre această rută. Fără cifre: distanța,
@@ -103,13 +103,13 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
                 name="faqAnswer"
                 rows={3}
                 defaultValue={item.a}
-                className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+                className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
               />
             </div>
             <button
               type="button"
               onClick={() => setFaq((current) => current.filter((_, i) => i !== index))}
-              className="self-start text-[0.8125rem] text-muted underline underline-offset-4 hover:text-foreground"
+              className="self-start text-small text-muted underline underline-offset-4 hover:text-foreground"
             >
               Șterge întrebarea
             </button>

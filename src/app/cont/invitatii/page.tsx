@@ -55,7 +55,7 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>Cont</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -71,7 +71,7 @@ export default async function Page() {
               className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-surface px-5 py-4"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[0.9375rem] font-medium">
+                <p className="font-display text-body font-medium">
                   {invitation.company?.display_name ?? invitation.company?.legal_name ?? '—'}
                 </p>
                 <p className="mt-0.5 text-xs text-muted">

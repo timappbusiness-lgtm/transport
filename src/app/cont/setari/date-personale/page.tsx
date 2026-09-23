@@ -30,8 +30,8 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>Setări</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-[0.9375rem] text-muted">{c.lede}</p>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <ExportPanel latest={data.latestExport} />

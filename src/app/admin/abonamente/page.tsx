@@ -55,7 +55,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -71,14 +71,14 @@ export default async function Page() {
 
       {closed.length > 0 ? (
         <section aria-labelledby="inchise">
-          <h2 id="inchise" className="text-[1.0625rem]">
+          <h2 id="inchise" className="text-h3">
             {c.status.activated} / {c.status.rejected}
           </h2>
           <ul className="mt-3 flex flex-col gap-2">
             {closed.map((row) => (
               <li
                 key={row.id}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-card border border-border bg-surface px-4 py-2.5 text-[0.8125rem]"
+                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-card border border-border bg-surface px-4 py-2.5 text-small"
               >
                 <span>{row.companyName}</span>
                 <span className="text-muted">{row.planName}</span>
@@ -100,9 +100,9 @@ function Row({ row }: { row: QueueRow & { status: OpenStatus } }) {
           <p className="font-medium">{row.companyName}</p>
           <StatusBadge tone={TONES[row.status]}>{c.status[row.status]}</StatusBadge>
         </div>
-        <p className="mt-1 font-mono text-[0.75rem] text-muted">CUI {row.companyCui}</p>
+        <p className="mt-1 font-mono text-xs text-muted">CUI {row.companyCui}</p>
 
-        <dl className="mt-3 grid gap-1 text-[0.8125rem]">
+        <dl className="mt-3 grid gap-1 text-small">
           <div className="flex gap-2">
             <dt className="text-muted">{c.columns.plan}:</dt>
             <dd>{row.planName}</dd>
@@ -121,7 +121,7 @@ function Row({ row }: { row: QueueRow & { status: OpenStatus } }) {
         </dl>
 
         {row.notes ? (
-          <p className="mt-3 rounded-input border border-border bg-ground-alt px-3 py-2 text-[0.8125rem]">
+          <p className="mt-3 rounded-input border border-border bg-ground-alt px-3 py-2 text-small">
             <span className="text-muted">{c.notes}: </span>
             {row.notes}
           </p>

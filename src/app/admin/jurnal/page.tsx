@@ -85,7 +85,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.hero.title}</h1>
+        <h1 className="mt-2 text-h2">{c.hero.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
       </div>
 
@@ -206,7 +206,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {page.entries.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
-          <h2 className="text-[1.0625rem]">{c.empty.title}</h2>
+          <h2 className="text-h3">{c.empty.title}</h2>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
           {filtered ? (
             <p className="mt-5 text-sm">

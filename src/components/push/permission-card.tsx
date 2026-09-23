@@ -62,7 +62,7 @@ export function PushPermissionCard({
       aria-labelledby="notificari-card"
       className="mt-6 rounded-card border border-border-strong bg-surface p-5"
     >
-      <h2 id="notificari-card" className="text-[1.0625rem]">
+      <h2 id="notificari-card" className="text-h3">
         {needsInstall ? c.iosTitle : c.title}
       </h2>
       <p className="mt-2 max-w-[56ch] text-sm text-muted">

@@ -13,7 +13,7 @@ import type { DeletionSettings } from '@/lib/account-deletion-source';
 const EMPTY: SettingsActionState = {};
 const c = personalDataCopy.admin.settings;
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 /**
  * The three numbers behind erasure and retention.
@@ -29,7 +29,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
 
   return (
     <section aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="text-[1.0625rem]">
+      <h2 id={`${id}-title`} className="text-h3">
         {c.title}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>

@@ -33,7 +33,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">Pagini de destinație</h1>
+        <h1 className="mt-2 text-h2">Pagini de destinație</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">
           Paginile care aduc clienți din căutări. Nimic nu se publică automat: citește
           pagina, corectează ce trebuie, apoi public-o. O pagină nepublicată nu apare
@@ -52,7 +52,7 @@ export default async function Page() {
         return (
           <section key={type} aria-labelledby={type}>
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 id={type} className="text-[1.0625rem]">
+              <h2 id={type} className="text-h3">
                 {TITLES[type]}{' '}
                 <span className="text-sm text-muted">
                   ({inType.length - drafts}/{inType.length})

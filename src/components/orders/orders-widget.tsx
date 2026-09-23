@@ -41,7 +41,7 @@ export function OrdersWidget({
 
   return (
     <section aria-labelledby="transporturi">
-      <h2 id="transporturi" className="text-[1.0625rem]">
+      <h2 id="transporturi" className="text-h3">
         <IconLabel as={iconForContent('comanda')} size="md" tone="strong">
           {c.title}
         </IconLabel>

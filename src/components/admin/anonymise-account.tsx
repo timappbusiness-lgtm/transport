@@ -13,7 +13,7 @@ import { personalDataCopy } from '@/content/date-personale';
 const c = personalDataCopy.admin;
 const EMPTY: DeletionAdminState = {};
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 export function AnonymiseAccount() {
   const [state, action, pending] = useActionState(anonymiseAccountAction, EMPTY);

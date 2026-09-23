@@ -52,7 +52,7 @@ export function Sidebar({
           own application who clicks the brand means „take me to the top of
           this", and being thrown out to the public site is the oldest way
           to lose them. */}
-      <Link href={ROUTES.account} className="font-display text-[1.0625rem] font-medium">
+      <Link href={ROUTES.account} className="font-display text-body-lg font-medium">
         {BRAND_NAME}
       </Link>
 
@@ -65,7 +65,7 @@ export function Sidebar({
             {/* One group needs no heading: a lone "Principal" above three
                 links is furniture, not information. */}
             {groups.length > 1 ? (
-              <p className="mb-1.5 px-3 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+              <p className="mb-1.5 px-3 font-mono text-label uppercase tracking-[0.12em] text-muted">
                 {GROUP_LABELS[group.group]}
               </p>
             ) : null}
@@ -82,7 +82,7 @@ export function Sidebar({
                         'flex items-center justify-between gap-2 rounded-input px-3 py-2 text-sm',
                         'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
                         current === item.href
-                          ? 'bg-surface font-medium text-foreground'
+                          ? 'bg-surface font-medium text-accent shadow-card'
                           : 'text-muted hover:bg-surface/60 hover:text-foreground',
                       )}
                     >
@@ -99,7 +99,7 @@ export function Sidebar({
                           call: two counts of one thing is how a badge
                           stops being believed. */}
                       {badge > 0 ? (
-                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-[0.625rem] leading-none text-surface">
+                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-label leading-none text-surface">
                           {badge > 9 ? '9+' : badge}
                           <span className="sr-only"> {accountCopy.nav.waiting}</span>
                         </span>
@@ -113,7 +113,7 @@ export function Sidebar({
         ))}
       </nav>
 
-      <p className="text-[0.8125rem]">
+      <p className="text-small">
         <Link
           href={ROUTES.accountHelp}
           className="inline-flex items-center gap-2 text-muted hover:text-foreground"

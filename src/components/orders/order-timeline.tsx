@@ -36,7 +36,7 @@ export function OrderTimeline({
 
   return (
     <section aria-labelledby="istoric" className="rounded-card border border-border bg-surface p-5">
-      <h2 id="istoric" className="text-[1.0625rem]">
+      <h2 id="istoric" className="text-h3">
         <IconLabel as={iconForContent('comanda')} size="md" tone="strong">
           {c.title}
         </IconLabel>
@@ -53,19 +53,18 @@ export function OrderTimeline({
                 and hollow for what is left. The line stops at the last
                 row so it does not dangle into nothing.
 
-                The „current" marker used to be `border-accent` with a
-                `ring-accent/30`, and there is no `--color-accent` in the
-                theme — `globals.css` says at the top that this design has
-                no accent colour. Both classes resolved to nothing, so the
-                step somebody opened the page to find was the one step not
-                marked. */}
+                The „current" marker once named `border-accent` when no
+                such token existed, so it resolved to nothing and the step
+                somebody opened the page to find was the one step not
+                marked. The token exists now, and marking the current step
+                is one of the six places it is spent. */}
             <div className="flex flex-none flex-col items-center">
               <span
                 className={cn(
                   'mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border',
                   row.state === 'done' && 'border-success/40 bg-success/10 text-success',
                   row.state === 'current' &&
-                    'border-foreground bg-surface text-foreground ring-2 ring-foreground/15',
+                    'border-accent bg-surface text-accent ring-2 ring-accent/20',
                   row.state === 'todo' && 'border-border-strong bg-surface text-muted',
                 )}
               >
@@ -104,7 +103,7 @@ export function OrderTimeline({
                 </p>
               ) : null}
               {row.note !== null ? (
-                <p className="mt-1 whitespace-pre-line text-[0.8125rem]">{row.note}</p>
+                <p className="mt-1 whitespace-pre-line text-small">{row.note}</p>
               ) : null}
             </div>
           </li>
@@ -112,7 +111,7 @@ export function OrderTimeline({
       </ol>
 
       {autoCompleted ? (
-        <p className="mt-2 text-[0.8125rem] text-muted">{c.autoCompleted}</p>
+        <p className="mt-2 text-small text-muted">{c.autoCompleted}</p>
       ) : null}
 
       {aside.length > 0 ? (
@@ -120,7 +119,7 @@ export function OrderTimeline({
           <h3 className="mt-5 text-sm font-medium">{c.aside}</h3>
           <ul className="mt-2 flex flex-col gap-2">
             {aside.map((event) => (
-              <li key={event.id} className="text-[0.8125rem]">
+              <li key={event.id} className="text-small">
                 <span className="text-muted">{formatMoment(event.created_at)} · </span>
                 <span>
                   {event.actor_name ?? sideLabel(event.actor_side)}

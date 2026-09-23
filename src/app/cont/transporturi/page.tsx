@@ -88,7 +88,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {orders.length === 0 ? (
         <Card className="p-6">
-          <h2 className="text-[1.125rem]">
+          <h2 className="text-lg">
             {isDriver && box === 'active' ? ordersCopy.driver.none : c.empty[box]}
           </h2>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">
@@ -119,21 +119,21 @@ function OrderCard({ order }: { order: OrderRow }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[1rem] font-medium">
+          <p className="text-base font-medium">
             {order.from_city ?? '—'} → {order.to_city ?? '—'}
           </p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted">
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
             <span>{order.carrier_name ?? order.client_name ?? '—'}</span>
             {order.plate_number !== null ? <span>{order.plate_number}</span> : null}
             {order.driver_name !== null ? <span>{order.driver_name}</span> : null}
           </p>
-          <p className="mt-1 text-[0.8125rem] text-muted">
+          <p className="mt-1 text-small text-muted">
             {ordersCopy.detail.pickupWindow}: {formatWindow(order.pickup_from, null)}
           </p>
         </div>
 
         <div className="flex flex-none flex-col items-end gap-2">
-          <p className="font-display text-[1.125rem] leading-none tabular-nums">
+          <p className="font-display text-lg leading-none tabular-nums">
             {formatMoney(order.agreed_price, order.currency as never)}
           </p>
           <StatusBadge tone={mine ? 'warning' : 'neutral'}>
@@ -153,9 +153,9 @@ function OrderCard({ order }: { order: OrderRow }) {
           {mine && step !== null ? step.label : ordersCopy.list.open}
         </Link>
         {mine ? (
-          <span className="text-[0.8125rem] font-medium text-foreground">{ordersCopy.list.needsMe}</span>
+          <span className="text-small font-medium text-foreground">{ordersCopy.list.needsMe}</span>
         ) : step !== null ? (
-          <span className="text-[0.8125rem] text-muted">{step.waitingFor}</span>
+          <span className="text-small text-muted">{step.waitingFor}</span>
         ) : null}
       </div>
     </li>
@@ -179,7 +179,7 @@ function Tab({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'rounded-pill border px-3 py-1.5',
-        small ? 'text-[0.8125rem]' : 'text-sm',
+        small ? 'text-small' : 'text-sm',
         active
           ? 'border-foreground bg-foreground text-ground'
           : 'border-border text-muted hover:text-foreground',

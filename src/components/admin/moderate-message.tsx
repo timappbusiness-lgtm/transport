@@ -22,7 +22,7 @@ export function ModerateMessage({ messageId }: { messageId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[0.75rem] text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.hide}
       </button>
@@ -32,7 +32,7 @@ export function ModerateMessage({ messageId }: { messageId: string }) {
   return (
     <form action={action} className="flex flex-col gap-2">
       <input type="hidden" name="message_id" value={messageId} />
-      <label htmlFor={`${id}-reason`} className="text-[0.8125rem] font-medium">
+      <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {c.hideReason}
       </label>
       <input

@@ -43,10 +43,10 @@ export function BoardRequestCard({
         href={requestRoute(request.id)}
         className={cn(
           'flex flex-col gap-3 rounded-card border border-border bg-surface p-4 sm:p-5',
-          'transition-[border-color] duration-150 hover:border-border-strong',
+          'transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised',
         )}
       >
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-mono text-label uppercase tracking-[0.12em] text-muted">
           {/* The icon helps somebody scan a column of cards for the
               one kind they carry; the label is what says which. */}
           <IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
@@ -57,7 +57,7 @@ export function BoardRequestCard({
           </span>
         </div>
 
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[1.0625rem]">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-lg">
           <span className="font-medium">{request.from_city}</span>
           <CountryTag cc={request.from_country} />
           <span className="text-muted">→</span>
@@ -65,7 +65,7 @@ export function BoardRequestCard({
           <CountryTag cc={request.to_country} />
         </p>
 
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
           <span>{formatWindow(request.loading_from, request.loading_to)}</span>
           {km ? <span className="font-mono tabular-nums">{km}</span> : null}
           {vehicle ? <span className="min-w-0 truncate">{vehicle}</span> : null}

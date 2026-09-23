@@ -35,7 +35,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
     <li className="rounded-card border border-border bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.9375rem]">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body">
             <span className="font-medium">
               {row.from_city} → {row.to_city}
             </span>
@@ -43,7 +43,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
               {ended ? c.ended : row.is_paused ? c.paused : c.live}
             </StatusBadge>
           </p>
-          <p className="mt-1 text-[0.8125rem] text-muted">
+          <p className="mt-1 text-small text-muted">
             {rule} · {c.until(row.ends_on)} · {row.plate_number ?? '—'}
           </p>
           <p className="mt-0.5 text-xs text-muted">{c.published(row.published)}</p>
@@ -75,7 +75,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
       </div>
 
       {row.paused_reason !== null && row.is_paused ? (
-        <p className="mt-3 max-w-[62ch] rounded-input border border-warning/45 bg-warning/8 p-2.5 text-[0.8125rem]">
+        <p className="mt-3 max-w-[62ch] rounded-input border border-warning/45 bg-warning/8 p-2.5 text-small">
           {row.paused_reason}
         </p>
       ) : null}
@@ -87,7 +87,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
             {upcoming.map((day) => (
               <li
                 key={day}
-                className="rounded-pill border border-border px-2.5 py-0.5 font-mono text-[0.6875rem] tabular-nums"
+                className="rounded-pill border border-border px-2.5 py-0.5 font-mono text-label tabular-nums"
               >
                 {day}
               </li>

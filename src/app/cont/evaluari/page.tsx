@@ -59,7 +59,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             href={b === 'de-dat' ? ROUTES.accountRatings : `${ROUTES.accountRatings}?cutie=${b}`}
             aria-current={b === box ? 'page' : undefined}
             className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+              'rounded-pill border px-3.5 py-1.5 text-small',
               b === box
                 ? 'border-transparent bg-foreground text-ground'
                 : 'border-border-strong text-muted hover:text-foreground',
@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {rows.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[1.0625rem]">{c.empty[box]}</p>
+          <p className="text-body-lg">{c.empty[box]}</p>
           <p className="mt-1 text-sm text-muted">{c.empty[`${box}Body`]}</p>
         </Card>
       ) : (
@@ -100,7 +100,7 @@ function PendingRow({ row }: { row: PendingRating }) {
   return (
     <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-[1rem]">
+        <p className="text-base">
           {row.from_city ?? '—'} → {row.to_city ?? '—'}
         </p>
         <p className="mt-0.5 text-sm text-muted">
@@ -108,7 +108,7 @@ function PendingRow({ row }: { row: PendingRating }) {
           {row.after_dispute ? ` · ${ratingsCopy.profile.afterDispute}` : ''}
         </p>
         {deadline !== null ? (
-          <p className="mt-1 text-[0.8125rem] text-muted">
+          <p className="mt-1 text-small text-muted">
             {c.deadline(deadline.at)}
             {deadline.passed ? '' : ` — ${c.deadlineLeft(deadline.left)}`}
           </p>
@@ -148,13 +148,13 @@ function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }
       </p>
 
       {row.comment !== null ? (
-        <p className="mt-2 whitespace-pre-line text-[0.9375rem]">{row.comment}</p>
+        <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
       ) : null}
 
       {row.reply_body !== null ? (
         <div className="mt-3 border-l-2 border-border-strong pl-3">
           <p className="text-xs font-medium text-muted">{ratingsCopy.reply.label}</p>
-          <p className="mt-1 whitespace-pre-line text-[0.875rem]">{row.reply_body}</p>
+          <p className="mt-1 whitespace-pre-line text-sm">{row.reply_body}</p>
         </div>
       ) : null}
 
@@ -162,7 +162,7 @@ function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }
         <ReplyForm ratingId={row.rating_id} slug={row.counterparty_slug} />
       ) : null}
 
-      <div className="mt-3 flex flex-wrap gap-3 text-[0.8125rem]">
+      <div className="mt-3 flex flex-wrap gap-3 text-small">
         <Link href={transportRoute(row.order_id)} className="underline underline-offset-4">
           {c.openOrder}
         </Link>

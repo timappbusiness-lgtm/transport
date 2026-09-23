@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
  * that refuses them.
  */
 const CONTROL =
-  'w-full rounded-input border border-border bg-surface px-3 py-2 text-[0.9375rem] ' +
+  'w-full rounded-input border border-border bg-surface px-3 py-2 text-body ' +
   'outline-none focus-visible:border-border-strong focus-visible:outline-2 ' +
   'focus-visible:outline-offset-[-2px] focus-visible:outline-foreground';
 
@@ -212,7 +212,7 @@ export function LocalityPicker({
           id={listId}
           role="listbox"
           aria-label={localitiesCopy.listLabel}
-          className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-card border border-border bg-surface py-1 shadow-[0_24px_48px_-24px_rgba(28,38,43,.5)]"
+          className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-card border border-border bg-surface py-1 shadow-float"
         >
           {groups.map((section) => (
             <li key={section.group}>
@@ -221,7 +221,7 @@ export function LocalityPicker({
                   fifteen mixes them. */}
               <p
                 aria-hidden="true"
-                className="px-3 pb-1 pt-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted"
+                className="px-3 pb-1 pt-2 font-mono text-label uppercase tracking-[0.12em] text-muted"
               >
                 {GROUP_LABELS[section.group]}
               </p>
@@ -238,20 +238,20 @@ export function LocalityPicker({
                         onMouseEnter={() => setActive(index)}
                         onClick={() => choose(locality)}
                         className={cn(
-                          'flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.9375rem]',
+                          'flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-body',
                           index === active ? 'bg-ground-alt' : 'hover:bg-ground-alt',
                         )}
                       >
                         <span className="min-w-0">
                           <span className="block truncate">{locality.name}</span>
-                          <span className="block truncate text-[0.75rem] text-muted">
+                          <span className="block truncate text-xs text-muted">
                             {subtitleOf(locality)}
                           </span>
                         </span>
                         {/* The country as a code, not a flag emoji: no
                             emoji in this interface, and a two-letter
                             badge is readable by everything. */}
-                        <span className="flex-none rounded-input border border-border px-1.5 py-0.5 font-mono text-[0.625rem] text-muted">
+                        <span className="flex-none rounded-input border border-border px-1.5 py-0.5 font-mono text-label text-muted">
                           {locality.country}
                         </span>
                       </button>
@@ -265,7 +265,7 @@ export function LocalityPicker({
       ) : null}
 
       {noResults ? (
-        <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.8125rem] text-muted">
+        <p className="mt-1.5 flex flex-wrap items-center gap-2 text-small text-muted">
           <Icon as={uiIcon('place')} size="sm" />
           {reported ? (
             localitiesCopy.reportedThanks

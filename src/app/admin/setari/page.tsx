@@ -32,12 +32,12 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
       <section>
-        <h2 className="text-[1.0625rem]">{c.state.title}</h2>
+        <h2 className="text-h3">{c.state.title}</h2>
         {stats ? (
           <>
             <div className="mt-4 rounded-card border border-border bg-surface px-5 py-2">
@@ -53,7 +53,7 @@ export default async function Page() {
                 {gridVisible ? c.state.gridShown : c.state.gridHidden}
               </StatusBadge>
             </div>
-            <p className="mt-3 max-w-[62ch] text-[0.8125rem] text-muted">{c.state.cached}</p>
+            <p className="mt-3 max-w-[62ch] text-small text-muted">{c.state.cached}</p>
           </>
         ) : (
           <p className="mt-3 text-sm text-muted">{c.state.unavailable}</p>

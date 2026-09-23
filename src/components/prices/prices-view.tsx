@@ -39,11 +39,11 @@ export function PricesView({
     <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,25rem)] lg:items-start">
       <section aria-labelledby={`${id}-table`} className="min-w-0">
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-          <h2 id={`${id}-table`} className="text-[1.125rem]">
+          <h2 id={`${id}-table`} className="text-lg">
             {pricesCopy.table.title}
           </h2>
           {month ? (
-            <p className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-muted">
+            <p className="font-mono text-label uppercase tracking-[0.1em] text-muted">
               {pricesCopy.table.updated(month)}
             </p>
           ) : null}
@@ -76,7 +76,7 @@ export function PricesView({
                     ?.focus();
                 }}
                 className={cn(
-                  'rounded-pill px-4 py-2 text-[0.875rem] transition-[color,background-color] duration-150',
+                  'rounded-pill px-4 py-2 text-sm transition-[color,background-color] duration-150',
                   selected ? 'bg-foreground text-white' : 'text-muted hover:text-foreground',
                 )}
               >
@@ -86,7 +86,7 @@ export function PricesView({
           })}
         </div>
 
-        <p className="mt-3 max-w-[64ch] text-[0.8125rem] text-muted">
+        <p className="mt-3 max-w-[64ch] text-small text-muted">
           {express
             ? pricesCopy.service.expressNote(settings.express_surcharge_pct)
             : pricesCopy.service.standardNote}
@@ -101,7 +101,7 @@ export function PricesView({
           <RateTable rates={rates} settings={settings} express={express} />
         </div>
 
-        <div className="mt-5 flex flex-col gap-2 text-[0.8125rem] text-muted">
+        <div className="mt-5 flex flex-col gap-2 text-small text-muted">
           <p className="max-w-[68ch]">{pricesCopy.table.minimumNote}</p>
           <p className="max-w-[68ch]">
             {pricesCopy.table.notRunning(settings.not_running_surcharge_pct)}

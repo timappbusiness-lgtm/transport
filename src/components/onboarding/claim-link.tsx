@@ -43,12 +43,12 @@ export function ClaimLink({
         <p className="text-sm">{c.sent}</p>
 
         {!mailConfigured ? (
-          <p className="max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-[0.8125rem]">
+          <p className="max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
             {c.noMail}
           </p>
         ) : null}
 
-        <p className="max-w-[66ch] rounded-input border border-danger/45 bg-danger/8 p-3 text-[0.8125rem]">
+        <p className="max-w-[66ch] rounded-input border border-danger/45 bg-danger/8 p-3 text-small">
           {c.onceOnly}
         </p>
 
@@ -68,7 +68,7 @@ export function ClaimLink({
           </button>
         </div>
 
-        <p className="max-w-[66ch] text-[0.8125rem] text-muted">{c.whatNext}</p>
+        <p className="max-w-[66ch] text-small text-muted">{c.whatNext}</p>
       </div>
     );
   }
@@ -78,12 +78,12 @@ export function ClaimLink({
       <input type="hidden" name="onboarding_id" value={onboardingId} />
 
       {!mailConfigured ? (
-        <p className="max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-[0.8125rem]">
+        <p className="max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
           {c.noMail}
         </p>
       ) : null}
 
-      <p className="max-w-[66ch] text-[0.8125rem] text-muted">{c.onceOnly}</p>
+      <p className="max-w-[66ch] text-small text-muted">{c.onceOnly}</p>
 
       <div>
         <button

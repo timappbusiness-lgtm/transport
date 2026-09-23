@@ -65,7 +65,7 @@ function href(audience: PlanAudience, months: BillingMonths): string {
 function Segmented({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="mb-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+      <p className="mb-2 font-mono text-label uppercase tracking-[0.12em] text-muted">
         {label}
       </p>
       <nav aria-label={label} className="flex flex-wrap gap-1.5">
@@ -84,7 +84,7 @@ function Option({ href, active, label }: { href: string; active: boolean; label:
         'rounded-pill border px-4 py-1.5 text-sm whitespace-nowrap',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

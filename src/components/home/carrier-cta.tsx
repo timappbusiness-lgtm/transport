@@ -49,7 +49,7 @@ export function CarrierCtaBand({
           <div className="min-w-0">
             <Headline as="h2" strong={c.strong} soft={c.soft} />
             {withCount && verifiedCarriers !== null ? (
-              <p className="mt-4 text-[0.9375rem] text-muted">
+              <p className="mt-4 text-body text-muted">
                 {c.count(formatCompanies(verifiedCarriers))}
               </p>
             ) : null}

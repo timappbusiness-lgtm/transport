@@ -65,7 +65,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 </p>
 
                 {message.body !== null && message.body !== '' ? (
-                  <p className="mt-1.5 whitespace-pre-line text-[0.9375rem]">{message.body}</p>
+                  <p className="mt-1.5 whitespace-pre-line text-body">{message.body}</p>
                 ) : null}
 
                 {message.attachments.length > 0 ? (

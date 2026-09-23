@@ -42,7 +42,9 @@ export const homeCopy = {
       subtitle: 'München → Cluj-Napoca · platformă deschisă',
       taken: 5,
       total: 8,
-      caption: '3 locuri libere din 8',
+      // Split so the figure can carry the accent. Reads identically:
+      // „3 locuri libere din 8".
+      caption: { free: 3, total: 8, suffix: 'locuri libere din 8' },
       free: 'liber',
     },
     corridor: {

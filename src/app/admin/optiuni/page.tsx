@@ -25,12 +25,12 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
       <section aria-labelledby="dotari">
-        <h2 id="dotari" className="text-[1.0625rem]">
+        <h2 id="dotari" className="text-h3">
           {c.equipment}
         </h2>
         <ul className="mt-3 divide-y divide-border rounded-card border border-border bg-surface px-4 sm:px-5">
@@ -47,7 +47,7 @@ export default async function Page() {
       </section>
 
       <section aria-labelledby="servicii">
-        <h2 id="servicii" className="text-[1.0625rem]">
+        <h2 id="servicii" className="text-h3">
           {c.services}
         </h2>
         <ul className="mt-3 divide-y divide-border rounded-card border border-border bg-surface px-4 sm:px-5">

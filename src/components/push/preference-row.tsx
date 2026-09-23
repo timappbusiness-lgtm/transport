@@ -24,7 +24,7 @@ export function PreferenceRow({ type }: { type: NotificationType }) {
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 py-4">
       <div className="min-w-[14rem] flex-1">
-        <p className="text-[0.9375rem]">{type.label}</p>
+        <p className="text-body">{type.label}</p>
         {type.description ? (
           <p className="mt-0.5 text-xs text-muted">{type.description}</p>
         ) : null}
@@ -81,7 +81,7 @@ function Channel({
     return (
       <span className="flex flex-col gap-0.5 text-xs text-muted">
         <span>{label}</span>
-        <span className="text-[0.6875rem]">{c.locked}</span>
+        <span className="text-xs">{c.locked}</span>
       </span>
     );
   }

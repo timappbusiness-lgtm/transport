@@ -44,7 +44,7 @@ export default async function Page({
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.hero.title}</h1>
+        <h1 className="mt-2 text-h2">{c.hero.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
       </div>
 
@@ -62,7 +62,7 @@ export default async function Page({
 
       {rows.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
-          <h2 className="text-[1.0625rem]">{status === null ? c.empty.title : c.empty.filtered}</h2>
+          <h2 className="text-h3">{status === null ? c.empty.title : c.empty.filtered}</h2>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
           {status !== null ? (
             <p className="mt-5 text-sm">
@@ -96,7 +96,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
       className={cn(
         'rounded-pill border px-3.5 py-1.5 text-sm',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

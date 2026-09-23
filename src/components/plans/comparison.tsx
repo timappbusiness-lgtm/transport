@@ -26,19 +26,19 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
 
   return (
     <section aria-labelledby="comparatie" className="mt-16">
-      <h2 id="comparatie" className="text-[1.25rem]">
+      <h2 id="comparatie" className="text-xl">
         {c.title}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
 
       {/* Desktop: one table, header sticky under the site header. */}
       <div className="mt-6 hidden overflow-x-auto rounded-card border border-border bg-surface md:block">
-        <table className="w-full border-collapse text-[0.9375rem]">
+        <table className="w-full border-collapse text-body">
           <thead className="sticky top-0 z-10 bg-surface">
             <tr>
               <th
                 scope="col"
-                className="border-b border-border px-5 py-3.5 text-left font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted"
+                className="border-b border-border px-5 py-3.5 text-left font-mono text-label font-normal uppercase tracking-[0.12em] text-muted"
               >
                 {c.feature}
               </th>
@@ -46,7 +46,7 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
                 <th
                   key={plan.code}
                   scope="col"
-                  className="border-b border-border px-5 py-3.5 text-left text-[0.875rem] font-medium"
+                  className="border-b border-border px-5 py-3.5 text-left text-sm font-medium"
                 >
                   {plan.name}
                 </th>
@@ -62,7 +62,7 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
                   <th
                     scope="colgroup"
                     colSpan={plans.length + 1}
-                    className="border-b border-border bg-ground-alt px-5 py-2 text-left font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted"
+                    className="border-b border-border bg-ground-alt px-5 py-2 text-left font-mono text-label font-normal uppercase tracking-[0.12em] text-muted"
                   >
                     {c.groups[section.group]}
                   </th>
@@ -93,19 +93,19 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
       <div className="mt-6 flex flex-col gap-3 md:hidden">
         {plans.map((plan) => (
           <details key={plan.code} className="rounded-card border border-border bg-surface">
-            <summary className="cursor-pointer px-5 py-4 text-[0.9375rem] font-medium">
+            <summary className="cursor-pointer px-5 py-4 text-body font-medium">
               {plan.name}
               <span className="ml-2 font-normal text-muted">· {c.showPlan}</span>
             </summary>
             <div className="px-5 pb-5">
               {sections.map((section) => (
                 <div key={section.group} className="mt-4 first:mt-0">
-                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+                  <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                     {c.groups[section.group]}
                   </p>
                   <ul className="mt-2 flex flex-col gap-2">
                     {section.rows.map((row) => (
-                      <li key={row.key} className="flex items-start gap-2.5 text-[0.875rem]">
+                      <li key={row.key} className="flex items-start gap-2.5 text-sm">
                         <Mark status={featureStatus(plan, row.key)} />
                         <span
                           className={cn(

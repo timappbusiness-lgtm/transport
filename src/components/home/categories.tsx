@@ -39,7 +39,7 @@ export function CategoriesSection({
     <section id="categorii" aria-label={c.eyebrow} className="bg-ground-alt">
       <Container className="py-14 sm:py-16">
         <SectionHead eyebrow={c.eyebrow} icon={iconForFact('vehicle')} strong={c.strong} soft={c.soft} />
-        <p className="mt-3 text-[0.8125rem] text-muted">
+        <p className="mt-3 text-small text-muted">
           {c.note(pluralRo(categoryWindowDays, 'zi', 'zile'))}
         </p>
 
@@ -67,12 +67,12 @@ function CategoryCard({ row }: { row: CategoryCount }) {
       <Link
         href={`${ROUTES.requests}?${REQUEST_FILTER_KEYS.category}=${row.category}`}
         aria-label={c.linkLabel(count, row.label)}
-        className="flex h-full flex-col justify-between gap-2 rounded-card border border-border bg-surface p-4 transition-[border-color] duration-150 hover:border-border-strong"
+        className="flex h-full flex-col justify-between gap-2 rounded-card border border-border bg-surface p-4 shadow-card transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised"
       >
-        <span className="font-display text-[clamp(1.375rem,3vw,1.75rem)] leading-none tabular-nums">
+        <span className="font-display text-h2 leading-none tabular-nums">
           {formatNumber(row.requests)}
         </span>
-        <span className="text-[0.8125rem] text-muted">{row.label}</span>
+        <span className="text-small text-muted">{row.label}</span>
       </Link>
     </li>
   );

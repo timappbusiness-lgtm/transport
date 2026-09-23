@@ -47,7 +47,7 @@ export function ProfileStep({
             <label
               key={option}
               className={cn(
-                'cursor-pointer rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+                'cursor-pointer rounded-pill border px-3.5 py-1.5 text-small',
                 scope === option
                   ? 'border-transparent bg-foreground text-ground'
                   : 'border-border-strong text-muted',

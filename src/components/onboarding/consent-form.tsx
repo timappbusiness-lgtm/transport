@@ -71,7 +71,7 @@ export function ConsentForm() {
         <span className="text-xs font-normal text-muted">{c.noteHint}</span>
       </label>
 
-      <label className="flex items-start gap-2.5 rounded-input border border-border-strong bg-ground-alt p-3 text-[0.8125rem]">
+      <label className="flex items-start gap-2.5 rounded-input border border-border-strong bg-ground-alt p-3 text-small">
         <input type="checkbox" name="consent_confirmed" className="mt-0.5" />
         <span>{c.confirm}</span>
       </label>

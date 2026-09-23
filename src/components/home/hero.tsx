@@ -21,7 +21,11 @@ function FloatCard({
   return (
     <div
       className={cn(
-        'rounded-card border border-border bg-surface/95 p-3.5 shadow-[0_18px_40px_-24px_rgba(28,38,43,.55)] backdrop-blur-sm',
+        // Genuinely above the scene: the float shadow, a heavier blur,
+        // and a hairline of white on the top edge so the card catches
+        // light the way something lifted off a surface does.
+        'rounded-card border border-white/70 bg-surface/92 p-3.5 shadow-float backdrop-blur-md',
+        'ring-1 ring-inset ring-white/50',
         'motion-safe:animate-[float-in_.7s_cubic-bezier(.22,.61,.36,1)_both]',
         className,
       )}
@@ -44,9 +48,9 @@ export function Hero() {
             as="h1"
             strong={c.strong}
             soft={c.soft}
-            className="mt-6 text-[clamp(2.25rem,5.6vw,4rem)] text-white [&_span:last-child]:text-white/60"
+            className="mt-6 text-display text-white [&_span:last-child]:text-white/60"
           />
-          <p className="mt-5 max-w-[46ch] text-[1.0625rem] leading-relaxed text-white/80">
+          <p className="mt-5 max-w-[46ch] text-body-lg leading-relaxed text-white/80">
             {c.subtitle}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -64,7 +68,7 @@ export function Hero() {
 
           <FloatCard className="absolute -bottom-4 left-2 w-[min(17rem,78%)] sm:-left-6">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+              <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                 Documente
               </span>
               <SampleTag />
@@ -77,15 +81,17 @@ export function Hero() {
 
           <FloatCard className="absolute -top-4 right-0 w-[min(13rem,60%)] sm:-right-4">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+              <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                 Platformă
               </span>
               <SampleTag />
             </div>
-            <SeatDeck taken={5} total={8} compact />
-            <p className="mt-2 font-mono text-[0.6875rem] tabular-nums text-foreground">
-              3 locuri libere din 8
-            </p>
+            <SeatDeck
+              taken={5}
+              total={8}
+              compact
+              caption={{ free: 3, total: 8, suffix: 'locuri libere din 8' }}
+            />
           </FloatCard>
         </div>
       </Container>

@@ -33,7 +33,7 @@ export function TopBar({
       <div className="min-w-0">
         {crumbs.length > 0 ? (
           <nav aria-label="Navigare ierarhică" className="mb-1.5">
-            <ol className="flex flex-wrap items-center gap-1 text-[0.8125rem] text-muted">
+            <ol className="flex flex-wrap items-center gap-1 text-small text-muted">
               {crumbs.map((crumb) => (
                 <li key={crumb.href} className="flex items-center gap-1">
                   <Link href={crumb.href} className="hover:text-foreground">
@@ -45,7 +45,7 @@ export function TopBar({
             </ol>
           </nav>
         ) : null}
-        <h1 className="text-[clamp(1.375rem,3.5vw,1.875rem)] leading-tight">{title}</h1>
+        <h1 className="text-h2 leading-tight">{title}</h1>
       </div>
 
       <div className="flex flex-none items-center gap-2">

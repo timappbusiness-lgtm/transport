@@ -27,7 +27,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -40,7 +40,7 @@ export default async function Page() {
             >
               <div className="min-w-0">
                 <p className="font-medium">{company.name}</p>
-                <p className="mt-1 text-[0.8125rem] text-muted">
+                <p className="mt-1 text-small text-muted">
                   {[company.city, company.county].filter(Boolean).join(' · ')}
                   {company.compliantVehicles > 0
                     ? ` · ${pluralRo(company.compliantVehicles, 'vehicul', 'vehicule', 'un')}`

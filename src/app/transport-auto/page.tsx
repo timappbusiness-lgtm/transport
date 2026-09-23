@@ -38,14 +38,14 @@ export default async function Page() {
 
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
-      <h1 className="text-[clamp(1.75rem,4.5vw,2.75rem)] leading-tight">
+      <h1 className="text-h1 leading-tight">
         {c.h1}
         <span className="text-ink-soft"> {c.h1Soft}</span>
       </h1>
-      <p className="mt-4 max-w-[62ch] text-[1.0625rem] text-muted">{c.lede}</p>
+      <p className="mt-4 max-w-[62ch] text-body-lg text-muted">{c.lede}</p>
 
       {pages.length === 0 ? (
-        <p className="mt-10 text-[0.9375rem] text-muted">{c.empty}</p>
+        <p className="mt-10 text-body text-muted">{c.empty}</p>
       ) : (
         groups.map((group) => {
           const inGroup = pages.filter((page) => page.type === group.type);
@@ -60,13 +60,13 @@ export default async function Page() {
 function Group({ title, pages }: { title: string; pages: SeoPage[] }) {
   return (
     <section className="mt-10">
-      <h2 className="text-[1.0625rem]">{title}</h2>
+      <h2 className="text-h3">{title}</h2>
       <ul className="mt-4 flex flex-wrap gap-2">
         {pages.map((page) => (
           <li key={page.slug}>
             <Link
               href={pageHref(page)}
-              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-[0.8125rem] text-muted hover:border-border-strong hover:text-foreground"
+              className="inline-flex rounded-pill border border-border px-3 py-1.5 text-small text-muted hover:border-border-strong hover:text-foreground"
             >
               {pageSubject(page)}
             </Link>

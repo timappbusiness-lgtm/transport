@@ -10,7 +10,7 @@ const c = pricesCopy.faq;
 export function PriceFaq() {
   return (
     <section aria-labelledby="intrebari" className="mt-14 border-t border-border pt-10">
-      <h2 id="intrebari" className="text-[1.125rem]">
+      <h2 id="intrebari" className="text-lg">
         {c.title}
       </h2>
       <dl className="mt-6 grid gap-6 md:grid-cols-3">

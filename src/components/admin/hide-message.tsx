@@ -31,7 +31,7 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[0.75rem] text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.hide}
       </button>

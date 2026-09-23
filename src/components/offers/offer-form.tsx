@@ -79,7 +79,7 @@ export function OfferForm({
       <input type="hidden" name="loading_from" value={loadingFrom} />
 
       <div>
-        <h3 className="text-[1.0625rem]">{c.title}</h3>
+        <h3 className="text-h3">{c.title}</h3>
         <p className="mt-1.5 max-w-[58ch] text-sm text-muted">{c.lede}</p>
         {priceRange !== undefined ? (
           <p className="mt-2 text-sm text-muted">{c.priceRange(priceRange.low, priceRange.high)}</p>

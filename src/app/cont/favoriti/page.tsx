@@ -25,7 +25,7 @@ export default async function Page() {
       <TopBar title={c.title} actions={[]} />
       <div>
         <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
-        <p className="mt-1 max-w-[62ch] text-[0.8125rem] text-muted">{c.shared}</p>
+        <p className="mt-1 max-w-[62ch] text-small text-muted">{c.shared}</p>
         <p className="mt-2">
           <HelpLink topic="favourites" />
         </p>
@@ -33,7 +33,7 @@ export default async function Page() {
 
       {rows.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[1.0625rem]">{c.empty}</p>
+          <p className="text-body-lg">{c.empty}</p>
           <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
           <p className="mt-4 text-sm">
             <Link href={ROUTES.companies} className="underline underline-offset-4">
@@ -47,7 +47,7 @@ export default async function Page() {
             <li key={row.carrier_company_id}>
               <Card className="flex flex-wrap items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="text-[1rem] font-medium">
+                  <p className="text-base font-medium">
                     {row.slug !== null ? (
                       <Link
                         href={companyRoute(row.slug)}
@@ -59,14 +59,14 @@ export default async function Page() {
                       row.name
                     )}
                   </p>
-                  <p className="mt-1 text-[0.8125rem] text-muted">
+                  <p className="mt-1 text-small text-muted">
                     {[row.city, row.county].filter(Boolean).join(', ') || '—'} ·{' '}
                     {row.rating_count > 0
                       ? `${Number(row.rating_avg ?? 0).toFixed(1)} · ${c.ratings(row.rating_count)}`
                       : c.noRatings}
                   </p>
                   {row.note !== null ? (
-                    <p className="mt-1 text-[0.8125rem]">{row.note}</p>
+                    <p className="mt-1 text-small">{row.note}</p>
                   ) : null}
                 </div>
 
