@@ -57,11 +57,17 @@ function request(over: Partial<PublicRequest> = {}): PublicRequest {
 }
 
 /** Every `<svg>` in a fragment of markup, with its width and classes. */
-function glyphs(html: string): { width: number; cls: string }[] {
+function glyphs(html: string): { width: number; cls: string; art: boolean }[] {
   return [...html.matchAll(/<svg\b[^>]*>/g)].map((m) => {
     const tag = m[0];
-    const width = Number(/width="(\d+)"/.exec(tag)?.[1] ?? '0');
-    return { width, cls: /class="([^"]*)"/.exec(tag)?.[1] ?? '' };
+    const cls = /class="([^"]*)"/.exec(tag)?.[1] ?? '';
+    // A lucide icon carries its size as an attribute. A category drawing
+    // is sized by class — `w-13` is 13 × 4px — and the smallest step it
+    // takes, the phone one, is the one that counts.
+    const attr = /width="(\d+)"/.exec(tag)?.[1];
+    const byClass = /(?:^|\s)w-(\d+)(?:\s|$)/.exec(cls)?.[1];
+    const width = attr !== undefined ? Number(attr) : byClass !== undefined ? Number(byClass) * 4 : 0;
+    return { width, cls, art: tag.includes('data-category-art') };
   });
 }
 
@@ -106,6 +112,21 @@ describe('a card without an icon is a bug', () => {
     for (const glyph of glyphs(html)) {
       expect(glyph.width, `an icon ${glyph.width}px wide is decoration nobody sees`).toBeGreaterThanOrEqual(15);
     }
+  });
+
+  it('and its anchor is the category drawing, far larger than an icon', () => {
+    // The icon beside the category name was 15px. The card's anchor is
+    // now the drawing of the vehicle on its tint, at least 48px wide on
+    // a phone — the „larger than today" the brief asked for, measured.
+    const html = renderToStaticMarkup(
+      <ul>
+        <BoardRequestCard request={request()} now={NOW} />
+      </ul>,
+    );
+    const art = glyphs(html).filter((g) => g.art);
+    expect(art, 'no category drawing on the board card').toHaveLength(1);
+    expect(art[0]!.width).toBeGreaterThanOrEqual(48);
+    expect(html).toMatch(/data-category-tile="autoturism"[^>]*class="[^"]*bg-tint-/);
   });
 
   it('and in ink rather than the same grey as the label beside it', () => {

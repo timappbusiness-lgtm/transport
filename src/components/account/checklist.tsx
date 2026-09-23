@@ -42,7 +42,7 @@ export function Checklist({ title, steps }: { title: string; steps: ChecklistSte
             </span>
             <span className="min-w-0 flex-1 text-sm">{step.label}</span>
             {step.state === 'done' ? (
-              <span className="font-mono text-label text-success">
+              <span className="font-mono text-label text-foreground">
                 {accountCopy.checklist.done}
               </span>
             ) : null}

@@ -143,7 +143,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   {OPERATOR.email}
                 </a>
               ) : (
-                <span className="text-warning">{c.support.missing}</span>
+                <span className="font-medium text-foreground">{c.support.missing}</span>
               )}
             </dd>
           </div>
@@ -155,7 +155,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   {OPERATOR.phone}
                 </a>
               ) : (
-                <span className="text-warning">{c.support.missing}</span>
+                <span className="font-medium text-foreground">{c.support.missing}</span>
               )}
             </dd>
           </div>

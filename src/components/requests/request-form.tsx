@@ -1,5 +1,6 @@
 'use client';
 
+import { CategoryTile } from '@/components/ui/category-art';
 import { useActionState, useEffect, useId, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { attachListingPhotoAction } from '@/app/cerere/import-actions';
@@ -433,20 +434,27 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
             error={fieldError('category')}
             auto={auto.has('category')}
           >
-            <select
-              id={`${id}-category`}
-              value={draft.category}
-              onChange={(event) =>
-                set('category', event.target.value as RequestDraft['category'])
-              }
-              className={CONTROL}
-            >
-              {OFFERED_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {CARGO_CATEGORY_LABELS[category]}
-                </option>
-              ))}
-            </select>
+            {/* The drawing follows the choice: a person picking „Rulotă"
+                from a list sees a caravan appear beside it, which is the
+                quickest confirmation there is that they picked the right
+                line. Same row, no new step. */}
+            <div className="flex items-center gap-3">
+              <CategoryTile category={draft.category} size="sm" />
+              <select
+                id={`${id}-category`}
+                value={draft.category}
+                onChange={(event) =>
+                  set('category', event.target.value as RequestDraft['category'])
+                }
+                className={CONTROL}
+              >
+                {OFFERED_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {CARGO_CATEGORY_LABELS[category]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </Labelled>
 
           {/* A suggestion, not a rule. The request goes out either way;

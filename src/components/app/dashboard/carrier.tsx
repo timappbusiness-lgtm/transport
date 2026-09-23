@@ -305,7 +305,10 @@ function Countdown({ expiresAt, now }: { expiresAt: string | null; now: Date }) 
       : pluralRo(Math.max(Math.floor(left / 60_000), 1), 'minut', 'minute', 'un');
 
   return (
-    <span className={cn(hours < 3 ? 'text-warning' : 'text-muted')}>
+    // Under three hours it is ink and heavier, not amber: the warning
+    // colour measures 3.64:1 as text on white, under AA. The weight
+    // says „soon"; the words say how soon.
+    <span className={cn(hours < 3 ? 'font-medium text-foreground' : 'text-muted')}>
       {c.bookings.expiresIn(label)}
     </span>
   );
