@@ -221,7 +221,15 @@ function Row({
         </div>
 
         <div className="text-right">
-          <p className="font-display text-xl leading-none tabular-nums">
+          {/* The price is the key number while the offer is alive or won;
+              on one that was refused, withdrawn or ran out it is history,
+              and history is ink. */}
+          <p
+            className={cn(
+              'font-display text-xl leading-none tabular-nums',
+              isLive(offer.status) || offer.status === 'accepted' ? 'text-accent' : 'text-foreground',
+            )}
+          >
             {formatMoney(offer.price_amount, offer.currency)}
           </p>
           <p className="mt-1.5">

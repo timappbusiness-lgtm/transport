@@ -189,11 +189,13 @@ export function CarrierHome({
             {h.activity}
           </h2>
           <Card className="mt-3 px-5 py-2">
-            <DataRow label={c.activity.routes} value={formatNumber(data.activeRoutes)} />
+            {/* The three counts this card is for, in the accent. */}
+            <DataRow label={c.activity.routes} value={formatNumber(data.activeRoutes)} tone="accent" />
             {data.seatsTotal > 0 ? (
               <DataRow
                 label={c.activity.seats}
                 value={`${formatNumber(data.seatsTaken)} / ${formatNumber(data.seatsTotal)}`}
+                tone="accent"
               />
             ) : null}
             <DataRow
@@ -203,6 +205,7 @@ export function CarrierHome({
                   ? formatNumber(data.contactsThisMonth)
                   : `${formatNumber(data.contactsThisMonth)} / ${formatNumber(contactsLimit)}`
               }
+              tone="accent"
             />
           </Card>
         </section>
