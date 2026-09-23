@@ -30,23 +30,30 @@ const c = homeCopy.activity.feed;
  *
  * No hooks of its own, so it renders to static markup in a test — which is
  * how "the card never shows a note" is checked without a browser.
+ *
+ * It is its own list item on the homepage feed. The dashboard and the
+ * landing pages wrap it in a `<li>` of their own, and pass `as="div"`:
+ * a `<li>` inside a `<li>` is closed early by the HTML parser, and the
+ * page that arrives is not the page React hydrates.
  */
 export function RequestCard({
   request,
   now,
   className,
+  as: Item = 'li',
 }: {
   request: PublicRequest;
   /** Passed in so the server and the test agree on what "now" means. */
   now: Date;
   className?: string | undefined;
+  as?: 'li' | 'div';
 }) {
   const scope = scopeOf(request.from_country, request.to_country);
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
 
   return (
-    <li className={cn('min-w-0', className)}>
+    <Item className={cn('min-w-0', className)}>
       <Link
         href={requestRoute(request.id)}
         className={cn(CARD_INTERACTIVE, 'flex h-full flex-col p-4 sm:p-5')}
@@ -101,6 +108,6 @@ export function RequestCard({
           </Badge>
         </p>
       </Link>
-    </li>
+    </Item>
   );
 }

@@ -261,7 +261,7 @@ function Requests({
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">
             {data.requests.map((request) => (
               <li key={request.id} className="min-w-0">
-                <RequestCard request={request} now={now} />
+                <RequestCard request={request} now={now} as="div" />
               </li>
             ))}
           </ul>

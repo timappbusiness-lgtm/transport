@@ -159,7 +159,7 @@ export function CarrierHome({
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {data.matches.map((request) => (
               <li key={request.id} className="flex min-w-0 flex-col">
-                <RequestCard request={request} now={now} />
+                <RequestCard request={request} now={now} as="div" />
                 <MatchReasons
                   reasons={data.matchReasons[request.id] ?? []}
                   detour={data.detours[request.id]}
