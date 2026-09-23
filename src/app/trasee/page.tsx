@@ -21,7 +21,7 @@ import type { PublicDeparture } from '@/lib/departures';
 import { boundingBox, withinRadius } from '@/lib/radius';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { EmptyFigure } from '@/components/ui/empty-state';
+import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
 import { DEPARTURE_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortDepartures } from '@/lib/board-sort';
 import { carrierStage } from '@/lib/carrier-onboarding';
@@ -122,50 +122,62 @@ function EmptyState({
   signedIn: boolean;
 }) {
   const c = departuresCopy.empty;
+  const filtered = hasActiveFilters(filters);
+
   return (
-    <div className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8">
-      <EmptyFigure kind="route" className="mb-4" />
-      <h2 className="text-lg">{c.title}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
+    <div>
+      {/* One sentence saying what will appear here, and one button. The
+          screen used to carry two buttons, two alert forms, a paragraph
+          and a link — five things to choose between, on the screen where
+          a person has the least to go on. */}
+      <EmptyCard
+        figure="route"
+        title={filtered ? c.filteredTitle : c.title}
+        body={filtered ? c.filteredBody : c.body}
+        action={
+          filtered ? (
+            <Link
+              href={`${ROUTES.routes}${filtersToQuery({ ...EMPTY_FILTERS, tab: filters.tab })}`}
+              className={buttonClasses('primary', 'md')}
+            >
+              {c.clear}
+            </Link>
+          ) : (
+            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+              {c.request}
+            </Link>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
-          {c.request}
-        </Link>
-        <SavedSearchButton filters={filters} signedIn={signedIn} />
-      </div>
-
-      {/* The other half of an empty board. Whoever is reading this is
-          either looking for a carrier — the button above — or is a
-          carrier with nothing to look at, and that person wants to be
-          told when a request appears on the corridor they just typed
-          in, not to come back and check. */}
-      <div className="mt-6 border-t border-border pt-5">
-        <p className="mb-3 max-w-[58ch] text-sm text-muted">{c.carrierAlert}</p>
-        <SaveSearch
-          filters={filtersFromBoard({
-            fromCountry: filters.fromCountry,
-            fromCounty: filters.fromCounty,
-            toCountry: filters.toCountry,
-            toCounty: filters.toCounty,
-            category: filters.vehicleType,
-            scope: filters.scope,
-          })}
-          signedIn={signedIn}
-          label={c.carrierAlertAction}
-        />
-      </div>
-
-      {hasActiveFilters(filters) ? (
-        <p className="mt-5 text-sm">
-          <Link
-            href={`${ROUTES.routes}${filtersToQuery({ ...EMPTY_FILTERS, tab: filters.tab })}`}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
-          >
-            {c.clear}
-          </Link>
-        </p>
-      ) : null}
+      {/* Nothing was removed, it moved one level down. Whoever is reading
+          an empty board is either looking for a carrier — the button
+          above — or is a carrier with nothing to look at, and that person
+          wants to be told when a request appears on the corridor they
+          just typed in rather than to come back and check. */}
+      <details className="mt-4 rounded-input border border-border bg-ground-alt/60">
+        <summary className="cursor-pointer list-none px-4 py-2.5 text-small font-medium">
+          {c.more}
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-border px-4 py-4">
+          <SavedSearchButton filters={filters} signedIn={signedIn} />
+          <div>
+            <p className="mb-3 max-w-[58ch] text-small text-muted">{c.carrierAlert}</p>
+            <SaveSearch
+              filters={filtersFromBoard({
+                fromCountry: filters.fromCountry,
+                fromCounty: filters.fromCounty,
+                toCountry: filters.toCountry,
+                toCounty: filters.toCounty,
+                category: filters.vehicleType,
+                scope: filters.scope,
+              })}
+              signedIn={signedIn}
+              label={c.carrierAlertAction}
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

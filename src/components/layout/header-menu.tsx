@@ -44,6 +44,10 @@ const PAGES = [
   { href: ROUTES.routes, label: 'Trasee' },
   { href: ROUTES.companies, label: 'Firme' },
   { href: ROUTES.plans, label: 'Abonamente' },
+  // The fifth and last: somewhere a first-time visitor can find out what
+  // this is before deciding whether to sign up. Four product pages and
+  // no explanation is a menu that assumes everybody already knows.
+  { href: ROUTES.faq, label: 'Cum funcționează' },
 ] as const;
 
 export interface HeaderUser {

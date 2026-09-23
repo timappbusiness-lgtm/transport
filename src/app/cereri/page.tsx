@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
+import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
 import { CarrierBanner } from '@/components/onboarding/carrier-banner';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
@@ -184,54 +185,65 @@ function companyState(company: Company | null) {
  */
 function EmptyState({ filters, signedIn }: { filters: RequestFilters; signedIn: boolean }) {
   const c = requestsCopy.empty;
+  const filtered = hasActiveRequestFilters(filters);
+
   return (
-    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-lg">{c.title}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
+    <div>
+      {/* One sentence saying what will appear here, and one button. It
+          used to be two buttons, a three-clause paragraph, an alert form
+          and a link — five things to choose between, on the screen where
+          a person has the least to go on. */}
+      <EmptyCard
+        figure="list"
+        title={filtered ? c.filteredTitle : c.title}
+        body={filtered ? c.filteredBody : c.body}
+        action={
+          filtered ? (
+            <Link
+              href={`${ROUTES.requests}${requestFiltersToQuery({
+                ...EMPTY_REQUEST_FILTERS,
+                tab: filters.tab,
+              })}`}
+              className={buttonClasses('primary', 'md')}
+            >
+              {c.clear}
+            </Link>
+          ) : (
+            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+              {c.publish}
+            </Link>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
-          {requestsCopy.board.publish}
-        </Link>
-        {/* A carrier who finds the board empty is not here to publish a
-            request. The other board is what they came for, and an empty
-            state with one button aimed at the other side of the market
-            is a dead end for half the people who reach it. */}
-        <Link href={ROUTES.routes} className={buttonClasses('secondary', 'md')}>
-          {c.departures}
-        </Link>
-      </div>
-
-      {/* An empty board is the moment to ask to be told when it changes,
-          not the moment to leave. */}
-      <div className="mt-6 border-t border-border pt-5">
-        <SaveSearch
-          filters={filtersFromBoard({
-            fromCountry: filters.fromCountry,
-            toCountry: filters.toCountry,
-            category: filters.category,
-            condition: filters.condition,
-            service: filters.service,
-            scope: filters.scope,
-          })}
-          signedIn={signedIn}
-          label="Anunță-mă când apare ceva"
-        />
-      </div>
-
-      {hasActiveRequestFilters(filters) ? (
-        <p className="mt-5 text-sm">
-          <Link
-            href={`${ROUTES.requests}${requestFiltersToQuery({
-              ...EMPTY_REQUEST_FILTERS,
-              tab: filters.tab,
-            })}`}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
-          >
-            {c.clear}
-          </Link>
-        </p>
-      ) : null}
+      {/* Nothing was removed, it moved one level down. A carrier who
+          finds the board empty did not come here to publish a request:
+          the other board is what they came for, and being told when one
+          appears beats coming back to check. */}
+      <details className="mt-4 rounded-input border border-border bg-ground-alt/60">
+        <summary className="cursor-pointer list-none px-4 py-2.5 text-small font-medium">
+          {c.more}
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-border px-4 py-4">
+          <p className="text-small">
+            <Link href={ROUTES.routes} className="text-foreground underline underline-offset-4">
+              {c.departures}
+            </Link>
+          </p>
+          <SaveSearch
+            filters={filtersFromBoard({
+              fromCountry: filters.fromCountry,
+              toCountry: filters.toCountry,
+              category: filters.category,
+              condition: filters.condition,
+              service: filters.service,
+              scope: filters.scope,
+            })}
+            signedIn={signedIn}
+            label="Anunță-mă când apare ceva"
+          />
+        </div>
+      </details>
     </div>
   );
 }
@@ -317,20 +329,28 @@ async function loadCompanyRoutes(companyId: string): Promise<CarrierRoute[]> {
 function MineEmptyState({ filters }: { filters: RequestFilters }) {
   const c = requestsCopy.empty;
   return (
-    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-lg">{c.mineTitle}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.mineBody}</p>
-      <div className="mt-6 flex flex-wrap gap-3">
+    <div>
+      <EmptyCard
+        figure="search"
+        title={c.mineTitle}
+        body={c.mineBody}
+        action={
+          <Link
+            href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
+            className={buttonClasses('primary', 'md')}
+          >
+            {c.mineClear}
+          </Link>
+        }
+      />
+      <p className="mt-4 text-center text-small">
         <Link
-          href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
-          className={buttonClasses('primary', 'md')}
+          href={ROUTES.accountDepartures}
+          className="text-muted underline underline-offset-4 hover:text-foreground"
         >
-          {c.mineClear}
+          Lărgește toleranța pe traseele tale
         </Link>
-        <Link href={ROUTES.accountDepartures} className={buttonClasses('secondary', 'md')}>
-          Vezi traseele mele
-        </Link>
-      </div>
+      </p>
     </div>
   );
 }

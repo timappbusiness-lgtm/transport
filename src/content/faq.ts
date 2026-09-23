@@ -33,8 +33,11 @@ export interface FaqGroup {
 
 export const faqCopy = {
   eyebrow: 'Întrebări frecvente',
+  /** The homepage section, which is a marketing head in two tones. */
   strong: 'Întrebări',
   soft: 'pe care le primim des.',
+  /** The page's own heading: literal, what it is, in two words. */
+  heading: 'Cum funcționează',
   lede:
     'Răspunsurile despre documente, tarife și verificare sunt luate din regulile pe care platforma le aplică.',
   seeAll: 'Vezi toate întrebările',
@@ -43,7 +46,7 @@ export const faqCopy = {
     transportatori: 'Pentru transportatori',
   },
   page: {
-    title: 'Întrebări frecvente',
+    title: 'Cum funcționează',
     description:
       'Ce acte sunt necesare, cât costă publicarea unei cereri, cum verificăm firmele de transport și ce se întâmplă când expiră un document.',
     lede:

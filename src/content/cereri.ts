@@ -240,14 +240,20 @@ export const requestsCopy = {
   },
 
   empty: {
-    mineTitle: 'Nicio cerere potrivită cu firma ta acum.',
-    mineBody:
-      'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale. Lărgește toleranța la traseu sau scoate filtrul ca să vezi tot panoul.',
+    mineTitle: 'Nicio cerere potrivită cu firma ta',
+    mineBody: 'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale.',
     mineClear: 'Vezi toate cererile',
-    title: 'Nicio cerere pentru această căutare.',
-    body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați. Dacă ești transportator, vezi ce trasee sunt deja publicate.',
-    departures: 'Vezi traseele',
+    /** The board itself is empty. One sentence: what will be here. */
+    title: 'Încă nu este nicio cerere aici',
+    body: 'Aici apar vehiculele care așteaptă un transportator.',
+    publish: 'Publică o cerere',
+    /** The search found nothing. The action is the filters, not a form. */
+    filteredTitle: 'Nicio cerere pentru această căutare',
+    filteredBody: 'Șterge filtrele ca să vezi tot panoul.',
     clear: 'Vezi toate cererile',
+    /** One level down: the alert, and the other board. */
+    more: 'Altceva de făcut de aici',
+    departures: 'Vezi traseele',
   },
 
   detail: {

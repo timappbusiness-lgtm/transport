@@ -5,7 +5,7 @@ import { FaqAccordion } from '@/components/faq/accordion';
 import { PlanCard, type PlanAction } from '@/components/plans/plan-card';
 import { PlanComparison } from '@/components/plans/comparison';
 import { PricingControls } from '@/components/plans/controls';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
+import { Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { plansCopy } from '@/content/plans';
 import type { FaqEntry } from '@/content/faq';
@@ -87,8 +87,7 @@ export function PricingBody({
   return (
     <Container className="py-12 sm:py-16">
       <header className="max-w-[48rem]">
-        <EyebrowPill>{c.header.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.header.strong} soft={c.header.soft} className="mt-5" />
+        <h1 className="text-h1">{c.header.heading}</h1>
         <Lede className="mt-4">{c.header.subtitle}</Lede>
         <p className="mt-3 text-body text-muted">
           {pricing.settings.trialDays > 0

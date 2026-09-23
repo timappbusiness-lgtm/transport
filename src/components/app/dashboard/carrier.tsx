@@ -68,17 +68,21 @@ export function CarrierHome({
 
   return (
     <div className="flex flex-col gap-8">
-      {!verified ? (
-        <div>
-          <Checklist title={c.checklist.title} steps={steps(company, data)} />
-          <p className="mt-2 text-small text-muted">{c.checklist.lede}</p>
-        </div>
-      ) : null}
-
+      {/* One block at the top answering one question, and everything
+          else under it. The verification checklist used to sit above
+          this heading as a second, unlabelled „what to do now" — two
+          lists of pending work with one heading between them. */}
       <section aria-labelledby="atentie">
         <h2 id="atentie" className="text-h3">
           {h.needsAttention}
         </h2>
+
+        {!verified ? (
+          <div className="mt-3">
+            <Checklist title={c.checklist.title} steps={steps(company, data)} />
+            <p className="mt-2 text-small text-muted">{c.checklist.lede}</p>
+          </div>
+        ) : null}
 
         {attention ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -136,9 +140,9 @@ export function CarrierHome({
               </Attention>
             ) : null}
           </div>
-        ) : (
+        ) : verified ? (
           <p className="mt-3 text-sm text-muted">{h.nothingToDo}</p>
-        )}
+        ) : null}
       </section>
 
       {/* A carrier looking at requests matched to their firm is a carrier

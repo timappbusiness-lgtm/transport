@@ -22,11 +22,10 @@ export const plansCopy = {
   },
 
   header: {
-    eyebrow: 'Abonamente',
-    strong: 'Plătești pentru contacte,',
-    soft: 'nu pentru a vedea bursa.',
+    /** Literal: what the page is, in one word. */
+    heading: 'Abonamente',
     subtitle:
-      'Cererile de transport și traseele se consultă gratuit. Abonamentul deblochează contactele clienților, mai multe trasee publicate și alertele pe e-mail.',
+      'Panoul se vede gratuit. Abonamentul deschide contactele clienților, mai multe trasee publicate și alertele pe e-mail.',
     /** Takes the trial as "30 de zile". */
     trust: (days: string) =>
       `Perioada gratuită de ${days} începe când firma este aprobată. Fără card la înscriere.`,

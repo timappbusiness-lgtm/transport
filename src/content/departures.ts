@@ -62,8 +62,14 @@ export const departuresCopy = {
   },
 
   empty: {
-    title: 'Încă nu sunt trasee publicate pentru această căutare.',
-    body: 'Bursa este la început. Publică o cerere și transportatorii o văd, sau lasă-ne adresa și te anunțăm când apare un traseu potrivit.',
+    /** The board itself is empty. One sentence: what will be here. */
+    title: 'Încă nu este niciun traseu aici',
+    body: 'Aici apar platformele cu locuri libere pe o rută.',
+    /** The search found nothing. The action is the filters. */
+    filteredTitle: 'Niciun traseu pentru această căutare',
+    filteredBody: 'Șterge filtrele ca să vezi toate traseele.',
+    /** One level down: the two alerts. */
+    more: 'Altceva de făcut de aici',
     request: 'Publică o cerere',
     alert: 'Anunță-mă când apare un traseu',
     alertSignedOut: 'Intră în cont ca să primești anunțul',
