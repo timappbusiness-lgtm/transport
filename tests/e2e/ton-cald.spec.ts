@@ -191,7 +191,25 @@ test.describe('a slow page', () => {
 
     // The bar's own link: on a phone it is behind „Meniu", and opening
     // the menu is what brings it on screen and prefetches it.
-    if (await openMenu(page)) await page.waitForLoadState('networkidle');
+    // Opening the menu prefetches its pages — the route tree, then the
+    // segments that carry the loading shell. Wait for all of the board's.
+    const inflight = new Set<unknown>();
+    let finished = 0;
+    const isBoardPrefetch = (request: import('@playwright/test').Request) =>
+      new URL(request.url()).pathname === '/cereri' && request.headers()['next-router-prefetch'] !== undefined;
+    page.on('request', (request) => {
+      if (isBoardPrefetch(request)) inflight.add(request);
+    });
+    // Next reads what it needs of a prefetch and aborts the rest, so an
+    // abort is as done as a finish.
+    for (const event of ['requestfinished', 'requestfailed'] as const) {
+      page.on(event, (request) => {
+        if (inflight.delete(request)) finished += 1;
+      });
+    }
+    if (await openMenu(page)) {
+      await expect.poll(() => finished > 0 && inflight.size === 0, { timeout: 10_000 }).toBe(true);
+    }
     await page.locator('header a[href="/cereri"]:visible').first().click();
     const skeleton = page.locator('[data-skeleton]');
     await expect(skeleton).toBeVisible();
