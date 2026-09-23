@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { TabLink } from '@/components/ui/tab';
 import { ROUTES } from '@/config/routes';
 import { plansCopy } from '@/content/plans';
 import {
@@ -10,7 +10,6 @@ import {
   type BillingMonths,
   type PlanAudience,
 } from '@/lib/plans';
-import { cn } from '@/lib/utils';
 
 const c = plansCopy.controls;
 
@@ -77,18 +76,8 @@ function Segmented({ label, children }: { label: string; children: React.ReactNo
 
 function Option({ href, active, label }: { href: string; active: boolean; label: string }) {
   return (
-    <Link
-      href={href}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'rounded-pill border px-4 py-1.5 text-sm whitespace-nowrap',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
-        active
-          ? 'border-accent bg-accent text-white'
-          : 'border-border text-muted hover:border-border-strong',
-      )}
-    >
+    <TabLink href={href} active={active}>
       {label}
-    </Link>
+    </TabLink>
   );
 }

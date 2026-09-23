@@ -68,7 +68,7 @@ export function OrderRatingCard({
         <p className="mt-3 text-xs text-muted">{c.form.notEditable}</p>
         <Link
           href={`${ROUTES.accountRatings}?cutie=date`}
-          className="mt-2 inline-block text-small underline underline-offset-4"
+          className="mt-2 inline-block text-small link-accent"
         >
           {c.widget.action}
         </Link>

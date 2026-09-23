@@ -271,7 +271,7 @@ function Attention({
       <p className="mt-3">
         <Link
           href={href}
-          className="text-small text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-small link-accent"
         >
           {action}
         </Link>

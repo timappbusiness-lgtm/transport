@@ -120,7 +120,7 @@ export function CapabilitiesTab({
           {c.fleetHint}{' '}
           <Link
             href={ROUTES.accountFleet}
-            className="underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             Flotă
           </Link>

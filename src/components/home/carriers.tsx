@@ -134,7 +134,7 @@ export function CarriersBody({
               <p className="mt-3 text-center text-small">
                 <Link
                   href={ROUTES.plans}
-                  className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+                  className="link-accent"
                 >
                   {c.allPlans}
                 </Link>

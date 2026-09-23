@@ -76,11 +76,11 @@ export function ClaimForm({
         <input type="checkbox" name="terms" className="mt-0.5" />
         <span>
           Am citit și accept{' '}
-          <a href={ROUTES.terms} className="underline underline-offset-4">
+          <a href={ROUTES.terms} className="link-accent">
             Termenii
           </a>{' '}
           și{' '}
-          <a href={ROUTES.privacy} className="underline underline-offset-4">
+          <a href={ROUTES.privacy} className="link-accent">
             Politica de confidențialitate
           </a>
           .

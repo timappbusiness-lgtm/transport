@@ -1,3 +1,4 @@
+import { TabLink } from '@/components/ui/tab';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
@@ -15,7 +16,6 @@ import {
   type PendingRating,
   type RatingBox,
 } from '@/lib/ratings-source';
-import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: ratingsCopy.list.title };
 export const dynamic = 'force-dynamic';
@@ -54,20 +54,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       <nav aria-label={c.title} className="flex flex-wrap gap-2">
         {BOXES.map((b) => (
-          <Link
+          <TabLink
             key={b}
             href={b === 'de-dat' ? ROUTES.accountRatings : `${ROUTES.accountRatings}?cutie=${b}`}
-            aria-current={b === box ? 'page' : undefined}
-            className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-small',
-              b === box
-                ? 'border-transparent bg-foreground text-ground'
-                : 'border-border-strong text-muted hover:text-foreground',
-            )}
+            active={b === box}
+            size="sm"
           >
             {c.boxes[b]}
             {b === 'de-dat' && pending !== null && pending > 0 ? ` (${pending})` : ''}
-          </Link>
+          </TabLink>
         ))}
       </nav>
 
@@ -163,7 +158,7 @@ function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }
       ) : null}
 
       <div className="mt-3 flex flex-wrap gap-3 text-small">
-        <Link href={transportRoute(row.order_id)} className="underline underline-offset-4">
+        <Link href={transportRoute(row.order_id)} className="link-accent">
           {c.openOrder}
         </Link>
         {row.counterparty_slug !== null ? (

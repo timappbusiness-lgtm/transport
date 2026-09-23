@@ -226,7 +226,7 @@ function EmptyState({ filters, signedIn }: { filters: RequestFilters; signedIn: 
         </summary>
         <div className="flex flex-col gap-5 border-t border-border px-4 py-4">
           <p className="text-small">
-            <Link href={ROUTES.routes} className="text-foreground underline underline-offset-4">
+            <Link href={ROUTES.routes} className="link-accent">
               {c.departures}
             </Link>
           </p>

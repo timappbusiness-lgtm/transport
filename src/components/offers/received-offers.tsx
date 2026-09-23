@@ -243,7 +243,7 @@ function OfferCard({
             <p className="mt-1.5 text-sm">
               <Link
                 href={companyRoute(offer.company_slug)}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {c.profile}
               </Link>

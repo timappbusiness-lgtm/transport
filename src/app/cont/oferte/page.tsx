@@ -1,3 +1,4 @@
+import { TabLink } from '@/components/ui/tab';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
@@ -150,7 +151,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {only !== null && offers.length > 0 ? (
         <p className="text-sm">
-          <Link href={`${ROUTES.accountOffers}?cutie=${box}`} className="underline underline-offset-4">
+          <Link href={`${ROUTES.accountOffers}?cutie=${box}`} className="link-accent">
             Vezi toate ofertele
           </Link>
         </p>
@@ -205,7 +206,7 @@ function Row({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-h3">
-            <Link href={requestRoute(offer.request_id)} className="underline underline-offset-4">
+            <Link href={requestRoute(offer.request_id)} className="link-accent">
               {offer.request_title ?? `${offer.from_city} — ${offer.to_city}`}
             </Link>
           </h2>
@@ -245,7 +246,7 @@ function Row({
             <p className="mt-3 text-sm">
               <Link
                 href={transportRoute(offer.transport_id)}
-                className="underline underline-offset-4"
+                className="link-accent"
               >
                 {offersCopy.sent.seeOrder}
               </Link>
@@ -289,18 +290,8 @@ function Tab({
   small?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'rounded-pill border',
-        small ? 'px-3 py-1 text-xs' : 'px-3.5 py-1.5 text-sm',
-        active
-          ? 'border-accent bg-accent text-white'
-          : 'border-border text-muted hover:border-border-strong',
-      )}
-    >
+    <TabLink href={href} active={active} size={small ? 'sm' : 'md'}>
       {label}
-    </Link>
+    </TabLink>
   );
 }

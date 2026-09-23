@@ -96,7 +96,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
           ) : isLive && company.slug ? (
             <Link
               href={companyRoute(company.slug)}
-              className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="link-accent"
             >
               {c.live}
             </Link>

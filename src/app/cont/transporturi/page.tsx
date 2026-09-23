@@ -1,3 +1,4 @@
+import { TabLink } from '@/components/ui/tab';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
@@ -174,18 +175,8 @@ function Tab({
   small?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'rounded-pill border px-3 py-1.5',
-        small ? 'text-small' : 'text-sm',
-        active
-          ? 'border-foreground bg-foreground text-ground'
-          : 'border-border text-muted hover:text-foreground',
-      )}
-    >
+    <TabLink href={href} active={active} size={small ? 'sm' : 'md'}>
       {label}
-    </Link>
+    </TabLink>
   );
 }

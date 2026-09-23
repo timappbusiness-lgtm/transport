@@ -60,7 +60,7 @@ export default async function Page() {
           </p>
           <p className="mt-2 text-sm">{quotaMessage(quota)}</p>
           <p className="mt-2 text-sm">
-            <Link href={ROUTES.plans} className="underline underline-offset-4">
+            <Link href={ROUTES.plans} className="link-accent">
               {c.quota.action}
             </Link>{' '}
             <span className="text-muted">{c.quota.hint}</span>
@@ -93,7 +93,7 @@ export default async function Page() {
 
           <p className="text-sm text-muted">
             Vrei încă una?{' '}
-            <Link href={ROUTES.requests} className="underline underline-offset-4">
+            <Link href={ROUTES.requests} className="link-accent">
               Filtrează pe panou
             </Link>{' '}
             și apasă „Salvează căutarea”.

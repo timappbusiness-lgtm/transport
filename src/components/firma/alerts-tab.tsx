@@ -88,7 +88,7 @@ export function AlertsTab({ company }: { company: Company }) {
         <p className="text-sm font-medium">{c.savedTitle}</p>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.savedLede}</p>
         <p className="mt-2.5 text-sm">
-          <Link href={ROUTES.accountAlerts} className="underline underline-offset-4">
+          <Link href={ROUTES.accountAlerts} className="link-accent">
             {c.savedAction}
           </Link>
         </p>

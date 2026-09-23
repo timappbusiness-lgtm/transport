@@ -114,7 +114,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                           <p className="text-sm">
                             <Link
                               href={answer.link.href}
-                              className="underline underline-offset-4"
+                              className="link-accent"
                             >
                               {answer.link.label} →
                             </Link>
@@ -139,7 +139,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             <dt className="text-muted">{c.support.email}:</dt>
             <dd>
               {has('email') ? (
-                <a href={`mailto:${OPERATOR.email}`} className="underline underline-offset-4">
+                <a href={`mailto:${OPERATOR.email}`} className="link-accent">
                   {OPERATOR.email}
                 </a>
               ) : (
@@ -151,7 +151,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             <dt className="text-muted">{c.support.phone}:</dt>
             <dd>
               {has('phone') ? (
-                <a href={`tel:${OPERATOR.phone}`} className="underline underline-offset-4">
+                <a href={`tel:${OPERATOR.phone}`} className="link-accent">
                   {OPERATOR.phone}
                 </a>
               ) : (
@@ -167,7 +167,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         {!has('email') || !has('phone') ? (
           <p className="mt-3 max-w-[60ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
             {c.support.missingHint}{' '}
-            <Link href={ROUTES.contact} className="underline underline-offset-4">
+            <Link href={ROUTES.contact} className="link-accent">
               {c.support.contactPage}
             </Link>
           </p>

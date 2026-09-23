@@ -74,7 +74,7 @@ export async function Prices() {
         <p className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-small">
           <Link
             href={ROUTES.prices}
-            className="inline-flex items-center gap-2 text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="inline-flex items-center gap-2 link-accent"
           >
             {published ? c.link : c.linkUnpublished}
             <ArrowRight />

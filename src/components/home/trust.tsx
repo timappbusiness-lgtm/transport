@@ -44,7 +44,7 @@ export function Trust() {
           <p className="mt-4 text-sm">
             <Link
               href={ROUTES.verification}
-              className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="link-accent"
             >
               {c.example.link}
             </Link>

@@ -104,7 +104,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <label className="cursor-pointer text-small underline underline-offset-4">
+        <label className="cursor-pointer text-small link-accent">
           {c.attach}
           <input
             ref={fileRef}

@@ -278,7 +278,7 @@ function Capabilities({
               href={company.website}
               rel="nofollow noopener noreferrer external"
               target="_blank"
-              className="min-w-0 flex-1 break-all text-body underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+              className="min-w-0 flex-1 break-all text-body link-accent"
             >
               {company.website.replace(/^https:\/\//, '')}
             </a>

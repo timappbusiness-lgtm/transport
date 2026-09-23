@@ -281,6 +281,41 @@
   }
 }
 
+/* A link inside a sentence. The accent's third job, after the primary
+   action and the key number: a person scanning a paragraph finds the
+   thing they can click without reading every word. The underline is the
+   accent's border step at rest and the accent itself on hover, so the
+   link is identifiable by more than its colour (WCAG 1.4.1).
+
+   Never on a legal page, a suspension, a rejection, a dispute, a
+   deletion, an error or a staff screen — those keep the ink link they
+   had. `tests/unit/accent-scale.test.ts` lists the files. */
+@utility link-accent {
+  color: var(--color-accent);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--color-accent-border);
+  transition: text-decoration-color var(--duration-quick) var(--ease-soft);
+
+  &:hover {
+    text-decoration-color: var(--color-accent);
+  }
+}
+
+/* The same link in ink, for the screens the accent may not touch: an
+   error, a suspension, a dispute, a deletion. The sentence around it is
+   something to read, not a notification to click away. */
+@utility link-ink {
+  color: var(--color-foreground);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--color-border-strong);
+
+  &:hover {
+    text-decoration-color: var(--color-foreground);
+  }
+}
+
 /* Entrances are transform-only. Nothing starts at opacity 0: the first
    painted frame is what a thumbnail, a shared link and a fast scroller all
    get, so everything meant to be read is legible before any animation. */

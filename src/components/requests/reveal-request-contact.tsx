@@ -38,14 +38,14 @@ export function RevealRequestContact({
         ) : null}
         {state.contact.phone ? (
           <p className="font-mono text-sm tabular-nums">
-            <a href={`tel:${state.contact.phone}`} className="underline underline-offset-4">
+            <a href={`tel:${state.contact.phone}`} className="link-accent">
               {state.contact.phone}
             </a>
           </p>
         ) : null}
         {state.contact.email ? (
           <p className="text-sm">
-            <a href={`mailto:${state.contact.email}`} className="underline underline-offset-4">
+            <a href={`mailto:${state.contact.email}`} className="link-accent">
               {state.contact.email}
             </a>
           </p>
@@ -65,7 +65,7 @@ export function RevealRequestContact({
         <p className="text-sm">
           <Link
             href={ROUTES.plans}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             {c.seePlans}
           </Link>

@@ -286,7 +286,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 {order.carrier_slug !== null ? (
                   <Link
                     href={companyRoute(order.carrier_slug)}
-                    className="mt-0.5 block text-xs underline underline-offset-4"
+                    className="mt-0.5 block text-xs link-accent"
                   >
                     {c.profile}
                   </Link>
@@ -303,7 +303,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <div className="flex flex-col gap-3 text-sm">
             {order.request_id !== null ? (
               <div className="flex flex-wrap gap-4">
-                <Link href={requestRoute(order.request_id)} className="underline underline-offset-4">
+                <Link href={requestRoute(order.request_id)} className="link-accent">
                   {c.request}
                 </Link>
                 {side === 'client' ? (

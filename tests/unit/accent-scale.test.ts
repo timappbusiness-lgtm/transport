@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { contrast } from './contrast.test';
 
@@ -146,5 +146,74 @@ describe('the category tints', () => {
     // Under 1.25:1 against white — about what the card hairline is. A
     // tint any stronger than that starts to compete with the route.
     expect(contrast(token(`tint-${name}`), SURFACE)).toBeLessThan(1.25);
+  });
+});
+
+describe('where the new accent classes may not go', () => {
+  /**
+   * The screens that stay formal. A link in them is ink, not accent: the
+   * sentence around it is something to read, not a notification to
+   * click away. The directories are checked file by file so a new
+   * legal or staff component inherits the rule without anybody
+   * remembering to add it.
+   */
+  const FORMAL_DIRS = ['src/components/legal', 'src/components/admin', 'src/app/admin'];
+  const FORMAL_FILES = [
+    'src/app/termeni/page.tsx',
+    'src/app/confidentialitate/page.tsx',
+    'src/app/cookies/page.tsx',
+    'src/components/app/status-banner.tsx',
+    'src/components/account/status-banner.tsx',
+    'src/components/account/deletion-panel.tsx',
+    'src/components/app/account-notices.tsx',
+  ];
+
+  function walk(dir: string): string[] {
+    if (!existsSync(dir)) return [];
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) out.push(...walk(path));
+      else if (/\.tsx?$/.test(entry.name)) out.push(path);
+    }
+    return out;
+  }
+
+  const files = [...FORMAL_DIRS.flatMap(walk), ...FORMAL_FILES];
+
+  it('actually finds the formal screens it is guarding', () => {
+    // A walk that silently returns nothing guards nothing.
+    expect(files.filter((f) => f.startsWith('src/components/admin')).length).toBeGreaterThan(10);
+  });
+
+  it('no accent link, no accent tab, no dark accent step on a formal screen', () => {
+    const offenders = files.filter((file) => {
+      let body: string;
+      try {
+        body = readFileSync(file, 'utf8');
+      } catch {
+        return false;
+      }
+      return /\blink-accent\b|\bTabLink\b|accent-on-dark|accent-subtle/.test(body);
+    });
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
+  it('and inside an error the link is ink', () => {
+    // The quota message on the offer form and on the saved-search form
+    // is an error: `role="alert"`, danger text. Its way out is a link,
+    // and the link does not turn the error into an advertisement.
+    for (const file of ['src/components/offers/offer-form.tsx', 'src/components/requests/save-search.tsx']) {
+      const body = readFileSync(file, 'utf8');
+      const alert = body.slice(body.indexOf('role="alert"'), body.indexOf('role="alert"') + 600);
+      expect(alert, file).not.toMatch(/link-accent/);
+      expect(alert, file).toMatch(/link-ink/);
+    }
+  });
+
+  it('a dispute keeps the colour of its row', () => {
+    const body = readFileSync('src/components/orders/orders-widget.tsx', 'utf8');
+    const row = body.slice(body.indexOf('text-danger'), body.indexOf('text-danger') + 400);
+    expect(row).not.toMatch(/link-accent/);
   });
 });

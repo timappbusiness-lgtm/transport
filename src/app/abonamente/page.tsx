@@ -211,7 +211,7 @@ function BillingFaq({ settings }: { settings: PricingSettings }) {
           <Link
             key={link.href}
             href={link.href}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+            className="link-accent"
           >
             {link.label}
           </Link>
