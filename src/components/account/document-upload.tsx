@@ -1,10 +1,11 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
 import { useId, useState, useTransition } from 'react';
 import { registerDocumentAction } from '@/app/cont/fleet-actions';
 import type { ActionState } from '@/app/cont/actions';
-import { FormError, FormNotice } from '@/components/auth/form';
+import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import {
   ACCEPTED_DOCUMENT_TYPES,
@@ -49,6 +50,9 @@ export function DocumentUpload({
   const id = useId();
   const router = useRouter();
   const [state, setState] = useState<ActionState>({});
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const [pending, startTransition] = useTransition();
 
   if (kinds.length === 0) return null;
@@ -194,7 +198,6 @@ export function DocumentUpload({
       )}
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       {cameraFirst ? (
         pending ? (

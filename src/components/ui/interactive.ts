@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  *   - its raised shadow is a layer on `::before` that fades in, rather
  *     than a `box-shadow` that animates, because an animated shadow is a
  *     repaint on every frame and a faded layer is not;
- *   - a button presses in by 2%.
+ *   - a button presses in by 2% (see `buttonClasses`).
  *
  * `motion-safe:` on every movement, and the reduced-motion block in
  * globals.css takes the fades to a single frame. Colour changes — a
@@ -38,6 +38,3 @@ export const CARD_INTERACTIVE = cn(
  */
 export const CARD_ACTION =
   'rounded-input border border-accent-border px-3 py-1.5 text-small font-medium text-accent group-hover:bg-accent-subtle';
-
-/** The press every button shares. */
-export const PRESS = 'transition-transform duration-(--duration-quick) ease-(--ease-soft) motion-safe:active:scale-[0.98]';

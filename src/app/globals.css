@@ -281,6 +281,20 @@
   }
 }
 
+/* Every text control answers the pointer the same way: its edge darkens
+   from the strong border to muted ink on hover. Unlayered on purpose —
+   the controls carry `border-border-strong` as a utility, and a layered
+   rule would lose to it. `:where` keeps the specificity at zero, so any
+   control that sets its own hover still wins. Focus is the global ring
+   above, on every control, on the first frame. */
+:where(
+    input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range']),
+    select,
+    textarea
+  ):hover:not(:disabled, :focus) {
+  border-color: var(--color-muted);
+}
+
 /* A link inside a sentence. The accent's third job, after the primary
    action and the key number: a person scanning a paragraph finds the
    thing they can click without reading every word. The underline is the
@@ -325,6 +339,21 @@
   }
   to {
     transform: none;
+  }
+}
+
+/* A toast rises a little and fades in. The only entrance here that
+   starts below full opacity, because a toast is not content somebody
+   came to read — it is a sign that something happened, and the first
+   frame of it does not need to be legible. */
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }
 

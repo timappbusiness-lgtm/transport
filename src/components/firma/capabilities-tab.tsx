@@ -1,9 +1,10 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { updateCapabilitiesAction, type ActionState } from '@/app/cont/actions';
-import { Field, FormError, FormNotice } from '@/components/auth/form';
+import { Field, FormError } from '@/components/auth/form';
 import { CheckboxGrid } from '@/components/firma/checkbox-grid';
 import { SaveBar } from '@/components/firma/save-bar';
 import { ROUTES } from '@/config/routes';
@@ -44,6 +45,9 @@ export function CapabilitiesTab({
   vehiclesTotal: number;
 }) {
   const [state, action] = useActionState(updateCapabilitiesAction, EMPTY);
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const c = firmaCopy.capabilities;
 
   return (
@@ -54,7 +58,6 @@ export function CapabilitiesTab({
       </div>
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       <fieldset className="flex flex-col gap-2.5">
         <legend className="mb-1 text-sm font-medium">{c.vehicleTypes}</legend>

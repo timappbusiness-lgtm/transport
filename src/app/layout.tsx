@@ -3,6 +3,7 @@ import { THEME_COLOR } from '@/config/theme';
 import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { ToastProvider } from '@/components/ui/toast';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
 import { indexingMetadata } from '@/lib/seo-indexing';
 import './globals.css';
@@ -120,9 +121,14 @@ export default function RootLayout({
         >
           Sari la conținut
         </a>
-        <SiteHeader />
-        <main id="continut">{children}</main>
-        <SiteFooter />
+        {/* Around everything, so any form on any page can say „salvat"
+            where the person is looking rather than at the top of a form
+            they have scrolled past. */}
+        <ToastProvider>
+          <SiteHeader />
+          <main id="continut">{children}</main>
+          <SiteFooter />
+        </ToastProvider>
       </body>
     </html>
   );

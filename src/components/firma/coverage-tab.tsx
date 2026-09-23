@@ -1,9 +1,10 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useState } from 'react';
 import { useActionState } from 'react';
 import { updateCoverageAction, type ActionState } from '@/app/cont/actions';
-import { FormError, FormNotice } from '@/components/auth/form';
+import { FormError } from '@/components/auth/form';
 import { CheckboxGrid } from '@/components/firma/checkbox-grid';
 import { SaveBar } from '@/components/firma/save-bar';
 import { COVERAGE_COUNTRIES, firmaCopy } from '@/content/firma';
@@ -26,6 +27,9 @@ const EMPTY: ActionState = {};
  */
 export function CoverageTab({ company }: { company: Company }) {
   const [state, action] = useActionState(updateCoverageAction, EMPTY);
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const [scope, setScope] = useState<CoverageScope>(company.coverage_scope);
   const c = firmaCopy.coverage;
 
@@ -37,7 +41,6 @@ export function CoverageTab({ company }: { company: Company }) {
       </div>
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       <fieldset className="flex flex-col gap-2.5">
         <legend className="mb-1 text-sm font-medium">{c.scope}</legend>

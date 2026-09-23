@@ -1,8 +1,9 @@
 'use client';
 
+import { useActionToast } from '@/components/ui/toast';
 import { useActionState } from 'react';
 import { updateCompanyIdentityAction, type ActionState } from '@/app/cont/actions';
-import { Field, FormError, FormNotice } from '@/components/auth/form';
+import { Field, FormError } from '@/components/auth/form';
 import { SaveBar } from '@/components/firma/save-bar';
 import { COMPANY_TYPE_LABELS, accountCopy } from '@/content/account';
 import { firmaCopy } from '@/content/firma';
@@ -46,6 +47,9 @@ function ReadOnly({
  */
 export function IdentityTab({ company }: { company: Company }) {
   const [state, action] = useActionState(updateCompanyIdentityAction, EMPTY);
+  // The result where the person is looking: the save button sticks to
+  // the bottom of a phone, and the top of this form may be off screen.
+  useActionToast(state);
   const c = firmaCopy.identity;
   const isDraft = company.verification_status === 'draft';
 
@@ -57,7 +61,6 @@ export function IdentityTab({ company }: { company: Company }) {
       </div>
 
       <FormError>{state.error}</FormError>
-      <FormNotice>{state.notice}</FormNotice>
 
       <ReadOnly label={accountCopy.company.cui} value={company.cui} />
 
