@@ -1,17 +1,19 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { hideMessageAction, type ModerationState } from '@/app/admin/anunturi/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ModerationState = {};
 const c = messagesCopy.admin.conversations;
 
 /** Ascunde un mesaj, cu motiv. Părțile văd că a fost ascuns, nu de ce. */
 export function ModerateMessage({ messageId }: { messageId: string }) {
-  const [state, action, pending] = useActionState(hideMessageAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(hideMessageAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -30,7 +32,7 @@ export function ModerateMessage({ messageId }: { messageId: string }) {
   }
 
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <KeepingForm action={action} className="flex flex-col gap-2">
       <input type="hidden" name="message_id" value={messageId} />
       <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {c.hideReason}
@@ -56,6 +58,6 @@ export function ModerateMessage({ messageId }: { messageId: string }) {
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

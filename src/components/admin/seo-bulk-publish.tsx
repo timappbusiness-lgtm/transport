@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   setSeoPagesPublishedByTypeAction,
   type PageActionState,
@@ -8,6 +7,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import type { SeoPageType } from '@/lib/seo-pages';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: PageActionState = {};
 
@@ -19,11 +20,11 @@ const EMPTY: PageActionState = {};
  * because "gata" after a bulk action is how nobody finds out.
  */
 export function SeoBulkPublish({ type, drafts }: { type: SeoPageType; drafts: number }) {
-  const [state, action, pending] = useActionState(setSeoPagesPublishedByTypeAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(setSeoPagesPublishedByTypeAction, EMPTY);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <form action={action} className="flex flex-wrap items-center gap-2">
+      <KeepingForm action={action} className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="type" value={type} />
         <input type="hidden" name="published" value="true" />
         <button
@@ -33,7 +34,7 @@ export function SeoBulkPublish({ type, drafts }: { type: SeoPageType; drafts: nu
         >
           {drafts === 0 ? 'Toate sunt publicate' : `Publică toate (${drafts})`}
         </button>
-      </form>
+      </KeepingForm>
       <FormError>{state.error}</FormError>
       {state.notice ? <FormNotice>{state.notice}</FormNotice> : null}
     </div>

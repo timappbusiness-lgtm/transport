@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import type { CargoCategory } from '@/lib/departures';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { sessionExpiredError } from '@/lib/continuity/session';
 import { PATHNAME_HEADER } from './pathname-header';
 import { safeNextPath, signInUrlFor } from './next-path';
 
@@ -198,6 +199,24 @@ export async function requireAccountContext(
   const actual = headerList.get(PATHNAME_HEADER);
   const target = actual ? safeNextPath(actual, fallbackPath) : `${fallbackPath}${search ?? ''}`;
 
+  return redirectToSignIn(target);
+}
+
+/**
+ * Nobody is signed in: on a page, the sign-in screen with the way back; in
+ * a server action, the error the form turns into „sign in again".
+ *
+ * A redirect out of an action is a navigation, and a navigation is the end
+ * of everything typed into the form that sent it. The session usually
+ * ends while the form is open — the tab sat overnight, the password was
+ * changed on the phone — so the press of „Salvează" was exactly the moment
+ * the work was thrown away. Thrown instead, the error reaches the form as
+ * state (`keepOnFailure`), the fields stay, and the person signs in again
+ * in a new tab and presses the same button.
+ */
+export async function redirectToSignIn(target: string): Promise<never> {
+  const headerList = await headers();
+  if (headerList.has('next-action')) throw sessionExpiredError();
   redirect(signInUrlFor(target));
 }
 

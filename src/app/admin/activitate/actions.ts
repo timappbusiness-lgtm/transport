@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { activityAdminCopy } from '@/content/activitate';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { ACTIVITY_TAG } from '@/lib/requests-source';
 import { VERIFICATION_TAG } from '@/lib/trust-source';
@@ -37,7 +37,8 @@ export async function setThresholdsAction(
   formData: FormData,
 ): Promise<ThresholdActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const statsMin = whole(formData, 'stats_min_requests');
   const feedMin = whole(formData, 'feed_min_requests');
@@ -106,7 +107,8 @@ export async function setMatchingSettingsAction(
   formData: FormData,
 ): Promise<ThresholdActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const detour = whole(formData, 'default_detour_km');
   const window = whole(formData, 'category_window_days');

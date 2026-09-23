@@ -1,18 +1,19 @@
 'use client';
 
-import { useActionState } from 'react';
 import { withdrawOfferAction, type OfferState } from '@/app/cont/oferte/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { offersCopy } from '@/content/oferte';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OfferState = {};
 
 /** Taking an offer back, with the consequence said before the click. */
 export function WithdrawOffer({ offerId }: { offerId: string }) {
-  const [state, action, pending] = useActionState(withdrawOfferAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(withdrawOfferAction, EMPTY);
 
   return (
-    <form
+    <KeepingForm
       action={action}
       onSubmit={(event) => {
         if (!window.confirm(offersCopy.sent.withdrawConfirm)) event.preventDefault();
@@ -27,6 +28,6 @@ export function WithdrawOffer({ offerId }: { offerId: string }) {
           {state.error}
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useActionState } from 'react';
+import { useState, useRef } from 'react';
 import { saveSeoPageAction, type PageActionState } from '@/app/admin/pagini/actions';
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { seoCopy } from '@/content/transport-auto';
 import type { FaqItem, SeoPage } from '@/lib/seo-pages';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: PageActionState = {};
 const MAX_FAQ = 8;
@@ -23,13 +25,16 @@ const MAX_FAQ = 8;
  * unclosed tag.
  */
 export function SeoPageForm({ page }: { page: SeoPage }) {
-  const [state, action] = useActionState(saveSeoPageAction, EMPTY);
+  const [state, action] = useKeptActionState(saveSeoPageAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const [faq, setFaq] = useState<FaqItem[]>(
     page.faq.length > 0 ? page.faq : [{ q: '', a: '' }],
   );
 
   return (
-    <form action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="slug" value={page.slug} />
 
       <FormError>{state.error}</FormError>
@@ -128,6 +133,6 @@ export function SeoPageForm({ page }: { page: SeoPage }) {
       </fieldset>
 
       <SubmitButton className="sm:w-auto sm:px-8 sm:self-start">Salvează</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }

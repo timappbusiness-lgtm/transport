@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   blockSenderAction,
   reportMessageAction,
@@ -10,6 +10,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: MessageState = {};
 const c = messagesCopy.actions;
@@ -36,7 +38,7 @@ export function MessageActions({
   /** Blocarea existentă pe contul ăla, dacă există. */
   blockId?: string | null;
 }) {
-  const [state, action, pending] = useActionState(reportMessageAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(reportMessageAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -62,7 +64,7 @@ export function MessageActions({
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="mt-2 flex w-full flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
@@ -107,7 +109,7 @@ export function MessageActions({
       </div>
       <FormError>{state.error}</FormError>
       <input type="hidden" name="conversation_id" value={conversationId} />
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -122,7 +124,7 @@ export function MessageActions({
  * funcționat.
  */
 function Block({ userId, blockId }: { userId: string; blockId: string | null }) {
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     blockId === null ? blockSenderAction : unblockSenderAction,
     EMPTY,
   );
@@ -133,7 +135,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
 
   if (blockId !== null) {
     return (
-      <form action={action} className="inline">
+      <KeepingForm action={action} className="inline">
         <input type="hidden" name="block_id" value={blockId} />
         <button
           type="submit"
@@ -142,7 +144,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
         >
           {c.unblock}
         </button>
-      </form>
+      </KeepingForm>
     );
   }
 
@@ -159,7 +161,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="mt-2 flex w-full flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
@@ -190,6 +192,6 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

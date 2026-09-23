@@ -90,3 +90,60 @@ export function signInUrlFor(pathname: string, search?: string): string {
   if (safe === '' || safe === DEFAULT_NEXT) return '/autentificare';
   return `/autentificare?next=${encodeURIComponent(safe)}`;
 }
+
+/**
+ * A link to an authentication page that carries the place to come back to.
+ *
+ * Every page on the way — sign-in, the switch to sign-up, the confirmation
+ * screen, the password reset and the page that sets the new password —
+ * passes `next` along, so a person who started signing in from step four
+ * of a form lands on step four, whichever way they went. A `next` that is
+ * not a safe internal path, or is the default anyway, is left off.
+ */
+export function withNext(path: string, next: string | null | undefined): string {
+  const safe = safeNextPath(next, '');
+  if (safe === '' || safe === DEFAULT_NEXT) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}next=${encodeURIComponent(safe)}`;
+}
+
+/** Pages that exist only for somebody who is not signed in yet. */
+export const AUTH_PAGES = ['/autentificare', '/inregistrare'] as const;
+
+function isAuthPage(path: string): boolean {
+  const pathname = path.split(/[?#]/)[0] ?? path;
+  return AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Where a person who is signed in goes from a sign-in or sign-up page.
+ *
+ * Before, always the dashboard — so somebody who pressed „Intră în cont"
+ * on step four of a form, while already signed in in another tab, was
+ * taken away from the form they were filling in. Now, the `next` they
+ * carried, when it is a safe internal path. Never back to a sign-in page,
+ * which would redirect here again, for ever.
+ */
+export function returnPathAfterAuth(raw: string | null | undefined): string {
+  const safe = safeNextPath(raw, DEFAULT_NEXT);
+  return isAuthPage(safe) ? DEFAULT_NEXT : safe;
+}
+
+/**
+ * The header's „Autentificare", from the page it is pressed on.
+ *
+ * Pressed in the middle of a form, it used to open a sign-in that came
+ * back to the dashboard. Now it comes back to the page — the step, the
+ * filters — and on a sign-in or sign-up page it keeps the `next` that
+ * page already carries instead of pointing at itself. On the homepage
+ * there is nothing to come back to.
+ */
+export function signInLinkFor(pathname: string, search: string): string {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  if (isAuthPage(pathname) || pathname === '/reconectat') {
+    return withNext('/autentificare', params.get('next'));
+  }
+  if (pathname === '/') return '/autentificare';
+  const query = params.toString();
+  return withNext('/autentificare', `${pathname}${query === '' ? '' : `?${query}`}`);
+}

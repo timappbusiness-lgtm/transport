@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import { seriesStateAction, type SeriesState } from '@/app/cont/trasee/series-actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -8,6 +7,8 @@ import { StatusBadge } from '@/components/ui/primitives';
 import { departuresCopy } from '@/content/departures';
 import { describe as describeRule } from '@/lib/recurrence';
 import type { SeriesRow } from '@/lib/series-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: SeriesState = {};
 const c = departuresCopy.series;
@@ -20,7 +21,7 @@ const c = departuresCopy.series;
  * are de făcut, iar un „Pe pauză" fără motiv îl trimite să ne scrie.
  */
 export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readonly string[] }) {
-  const [state, action, pending] = useActionState(seriesStateAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(seriesStateAction, EMPTY);
 
   const ended = row.ended_at !== null;
   const rule = describeRule({
@@ -50,7 +51,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
         </div>
 
         {!ended ? (
-          <form action={action} className="flex flex-wrap gap-2">
+          <KeepingForm action={action} className="flex flex-wrap gap-2">
             <input type="hidden" name="series_id" value={row.id} />
             <button
               type="submit"
@@ -70,7 +71,7 @@ export function SeriesCard({ row, upcoming }: { row: SeriesRow; upcoming: readon
             >
               {c.end}
             </button>
-          </form>
+          </KeepingForm>
         ) : null}
       </div>
 

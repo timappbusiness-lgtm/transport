@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useRef } from 'react';
+
 import {
   setQuietHoursAction,
   type NotificationActionState,
@@ -8,15 +9,21 @@ import {
 import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/form';
 import { pushCopy } from '@/content/notificari';
 import type { QuietHours } from '@/lib/notifications-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: NotificationActionState = {};
 const c = pushCopy.settings.quiet;
 
 export function QuietHoursForm({ quiet }: { quiet: QuietHours }) {
-  const [state, action] = useActionState(setQuietHoursAction, EMPTY);
+  const [state, action] = useKeptActionState(setQuietHoursAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
 
   return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-4" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[60ch] text-body text-muted">{c.lede}</p>
@@ -50,6 +57,6 @@ export function QuietHoursForm({ quiet }: { quiet: QuietHours }) {
       </p>
 
       <SubmitButton className="sm:w-auto sm:px-8 sm:self-start">Salvează</SubmitButton>
-    </form>
+    </KeepingForm>
   );
 }

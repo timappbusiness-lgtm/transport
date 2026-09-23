@@ -8,6 +8,7 @@ import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
 import { isManager } from '@/lib/auth/account';
 import { requireManagerContext } from '@/lib/auth/guards';
 import { createClient } from '@/lib/supabase/server';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 export const metadata: Metadata = { title: accountCopy.members.title };
 
@@ -101,7 +102,7 @@ export default async function Page() {
                 </div>
 
                 {canManage && member.role !== 'owner' && !isSelf ? (
-                  <form action={changeMemberRoleAction} className="flex items-center gap-2">
+                  <KeepingForm action={changeMemberRoleAction} className="flex items-center gap-2">
                     <input type="hidden" name="userId" value={member.user_id} />
                     <label className="sr-only" htmlFor={`role-${member.user_id}`}>
                       {c.role}
@@ -121,7 +122,7 @@ export default async function Page() {
                     <button type="submit" className={buttonClasses('secondary', 'sm')}>
                       Salvează
                     </button>
-                  </form>
+                  </KeepingForm>
                 ) : (
                   <span className="font-mono text-small text-muted">
                     {MEMBER_ROLE_LABELS[member.role] ?? member.role}
@@ -129,12 +130,12 @@ export default async function Page() {
                 )}
 
                 {canManage && member.role !== 'owner' && !isSelf ? (
-                  <form action={removeMemberAction}>
+                  <KeepingForm action={removeMemberAction}>
                     <input type="hidden" name="userId" value={member.user_id} />
                     <button type="submit" className="text-small text-danger underline-offset-4 hover:underline">
                       {c.remove}
                     </button>
-                  </form>
+                  </KeepingForm>
                 ) : null}
               </li>
             );
@@ -160,12 +161,12 @@ export default async function Page() {
                   </p>
                 </div>
                 {canManage ? (
-                  <form action={revokeInvitationAction}>
+                  <KeepingForm action={revokeInvitationAction}>
                     <input type="hidden" name="invitationId" value={invitation.id} />
                     <button type="submit" className="text-small text-danger underline-offset-4 hover:underline">
                       {c.revoke}
                     </button>
-                  </form>
+                  </KeepingForm>
                 ) : null}
               </li>
             ))}

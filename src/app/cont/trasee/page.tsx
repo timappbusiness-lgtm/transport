@@ -14,6 +14,7 @@ import { requireAccountContext } from '@/lib/auth/account';
 import { DIRECTION_LABELS, formatWindow, readWaypoints } from '@/lib/departures';
 import { loadSeries, loadUpcoming } from '@/lib/series-source';
 import { createClient } from '@/lib/supabase/server';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 export const metadata: Metadata = { title: departuresCopy.mine.title };
 
@@ -227,7 +228,7 @@ export default async function Page() {
                         >
                           Vezi pe bursă
                         </Link>
-                        <form action={stopDepartureAction}>
+                        <KeepingForm action={stopDepartureAction}>
                           <input type="hidden" name="departure_id" value={departure.id} />
                           <button
                             type="submit"
@@ -235,11 +236,11 @@ export default async function Page() {
                           >
                             {c.stop}
                           </button>
-                        </form>
+                        </KeepingForm>
                       </>
                     ) : null}
 
-                    <form action={duplicateAsReturnAction}>
+                    <KeepingForm action={duplicateAsReturnAction}>
                       <input type="hidden" name="departure_id" value={departure.id} />
                       <button
                         type="submit"
@@ -247,7 +248,7 @@ export default async function Page() {
                       >
                         {c.duplicate}
                       </button>
-                    </form>
+                    </KeepingForm>
                   </div>
                 </li>
               );

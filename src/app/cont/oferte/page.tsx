@@ -68,20 +68,43 @@ function parseStatus(value: string | null): OfferStatus | null {
  * is decided by what the account does: a carrier lands on „Trimise", a
  * private client on „Primite".
  */
+/**
+ * A link to the list with one filter changed and the others kept. The
+ * status links used to drop „favoriți" and the favourites links dropped
+ * the status, so choosing the second filter undid the first.
+ */
+function offersHref(box: string, status: string | null, favourites: boolean): string {
+  const params = new URLSearchParams({ cutie: box });
+  if (status !== null) params.set('stare', status);
+  if (favourites && box === 'primite') params.set('favoriti', 'da');
+  return `${ROUTES.accountOffers}?${params.toString()}`;
+}
+
 export default async function Page({ searchParams }: { searchParams: Promise<Params> }) {
   const context = await requireAccountContext(ROUTES.accountOffers);
   const params = await searchParams;
 
   const company = context.activeCompany;
   const canSend = company !== null;
-  const box = parseBox(one(params, 'cutie'), canSend);
   const status = parseStatus(one(params, 'stare'));
-
-  const all = await loadMyOffers(box, status);
-
   // A deep link from an e-mail about one offer opens that offer, not a
   // list of twelve with it somewhere inside.
   const only = one(params, 'oferta');
+
+  let box = parseBox(one(params, 'cutie'), canSend);
+  let all = await loadMyOffers(box, status);
+  // The e-mail does not know which side of the offer its reader is on. A
+  // firm that both sends and receives offers defaulted to „trimise" and
+  // found an empty list when the offer was one it had received; the
+  // other box is looked in before the page says there is nothing.
+  if (only !== null && one(params, 'cutie') === null && !all.some((offer) => offer.id === only)) {
+    const other: OfferBox = box === 'trimise' ? 'primite' : 'trimise';
+    const there = await loadMyOffers(other, status);
+    if (there.some((offer) => offer.id === only)) {
+      box = other;
+      all = there;
+    }
+  }
   const byDeepLink = only === null ? all : all.filter((offer) => offer.id === only);
 
   // „Doar favoriți", on received offers. Compares company ids, not
@@ -117,21 +140,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       <nav aria-label="Cutii" className="flex flex-wrap gap-1.5">
         {canSend ? (
-          <Tab href={`${ROUTES.accountOffers}?cutie=trimise`} label="Trimise" active={box === 'trimise'} />
+          <Tab href={offersHref('trimise', status, false)} label="Trimise" active={box === 'trimise'} />
         ) : null}
-        <Tab href={`${ROUTES.accountOffers}?cutie=primite`} label="Primite" active={box === 'primite'} />
+        <Tab href={offersHref('primite', status, onlyFavourites)} label="Primite" active={box === 'primite'} />
       </nav>
 
       {box === 'primite' && company !== null ? (
         <nav aria-label="Favoriți" className="flex flex-wrap gap-1.5">
           <Tab
-            href={`${ROUTES.accountOffers}?cutie=primite`}
+            href={offersHref('primite', status, false)}
             label={favouritesCopy.filterAll}
             active={!onlyFavourites}
             small
           />
           <Tab
-            href={`${ROUTES.accountOffers}?cutie=primite&favoriti=da`}
+            href={offersHref('primite', status, true)}
             label={favouritesCopy.filter}
             active={onlyFavourites}
             small
@@ -140,11 +163,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       ) : null}
 
       <nav aria-label="Stare" className="flex flex-wrap gap-1.5">
-        <Tab href={`${ROUTES.accountOffers}?cutie=${box}`} label="Toate" active={status === null} small />
+        <Tab href={offersHref(box, null, onlyFavourites)} label="Toate" active={status === null} small />
         {OFFER_STATUS_ORDER.map((value) => (
           <Tab
             key={value}
-            href={`${ROUTES.accountOffers}?cutie=${box}&stare=${value}`}
+            href={offersHref(box, value, onlyFavourites)}
             label={OFFER_STATUS_LABELS[value]}
             active={status === value}
             small

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { handleReportAction, type ReportAdminState } from '@/app/admin/sesizari/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
@@ -14,6 +14,8 @@ import {
   reportedEntity,
   type ReportRow as Row,
 } from '@/lib/reports';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ReportAdminState = {};
 const c = reportsCopy;
@@ -43,7 +45,7 @@ function when(value: string | null): string {
  * you press the button is a field people meet as an error.
  */
 export function ReportRow({ row }: { row: Row }) {
-  const [state, action, pending] = useActionState(handleReportAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(handleReportAction, EMPTY);
   const [open, setOpen] = useState(row.status === 'open' || row.status === 'investigating');
   const id = useId();
 
@@ -136,7 +138,7 @@ export function ReportRow({ row }: { row: Row }) {
       ) : null}
 
       {open ? (
-        <form action={action} className="mt-5 flex flex-col gap-3 border-t border-border pt-4">
+        <KeepingForm action={action} className="mt-5 flex flex-col gap-3 border-t border-border pt-4">
           <input type="hidden" name="report_id" value={row.id} />
 
           <label htmlFor={`${id}-res`} className="flex flex-col gap-1.5 text-body">
@@ -216,7 +218,7 @@ export function ReportRow({ row }: { row: Row }) {
               {state.notice}
             </p>
           ) : null}
-        </form>
+        </KeepingForm>
       ) : null}
     </li>
   );

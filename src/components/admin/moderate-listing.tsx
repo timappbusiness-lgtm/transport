@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   hideListingAction,
   restoreListingAction,
@@ -9,6 +9,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ModerationState = {};
 const c = messagesCopy.admin.listings;
@@ -30,7 +32,7 @@ export function ModerateListing({
   routeId?: string;
   hidden: boolean;
 }) {
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     hidden ? restoreListingAction : hideListingAction,
     EMPTY,
   );
@@ -52,7 +54,7 @@ export function ModerateListing({
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3"
     >
@@ -87,6 +89,6 @@ export function ModerateListing({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

@@ -200,6 +200,58 @@ existat în proiectul ăsta și este scrisă cu prețul lui. Auditul întreg est
     `alter default privileges ... on tables` nu deosebește o vedere de o
     tabelă, iar pe tabele `authenticated` chiar scrie, sub politici.
 
+## Continuity: nobody types anything twice
+
+`/cerere/noua` kept its step in `useState`: a refresh on step 3 or the way
+back from signing in landed on step 1. Looking for the same class of bug
+found it in every form on the platform — a validation error that emptied
+the form, a dropped connection that replaced it with the error page, an
+expired session that redirected it away, a clarification button that
+cleared its own text before sending it. The audit, flow by flow, with the
+six interruptions each one now survives, is `docs/16-continuitate.md`.
+A new screen follows these:
+
+1. **A form uses `KeepingForm` and `useKeptActionState`**, never a bare
+   `<form action={fn}>` or `useActionState`. A dropped connection, a
+   server error, an expired session and a page left behind by a deploy
+   become a sentence beside the fields; nothing is cleared. A form that
+   should be empty after a success says so with `resetOn`.
+2. **A step is in the address** (`?pas=`, `src/lib/continuity/steps.ts`),
+   checked on arrival with `reachableStep`: a step whose earlier steps
+   are incomplete shows the first incomplete one, without messages on
+   steps nobody reached. Each step is a history entry.
+3. **A long form keeps a draft** with `useFormDraft` (or `useDraft`,
+   `useTextDraft`): in the browser always, on the account
+   (`form_drafts`) once signed in, newest wins, with `DraftStatus` and
+   `DraftRestored`. A new form key is added to `DRAFT_FORMS` **and** to the
+   table's check constraint in a migration, or to `LOCAL_DRAFT_FORMS` when
+   it stays in the browser. The action that finishes the form deletes the
+   account copy (`deleteServerDraft`) and redirects with `doneUrl`, which
+   clears the browser copy.
+4. **A settings form asks once before leaving with unsaved changes**
+   (`useUnsavedGuard`) and never after a successful save.
+5. **Every way to sign in carries the way back.** Links use `withNext`;
+   `next` goes through `safeNextPath` and lands with `returnPathAfterAuth`
+   — internal paths only, never back onto a sign-in page. A page that
+   sends people to sign in passes the exact place, step and filters
+   included.
+6. **An action never redirects to sign-in.** It calls
+   `requireAccountContext` / `redirectToSignIn`, which throw the
+   session-expired error inside an action; the form keeps its fields and
+   offers a sign-in in a new tab. The middleware does not redirect server
+   actions. The notice with that link comes with `KeepingForm` and the
+   `/cont` and `/admin` shells — never the root layout, where one more
+   client component left the 404 page blank one load in a few hundred.
+7. **An upload that fails keeps the file** and offers „Încearcă din nou";
+   a retry does not upload twice. Photos are drawn down with
+   `shrinkPhoto` before a server action (4 MB ceiling); a photo taken in
+   the field goes through IndexedDB (`pending-uploads.ts`) until the
+   server has it.
+8. **A list's filters, sort and page are in the address**, and a link that
+   changes one keeps the others (`withParam`). A detail page links back to
+   its board with `BackToBoard`. An e-mail links to the exact place — the
+   conversation, the section, the anchor — not to a list.
+
 ## Commands
 
 ```bash

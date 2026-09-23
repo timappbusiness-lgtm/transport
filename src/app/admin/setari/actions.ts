@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { adminDirectoryCopy } from '@/content/admin-directory';
 import { personalDataCopy } from '@/content/date-personale';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { createClient } from '@/lib/supabase/server';
@@ -37,7 +37,8 @@ export async function setDirectorySettingsAction(
   formData: FormData,
 ): Promise<SettingsActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const statsMin = whole(formData, 'stats_min_companies');
   const directoryMin = whole(formData, 'directory_min_companies');
@@ -86,7 +87,8 @@ export async function setDeletionSettingsAction(
   formData: FormData,
 ): Promise<SettingsActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: personalDataCopy.admin.settings.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: personalDataCopy.admin.settings.noAccess };
 
   const graceDays = whole(formData, 'grace_days');
   const months = whole(formData, 'contact_reveal_months');

@@ -12759,6 +12759,152 @@ select pg_temp.check('SMS  and nobody else can', 'fix',
   $a$update public.phone_verification_settings set max_attempts = 20 where id$a$, 'blocked',
   p_verify => $v$select max_attempts = 5 from public.phone_verification_settings$v$);
 
+-- =====================================================================
+-- DRF - ciorne de formular (20261007100000)
+--
+-- A draft is the person's own and nobody else's, in every direction; the
+-- database, not the form, keeps the keys and the size honest; and the
+-- nightly job and the data export both know the table exists.
+-- =====================================================================
+
+select pg_temp.check('DRF  a person saves a draft of their own', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, step, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'cerere', 'contact', '{"fromCity":"Cluj"}')$a$,
+  'allowed');
+
+select pg_temp.check('DRF  and reads it back', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select payload ->> 'fromCity' = 'Cluj' from public.form_drafts where form_key = 'cerere'$a$,
+  'true',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{"fromCity":"Cluj"}')$s$);
+
+select pg_temp.check('DRF  and updates it', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.form_drafts set step = 'vehicul' where form_key = 'cerere'$a$,
+  'allowed',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}')$s$);
+
+select pg_temp.check('DRF  but cannot write one for somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, payload)
+     values ('f0000000-0000-0000-0000-000000000007', 'cerere', '{}')$a$,
+  'blocked');
+
+select pg_temp.check('DRF  nor read another person''s', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select count(*) = 0 from public.form_drafts where user_id = 'f0000000-0000-0000-0000-000000000006'$a$,
+  'true',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{"contactPhone":"+40722000111"}')$s$);
+
+select pg_temp.check('DRF  nor change it', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$update public.form_drafts set payload = '{}' where user_id = 'f0000000-0000-0000-0000-000000000006'$a$,
+  'blocked',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{"a":1}')$s$,
+  p_verify => $v$select payload = '{"a":1}' from public.form_drafts where user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('DRF  nor delete it', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$delete from public.form_drafts where user_id = 'f0000000-0000-0000-0000-000000000006'$a$,
+  'blocked',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}')$s$,
+  p_verify => $v$select count(*) = 1 from public.form_drafts where user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('DRF  nor move one of theirs to somebody else', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.form_drafts set user_id = 'f0000000-0000-0000-0000-000000000007' where form_key = 'cerere'$a$,
+  'blocked',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}')$s$,
+  p_verify => $v$select count(*) = 0 from public.form_drafts where user_id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+select pg_temp.check('DRF  anon reads nothing', 'fix',
+  null, 'anon',
+  $a$select * from public.form_drafts$a$,
+  'blocked',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}')$s$);
+
+select pg_temp.check('DRF  anon writes nothing', 'fix',
+  null, 'anon',
+  $a$insert into public.form_drafts (user_id, form_key, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}')$a$,
+  'blocked');
+
+select pg_temp.check('DRF  only the forms that keep drafts', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'orice', '{}')$a$,
+  'blocked');
+
+select pg_temp.check('DRF  a step is a slug, not free text', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, step, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'cerere', 'pas; drop table', '{}')$a$,
+  'blocked');
+
+select pg_temp.check('DRF  a payload is an object', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'cerere', '"text"')$a$,
+  'blocked');
+
+select pg_temp.check('DRF  and not free storage', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'cerere',
+             jsonb_build_object('x', (select string_agg(md5(g::text), '') from generate_series(1, 2000) g)))$a$,
+  'blocked');
+
+select pg_temp.check('DRF  a draft past its month is not offered back', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 0 from public.form_drafts where form_key = 'cerere'$a$,
+  'true',
+  -- The trigger stamps updated_at on update only, so an insert can date it.
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload, updated_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}', now() - interval '31 days')$s$);
+
+select pg_temp.check('DRF  and the nightly job removes it', 'fix',
+  null, 'service_role',
+  $a$select public.purge_contact_reveals() >= 0$a$,
+  'true',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload, updated_at)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{}', now() - interval '31 days'),
+                       ('f0000000-0000-0000-0000-000000000007', 'traseu', '{}', now())$s$,
+  p_verify => $v$select count(*) = 1 and bool_and(form_key = 'traseu') from public.form_drafts$v$);
+
+select pg_temp.check('DRF  the job is still one nobody signed in can run', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.purge_contact_reveals()$a$,
+  'blocked');
+
+select pg_temp.check('DRF  the data export includes the drafts', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select jsonb_array_length(public.my_data_export() -> 'ciorne') = 1
+       and public.my_data_export() -> 'ciorne' -> 0 ->> 'formular' = 'cerere'$a$,
+  'true',
+  p_setup => $s$insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-000000000006', 'cerere', '{"fromCity":"Cluj"}')$s$);
+
+select pg_temp.check('DRF  and a deleted account takes its drafts with it', 'fix',
+  null, 'service_role',
+  $a$select true$a$,
+  'true',
+  -- A person made for this check alone, with nothing else pointing at them.
+  p_setup => $s$insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data)
+                values ('f0000000-0000-0000-0000-0000000000d1', 'rls-drafts@test.ro', now(),
+                        '{"full_name":"Ciornă","account_type":"individual"}');
+                insert into public.form_drafts (user_id, form_key, payload)
+                values ('f0000000-0000-0000-0000-0000000000d1', 'cerere', '{}')$s$,
+  p_after => $s$delete from auth.users where id = 'f0000000-0000-0000-0000-0000000000d1'$s$,
+  p_verify => $v$select count(*) = 0 from public.form_drafts where user_id = 'f0000000-0000-0000-0000-0000000000d1'$v$);
+
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
               count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),

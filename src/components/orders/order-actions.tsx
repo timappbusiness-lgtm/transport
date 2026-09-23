@@ -1,6 +1,9 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { DraftRestored } from '@/components/continuity/draft-status';
+import { browserStorage, clearDraft, draftKey } from '@/lib/continuity/drafts';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 import {
   assignCrewAction,
   cancelOrderAction,
@@ -25,6 +28,8 @@ import {
   type OrderSide,
 } from '@/lib/orders';
 import type { CrewOption, DisputeReason } from '@/lib/orders-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OrderState = {};
 const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
@@ -80,11 +85,11 @@ function SimpleStep({
   action: NextAction;
   gaps: readonly string[];
 }) {
-  const [state, submit, pending] = useActionState(transitionOrderAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(transitionOrderAction, EMPTY);
   const blocked = gaps.length > 0;
 
   return (
-    <form action={submit} className="flex flex-col gap-2">
+    <KeepingForm action={submit} className="flex flex-col gap-2">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value={action.to} />
       <button
@@ -98,7 +103,7 @@ function SimpleStep({
         <p className="text-small text-muted">{ordersCopy.actions.missing([...gaps])}</p>
       ) : null}
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -111,7 +116,7 @@ function ScheduleForm({
   action: NextAction;
   needsCrew: boolean;
 }) {
-  const [state, submit, pending] = useActionState(transitionOrderAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(transitionOrderAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
   const pickup = action.to === 'pickup_scheduled';
@@ -136,7 +141,7 @@ function ScheduleForm({
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <KeepingForm action={submit} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value={action.to} />
 
@@ -176,7 +181,7 @@ function ScheduleForm({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -192,7 +197,7 @@ export function AssignCrew({
   driverId: string | null;
   vehicleId: string | null;
 }) {
-  const [state, submit, pending] = useActionState(assignCrewAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(assignCrewAction, EMPTY);
   const [open, setOpen] = useState(driverId === null || vehicleId === null);
   const id = useId();
 
@@ -212,7 +217,7 @@ export function AssignCrew({
   }
 
   return (
-    <form action={submit} className="mt-3 flex flex-col gap-3">
+    <KeepingForm action={submit} className="mt-3 flex flex-col gap-3">
       <input type="hidden" name="order_id" value={orderId} />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -275,19 +280,52 @@ export function AssignCrew({
         <FormError>{state.fieldErrors.vehicle_id}</FormError>
       ) : null}
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
 /** The nine lines a driver walks round the car for. */
 export function ConditionForm({ orderId }: { orderId: string }) {
-  const [state, submit, pending] = useActionState(saveChecklistAction, EMPTY);
-  const id = useId();
+  const [state, submit, pending] = useKeptActionState(saveChecklistAction, EMPTY);
 
-  if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
+  if (state.notice !== undefined) return <ConditionSaved orderId={orderId} notice={state.notice} />;
+  return <ConditionFields orderId={orderId} state={state} submit={submit} pending={pending} />;
+}
+
+/** Saved: the phone's copy of the checklist is no longer needed. */
+function ConditionSaved({ orderId, notice }: { orderId: string; notice: string }) {
+  useEffect(() => {
+    clearDraft(browserStorage(), draftKey('stare', orderId));
+  }, [orderId]);
+  return <FormNotice>{notice}</FormNotice>;
+}
+
+/**
+ * The checklist, kept on the phone as it is filled in: a driver who is
+ * interrupted halfway round the car — a call, a locked screen, a page
+ * that reloads when the signal comes back — finds the nine answers where
+ * they left them.
+ */
+function ConditionFields({
+  orderId,
+  state,
+  submit,
+  pending,
+}: {
+  orderId: string;
+  state: OrderState;
+  submit: (formData: FormData) => void;
+  pending: boolean;
+}) {
+  const id = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(formRef, { form: 'stare', scope: orderId, signedIn: false });
 
   return (
-    <form action={submit} className="flex flex-col gap-3">
+    <KeepingForm ref={formRef} action={submit} className="flex flex-col gap-3">
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <input type="hidden" name="order_id" value={orderId} />
       <p className="text-body text-muted">{ordersCopy.checklist.lede}</p>
 
@@ -336,7 +374,7 @@ export function ConditionForm({ orderId }: { orderId: string }) {
         {pending ? ordersCopy.actions.saving : ordersCopy.checklist.save}
       </button>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -350,12 +388,12 @@ export function ConditionForm({ orderId }: { orderId: string }) {
  * is not the person at the kerb.
  */
 export function HandoverForm({ orderId }: { orderId: string }) {
-  const [state, submit, pending] = useActionState(transitionOrderAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(transitionOrderAction, EMPTY);
   const [code, setCode] = useState('');
   const id = useId();
 
   return (
-    <form action={submit} className="flex flex-col gap-3">
+    <KeepingForm action={submit} className="flex flex-col gap-3">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value="vehicle_delivered" />
 
@@ -383,7 +421,7 @@ export function HandoverForm({ orderId }: { orderId: string }) {
         {ordersCopy.handover.deliver}
       </button>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -412,11 +450,11 @@ export function ConfirmDelivery({
   hours: number;
   now: string;
 }) {
-  const [state, submit, pending] = useActionState(transitionOrderAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(transitionOrderAction, EMPTY);
   const deadline = confirmationDeadline(deliveredAt, hours, new Date(now));
 
   return (
-    <form action={submit} className="flex flex-col gap-3 rounded-card border border-foreground/35 bg-ground-alt p-5">
+    <KeepingForm action={submit} className="flex flex-col gap-3 rounded-card border border-foreground/35 bg-ground-alt p-5">
       <input type="hidden" name="order_id" value={orderId} />
       <input type="hidden" name="to" value="order_completed" />
 
@@ -436,13 +474,13 @@ export function ConfirmDelivery({
         {ordersCopy.confirm.submit}
       </button>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
 /** Cancelling, before the car is on the lorry. */
 export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSide }) {
-  const [state, submit, pending] = useActionState(cancelOrderAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(cancelOrderAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -461,7 +499,7 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-3 rounded-card border border-danger/40 bg-danger/8 p-4">
+    <KeepingForm action={submit} className="flex flex-col gap-3 rounded-card border border-danger/40 bg-danger/8 p-4">
       <input type="hidden" name="order_id" value={orderId} />
       <p className="text-body font-medium">{ordersCopy.cancel.title}</p>
       <p className="text-body text-muted">{ordersCopy.cancel.body}</p>
@@ -508,7 +546,7 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -520,7 +558,7 @@ export function OpenDispute({
   orderId: string;
   reasons: readonly DisputeReason[];
 }) {
-  const [state, submit, pending] = useActionState(openDisputeAction, EMPTY);
+  const [state, submit, pending] = useKeptActionState(openDisputeAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -539,7 +577,7 @@ export function OpenDispute({
   }
 
   return (
-    <form action={submit} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-4">
+    <KeepingForm action={submit} className="flex flex-col gap-3 rounded-card border border-warning/45 bg-warning/8 p-4">
       <input type="hidden" name="order_id" value={orderId} />
       <p className="text-body font-medium">{ordersCopy.dispute.title}</p>
       <p className="max-w-[60ch] text-body text-muted">{ordersCopy.dispute.lede}</p>
@@ -588,6 +626,6 @@ export function OpenDispute({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

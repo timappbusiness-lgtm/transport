@@ -94,7 +94,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           nu e nevoie de niciun efect care să o golească. Un eșec nu
           schimbă numărul, deci textul rămâne — exact când omul trebuie
           să reîncerce cu el. */}
-      <Composer key={messages.length} conversationId={conversation.id} />
+      <Composer conversationId={conversation.id} />
     </div>
   );
 }

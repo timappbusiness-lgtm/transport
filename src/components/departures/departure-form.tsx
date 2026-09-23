@@ -1,6 +1,8 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 import { createDepartureAction, type DepartureActionState } from '@/app/cont/trasee/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -19,6 +21,8 @@ import {
 } from '@/lib/recurrence';
 import { COUNTRY_OPTIONS, formatPlate } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: DepartureActionState = {};
 const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
@@ -62,9 +66,14 @@ function Labelled({
  * refuses a suspended company or a vehicle whose ITP, RCA or copie conformă
  * has lapsed, and the plan quota refuses a fourth active listing on the free
  * plan. Both raise written Romanian messages, which appear above the button.
+ *
+ * The draft is kept on every change, in the browser and on the account,
+ * series options included: a refresh, a refused publish or the phone
+ * finishing what the desktop started loses nothing. The action clears it
+ * once the departure is published (`?gata=traseu`).
  */
 export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
-  const [state, action] = useActionState(createDepartureAction, EMPTY);
+  const [state, action] = useKeptActionState(createDepartureAction, EMPTY);
   const id = useId();
   const c = departuresCopy.form;
   const r = departuresCopy.series;
@@ -74,9 +83,29 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
   // nu a bifat, iar cei mai mulți o lasă nebifată.
   const [repeats, setRepeats] = useState(false);
   const [kind, setKind] = useState<RecurrenceKind>('saptamanal');
+  const formRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(formRef, {
+    form: 'traseu',
+    signedIn: true,
+    onRestore: (values) => {
+      setRepeats(Array.isArray(values.repeats) && values.repeats.length > 0);
+      const restoredKind = values.recurrence_kind;
+      if (restoredKind === 'saptamanal' || restoredKind === 'la_n_zile') setKind(restoredKind);
+    },
+  });
 
   return (
-    <form action={action} className="flex flex-col gap-6" noValidate>
+    <KeepingForm ref={formRef} action={action} className="flex flex-col gap-6" noValidate>
+      {draft.restored !== null ? (
+        <DraftRestored
+          savedAt={draft.restored.savedAt}
+          onStartOver={() => {
+            draft.startOver();
+            setRepeats(false);
+            setKind('saptamanal');
+          }}
+        />
+      ) : null}
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-body font-medium">{c.direction}</legend>
         {(
@@ -351,7 +380,8 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
             {c.saveDraft}
           </button>
         ) : null}
+        <DraftStatus status={draft.status} />
       </div>
-    </form>
+    </KeepingForm>
   );
 }

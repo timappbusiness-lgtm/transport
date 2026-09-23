@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { signInLinkFor } from '@/lib/auth/next-path';
 import { Badge } from '@/components/ui/badge';
 import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
@@ -12,6 +13,7 @@ import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { PUBLIC_NAV, currentPublicHref, type BadgedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 export interface HeaderUser {
   name: string;
@@ -335,7 +337,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                     </Link>
                   );
                 })}
-                <form action={signOutAction} className="border-t border-border">
+                <KeepingForm action={signOutAction} className="border-t border-border">
                   <button
                     type="submit"
                     role="menuitem"
@@ -343,7 +345,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                   >
                     {accountCopy.nav.signOut}
                   </button>
-                </form>
+                </KeepingForm>
               </div>
             ) : null}
           </div>
@@ -352,9 +354,19 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
         <div className="flex items-center gap-1.5">
           {/* Visible at every width: off the homepage there is no other way
               into sign-in from the header on a phone. */}
-          <Link href={ROUTES.signIn} className={PILL_QUIET}>
-            Autentificare
-          </Link>
+          {/* The query is read in a boundary of its own: on a page drawn
+              ahead of time, `useSearchParams` leaves everything up to the
+              nearest boundary for the browser to draw, and without this
+              one that is the whole header — on every such page. */}
+          <Suspense
+            fallback={
+              <Link href={signInLinkFor(pathname, '')} className={PILL_QUIET}>
+                Autentificare
+              </Link>
+            }
+          >
+            <SignInLink pathname={pathname} />
+          </Suspense>
           <Link href={ROUTES.newRequest} className={PILL_SOLID}>
             {/* The full label and the brand and sign-in together need more
                 room than a 360px phone has. Only one of the two is in the
@@ -365,6 +377,16 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
         </div>
       )}
     </>
+  );
+}
+
+/** „Autentificare", coming back to this page with its query: the step, the filters. */
+function SignInLink({ pathname }: { pathname: string }) {
+  const search = useSearchParams()?.toString() ?? '';
+  return (
+    <Link href={signInLinkFor(pathname, search)} className={PILL_QUIET}>
+      Autentificare
+    </Link>
   );
 }
 

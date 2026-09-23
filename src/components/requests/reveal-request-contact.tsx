@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import Link from 'next/link';
 import { revealRequestContactAction, type RevealRequestState } from '@/app/cerere/actions';
 import { FormError } from '@/components/auth/form';
@@ -8,6 +7,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { isQuotaError } from '@/lib/errors';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RevealRequestState = {};
 
@@ -30,7 +31,7 @@ export function RevealRequestContact({
   /** Secondary when an offer form sits above it: one primary per column. */
   variant?: 'primary' | 'secondary';
 }) {
-  const [state, action] = useActionState(revealRequestContactAction, EMPTY);
+  const [state, action] = useKeptActionState(revealRequestContactAction, EMPTY);
   const c = requestsCopy.detail;
 
   if (state.contact) {
@@ -58,7 +59,7 @@ export function RevealRequestContact({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="request_id" value={requestId} />
       <button type="submit" className={buttonClasses(variant, 'md')}>
         {signedIn ? c.contact : c.contactHidden}
@@ -74,6 +75,6 @@ export function RevealRequestContact({
           </Link>
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

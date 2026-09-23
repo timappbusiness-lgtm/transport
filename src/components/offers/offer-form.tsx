@@ -1,6 +1,10 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { clearDraftAction } from '@/app/draft-actions';
+import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status';
+import { browserStorage, clearDraft, draftKey } from '@/lib/continuity/drafts';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 import Link from 'next/link';
 import { sendOfferAction, type OfferState } from '@/app/cont/oferte/actions';
 import { buttonClasses } from '@/components/ui/button';
@@ -9,6 +13,8 @@ import { offersCopy } from '@/content/oferte';
 import { CURRENCIES, formatMoney, priceCeiling, type Currency, type OfferSettings } from '@/lib/offers';
 import type { EligibleVehicle } from '@/lib/offers-source';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.form;
@@ -44,10 +50,25 @@ export function OfferForm({
   priceRange?: { low: string; high: string } | undefined;
   label?: string | undefined;
 }) {
-  const [state, action, pending] = useActionState(sendOfferAction, EMPTY);
-  const [open, setOpen] = useState(false);
-  const [currency, setCurrency] = useState<Currency>('RON');
-  const id = useId();
+  const [state, action, pending] = useKeptActionState(sendOfferAction, EMPTY);
+  const key = draftKey('oferta', listingId);
+  // A draft of this offer in the browser opens the form by itself: the
+  // price typed before a refresh is waiting in it.
+  const hasDraft = useSyncExternalStore(
+    subscribeNothing,
+    () => browserStorage()?.getItem(key) != null,
+    () => false,
+  );
+  const [chosen, setOpen] = useState<boolean | null>(null);
+  const open = chosen ?? hasDraft;
+
+  // Sent: the draft has done its job, here and on the account.
+  const sent = state.notice !== undefined;
+  useEffect(() => {
+    if (!sent) return;
+    clearDraft(browserStorage(), key);
+    clearDraftAction('oferta', listingId).catch(() => {});
+  }, [sent, key, listingId]);
 
   if (state.notice !== undefined) {
     return (
@@ -68,14 +89,82 @@ export function OfferForm({
     );
   }
 
+  return (
+    <OfferFields
+      state={state}
+      action={action}
+      pending={pending}
+      onClose={() => setOpen(false)}
+      listingId={listingId}
+      loadingFrom={loadingFrom}
+      vehicles={vehicles}
+      needsVehicle={needsVehicle}
+      settings={settings}
+      priceRange={priceRange}
+    />
+  );
+}
+
+function subscribeNothing() {
+  return () => {};
+}
+
+/**
+ * The form itself, mounted while it is open. Its draft is kept on every
+ * change — in the browser and on the account — so closing it, a refresh,
+ * or a request that fails loses nothing; „Închide" hides the form and
+ * keeps the draft, „Începe din nou" throws it away.
+ */
+function OfferFields({
+  state,
+  action,
+  pending,
+  onClose,
+  listingId,
+  loadingFrom,
+  vehicles,
+  needsVehicle,
+  settings,
+  priceRange,
+}: {
+  state: OfferState;
+  action: (formData: FormData) => void;
+  pending: boolean;
+  onClose: () => void;
+  listingId: string;
+  loadingFrom: string;
+  vehicles: readonly EligibleVehicle[];
+  needsVehicle: boolean;
+  settings: OfferSettings;
+  priceRange?: { low: string; high: string } | undefined;
+}) {
+  const [currency, setCurrency] = useState<Currency>('RON');
+  const formRef = useRef<HTMLFormElement>(null);
+  const id = useId();
+  const draft = useFormDraft(formRef, {
+    form: 'oferta',
+    scope: listingId,
+    signedIn: true,
+    onRestore: (values) => {
+      const restored = values.currency;
+      if (typeof restored === 'string' && (CURRENCIES as readonly string[]).includes(restored)) {
+        setCurrency(restored as Currency);
+      }
+    },
+  });
+
   const noVehicle = needsVehicle && vehicles.length === 0;
 
   return (
-    <form
+    <KeepingForm
+      ref={formRef}
       action={action}
       className="flex w-full flex-col gap-4 rounded-card border border-border bg-surface p-4 sm:p-5"
     >
       <input type="hidden" name="listing_id" value={listingId} />
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <input type="hidden" name="loading_from" value={loadingFrom} />
 
       <div>
@@ -242,11 +331,12 @@ export function OfferForm({
         </button>
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={onClose}
           className="text-body text-muted underline underline-offset-4"
         >
           {c.cancel}
         </button>
+        <DraftStatus status={draft.status} />
       </div>
 
       {state.error !== undefined ? (
@@ -261,7 +351,7 @@ export function OfferForm({
           ) : null}
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

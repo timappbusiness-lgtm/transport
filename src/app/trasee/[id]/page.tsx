@@ -26,6 +26,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { IconLabel } from '@/components/ui/icon';
 import { iconForFact } from '@/lib/icons';
+import { BackToBoard } from '@/components/continuity/board-memory';
 
 export const metadata: Metadata = { title: 'Traseu' };
 
@@ -67,12 +68,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <p className="mb-6 text-body">
-        <Link
-          href={ROUTES.routes}
+        <BackToBoard
+          board={ROUTES.routes}
           className="text-muted underline-offset-4 hover:text-foreground hover:underline"
         >
           ← {c.back}
-        </Link>
+        </BackToBoard>
       </p>
 
       <header className="flex flex-wrap items-start justify-between gap-4">

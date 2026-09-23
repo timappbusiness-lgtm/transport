@@ -5,6 +5,7 @@ import { OFFERED_CATEGORIES, needsDescription } from './vehicle-categories';
 import type { Prefill } from './price-prefill';
 import type { VehicleClass } from './pricing';
 import { validateEmail, validatePhone, type FieldErrors } from './validation/auth';
+import { reachableStep, type StepDefinition } from './continuity/steps';
 
 /**
  * The publish-a-request form, without React and without SQL.
@@ -334,6 +335,48 @@ export function validateStep(
   return errors;
 }
 
+/**
+ * The four steps as the address says them: `?pas=vehicul`, or `?pas=2`.
+ * „traseu" rather than the internal `ruta`, because it is the word on the
+ * stepper.
+ */
+export const REQUEST_STEP_DEFINITION: StepDefinition<RequestStep> = {
+  steps: REQUEST_STEPS,
+  slugs: { ruta: 'traseu', vehicul: 'vehicul', serviciu: 'serviciu', contact: 'contact' },
+};
+
+/**
+ * The step to show for a requested one: itself when every step before it
+ * is complete, otherwise the first that is not. `?pas=contact` on an empty
+ * form is step one, not a contact step with nothing above it.
+ */
+export function reachableRequestStep(
+  draft: RequestDraft,
+  requested: RequestStep,
+  today: string,
+): RequestStep {
+  return reachableStep(
+    requested,
+    REQUEST_STEPS,
+    (step) => Object.keys(validateStep(draft, step, today)).length === 0,
+  );
+}
+
+/**
+ * True when somebody has typed anything into a step. Used to decide
+ * whether a step the form was sent back to should say what is wrong with
+ * it: one the person filled in, yes; one they never reached, no.
+ */
+export function stepHasInput(draft: RequestDraft, step: RequestStep): boolean {
+  const blank = emptyDraft();
+  return STEP_FIELDS[step].some((field) => {
+    const value = draft[field];
+    const initial = blank[field];
+    if (Array.isArray(value) && Array.isArray(initial)) return value.length > 0;
+    return value !== initial;
+  });
+}
+
 export function firstStepWithError(draft: RequestDraft, today: string): RequestStep | null {
   for (const step of REQUEST_STEPS) {
     if (Object.keys(validateStep(draft, step, today)).length > 0) return step;
@@ -373,6 +416,11 @@ export function parseDraft(raw: string | null): RequestDraft | null {
   } catch {
     return null;
   }
+  return parseDraftValue(parsed);
+}
+
+/** The same, for a value already parsed: a draft kept inside an envelope. */
+export function parseDraftValue(parsed: unknown): RequestDraft | null {
   if (typeof parsed !== 'object' || parsed === null) return null;
 
   const source = parsed as Record<string, unknown>;
@@ -384,6 +432,12 @@ export function parseDraft(raw: string | null): RequestDraft | null {
       (draft[key] as boolean) = value;
     } else if (typeof current === 'string' && typeof value === 'string') {
       (draft[key] as string) = value.slice(0, MAX_DESCRIPTION);
+    } else if (Array.isArray(current) && Array.isArray(value)) {
+      // The invited carriers: company ids, kept as they were chosen. The
+      // database checks each one again when the request is sent.
+      (draft[key] as string[]) = value
+        .filter((item): item is string => typeof item === 'string' && item.length <= 64)
+        .slice(0, 50);
     }
   }
   // Two enums, both of which arrive as strings and neither of which may be

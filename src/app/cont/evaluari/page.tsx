@@ -123,7 +123,8 @@ function PendingRow({ row }: { row: PendingRating }) {
 /** O evaluare dată sau primită, cu răspunsul ei dacă există. */
 function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }) {
   return (
-    <Card className="p-5">
+    // The anchor the e-mail about this rating links to.
+    <Card id={row.rating_id !== null ? `evaluare-${row.rating_id}` : undefined} className="scroll-mt-24 p-5">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         {row.score !== null ? <Stars score={row.score} /> : null}
         {row.after_dispute ? (

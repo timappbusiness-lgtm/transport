@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   setPreferenceAction,
   type NotificationActionState,
 } from '@/app/cont/setari/notificari/actions';
 import { pushCopy } from '@/content/notificari';
 import type { NotificationType } from '@/lib/notifications-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: NotificationActionState = {};
 const c = pushCopy.settings.channels;
@@ -19,7 +20,7 @@ const c = pushCopy.settings.channels;
  * to keep clicking it; a sentence says why once.
  */
 export function PreferenceRow({ type }: { type: NotificationType }) {
-  const [state, action] = useActionState(setPreferenceAction, EMPTY);
+  const [state, action] = useKeptActionState(setPreferenceAction, EMPTY);
 
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 py-4">
@@ -87,7 +88,7 @@ function Channel({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-0.5">
+    <KeepingForm action={action} className="flex flex-col gap-0.5">
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="channel" value={channel} />
       <input type="hidden" name="enabled" value={checked ? 'false' : 'true'} />
@@ -100,6 +101,6 @@ function Channel({
         />
         {label}
       </label>
-    </form>
+    </KeepingForm>
   );
 }

@@ -3,7 +3,7 @@ import { AuthCard, TextLink } from '@/components/auth/form';
 import { IndividualSignUpForm } from '@/components/auth/forms';
 import { ROUTES } from '@/config/routes';
 import { authCopy } from '@/content/auth';
-import { safeNextPath } from '@/lib/auth/next-path';
+import { safeNextPath, withNext } from '@/lib/auth/next-path';
 
 export const metadata: Metadata = { title: authCopy.individualSignUp.title };
 
@@ -33,7 +33,7 @@ export default async function Page({
       lede={c.lede}
       footer={
         <p>
-          {c.hasAccount} <TextLink href={ROUTES.signIn}>{c.signIn}</TextLink>
+          {c.hasAccount} <TextLink href={withNext(ROUTES.signIn, next)}>{c.signIn}</TextLink>
         </p>
       }
     >

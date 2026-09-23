@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import { SEO_DATA_TAG } from '@/lib/seo-data-source';
@@ -75,7 +75,8 @@ export async function saveSeoPageAction(
   formData: FormData,
 ): Promise<PageActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: NO_ACCESS };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: NO_ACCESS };
 
   const slug = text(formData, 'slug');
   const { faq, error: faqError } = readFaq(formData);
@@ -103,7 +104,8 @@ export async function setSeoPagePublishedAction(
   formData: FormData,
 ): Promise<PageActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: NO_ACCESS };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: NO_ACCESS };
 
   const slug = text(formData, 'slug');
   const published = text(formData, 'published') === 'true';
@@ -125,7 +127,8 @@ export async function setSeoPagesPublishedByTypeAction(
   formData: FormData,
 ): Promise<PageActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: NO_ACCESS };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: NO_ACCESS };
 
   const type = text(formData, 'type') as SeoPageType;
   const published = text(formData, 'published') === 'true';

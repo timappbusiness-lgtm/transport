@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
+import { doneUrl } from '@/lib/continuity/drafts';
+import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
@@ -38,7 +40,7 @@ type Direction = Database['public']['Enums']['truck_direction'];
 
 async function requireCompany() {
   const context = await getAccountContext();
-  if (!context) redirect(ROUTES.signIn);
+  if (!context) return redirectToSignIn(ROUTES.accountDepartures);
   if (!context.activeCompany) redirect(ROUTES.accountCompanyCreate);
   return { context, company: context.activeCompany };
 }
@@ -219,7 +221,9 @@ export async function createDepartureAction(
 
     revalidatePath(ROUTES.accountDepartures);
     revalidatePath(ROUTES.routes);
-    redirect(ROUTES.accountDepartures);
+    // The form has done its job: its draft goes, here and in the browser.
+    await deleteServerDraft(context.user.id, 'traseu');
+    redirect(doneUrl(ROUTES.accountDepartures, 'traseu'));
   }
 
   const publish = formData.get('intent') === 'publish';
@@ -260,7 +264,8 @@ export async function createDepartureAction(
 
   revalidatePath(ROUTES.accountDepartures);
   revalidatePath(ROUTES.routes);
-  redirect(ROUTES.accountDepartures);
+  await deleteServerDraft(context.user.id, 'traseu');
+  redirect(doneUrl(ROUTES.accountDepartures, 'traseu'));
 }
 
 /** Take a departure off the board. The row stays; only its status changes. */

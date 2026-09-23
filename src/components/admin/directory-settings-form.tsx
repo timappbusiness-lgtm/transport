@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId, useRef } from 'react';
 import {
   setDirectorySettingsAction,
   type SettingsActionState,
@@ -10,16 +10,22 @@ import { buttonClasses } from '@/components/ui/button';
 import { adminDirectoryCopy } from '@/content/admin-directory';
 import type { DirectoryThresholds } from '@/lib/directory';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: SettingsActionState = {};
 const c = adminDirectoryCopy.settings;
 
 export function DirectorySettingsForm({ thresholds }: { thresholds: DirectoryThresholds }) {
-  const [state, action] = useActionState(setDirectorySettingsAction, EMPTY);
+  const [state, action] = useKeptActionState(setDirectorySettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
-    <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id={`${id}-stats`}
@@ -50,7 +56,7 @@ export function DirectorySettingsForm({ thresholds }: { thresholds: DirectoryThr
           <FormError>{state.error}</FormError>
         </div>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 

@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   addFavouriteAction,
   removeFavouriteAction,
@@ -8,6 +7,8 @@ import {
 } from '@/app/cont/favoriti/actions';
 import { FormError } from '@/components/auth/form';
 import { favouritesCopy } from '@/content/favoriti';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: FavouriteState = {};
 const c = favouritesCopy;
@@ -26,13 +27,13 @@ export function FavouriteButton({
   carrierCompanyId: string;
   isFavourite: boolean;
 }) {
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     isFavourite ? removeFavouriteAction : addFavouriteAction,
     EMPTY,
   );
 
   return (
-    <form action={action} className="inline-flex flex-col gap-1">
+    <KeepingForm action={action} className="inline-flex flex-col gap-1">
       <input type="hidden" name="carrier_company_id" value={carrierCompanyId} />
       <button
         type="submit"
@@ -44,6 +45,6 @@ export function FavouriteButton({
         {state.notice ?? (isFavourite ? c.added : c.add)}
       </button>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

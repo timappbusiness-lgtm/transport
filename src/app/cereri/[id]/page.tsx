@@ -33,6 +33,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { IconLabel } from '@/components/ui/icon';
 import { CategoryTile } from '@/components/ui/category-art';
 import { iconForFact } from '@/lib/icons';
+import { BackToBoard } from '@/components/continuity/board-memory';
 
 export const metadata: Metadata = { title: 'Cerere de transport' };
 
@@ -103,9 +104,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="mx-auto w-full max-w-[60rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <p className="text-body">
-        <Link href={ROUTES.requests} className="text-muted underline-offset-4 hover:underline">
+        <BackToBoard board={ROUTES.requests} className="text-muted underline-offset-4 hover:underline">
           ← {c.back}
-        </Link>
+        </BackToBoard>
       </p>
 
       <header className="mt-6">

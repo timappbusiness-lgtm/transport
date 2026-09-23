@@ -117,6 +117,8 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   outcome: 'rezolvată',
   resolution: 'Exemplu: am sunat firma, au confirmat, iar anunțul a fost corectat.',
   order_id: '00000000-0000-4000-8000-000000000005',
+  conversation_id: '00000000-0000-4000-8000-000000000006',
+  rating_id: '00000000-0000-4000-8000-000000000007',
   deadline_hours: '48',
   plate: 'CJ 12 ABC',
   deadline: '5 octombrie 2026',

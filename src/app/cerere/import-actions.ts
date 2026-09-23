@@ -257,3 +257,29 @@ export async function removeRequestPhotoAction(path: string): Promise<void> {
   const supabase = await createClient();
   await supabase.storage.from('listing-photos').remove([path]);
 }
+
+/**
+ * Pictures for photos a draft brought back.
+ *
+ * A photo uploaded before a refresh is still in the bucket and still on
+ * the draft, but its preview was a `blob:` URL of the page that is gone.
+ * The bucket is private, so the preview comes back as a short-lived signed
+ * link — only for paths in the caller's own folder, the same check the
+ * publish action makes.
+ */
+export async function previewRequestPhotosAction(
+  paths: readonly string[],
+): Promise<Record<string, string>> {
+  const context = await getAccountContext();
+  if (context === null) return {};
+  const own = paths.filter((path) => ownsPhotoPath(path, context.user.id)).slice(0, 6);
+  if (own.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data } = await supabase.storage.from('listing-photos').createSignedUrls(own, 60 * 60);
+  const previews: Record<string, string> = {};
+  for (const item of data ?? []) {
+    if (item.path && item.signedUrl) previews[item.path] = item.signedUrl;
+  }
+  return previews;
+}

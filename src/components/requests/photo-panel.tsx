@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState, useTransition } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   removeRequestPhotoAction,
   uploadRequestPhotoAction,
@@ -9,11 +9,11 @@ import { requestsCopy } from '@/content/cereri';
 import {
   ACCEPTED_PHOTO_TYPES,
   MAX_PHOTOS,
-  canResizeInBrowser,
   rejectPhoto,
   remainingPhotoSlots,
-  scaleToFit,
 } from '@/lib/photo-upload';
+import { shrinkPhoto as shrink } from '@/lib/photo-shrink';
+import { buttonClasses } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/icon';
 import { iconForAction } from '@/lib/icons';
@@ -28,50 +28,6 @@ export interface ChosenPhoto {
 }
 
 /**
- * Drawing a photo down to size before it is uploaded.
- *
- * On a phone this is the difference between an upload that finishes and
- * one somebody abandons: a modern camera writes 4–8 MB and four of those
- * over a mobile connection is a minute of nothing happening.
- *
- * HEIC cannot be drawn into a canvas anywhere, so it goes up as it is and
- * the server converts it. Every failure here falls back to the original
- * file rather than refusing: a resize is an optimisation, and an
- * optimisation that can block an upload is a bug.
- */
-async function shrink(file: File): Promise<File> {
-  if (!canResizeInBrowser(file.type)) return file;
-
-  try {
-    const bitmap = await createImageBitmap(file);
-    const { width, height } = scaleToFit(bitmap.width, bitmap.height);
-    if (width === bitmap.width && height === bitmap.height) {
-      bitmap.close();
-      return file;
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d');
-    if (context === null) {
-      bitmap.close();
-      return file;
-    }
-    context.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close();
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', 0.85);
-    });
-    if (blob === null) return file;
-    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
-  } catch {
-    return file;
-  }
-}
-
-/**
  * „Pozele vehiculului".
  *
  * Up to six, from the person's own phone. Before this existed the only
@@ -81,56 +37,74 @@ async function shrink(file: File): Promise<File> {
  */
 export function PhotoPanel({
   photos,
-  onChange,
+  onAdd,
+  onRemove,
 }: {
   photos: ChosenPhoto[];
-  onChange: (next: ChosenPhoto[]) => void;
+  /** One photo, as soon as it is up: a reload after it loses nothing. */
+  onAdd: (photo: ChosenPhoto) => void;
+  onRemove: (photo: ChosenPhoto) => void;
 }) {
   const c = requestsCopy.form.photos;
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  // Files whose upload failed — the connection dropped, the server said
+  // no. They stay chosen, and „Încearcă din nou" sends them again; before,
+  // the loop stopped at the first failure and every file after it was
+  // silently dropped with it.
+  const [failed, setFailed] = useState<File[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const remaining = remainingPhotoSlots(photos.length);
+  const busy = progress !== null;
 
-  async function add(files: FileList) {
+  async function upload(files: File[]) {
     setError(null);
-    const accepted: ChosenPhoto[] = [];
+    const stillFailing: File[] = [];
+    let chosen = photos.length;
+    setProgress({ done: 0, total: files.length });
 
-    for (const file of Array.from(files)) {
-      const rejection = rejectPhoto(file, photos.length + accepted.length);
+    for (const [index, file] of files.entries()) {
+      setProgress({ done: index + 1, total: files.length });
+      const rejection = rejectPhoto(file, chosen);
       if (rejection !== null) {
+        // Said, and the next file is still tried: one wrong file is not a
+        // reason to drop the five right ones after it.
         setError(rejection.message);
-        break;
+        continue;
       }
-
-      const result = await uploadRequestPhotoAction(toFormData(await shrink(file)));
-      if (!result.ok) {
-        setError(result.message);
-        break;
+      try {
+        const result = await uploadRequestPhotoAction(toFormData(await shrink(file)));
+        if (!result.ok) {
+          setError(result.message);
+          stillFailing.push(file);
+          continue;
+        }
+        chosen += 1;
+        onAdd({ path: result.path, preview: URL.createObjectURL(file) });
+      } catch {
+        stillFailing.push(file);
       }
-      accepted.push({ path: result.path, preview: URL.createObjectURL(file) });
     }
 
-    if (accepted.length > 0) onChange([...photos, ...accepted]);
+    setFailed(stillFailing);
+    setProgress(null);
     if (input.current !== null) input.current.value = '';
   }
 
   function remove(photo: ChosenPhoto) {
-    onChange(photos.filter((p) => p.path !== photo.path));
-    URL.revokeObjectURL(photo.preview);
+    onRemove(photo);
+    if (photo.preview.startsWith('blob:')) URL.revokeObjectURL(photo.preview);
     // Fire and forget: the request has not been published, so nothing
     // references the file and a failed delete costs a stray object rather
     // than a broken form.
-    void removeRequestPhotoAction(photo.path);
+    removeRequestPhotoAction(photo.path).catch(() => {});
   }
 
   function pick(files: FileList | null) {
-    if (files === null || files.length === 0) return;
-    startTransition(() => {
-      void add(files);
-    });
+    if (files === null || files.length === 0 || busy) return;
+    void upload(Array.from(files));
   }
 
   return (
@@ -145,8 +119,15 @@ export function PhotoPanel({
               data-photo
               className="relative overflow-hidden rounded-input border border-border bg-surface"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser, never a remote one */}
-              <img src={photo.preview} alt="" className="aspect-square w-full object-cover" />
+              {photo.preview === '' ? (
+                // Brought back by a draft, its picture still on the way.
+                <span className="flex aspect-square w-full items-center justify-center bg-ground-alt px-2 text-center text-small text-muted">
+                  {c.savedPhoto}
+                </span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser, or a short-lived signed link to the person's own photo
+                <img src={photo.preview} alt="" className="aspect-square w-full object-cover" />
+              )}
               {/* A word, not a cross: the button says what it does. */}
               <button
                 type="button"
@@ -197,7 +178,9 @@ export function PhotoPanel({
           </span>
           <span className="text-body font-medium text-foreground">{c.drop}</span>
           <span className="text-small text-muted">
-            {pending ? c.uploading : `${c.dropHint} ${c.remaining(remaining, MAX_PHOTOS)}`}
+            {progress !== null
+              ? c.uploadingOf(progress.done, progress.total)
+              : `${c.dropHint} ${c.remaining(remaining, MAX_PHOTOS)}`}
           </span>
           <input
             id={id}
@@ -205,7 +188,7 @@ export function PhotoPanel({
             type="file"
             multiple
             accept={ACCEPTED_PHOTO_TYPES.join(',')}
-            disabled={pending}
+            disabled={busy}
             aria-label={c.add}
             onChange={(event) => pick(event.target.files)}
             className="sr-only"
@@ -219,6 +202,30 @@ export function PhotoPanel({
         <p role="alert" className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body">
           {error}
         </p>
+      ) : null}
+
+      {failed.length > 0 && !busy ? (
+        <div
+          role="alert"
+          data-photo-failed={failed.length}
+          className="flex flex-wrap items-center gap-3 rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body"
+        >
+          <p className="min-w-0 flex-1">{c.failed(failed.length)}</p>
+          <button
+            type="button"
+            onClick={() => void upload(failed)}
+            className={buttonClasses('secondary', 'sm')}
+          >
+            {c.retry}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFailed([])}
+            className="text-small text-muted underline underline-offset-4 hover:text-foreground"
+          >
+            {c.drop_failed}
+          </button>
+        </div>
       ) : null}
 
     </div>

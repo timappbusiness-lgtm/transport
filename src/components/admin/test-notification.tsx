@@ -1,9 +1,11 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { sendTestNotificationAction, type RetryState } from '@/app/admin/notificari/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { MAIL_TEMPLATES } from '@/content/mail-samples';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RetryState = {};
 const CONTROL =
@@ -17,11 +19,11 @@ const CONTROL =
  * the button works and nothing about the path a notification takes.
  */
 export function TestNotification() {
-  const [state, action, pending] = useActionState(sendTestNotificationAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(sendTestNotificationAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
+    <KeepingForm action={action} className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
       <div>
         <h3 className="text-body">Trimite un e-mail de test</h3>
         <p className="mt-1 max-w-[62ch] text-body text-muted">
@@ -70,6 +72,6 @@ export function TestNotification() {
           {state.notice}
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

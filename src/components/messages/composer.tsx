@@ -1,11 +1,15 @@
 'use client';
 
-import { useActionState, useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { draftKey } from '@/lib/continuity/drafts';
+import { useTextDraft } from '@/lib/continuity/use-text-draft';
 import { sendMessageAction, type MessageState } from '@/app/cont/mesaje/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { messagesCopy } from '@/content/mesaje';
 import { MAX_ATTACHMENTS, MAX_BODY, validateAttachment } from '@/lib/messages';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: MessageState = {};
 const c = messagesCopy.composer;
@@ -21,11 +25,26 @@ const c = messagesCopy.composer;
  * Imaginile se aleg local și se trimit odată cu formularul; nu se
  * încarcă în fundal, pentru că un mesaj pe jumătate trimis dintr-o
  * pagină închisă este o imagine fără mesaj în bucket.
+ *
+ * Textul se păstrează în browser cât e scris (o reîncărcare, un mesaj
+ * primit între timp nu-l mai șterg) și se golește numai după ce a
+ * plecat. Înainte, caseta era remontată la fiecare mesaj nou din fir —
+ * inclusiv la unul primit în timp ce scriai.
  */
 export function Composer({ conversationId }: { conversationId: string }) {
-  const [state, action, pending] = useActionState(sendMessageAction, EMPTY);
-  const [body, setBody] = useState('');
+  const [state, action, pending] = useKeptActionState(sendMessageAction, EMPTY);
+  const [body, setBody, clearBody] = useTextDraft(draftKey('mesaj', conversationId));
   const [files, setFiles] = useState<File[]>([]);
+  const [handled, setHandled] = useState(state);
+  // Sent: the text, the chosen images and the file input go, together.
+  // A failure keeps all three, so pressing again sends the same thing.
+  if (handled !== state) {
+    setHandled(state);
+    if (state.sent === true) {
+      clearBody();
+      setFiles([]);
+    }
+  }
   const [problem, setProblem] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -58,9 +77,10 @@ export function Composer({ conversationId }: { conversationId: string }) {
   }
 
   return (
-    <form
+    <KeepingForm
       ref={formRef}
       action={action}
+      resetOn={state.sent === true ? state : null}
       className="sticky bottom-0 border-t border-border bg-background px-3 py-3 sm:px-0"
     >
       <input type="hidden" name="conversation_id" value={conversationId} />
@@ -122,6 +142,6 @@ export function Composer({ conversationId }: { conversationId: string }) {
 
       <FormError>{problem ?? state.fieldErrors?.body ?? state.fieldErrors?.attachments}</FormError>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

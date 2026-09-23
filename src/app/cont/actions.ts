@@ -4,7 +4,9 @@ import { cookies } from 'next/headers';
 import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
-import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager } from '@/lib/auth/account';
+import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager, redirectToSignIn } from '@/lib/auth/account';
+import { doneUrl } from '@/lib/continuity/drafts';
+import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { MAX_PUBLIC_DESCRIPTION } from '@/lib/directory';
 import { toAppError } from '@/lib/errors';
@@ -57,7 +59,7 @@ function text(formData: FormData, name: string): string {
 
 async function requireContext() {
   const context = await getAccountContext();
-  if (!context) redirect(ROUTES.signIn);
+  if (!context) return redirectToSignIn(ROUTES.account);
   return context;
 }
 
@@ -164,7 +166,7 @@ export async function createCompanyAction(
   _previous: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireContext();
+  const context = await requireContext();
 
   const cui = text(formData, 'cui');
   const legalName = text(formData, 'legalName').trim();
@@ -204,7 +206,9 @@ export async function createCompanyAction(
   }
 
   revalidatePath('/cont', 'layout');
-  redirect(ROUTES.accountCompany);
+  // The company exists: the form's draft goes, here and in the browser.
+  await deleteServerDraft(context.user.id, 'firma');
+  redirect(doneUrl(ROUTES.accountCompany, 'firma'));
 }
 
 // ---------------------------------------------------------------------
@@ -540,7 +544,7 @@ export async function submitCompanyForReviewAction(
   formData: FormData,
 ): Promise<ActionState> {
   const context = await getAccountContext();
-  if (!context) redirect(ROUTES.signIn);
+  if (!context) return redirectToSignIn(ROUTES.accountCompany);
 
   const companyId = String(formData.get('company_id') ?? '');
   // The form field says which company was on screen; membership is the

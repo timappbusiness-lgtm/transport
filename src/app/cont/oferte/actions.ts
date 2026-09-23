@@ -15,6 +15,8 @@ export interface OfferState {
   fieldErrors?: Record<string, string>;
   /** Set when the plan is full, so the form can link to /abonamente. */
   quotaReached?: boolean;
+  /** A question went out: the box it was typed in can be emptied. */
+  sent?: boolean;
 }
 
 function text(formData: FormData, name: string): string {
@@ -200,7 +202,7 @@ export async function askOfferAction(
   if (error) return { error: toAppError(error, 'offers.message').message };
 
   revalidatePath(ROUTES.accountOffers);
-  return {};
+  return { sent: true };
 }
 
 export interface ContactsState {

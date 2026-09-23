@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   openToPublicAction,
   setInvitesAction,
@@ -11,6 +10,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { Card } from '@/components/ui/primitives';
 import { HelpLink } from '@/components/help/help-link';
 import { requestsCopy } from '@/content/cereri';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: VisibilityState = {};
 const c = requestsCopy.visibility;
@@ -36,8 +37,8 @@ export function VisibilityPanel({
   /** Favoriții firmei, cu bifa pe cei deja invitați. */
   carriers: readonly InvitableCarrier[];
 }) {
-  const [invites, inviteAction, inviting] = useActionState(setInvitesAction, EMPTY);
-  const [opened, openAction, opening] = useActionState(openToPublicAction, EMPTY);
+  const [invites, inviteAction, inviting] = useKeptActionState(setInvitesAction, EMPTY);
+  const [opened, openAction, opening] = useKeptActionState(openToPublicAction, EMPTY);
 
   if (opened.notice !== undefined) return <FormNotice>{opened.notice}</FormNotice>;
 
@@ -52,7 +53,7 @@ export function VisibilityPanel({
       {carriers.length === 0 ? (
         <p className="mt-4 text-body text-muted">{c.noFavourites}</p>
       ) : (
-        <form action={inviteAction} className="mt-4 flex flex-col gap-3">
+        <KeepingForm action={inviteAction} className="mt-4 flex flex-col gap-3">
           <input type="hidden" name="request_id" value={requestId} />
           <fieldset className="flex flex-col gap-2">
             <legend className="text-body font-medium">{c.invited}</legend>
@@ -82,10 +83,10 @@ export function VisibilityPanel({
           </div>
           {invites.notice !== undefined ? <FormNotice>{invites.notice}</FormNotice> : null}
           <FormError>{invites.error}</FormError>
-        </form>
+        </KeepingForm>
       )}
 
-      <form action={openAction} className="mt-5 border-t border-border pt-4">
+      <KeepingForm action={openAction} className="mt-5 border-t border-border pt-4">
         <input type="hidden" name="request_id" value={requestId} />
         <p className="max-w-[60ch] text-small text-muted">{c.openHint}</p>
         <button
@@ -96,7 +97,7 @@ export function VisibilityPanel({
           {c.openAction}
         </button>
         <FormError>{opened.error}</FormError>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }

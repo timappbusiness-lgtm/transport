@@ -29,6 +29,11 @@ export const ROUTES = {
   confirmEmail: '/confirmare-email',
   resetPassword: '/resetare-parola',
   newPassword: '/parola-noua',
+  /**
+   * Where signing in again in a second tab lands: a page that tells the
+   * first tab — the one holding the form — that the session is back.
+   */
+  signedInAgain: '/reconectat',
 
   /**
    * Kept for links already in the wild. Redirects to the company sign-up

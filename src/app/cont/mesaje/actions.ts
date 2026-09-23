@@ -12,6 +12,8 @@ export interface MessageState {
   error?: string;
   notice?: string;
   fieldErrors?: Record<string, string>;
+  /** The message went out: the composer can be emptied. */
+  sent?: boolean;
 }
 
 function text(formData: FormData, name: string): string {
@@ -89,7 +91,7 @@ export async function sendMessageAction(
   }
 
   refresh(conversationId);
-  return {};
+  return { sent: true };
 }
 
 /** Marcarea firului ca citit. Prin RPC-ul care exista deja. */

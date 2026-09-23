@@ -1,6 +1,8 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { draftKey } from '@/lib/continuity/drafts';
+import { useTextDraft } from '@/lib/continuity/use-text-draft';
 import { editRatingAction, postRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { Stars, StarInput } from '@/components/ratings/star-input';
@@ -9,6 +11,8 @@ import { Card } from '@/components/ui/primitives';
 import { ratingsCopy } from '@/content/evaluari';
 import { MAX_COMMENT, charsLeft, editWindowLeft, subScoresFor, type RatingSide } from '@/lib/ratings';
 import type { OrderRatingState } from '@/lib/ratings-source';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
 const c = ratingsCopy.form;
@@ -35,12 +39,22 @@ export function RatingForm({
   existing?: OrderRatingState;
 }) {
   const editing = existing?.rating_id != null;
-  const [state, action, pending] = useActionState(
+  const [state, action, pending] = useKeptActionState(
     editing ? editRatingAction : postRatingAction,
     EMPTY,
   );
-  const [comment, setComment] = useState(existing?.comment ?? '');
+  // A new rating's words are kept in the browser while they are written:
+  // the link in the reminder e-mail, a refresh or a failed send brings
+  // them back. A correction starts from the published text instead.
+  const [draftComment, setDraftComment, clearDraftComment] = useTextDraft(draftKey('evaluare', orderId));
+  const [editedComment, setEditedComment] = useState(existing?.comment ?? '');
+  const comment = editing ? editedComment : draftComment;
+  const setComment = editing ? setEditedComment : setDraftComment;
   const [preview, setPreview] = useState(false);
+  const sent = state.notice !== undefined;
+  useEffect(() => {
+    if (sent && !editing) clearDraftComment();
+  }, [sent, editing, clearDraftComment]);
   const [score, setScore] = useState<number | null>(existing?.score ?? null);
   const id = useId();
 
@@ -58,7 +72,7 @@ export function RatingForm({
       </h2>
       {editing ? <p className="mt-1 text-small text-muted">{c.editHint}</p> : null}
 
-      <form action={action} className="mt-4 flex flex-col gap-5">
+      <KeepingForm action={action} className="mt-4 flex flex-col gap-5">
         <input type="hidden" name="order_id" value={orderId} />
         {slug !== null ? <input type="hidden" name="slug" value={slug} /> : null}
         {editing ? <input type="hidden" name="rating_id" value={existing.rating_id ?? ''} /> : null}
@@ -134,7 +148,7 @@ export function RatingForm({
 
         {left !== null ? <p className="text-small text-muted">{c.editable(left)}</p> : null}
         <FormError>{state.error}</FormError>
-      </form>
+      </KeepingForm>
     </Card>
   );
 }

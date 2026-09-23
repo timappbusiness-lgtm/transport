@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import Link from 'next/link';
 import {
   setSeoPagePublishedAction,
@@ -11,6 +10,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { pageHref, pageSubject, type SeoPage } from '@/lib/seo-pages';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: PageActionState = {};
 
@@ -23,7 +24,7 @@ const EMPTY: PageActionState = {};
  * unpublishes is how a landing page disappears without anybody noticing.
  */
 export function SeoPageRow({ page }: { page: SeoPage }) {
-  const [state, action, pending] = useActionState(setSeoPagePublishedAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(setSeoPagePublishedAction, EMPTY);
 
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
@@ -55,7 +56,7 @@ export function SeoPageRow({ page }: { page: SeoPage }) {
           {page.isPublished ? 'Vezi' : 'Previzualizează'}
         </Link>
 
-        <form action={action}>
+        <KeepingForm action={action}>
           <input type="hidden" name="slug" value={page.slug} />
           <input type="hidden" name="published" value={page.isPublished ? 'false' : 'true'} />
           <button
@@ -65,7 +66,7 @@ export function SeoPageRow({ page }: { page: SeoPage }) {
           >
             {page.isPublished ? 'Retrage' : 'Publică'}
           </button>
-        </form>
+        </KeepingForm>
       </div>
 
       {state.error ? (

@@ -3,9 +3,19 @@
 import { successCopy } from '@/content/success';
 import { SuccessMoment } from '@/components/ui/success-moment';
 import { CategoryTile } from '@/components/ui/category-art';
-import { useActionState, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { attachListingPhotoAction } from '@/app/cerere/import-actions';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { attachListingPhotoAction, previewRequestPhotosAction } from '@/app/cerere/import-actions';
+import { clearDraftAction, saveDraftAction } from '@/app/draft-actions';
+import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { Bone } from '@/components/ui/skeleton';
+import { safeNextPath, withNext } from '@/lib/auth/next-path';
+import type { DraftEnvelope } from '@/lib/continuity/drafts';
+import { STEP_PARAM, parseStep, withStep } from '@/lib/continuity/steps';
+import type { DraftSaveStatus } from '@/lib/continuity/use-draft';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 import { PhotoPanel, PhotoPanelLocked, type ChosenPhoto } from '@/components/requests/photo-panel';
 import { MAX_PHOTOS } from '@/lib/photo-upload';
 import { DURATION_OPTIONS, STEP_FIELDS, estimatedKm, validateDraft } from '@/lib/request-form';
@@ -23,7 +33,7 @@ import { CountryTag } from '@/components/ui/primitives';
 import { LocalityPicker, type LocalityValue } from '@/components/ui/locality-picker';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
-import { createDraftStore } from '@/lib/draft-store';
+import { browserStorage, createDraftStore, type StoredRequest } from '@/lib/draft-store';
 import { importCopy } from '@/content/import-anunt';
 import { applyExtraction, type ImportedField } from '@/lib/listing-import';
 import { CARGO_CATEGORY_LABELS, formatWindow } from '@/lib/departures';
@@ -38,7 +48,11 @@ import {
   MAX_DAMAGE_NOTES,
   MAX_DESCRIPTION,
   REQUEST_STEPS,
+  REQUEST_STEP_DEFINITION,
+  emptyDraft,
+  reachableRequestStep,
   serialiseDraft,
+  stepHasInput,
   validateStep,
   type RequestDraft,
   type RequestField,
@@ -61,6 +75,43 @@ const CONTROL =
 
 type Point = { lat: number; lng: number };
 
+/** How long typing has to pause before the account copy is written. */
+const SERVER_SAVE_DELAY_MS = 1500;
+
+/**
+ * The account's copy of the request draft: written when the typing
+ * pauses, removed when the request is sent or the person starts over.
+ * Signed out, it does nothing — the browser copy is the whole draft then.
+ */
+function accountDraftWriter(signedIn: boolean, onSaved: () => void) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return {
+    schedule(stored: StoredRequest, step: string | null) {
+      if (!signedIn) return;
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        saveDraftAction('cerere', '', step, stored)
+          .then((ok) => {
+            if (ok) onSaved();
+          })
+          .catch(() => {
+            /* the browser copy is there; the next change tries again */
+          });
+      }, SERVER_SAVE_DELAY_MS);
+    },
+    clear() {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      if (signedIn) clearDraftAction('cerere', '').catch(() => {});
+    },
+  };
+}
+
+function subscribeNothing() {
+  return () => {};
+}
+
 export interface RequestFormProps {
   /** The prefilled draft, from the price calculator or empty. */
   initial: RequestDraft;
@@ -69,8 +120,8 @@ export interface RequestFormProps {
   /** Today as `YYYY-MM-DD`, from the server: React refuses a clock in render. */
   today: string;
   signedIn: boolean;
-  /** Where sign-in should come back to, already safe. */
-  returnTo: string;
+  /** The account's copy of the draft, for a signed-in person; null otherwise. */
+  serverDraft: DraftEnvelope<StoredRequest> | null;
 }
 
 /**
@@ -169,19 +220,72 @@ function Group({ title, id, children }: { title: string; id?: string; children: 
  * has a twin in `create_cargo_request`, and when the two could disagree
  * the database wins and its sentence is shown as it is.
  */
-export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: RequestFormProps) {
-  const [state, action, pending] = useActionState(publishRequestAction, EMPTY);
-  // The draft lives in sessionStorage, not in React: it has to survive the
+export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft }: RequestFormProps) {
+  const [state, action, pending] = useKeptActionState(publishRequestAction, EMPTY);
+  const [saveStatus, setSaveStatus] = useState<DraftSaveStatus>('idle');
+  // The draft lives outside React — in localStorage, and on the account
+  // once there is one: it has to survive a refresh, a closed tab and the
   // trip through sign-up. See src/lib/draft-store.ts.
-  const [store] = useState(() => createDraftStore(initial, hasPrefill));
+  const [{ store, accountCopy }] = useState(() => {
+    const copy = accountDraftWriter(signedIn, () => setSaveStatus('saved-account'));
+    return {
+      accountCopy: copy,
+      store: createDraftStore({
+        initial,
+        ignoreStored: hasPrefill,
+        storage: browserStorage('local'),
+        legacy: browserStorage('session'),
+        server: serverDraft,
+        onPersist: (stored, slug) => {
+          setSaveStatus('saved');
+          copy.schedule(stored, slug);
+        },
+      }),
+    };
+  });
   const draft = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
-  const [step, setStep] = useState<RequestStep>('ruta');
+  const photoPaths = useSyncExternalStore(store.subscribe, store.getPhotos, store.getServerPhotos);
+  // False on the server and in the hydration render, true after: the
+  // browser's copy of the draft is only readable from then on.
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
+
+  // The step is in the address — `?pas=vehicul` — so a refresh, the back
+  // button, a shared link and a return from sign-in all land on it. The
+  // address is not trusted: a step whose earlier steps are not complete is
+  // shown as the first one that is not.
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requested = parseStep(searchParams.get(STEP_PARAM), REQUEST_STEP_DEFINITION) ?? 'ruta';
+  // Checked on arrival — the first render with the browser's draft, and
+  // every time the address names a different step (a link, back, forward)
+  // — and not again while the person types: emptying a field in the
+  // summary on the last step is an edit, not a reason to be thrown back
+  // to step one.
   const [errors, setErrors] = useState<FieldErrors<RequestField>>({});
   /** The fields somebody has left at least once: those may say what is wrong. */
   const [touched, setTouched] = useState<Set<RequestField>>(new Set());
   /** A block of the summary opened for editing in place, on the last step. */
   const [editing, setEditing] = useState<RequestStep | null>(null);
   const [stuck, setStuck] = useState(0);
+  const [arrival, setArrival] = useState<{ requested: RequestStep; step: RequestStep } | null>(null);
+  if (hydrated && arrival?.requested !== requested) {
+    const reachable = reachableRequestStep(draft, requested, today);
+    setArrival({ requested, step: reachable });
+    // Sent back to a step the person had filled in: it says, at once,
+    // what is missing there. Set here, with the step, rather than in an
+    // effect afterwards — the address is corrected in that effect, the
+    // correction is a new render, and a message scheduled for later was
+    // cancelled by it before it could appear.
+    if (reachable !== requested && stepHasInput(draft, reachable)) {
+      const found = validateStep(draft, reachable, today);
+      const fields = Object.keys(found) as RequestField[];
+      setErrors(found);
+      setTouched(new Set(fields));
+      setStuck(fields.length);
+    }
+  }
+  const step: RequestStep =
+    hydrated && arrival?.requested === requested ? arrival.step : requested;
   // Which fields a listing filled, so each one can say so. Cleared per
   // field the moment somebody edits it: a chip on a value they typed
   // themselves is a lie about where it came from.
@@ -194,22 +298,107 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
   });
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   // The person's own photographs, already in our bucket under their own
-  // folder. The form submits the paths; the action re-checks that each
-  // one is theirs before it reaches the database.
-  const [photos, setPhotos] = useState<ChosenPhoto[]>([]);
+  // folder. The paths are kept with the draft, so a refresh does not
+  // throw away an upload; the form submits them and the action re-checks
+  // that each one is theirs before it reaches the database. The previews
+  // are this page's own: a `blob:` for a photo added here, a signed link
+  // for one a draft brought back.
+  const [previews, setPreviews] = useState<Record<string, string>>({});
   const [attachPhoto, setAttachPhoto] = useState(false);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [restoredDismissed, setRestoredDismissed] = useState(false);
   const id = useId();
   const c = requestsCopy.form;
+  const photos: ChosenPhoto[] = photoPaths.map((path) => ({
+    path,
+    preview: previews[path] ?? '',
+    fromImport: path === photoPath,
+  }));
+  const restored = hydrated && !restoredDismissed ? store.getRestored() : null;
 
   // Published, or written down as a draft the database will not put on the
   // board yet. Either way it is somewhere safer than a browser tab now.
   useEffect(() => {
-    if (state.requestId !== undefined) store.clear();
-  }, [state.requestId, store]);
+    if (state.requestId === undefined) return;
+    accountCopy.clear();
+    store.clear();
+  }, [state.requestId, store, accountCopy]);
 
+  // The address asked for a step the draft cannot reach yet: it is
+  // corrected in place — no new history entry — to the step shown.
+  useEffect(() => {
+    if (!hydrated) return;
+    store.setStep(REQUEST_STEP_DEFINITION.slugs[step]);
+    if (step === requested) return;
+    window.history.replaceState(null, '', `${pathname}${withStep(window.location.search, step, REQUEST_STEP_DEFINITION)}`);
+  }, [hydrated, step, requested, pathname, store]);
+
+  // Typed on this device before signing in — or newer here than on the
+  // account: from now on it follows the account to the other device.
+  useEffect(() => {
+    if (!hydrated || !signedIn) return;
+    const found = store.getRestored();
+    if (found === null || (serverDraft !== null && found.savedAt <= serverDraft.savedAt)) return;
+    accountCopy.schedule(found.payload, found.step);
+  }, [hydrated, signedIn, store, serverDraft, accountCopy]);
+
+  // A link from the price calculator seeds the draft once. From then on
+  // the draft is the truth, so the choices come off the address: a
+  // refresh, or the way back from sign-in, must not seed it again over
+  // what the person changed since.
+  useEffect(() => {
+    if (!hydrated || !hasPrefill) return;
+    store.set(store.getSnapshot());
+    const kept = new URLSearchParams();
+    const current = new URLSearchParams(window.location.search).get(STEP_PARAM);
+    if (current !== null) kept.set(STEP_PARAM, current);
+    const query = kept.toString();
+    window.history.replaceState(null, '', `${pathname}${query === '' ? '' : `?${query}`}`);
+  }, [hydrated, hasPrefill, pathname, store]);
+
+  // Photos a draft brought back have no preview on this page yet.
+  const missingPreviews = photoPaths.filter((path) => previews[path] === undefined).join('|');
+  useEffect(() => {
+    if (!signedIn || missingPreviews === '') return;
+    let cancelled = false;
+    previewRequestPhotosAction(missingPreviews.split('|'))
+      .then((found) => {
+        if (!cancelled) setPreviews((current) => ({ ...found, ...current }));
+      })
+      .catch(() => {
+        /* the photos are still attached; only the thumbnail is missing */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn, missingPreviews]);
+
+  // Read from the store each time, not from this render: an upload of
+  // four photos adds them one by one, and each has to see the last.
+  function addPhoto(photo: ChosenPhoto) {
+    if (photo.preview !== '') setPreviews((current) => ({ ...current, [photo.path]: photo.preview }));
+    const current = store.getPhotos();
+    if (current.length < MAX_PHOTOS && !current.includes(photo.path)) {
+      store.setPhotos([...current, photo.path]);
+    }
+  }
+
+  function removePhoto(photo: ChosenPhoto) {
+    store.setPhotos(store.getPhotos().filter((path) => path !== photo.path));
+  }
+
+  function startOver() {
+    store.reset(emptyDraft());
+    accountCopy.clear();
+    setRestoredDismissed(true);
+    setSaveStatus('idle');
+    setErrors({});
+    setTouched(new Set());
+    setStuck(0);
+    goTo('ruta');
+  }
   // The server refused a field: go to the step that shows it, rather than
   // leaving a message on a screen nobody is looking at.
   const serverErrors = state.fieldErrors;
@@ -220,10 +409,12 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
     if (first !== undefined && first !== 'contact') {
       // Deferred a frame: this answers a server response, and the step
       // it moves to is state the response itself does not carry.
-      const frame = requestAnimationFrame(() => setStep(first));
+      const frame = requestAnimationFrame(() => {
+        window.history.pushState(null, '', `${pathname}${withStep(window.location.search, first, REQUEST_STEP_DEFINITION)}`);
+      });
       return () => cancelAnimationFrame(frame);
     }
-  }, [serverErrors]);
+  }, [serverErrors, pathname]);
 
   function set<K extends RequestField>(field: K, value: RequestDraft[K]): void {
     setMany({ [field]: value } as Partial<RequestDraft>, [field]);
@@ -343,7 +534,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
     if (!checked) {
       setPhotoNote(null);
       if (photoPath !== null) {
-        setPhotos((current) => current.filter((photo) => photo.path !== photoPath));
+        store.setPhotos(store.getPhotos().filter((path) => path !== photoPath));
       }
       return;
     }
@@ -354,11 +545,11 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
         const path = result.path;
         setPhotoPath(path);
         setPhotoNote(importCopy.attach.attached);
-        setPhotos((current) =>
-          current.length >= MAX_PHOTOS || current.some((photo) => photo.path === path)
-            ? current
-            : [...current, { path, preview: photoUrl, fromImport: true }],
-        );
+        const current = store.getPhotos();
+        if (current.length < MAX_PHOTOS && !current.includes(path)) {
+          setPreviews((all) => ({ ...all, [path]: photoUrl }));
+          store.setPhotos([...current, path]);
+        }
         return;
       }
       // The request is worth more than the photo, so a failure here
@@ -368,15 +559,26 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
     });
   }
 
+  /**
+   * A new history entry per step, so the browser's back and forward move
+   * between steps. The draft is outside React and the step is in the
+   * address, so nothing typed is lost either way.
+   */
   function goTo(next: RequestStep): void {
     setErrors({});
     setStuck(0);
     setEditing(null);
-    setStep(next);
-    // Back to the top of the step, where its heading says what it asks.
-    // A jump, not a glide, for anybody who asked the system for less motion.
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    formRef.current?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    if (next !== step) {
+      window.history.pushState(null, '', `${pathname}${withStep(window.location.search, next, REQUEST_STEP_DEFINITION)}`);
+    }
+    // Back to the top of the step, where its heading says what it asks —
+    // a jump, not a glide. The glide moved „Continuă" under the thumb for
+    // half a second: a second tap in that time landed on the form beside
+    // it and did nothing, on the one screen where a tap that does nothing
+    // reads as „the site is broken". Only when the top is above the
+    // screen: a step change that is already in view does not move.
+    const top = formRef.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) formRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
   }
 
   /**
@@ -734,7 +936,11 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               source listing — so the one case where a photograph decides
               the price, a damaged car somebody is selling privately, was
               the case that could not have one. */}
-          {signedIn ? <PhotoPanel photos={photos} onChange={setPhotos} /> : <PhotoPanelLocked />}
+          {signedIn ? (
+            <PhotoPanel photos={photos} onAdd={addPhoto} onRemove={removePhoto} />
+          ) : (
+            <PhotoPanelLocked />
+          )}
 
           {photoUrl !== null && signedIn ? (
             <div className="flex flex-col gap-1.5 rounded-card border border-border bg-ground-alt p-4">
@@ -920,8 +1126,17 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
   // ----------------------------------------------------------------- form
 
+  // Where sign-in and sign-up come back to: this page, on this step. The
+  // calculator's choices are already in the draft by now, off the address.
+  const query = searchParams.toString();
+  const returnTo = safeNextPath(`${pathname}${query === '' ? '' : `?${query}`}`, ROUTES.newRequest);
+  // Before the browser's copy of the draft is read, a step past the first
+  // would be drawn empty and then filled a moment later — or drawn at all
+  // when the draft cannot reach it. A placeholder holds its place instead.
+  const waiting = !hydrated && requested !== 'ruta' && serverDraft === null;
+
   return (
-    <form ref={formRef} action={action} className="flex scroll-mt-28 flex-col gap-7" noValidate>
+    <KeepingForm ref={formRef} action={action} className="flex scroll-mt-28 flex-col gap-7" noValidate>
       <input type="hidden" name="draft" value={serialiseDraft(draft)} />
       {/* The photos travel with the form from wherever the person is.
           They used to be drawn inside the photo panel, which exists only
@@ -931,18 +1146,34 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
       <PublishStepper current={step} onSelect={goTo} />
 
+      {restored !== null ? (
+        <DraftRestored savedAt={restored.savedAt} onStartOver={startOver} />
+      ) : null}
+
       <header data-step-head={step}>
         <h2 className="text-h2">{head.title}</h2>
         <p className="mt-2 max-w-[60ch] text-body text-muted">{head.why}</p>
       </header>
 
-      {step === 'ruta' ? routeFields() : null}
-      {step === 'vehicul' ? vehicleFields() : null}
-      {step === 'serviciu' ? serviceFields() : null}
-      {step === 'contact' ? contactFields() : null}
+      {waiting ? (
+        <div data-step-waiting className="flex flex-col gap-4">
+          <p className="sr-only">{c.restoring}</p>
+          <Bone className="h-11 w-full" />
+          <Bone className="h-11 w-full" />
+          <Bone className="h-24 w-full" />
+        </div>
+      ) : (
+        <>
+          {step === 'ruta' ? routeFields() : null}
+          {step === 'vehicul' ? vehicleFields() : null}
+          {step === 'serviciu' ? serviceFields() : null}
+          {step === 'contact' ? contactFields() : null}
+        </>
+      )}
 
       {state.error ? <FormError>{state.error}</FormError> : null}
       {state.needsAccount || (isLast && !signedIn) ? <AccountPanel returnTo={returnTo} /> : null}
+      {isLast && signedIn && !state.needsAccount ? <AccountDone /> : null}
 
       {/* The two buttons are always in reach: on a phone they ride along
           the bottom of the screen, on a wide one they sit under the step. */}
@@ -974,8 +1205,11 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
         )}
 
         <span className="hidden text-small text-muted sm:inline">{c.stepOf(index + 1, REQUEST_STEPS.length)}</span>
+        <span className="ml-auto">
+          <DraftStatus status={saveStatus} />
+        </span>
       </div>
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -1115,20 +1349,37 @@ function Summary({
 
 function AccountPanel({ returnTo }: { returnTo: string }) {
   const c = requestsCopy.form.account;
-  const next = `?next=${encodeURIComponent(returnTo)}`;
   return (
-    <section className="rounded-card border border-accent-border bg-accent-subtle p-5">
+    <section data-account-step="needed" className="rounded-card border border-accent-border bg-accent-subtle p-5">
       <h2 className="text-h3">{c.title}</h2>
       <p className="mt-2 max-w-[54ch] text-body text-foreground">{c.body}</p>
       <div className="mt-4 flex flex-wrap gap-3">
-        <Link href={`${ROUTES.signUpIndividual}${next}`} className={buttonClasses('primary', 'md')}>
+        <Link href={withNext(ROUTES.signUpIndividual, returnTo)} className={buttonClasses('primary', 'md')}>
           {c.signUp}
         </Link>
-        <Link href={`${ROUTES.signIn}${next}`} className={buttonClasses('secondary', 'md')}>
+        <Link href={withNext(ROUTES.signIn, returnTo)} className={buttonClasses('secondary', 'md')}>
           {c.signIn}
         </Link>
       </div>
     </section>
+  );
+}
+
+/**
+ * The account step, done. Somebody who came back from signing in or
+ * signing up lands on this step with this line where the account panel
+ * was, rather than wondering whether it worked.
+ */
+function AccountDone() {
+  const c = requestsCopy.form.account;
+  return (
+    <p
+      data-account-step="done"
+      className="flex items-start gap-2.5 rounded-input border border-accent-border bg-accent-subtle px-3.5 py-2.5 text-body text-foreground"
+    >
+      <span className="font-mono text-label uppercase tracking-[0.12em] text-accent">{c.doneLabel}</span>
+      <span>{c.done}</span>
+    </p>
   );
 }
 

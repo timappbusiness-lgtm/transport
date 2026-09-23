@@ -28,6 +28,7 @@ import { DEFAULT_THRESHOLDS, type Reputation } from '@/lib/ratings';
 import type { PublicRating } from '@/lib/ratings-source';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { BackToBoard } from '@/components/continuity/board-memory';
 
 const c = directoryCopy.profile;
 
@@ -89,12 +90,12 @@ export function CompanyProfileBody({
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <p className="text-body">
-        <Link
-          href={ROUTES.companies}
+        <BackToBoard
+          board={ROUTES.companies}
           className="text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
         >
           {c.back}
-        </Link>
+        </BackToBoard>
       </p>
 
       <header className="mt-6 flex flex-wrap items-start gap-5">

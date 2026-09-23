@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES, onboardingRoute } from '@/config/routes';
 import { requireAccountContext } from '@/lib/auth/account';
+import { doneUrl } from '@/lib/continuity/drafts';
+import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { toAppError } from '@/lib/errors';
 import {
   normaliseOnboardingPhone,
@@ -38,7 +40,7 @@ export async function startOnboardingAction(
   _previous: OnboardingState,
   formData: FormData,
 ): Promise<OnboardingState> {
-  await requireAccountContext(ROUTES.adminOnboardings);
+  const context = await requireAccountContext(ROUTES.adminOnboardings);
 
   const input = {
     name: text(formData, 'contact_name'),
@@ -67,7 +69,9 @@ export async function startOnboardingAction(
   if (error) return { error: toAppError(error, 'inscrieri.start').message };
 
   revalidatePath(ROUTES.adminOnboardings);
-  redirect(onboardingRoute((data as { id: string }).id, 'firma'));
+  // Started: the consent form's draft goes, here and in the browser.
+  await deleteServerDraft(context.user.id, 'inscriere-asistata');
+  redirect(doneUrl(onboardingRoute((data as { id: string }).id, 'firma'), 'inscriere-asistata'));
 }
 
 export async function createOnboardingCompanyAction(
@@ -145,7 +149,7 @@ export async function saveOnboardingProfileAction(
   _previous: OnboardingState,
   formData: FormData,
 ): Promise<OnboardingState> {
-  await requireAccountContext(ROUTES.adminOnboardings);
+  const context = await requireAccountContext(ROUTES.adminOnboardings);
 
   const id = text(formData, 'onboarding_id');
   const companyId = text(formData, 'company_id');
@@ -171,7 +175,8 @@ export async function saveOnboardingProfileAction(
   if (error) return { error: toAppError(error, 'inscrieri.profile').message };
 
   revalidatePath(onboardingRoute(id));
-  redirect(onboardingRoute(id, 'link'));
+  await deleteServerDraft(context.user.id, 'inscriere-asistata', `${id}-profil`);
+  redirect(doneUrl(onboardingRoute(id, 'link'), 'inscriere-asistata', `${id}-profil`));
 }
 
 /**

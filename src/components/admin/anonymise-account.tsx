@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   anonymiseAccountAction,
   cancelDeletionRequestAction,
@@ -9,6 +8,8 @@ import {
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { personalDataCopy } from '@/content/date-personale';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const c = personalDataCopy.admin;
 const EMPTY: DeletionAdminState = {};
@@ -16,10 +17,10 @@ const CONTROL =
   'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 export function AnonymiseAccount() {
-  const [state, action, pending] = useActionState(anonymiseAccountAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(anonymiseAccountAction, EMPTY);
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.userId}
@@ -38,20 +39,20 @@ export function AnonymiseAccount() {
       </div>
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
-    </form>
+    </KeepingForm>
   );
 }
 
 export function CancelDeletion({ requestId }: { requestId: string }) {
-  const [state, action, pending] = useActionState(cancelDeletionRequestAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(cancelDeletionRequestAction, EMPTY);
 
   return (
-    <form action={action}>
+    <KeepingForm action={action}>
       <input type="hidden" name="request_id" value={requestId} />
       <button type="submit" disabled={pending} className={buttonClasses('secondary', 'sm')}>
         {c.cancel}
       </button>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

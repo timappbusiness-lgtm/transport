@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
 import {
   markTestAccountAction,
   verifyPhoneAction,
   type StaffToolState,
 } from '@/app/admin/pilot/actions';
 import { buttonClasses } from '@/components/ui/button';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: StaffToolState = {};
 const CONTROL = 'rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
@@ -28,10 +29,14 @@ export function PilotTools() {
 }
 
 function VerifyPhone() {
-  const [state, action, pending] = useActionState(verifyPhoneAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(verifyPhoneAction, EMPTY);
 
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+    >
       <div>
         <h3 className="text-body">Confirmă un număr de telefon</h3>
         <p className="mt-1 max-w-[58ch] text-body text-muted">
@@ -61,15 +66,19 @@ function VerifyPhone() {
       </label>
 
       <Result state={state} pending={pending} label="Confirmă" />
-    </form>
+    </KeepingForm>
   );
 }
 
 function MarkTest() {
-  const [state, action, pending] = useActionState(markTestAccountAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(markTestAccountAction, EMPTY);
 
   return (
-    <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+    >
       <div>
         <h3 className="text-body">Marchează un cont ca al nostru</h3>
         <p className="mt-1 max-w-[58ch] text-body text-muted">
@@ -98,7 +107,7 @@ function MarkTest() {
       </label>
 
       <Result state={state} pending={pending} label="Salvează" />
-    </form>
+    </KeepingForm>
   );
 }
 

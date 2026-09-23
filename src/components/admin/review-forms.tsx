@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   reviewCompanyAction,
   reviewDocumentAction,
@@ -10,6 +10,8 @@ import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { adminReviewCopy } from '@/content/admin';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ReviewState = {};
 const c = adminReviewCopy;
@@ -34,7 +36,7 @@ export function DocumentReview({
   hasExpiry: boolean;
   extractedValidUntil: string | null;
 }) {
-  const [state, action] = useActionState(reviewDocumentAction, EMPTY);
+  const [state, action] = useKeptActionState(reviewDocumentAction, EMPTY);
   const [rejecting, setRejecting] = useState(false);
   const id = useId();
 
@@ -42,7 +44,7 @@ export function DocumentReview({
 
   if (rejecting) {
     return (
-      <form action={action} className="flex flex-col gap-3">
+      <KeepingForm action={action} className="flex flex-col gap-3">
         <input type="hidden" name="document_id" value={documentId} />
         <input type="hidden" name="decision" value="reject" />
         <div className="flex flex-col gap-1.5">
@@ -67,12 +69,12 @@ export function DocumentReview({
           </button>
         </div>
         {state.error ? <FormError>{state.error}</FormError> : null}
-      </form>
+      </KeepingForm>
     );
   }
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="document_id" value={documentId} />
       <input type="hidden" name="decision" value="approve" />
       <input type="hidden" name="has_expiry" value={String(hasExpiry)} />
@@ -109,7 +111,7 @@ export function DocumentReview({
         </button>
       </div>
       {state.error ? <FormError>{state.error}</FormError> : null}
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -121,7 +123,7 @@ export function DocumentReview({
  * lets it send offers.
  */
 export function CompanyReview({ companyId }: { companyId: string }) {
-  const [state, action] = useActionState(reviewCompanyAction, EMPTY);
+  const [state, action] = useKeptActionState(reviewCompanyAction, EMPTY);
   const [rejecting, setRejecting] = useState(false);
   const id = useId();
 
@@ -129,7 +131,7 @@ export function CompanyReview({ companyId }: { companyId: string }) {
 
   if (rejecting) {
     return (
-      <form action={action} className="flex flex-col gap-3">
+      <KeepingForm action={action} className="flex flex-col gap-3">
         <input type="hidden" name="company_id" value={companyId} />
         <input type="hidden" name="decision" value="reject" />
         <div className="flex flex-col gap-1.5">
@@ -155,12 +157,12 @@ export function CompanyReview({ companyId }: { companyId: string }) {
           </button>
         </div>
         {state.error ? <FormError>{state.error}</FormError> : null}
-      </form>
+      </KeepingForm>
     );
   }
 
   return (
-    <form action={action} className="flex flex-wrap items-center gap-2">
+    <KeepingForm action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="company_id" value={companyId} />
       <input type="hidden" name="decision" value="approve" />
       <button type="submit" className={buttonClasses('ink', 'sm')}>
@@ -174,6 +176,6 @@ export function CompanyReview({ companyId }: { companyId: string }) {
         {c.companies.reject}
       </button>
       {state.error ? <FormError>{state.error}</FormError> : null}
-    </form>
+    </KeepingForm>
   );
 }

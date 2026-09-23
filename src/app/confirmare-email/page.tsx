@@ -5,15 +5,17 @@ import { AuthCard, TextLink } from '@/components/auth/form';
 import { ResendConfirmationForm } from '@/components/auth/forms';
 import { ROUTES } from '@/config/routes';
 import { authCopy } from '@/content/auth';
+import { safeNextPath, withNext } from '@/lib/auth/next-path';
 
 export const metadata: Metadata = { title: authCopy.confirmEmail.title };
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string }>;
+  searchParams: Promise<{ email?: string; next?: string }>;
 }) {
-  const { email } = await searchParams;
+  const { email, next: rawNext } = await searchParams;
+  const next = safeNextPath(rawNext, '');
   const c = authCopy.confirmEmail;
 
   return (
@@ -22,7 +24,7 @@ export default async function Page({
       lede={c.lede}
       footer={
         <p>
-          <TextLink href={ROUTES.signIn}>{authCopy.resetPassword.backToSignIn}</TextLink>
+          <TextLink href={withNext(ROUTES.signIn, next)}>{authCopy.resetPassword.backToSignIn}</TextLink>
         </p>
       }
     >
@@ -33,9 +35,12 @@ export default async function Page({
           </span>
           <p className="text-body text-muted">{c.checkSpam}</p>
         </div>
+        {/* The draft is in this browser. A link opened on the phone signs
+            in there, where the form is empty; say so while it matters. */}
+        {next !== '' ? <p className="text-body text-foreground">{c.sameDevice}</p> : null}
         <div>
           <p className="mb-3 text-body font-medium">{c.noEmail}</p>
-          <ResendConfirmationForm email={email ?? ''} />
+          <ResendConfirmationForm email={email ?? ''} next={next} />
         </div>
       </div>
     </AuthCard>

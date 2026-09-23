@@ -6,6 +6,7 @@ import { ROUTES } from '@/config/routes';
 import { MEMBER_ROLE_LABELS, accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
 import { createClient } from '@/lib/supabase/server';
+import { KeepingForm } from '@/components/ui/keeping-form';
 
 export const metadata: Metadata = { title: accountCopy.invitations.title };
 
@@ -80,18 +81,18 @@ export default async function Page() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <form action={acceptInvitationAction}>
+                <KeepingForm action={acceptInvitationAction}>
                   <input type="hidden" name="invitationId" value={invitation.id} />
                   <button type="submit" className={buttonClasses('primary', 'sm')}>
                     {c.accept}
                   </button>
-                </form>
-                <form action={declineInvitationAction}>
+                </KeepingForm>
+                <KeepingForm action={declineInvitationAction}>
                   <input type="hidden" name="invitationId" value={invitation.id} />
                   <button type="submit" className={buttonClasses('secondary', 'sm')}>
                     {c.decline}
                   </button>
-                </form>
+                </KeepingForm>
               </div>
             </li>
           ))}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { requestSubscriptionAction, type RequestState } from '@/app/abonamente/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import {
 } from '@/lib/plans';
 import { pluralRo } from '@/lib/requests';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RequestState = {};
 const c = plansCopy.dialog;
@@ -39,7 +41,7 @@ export function RequestPlanButton({
   months: BillingMonths;
   settings: PricingSettings;
 }) {
-  const [state, action] = useActionState(requestSubscriptionAction, EMPTY);
+  const [state, action] = useKeptActionState(requestSubscriptionAction, EMPTY);
   const [open, setOpen] = useState(false);
   const dialogId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -84,7 +86,7 @@ export function RequestPlanButton({
             <p className="mt-3 text-small leading-relaxed text-muted">{c.manual}</p>
           ) : null}
 
-          <form action={action} className="mt-4 flex flex-col gap-3">
+          <KeepingForm action={action} className="mt-4 flex flex-col gap-3">
             <input type="hidden" name="companyId" value={companyId} />
             <input type="hidden" name="planCode" value={plan.code} />
             <input type="hidden" name="months" value={months} />
@@ -114,7 +116,7 @@ export function RequestPlanButton({
                 {c.cancel}
               </button>
             </div>
-          </form>
+          </KeepingForm>
         </div>
       ) : null}
     </div>

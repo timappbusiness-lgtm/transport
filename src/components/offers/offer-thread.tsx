@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { askOfferAction, type OfferState } from '@/app/cont/oferte/actions';
 import { buttonClasses } from '@/components/ui/button';
@@ -9,6 +9,10 @@ import { wouldBeMasked } from '@/lib/contact-mask';
 import { createPollScheduler } from '@/lib/poll-scheduler';
 import type { ThreadMessage } from '@/lib/offers-source';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { draftKey } from '@/lib/continuity/drafts';
+import { useTextDraft } from '@/lib/continuity/use-text-draft';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.thread;
@@ -57,9 +61,18 @@ export function OfferThread({
   messages: readonly ThreadMessage[];
   startOpen?: boolean;
 }) {
-  const [state, action, pending] = useActionState(askOfferAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(askOfferAction, EMPTY);
   const [open, setOpen] = useState(startOpen || messages.length > 0);
-  const [body, setBody] = useState('');
+  // Kept in the browser while it is written; emptied once it has gone.
+  // It used to be emptied by the button's own click — before the form
+  // read it, so the question went out blank and was refused, and the
+  // text was gone either way.
+  const [body, setBody, clearBody] = useTextDraft(draftKey('intrebare', offerId));
+  const [handled, setHandled] = useState(state);
+  if (handled !== state) {
+    setHandled(state);
+    if (state.sent === true) clearBody();
+  }
   const id = useId();
   const router = useRouter();
 
@@ -116,7 +129,7 @@ export function OfferThread({
         </ul>
       )}
 
-      <form action={action} className="mt-4 flex flex-col gap-2">
+      <KeepingForm action={action} className="mt-4 flex flex-col gap-2">
         <input type="hidden" name="offer_id" value={offerId} />
         <label htmlFor={`${id}-body`} className="sr-only">
           {c.placeholder}
@@ -140,7 +153,6 @@ export function OfferThread({
           <button
             type="submit"
             disabled={pending || body.trim() === ''}
-            onClick={() => setBody('')}
             className={buttonClasses('secondary', 'sm')}
           >
             {pending ? c.sending : c.send}
@@ -151,7 +163,7 @@ export function OfferThread({
             {state.error}
           </p>
         ) : null}
-      </form>
+      </KeepingForm>
     </div>
   );
 }

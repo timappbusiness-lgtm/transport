@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { adminDirectoryCopy } from '@/content/admin-directory';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { featuresFromText, type PlanAudience } from '@/lib/plans';
 import { PRICING_TAG } from '@/lib/plans-source';
@@ -44,7 +44,8 @@ export async function setPlanAction(
   formData: FormData,
 ): Promise<PlanActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const code = String(formData.get('code') ?? '').trim();
   const name = String(formData.get('name') ?? '').trim();
@@ -77,7 +78,8 @@ export async function setPlanPeriodAction(
   formData: FormData,
 ): Promise<PlanActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const code = String(formData.get('code') ?? '').trim();
   const months = Number(String(formData.get('months') ?? '').trim());
@@ -106,7 +108,8 @@ export async function setPricingSettingsAction(
   formData: FormData,
 ): Promise<PlanActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: s.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: s.noAccess };
 
   const trialDays = Number(String(formData.get('trial_days') ?? '').trim());
   if (!Number.isInteger(trialDays) || trialDays < 0 || trialDays > 365) {

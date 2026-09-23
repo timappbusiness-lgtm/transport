@@ -1,7 +1,8 @@
 'use client';
 
+import { useRef } from 'react';
+
 import { useActionToast } from '@/components/ui/toast';
-import { useActionState } from 'react';
 import Link from 'next/link';
 import { updateCapabilitiesAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError } from '@/components/auth/form';
@@ -11,6 +12,9 @@ import { ROUTES } from '@/config/routes';
 import { firmaCopy } from '@/content/firma';
 import type { Company } from '@/lib/auth/account';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ActionState = {};
 
@@ -44,14 +48,17 @@ export function CapabilitiesTab({
   serviceOptions: readonly Option[];
   vehiclesTotal: number;
 }) {
-  const [state, action] = useActionState(updateCapabilitiesAction, EMPTY);
+  const [state, action] = useKeptActionState(updateCapabilitiesAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   // The result where the person is looking: the save button sticks to
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
   const c = firmaCopy.capabilities;
 
   return (
-    <form action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
@@ -131,6 +138,6 @@ export function CapabilitiesTab({
       </div>
 
       <SaveBar />
-    </form>
+    </KeepingForm>
   );
 }

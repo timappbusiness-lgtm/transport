@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState, useRef } from 'react';
 import { saveOnboardingProfileAction, type OnboardingState } from '@/app/admin/inscrieri/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -9,6 +9,10 @@ import { onboardingCopy } from '@/content/inscrieri';
 import { COVERAGE_SCOPES } from '@/lib/company-profile';
 import { COUNTIES } from '@/lib/counties';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { DraftRestored } from '@/components/continuity/draft-status';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.profile;
@@ -32,11 +36,18 @@ export function ProfileStep({
   services?: readonly { code: string; label: string }[];
   equipment?: readonly { code: string; label: string }[];
 }) {
-  const [state, action, pending] = useActionState(saveOnboardingProfileAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(saveOnboardingProfileAction, EMPTY);
+  // Kept on every change, on the account too: coverage and equipment, ticked while on the phone with the carrier
+  // survive a refresh or a dropped connection. Cleared once the step is saved.
+  const draftRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(draftRef, { form: 'inscriere-asistata', scope: `${onboardingId}-profil`, signedIn: true });
   const [scope, setScope] = useState('national');
 
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <KeepingForm ref={draftRef} action={action} className="flex flex-col gap-5">
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <input type="hidden" name="onboarding_id" value={onboardingId} />
       <input type="hidden" name="company_id" value={companyId} />
 
@@ -126,6 +137,6 @@ export function ProfileStep({
         </button>
       </div>
       <FormError>{state.error}</FormError>
-    </form>
+    </KeepingForm>
   );
 }

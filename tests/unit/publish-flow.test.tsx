@@ -19,7 +19,18 @@ vi.mock('@/app/cerere/actions', () => ({
   publishRequestAction: async () => ({}),
   previewCarriersAction: async () => null,
 }));
+// The step is in the address; here, the plain address — step one.
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/cerere/noua',
+  useSearchParams: () => new URLSearchParams(),
+}));
+vi.mock('@/app/draft-actions', () => ({
+  loadDraftAction: async () => null,
+  saveDraftAction: async () => true,
+  clearDraftAction: async () => {},
+}));
 vi.mock('@/app/cerere/import-actions', () => ({
+  previewRequestPhotosAction: async () => ({}),
   attachListingPhotoAction: async () => ({ ok: false }),
   uploadRequestPhotoAction: async () => ({ ok: false }),
   removeRequestPhotoAction: async () => {},
@@ -42,7 +53,7 @@ function form(signedIn = false): string {
       hasPrefill={false}
       today="2026-09-23"
       signedIn={signedIn}
-      returnTo="/cerere/noua"
+      serverDraft={null}
     />,
   );
 }
@@ -112,7 +123,9 @@ describe('the photos travel with the form', () => {
     expect(panel).not.toMatch(/name="photo_paths"/);
 
     const source = readFileSync('src/components/requests/request-form.tsx', 'utf8');
-    const formOpen = source.indexOf('<form ref={formRef}');
+    // The form element is `KeepingForm`, which keeps what was typed when a
+    // request fails; the paths still have to be inside it, before any step.
+    const formOpen = source.indexOf('<KeepingForm ref={formRef}');
     const paths = source.indexOf('<PhotoPaths photos={photos} />');
     const firstStep = source.indexOf("{step === 'ruta'");
     expect(formOpen).toBeGreaterThan(-1);

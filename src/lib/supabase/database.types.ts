@@ -2043,6 +2043,44 @@ export type Database = {
           },
         ]
       }
+      form_drafts: {
+        Row: {
+          created_at: string
+          form_key: string
+          payload: Json
+          scope: string
+          step: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          form_key: string
+          payload: Json
+          scope?: string
+          step?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          form_key?: string
+          payload?: Json
+          scope?: string
+          step?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homepage_settings: {
         Row: {
           directory_min_companies: number

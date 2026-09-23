@@ -18,6 +18,7 @@ import { SeoLinkCloud } from '@/components/seo/link-cloud';
 import { companyLogoUrl, loadDirectoryPage } from '@/lib/directory-source';
 import { formatCompanies } from '@/lib/trust';
 import { cn } from '@/lib/utils';
+import { RememberBoard } from '@/components/continuity/board-memory';
 
 const c = directoryCopy.page;
 
@@ -45,6 +46,8 @@ export default async function Page({
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
+      {/* The way back from a detail page returns to these filters. */}
+      <RememberBoard board={ROUTES.companies} />
       <header className="max-w-[46rem]">
         <h1 className="text-h1">{c.heading}</h1>
         <Lede className="mt-4">{c.note}</Lede>

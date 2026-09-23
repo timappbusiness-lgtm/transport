@@ -1,11 +1,12 @@
 'use client';
 
-import { useActionState } from 'react';
 import { saveSearchAction, type SavedSearchState } from '@/app/trasee/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { departuresCopy } from '@/content/departures';
 import { filtersToQuery, type DepartureFilters } from '@/lib/departure-filters';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: SavedSearchState = {};
 
@@ -23,17 +24,17 @@ export function SavedSearchButton({
   filters: DepartureFilters;
   signedIn: boolean;
 }) {
-  const [state, action] = useActionState(saveSearchAction, EMPTY);
+  const [state, action] = useKeptActionState(saveSearchAction, EMPTY);
   const c = departuresCopy.empty;
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="query" value={filtersToQuery(filters)} />
       <button type="submit" className={buttonClasses('secondary', 'md')}>
         {signedIn ? c.alert : c.alertSignedOut}
       </button>
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
-    </form>
+    </KeepingForm>
   );
 }

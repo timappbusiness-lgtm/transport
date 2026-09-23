@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
   // Next 16 dropped the `eslint` build key; linting runs as its own
   // script and in CI.
   typescript: { ignoreBuildErrors: false },
+  experimental: {
+    // A photograph goes through a server action. Next refuses anything
+    // over 1 MB by default, which is a phone photograph that could not
+    // be drawn down in the browser (HEIC) — refused with an error page.
+    // Photographs are drawn down to 2000 px first; this is the ceiling
+    // for the ones that cannot be, kept under the 4.5 MB a Vercel
+    // function accepts at all.
+    serverActions: { bodySizeLimit: '4mb' },
+  },
   async headers() {
     // Antetele de securitate merg pe tot, mereu. Auditul le-a găsit
     // lipsă cu totul (R2): fără `frame-ancestors`, contul se pune

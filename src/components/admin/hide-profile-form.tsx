@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useId } from 'react';
 import { hideCompanyProfileAction, type HideActionState } from '@/app/admin/firme/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { adminDirectoryCopy } from '@/content/admin-directory';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: HideActionState = {};
 const c = adminDirectoryCopy.companies;
@@ -15,11 +17,11 @@ const c = adminDirectoryCopy.companies;
  * migration raised.
  */
 export function HideProfileForm({ companyId }: { companyId: string }) {
-  const [state, action] = useActionState(hideCompanyProfileAction, EMPTY);
+  const [state, action] = useKeptActionState(hideCompanyProfileAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <KeepingForm action={action} className="flex flex-col gap-2">
       <input type="hidden" name="companyId" value={companyId} />
       <label htmlFor={id} className="sr-only">
         {c.reason}
@@ -38,6 +40,6 @@ export function HideProfileForm({ companyId }: { companyId: string }) {
       </button>
       <FormError>{state.error}</FormError>
       {state.notice ? <FormNotice>{state.notice}</FormNotice> : null}
-    </form>
+    </KeepingForm>
   );
 }

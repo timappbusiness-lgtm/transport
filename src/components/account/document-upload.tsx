@@ -2,7 +2,9 @@
 
 import { useActionToast } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
-import { useId, useState, useTransition } from 'react';
+import { useId, useRef, useState, useTransition } from 'react';
+import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
+import { announceSessionExpired } from '@/lib/continuity/session-store';
 import { registerDocumentAction } from '@/app/cont/fleet-actions';
 import type { ActionState } from '@/app/cont/actions';
 import { FormError } from '@/components/auth/form';
@@ -54,11 +56,21 @@ export function DocumentUpload({
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
   const [pending, startTransition] = useTransition();
+  // A file already in the bucket whose registration failed: a retry
+  // registers it again instead of uploading a second copy — before, every
+  // retry left the previous upload behind, attached to nothing.
+  const uploaded = useRef<{ file: string; documentId: string } | null>(null);
+  // The camera-first screen has no button of its own; after a failure it
+  // gets one, so the photo already taken is sent again rather than taken
+  // again.
+  const [canRetry, setCanRetry] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   if (kinds.length === 0) return null;
 
   return (
     <form
+      ref={formRef}
       className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault();
@@ -90,31 +102,49 @@ export function DocumentUpload({
 
         startTransition(async () => {
           setState({});
-          const documentId = crypto.randomUUID();
-          const path = documentStoragePath(companyId, documentId, file.name);
+          setCanRetry(false);
+          const identity = `${file.name}:${file.size}:${file.lastModified}:${kind}`;
+          try {
+            let documentId = uploaded.current?.file === identity ? uploaded.current.documentId : null;
+            if (documentId === null) {
+              documentId = crypto.randomUUID();
+              const path = documentStoragePath(companyId, documentId, file.name);
+              const { error } = await createClient()
+                .storage.from('documents')
+                .upload(path, file, { contentType: file.type, upsert: false });
 
-          const { error } = await createClient()
-            .storage.from('documents')
-            .upload(path, file, { contentType: file.type, upsert: false });
+              if (error) {
+                // The file stays chosen: pressing again sends the same one.
+                setState({ error: 'Fișierul nu a putut fi încărcat. A rămas ales — încearcă din nou.' });
+                setCanRetry(true);
+                return;
+              }
+              uploaded.current = { file: identity, documentId };
+            }
 
-          if (error) {
-            setState({ error: 'Fișierul nu a putut fi încărcat. Încearcă din nou.' });
-            return;
-          }
+            const result = await registerDocumentAction({
+              documentId,
+              vehicleId,
+              kind,
+              fileName: file.name,
+              mime: file.type,
+              size: file.size,
+            });
 
-          const result = await registerDocumentAction({
-            documentId,
-            vehicleId,
-            kind,
-            fileName: file.name,
-            mime: file.type,
-            size: file.size,
-          });
-
-          setState(result);
-          if (!result.error) {
-            form.reset();
-            router.refresh();
+            setState(result);
+            if (!result.error) {
+              uploaded.current = null;
+              form.reset();
+              router.refresh();
+            } else {
+              setCanRetry(true);
+            }
+          } catch (error) {
+            const failure = failureKind(error);
+            if (failure === null) throw error;
+            if (failure === 'session') announceSessionExpired();
+            setState({ error: FAILURE_MESSAGES[failure] });
+            setCanRetry(true);
           }
         });
       }}
@@ -203,6 +233,16 @@ export function DocumentUpload({
       {cameraFirst ? (
         pending ? (
           <p className="text-small text-muted">Se încarcă…</p>
+        ) : canRetry ? (
+          <div>
+            <button
+              type="button"
+              onClick={() => formRef.current?.requestSubmit()}
+              className={buttonClasses('secondary', 'sm')}
+            >
+              Încearcă din nou
+            </button>
+          </div>
         ) : null
       ) : (
         <div>

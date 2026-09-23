@@ -1,6 +1,5 @@
 'use client';
 
-import { useActionState } from 'react';
 import { revealContactAction, type RevealState } from '@/app/trasee/actions';
 import Link from 'next/link';
 import { FormError } from '@/components/auth/form';
@@ -8,6 +7,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { isQuotaError } from '@/lib/errors';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RevealState = {};
 
@@ -27,7 +28,7 @@ export function RevealContactButton({
   truckListingId: string;
   signedIn: boolean;
 }) {
-  const [state, action] = useActionState(revealContactAction, EMPTY);
+  const [state, action] = useKeptActionState(revealContactAction, EMPTY);
   const c = departuresCopy.detail;
 
   if (state.contact) {
@@ -53,7 +54,7 @@ export function RevealContactButton({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-3">
+    <KeepingForm action={action} className="flex flex-col gap-3">
       <input type="hidden" name="truckListingId" value={truckListingId} />
       <button type="submit" className={buttonClasses('secondary', 'md')}>
         {signedIn ? c.contact : 'Intră în cont ca să contactezi'}
@@ -69,6 +70,6 @@ export function RevealContactButton({
           </Link>
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

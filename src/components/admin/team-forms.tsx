@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { grantStaffAction, revokeStaffAction, type TeamState } from '@/app/admin/echipa/actions';
 import { buttonClasses } from '@/components/ui/button';
 import { teamCopy } from '@/content/echipa';
 import { STAFF_ROLES, STAFF_ROLE_LABELS, type StaffMember } from '@/lib/staff';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: TeamState = {};
 const c = teamCopy;
@@ -12,11 +14,15 @@ const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-
 
 /** Adding somebody, by the address on an account that already exists. */
 export function GrantStaff() {
-  const [state, action, pending] = useActionState(grantStaffAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(grantStaffAction, EMPTY);
   const id = useId();
 
   return (
-    <form action={action} className="mt-4 flex flex-col gap-3">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="mt-4 flex flex-col gap-3"
+    >
       <label htmlFor={`${id}-email`} className="flex flex-col gap-1.5 text-body">
         {c.add.email}
         <input
@@ -69,7 +75,7 @@ export function GrantStaff() {
           {state.notice}
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }
 
@@ -81,7 +87,7 @@ export function GrantStaff() {
  * were about to write.
  */
 export function RevokeStaff({ member }: { member: StaffMember }) {
-  const [state, action, pending] = useActionState(revokeStaffAction, EMPTY);
+  const [state, action, pending] = useKeptActionState(revokeStaffAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
   const name = member.full_name ?? member.email ?? member.user_id;
@@ -106,7 +112,7 @@ export function RevokeStaff({ member }: { member: StaffMember }) {
   }
 
   return (
-    <form
+    <KeepingForm
       action={action}
       onSubmit={(event) => {
         if (!window.confirm(c.revoke.confirm)) event.preventDefault();
@@ -139,6 +145,6 @@ export function RevokeStaff({ member }: { member: StaffMember }) {
           {state.error}
         </p>
       ) : null}
-    </form>
+    </KeepingForm>
   );
 }

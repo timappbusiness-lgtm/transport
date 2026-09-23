@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import Link from 'next/link';
 import { reportAction, type ReportState } from '@/app/verificare/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
@@ -8,6 +8,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { verificationCopy } from '@/content/siguranta';
 import { cn } from '@/lib/utils';
+import { KeepingForm } from '@/components/ui/keeping-form';
+import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ReportState = {};
 const c = verificationCopy.report;
@@ -29,7 +31,7 @@ export function ReportButton({
   signedIn: boolean;
   supportEmail: string | null;
 }) {
-  const [state, action] = useActionState(reportAction, EMPTY);
+  const [state, action] = useKeptActionState(reportAction, EMPTY);
   const [open, setOpen] = useState(false);
   const id = useId();
 
@@ -76,7 +78,7 @@ export function ReportButton({
   }
 
   return (
-    <form action={action} className="mt-5 flex max-w-[34rem] flex-col gap-4">
+    <KeepingForm action={action} className="mt-5 flex max-w-[34rem] flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label htmlFor={`${id}-reason`} className="text-body font-medium">
           {c.form.reason}
@@ -127,6 +129,6 @@ export function ReportButton({
           {c.form.cancel}
         </button>
       </div>
-    </form>
+    </KeepingForm>
   );
 }

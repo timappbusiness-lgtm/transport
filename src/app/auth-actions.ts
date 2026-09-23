@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { CURRENT_TERMS_VERSION } from '@/content/legal';
-import { safeNextPath } from '@/lib/auth/next-path';
+import { returnPathAfterAuth, safeNextPath, withNext } from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -58,7 +58,9 @@ export async function signInAction(
 ): Promise<AuthActionState> {
   const email = text(formData, 'email').trim();
   const password = text(formData, 'password');
-  const next = safeNextPath(text(formData, 'next'));
+  // Never back to a sign-in page: that would only send a signed-in person
+  // round again.
+  const next = returnPathAfterAuth(text(formData, 'next'));
 
   const validation = validateSignIn({ email, password });
   if (!validation.ok) {
@@ -146,7 +148,11 @@ async function signUp(
     };
   }
 
-  redirect(`/confirmare-email?email=${encodeURIComponent(email)}`);
+  // The confirmation page keeps the place too: its „resend" and its way
+  // back to sign-in both lead to the same form, the same step.
+  redirect(
+    withNext(`${ROUTES.confirmEmail}?email=${encodeURIComponent(email)}`, text(formData, 'next')),
+  );
 }
 
 export async function signUpIndividualAction(
@@ -168,6 +174,7 @@ export async function resendConfirmationAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const email = text(formData, 'email').trim();
+  const next = safeNextPath(text(formData, 'next'), ROUTES.account);
 
   const emailError = validateEmail(email);
   if (emailError) return { fieldErrors: { email: emailError }, values: { email } };
@@ -175,10 +182,12 @@ export async function resendConfirmationAction(
   const supabase = await createClient();
   const origin = await siteOrigin();
 
+  // The second e-mail goes where the first one would have: back to the
+  // form somebody was in the middle of, not to a dashboard.
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/cont')}` },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
   });
 
   if (error) {
@@ -197,6 +206,9 @@ export async function requestPasswordResetAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const email = text(formData, 'email').trim();
+  // The link comes back to the new-password page, which carries the place
+  // on: after the new password, the form, not the dashboard.
+  const afterReset = withNext(ROUTES.newPassword, text(formData, 'next'));
 
   const emailError = validateEmail(email);
   if (emailError) return { fieldErrors: { email: emailError }, values: { email } };
@@ -205,7 +217,7 @@ export async function requestPasswordResetAction(
   const origin = await siteOrigin();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent('/parola-noua')}`,
+    redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(afterReset)}`,
   });
 
   // Rate limiting is worth surfacing; anything else is swallowed on purpose.
@@ -246,7 +258,7 @@ export async function updatePasswordAction(
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: toAppError(error, 'updatePassword').message };
 
-  redirect('/cont');
+  redirect(returnPathAfterAuth(text(formData, 'next')));
 }
 
 // ---------------------------------------------------------------------
