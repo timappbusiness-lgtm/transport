@@ -40,7 +40,7 @@ export function EvidenceGallery({
         <h2 id="dovezi" className="text-h3">
           {c.title}
         </h2>
-        <p className="mt-2 text-sm text-muted">{c.empty}</p>
+        <p className="mt-2 text-body text-muted">{c.empty}</p>
       </section>
     );
   }
@@ -61,13 +61,13 @@ export function EvidenceGallery({
       <div className="mt-5 flex flex-col gap-6">
         {groups.map((group) => (
           <div key={group.kind}>
-            <h3 className="text-sm font-medium">{group.label}</h3>
+            <h3 className="text-body font-medium">{group.label}</h3>
 
             {group.kind === 'condition_report' || group.kind === 'incident_note' ? (
               <ul className="mt-2 flex flex-col gap-3">
                 {group.items.map((row) => (
                   <li key={row.id} className="rounded-input border border-border bg-ground-alt p-3">
-                    <p className="text-xs text-muted">
+                    <p className="text-small text-muted">
                       {c.at} {formatMoment(row.captured_at)} {c.by} {row.author_name}
                       {row.is_hidden ? (
                         <StatusBadge tone="danger" className="ml-2">
@@ -78,7 +78,7 @@ export function EvidenceGallery({
                     {group.kind === 'condition_report' && !row.is_hidden ? (
                       <ChecklistCard payload={row.payload} note={row.note} />
                     ) : (
-                      <p className="mt-1.5 whitespace-pre-line text-sm">{row.note}</p>
+                      <p className="mt-1.5 whitespace-pre-line break-words text-body">{row.note}</p>
                     )}
                     {children?.(row)}
                   </li>
@@ -106,7 +106,7 @@ export function EvidencePhoto({ row, url }: { row: EvidenceRow; url: string | un
     <figure className="min-w-0">
       <div className="relative aspect-[4/3] overflow-hidden rounded-input border border-border bg-ground-alt">
         {row.is_hidden || url === undefined ? (
-          <span className="absolute inset-0 flex items-center justify-center p-2 text-center text-xs text-muted">
+          <span className="absolute inset-0 flex items-center justify-center p-2 text-center text-small text-muted">
             {row.is_hidden ? c.hidden : '—'}
           </span>
         ) : (
@@ -120,7 +120,7 @@ export function EvidencePhoto({ row, url }: { row: EvidenceRow; url: string | un
           />
         )}
       </div>
-      <figcaption className="mt-1 text-xs leading-tight text-muted">
+      <figcaption className="mt-1 text-small leading-tight text-muted">
         {formatMoment(row.captured_at)}
         <span className="block">{row.author_name}</span>
         {row.lat !== null ? <span className="block">{c.location}</span> : null}
@@ -138,7 +138,7 @@ function ChecklistCard({
 }) {
   return (
     <div className="mt-2">
-      <p className="text-sm font-medium">{summariseChecklist(payload)}</p>
+      <p className="text-body font-medium">{summariseChecklist(payload)}</p>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
         {CONDITION_CHECKLIST.map((item) => (
           <div key={item.key} className="flex items-baseline justify-between gap-2 text-small">
@@ -147,7 +147,7 @@ function ChecklistCard({
           </div>
         ))}
       </dl>
-      {note !== null ? <p className="mt-2 whitespace-pre-line text-sm">{note}</p> : null}
+      {note !== null ? <p className="mt-2 whitespace-pre-line break-words text-body">{note}</p> : null}
     </div>
   );
 }
@@ -186,7 +186,7 @@ export function ComparisonView({
       <h3 className="text-h3">{title}</h3>
       <div className="mt-4 grid gap-5 lg:grid-cols-2">
         <div>
-          <p className="text-sm font-medium text-muted">{leftLabel}</p>
+          <p className="text-body font-medium text-muted">{leftLabel}</p>
           <ul className="mt-2 grid grid-cols-2 gap-2">
             {left.map((item) =>
               typeof item === 'string' ? (
@@ -203,7 +203,7 @@ export function ComparisonView({
                       />
                     ) : null}
                   </div>
-                  <p className="mt-1 text-xs text-muted">{c.fromClient}</p>
+                  <p className="mt-1 text-small text-muted">{c.fromClient}</p>
                 </li>
               ) : (
                 <li key={item.id} className="min-w-0">
@@ -215,7 +215,7 @@ export function ComparisonView({
         </div>
 
         <div>
-          <p className="text-sm font-medium text-muted">{rightLabel}</p>
+          <p className="text-body font-medium text-muted">{rightLabel}</p>
           <ul className="mt-2 grid grid-cols-2 gap-2">
             {right.map((row) => (
               <li key={row.id} className="min-w-0">

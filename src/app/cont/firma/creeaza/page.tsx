@@ -26,7 +26,7 @@ export default async function Page({
       <div>
         <EyebrowPill>Pasul 2 din 2</EyebrowPill>
         <h1 className="mt-2 text-h2">Datele firmei</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">
+        <p className="mt-2 max-w-[54ch] text-body text-muted">
           După ce salvezi, poți încărca documentele și trimite firma la verificare.
         </p>
       </div>

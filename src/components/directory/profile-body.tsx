@@ -88,7 +88,7 @@ export function CompanyProfileBody({
 
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
-      <p className="text-sm">
+      <p className="text-body">
         <Link
           href={ROUTES.companies}
           className="text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
@@ -100,7 +100,7 @@ export function CompanyProfileBody({
       <header className="mt-6 flex flex-wrap items-start gap-5">
         <Logo company={company} logoUrl={companyLogoUrl(company.logoPath)} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-h2 leading-tight">{company.name}</h1>
+          <h1 className="text-h2 leading-tight break-words">{company.name}</h1>
           <p className="mt-2 text-body text-muted">
             {[company.city, company.county, COMPANY_TYPE_LABELS[company.companyType]]
               .filter(Boolean)
@@ -115,11 +115,16 @@ export function CompanyProfileBody({
             ) : null}
           </div>
         </div>
+        {/* The one thing a visitor came to do, where they arrive rather
+            than after five sections. It repeats, quieter, at the end. */}
+        <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} w-full sm:w-auto`}>
+          {c.cta.quote}
+        </Link>
       </header>
 
       {company.description ? (
         <section aria-labelledby="despre" className="mt-10">
-          <h2 id="despre" className="text-lg">
+          <h2 id="despre" className="text-h3">
             {c.about}
           </h2>
           <p className="mt-2 max-w-[62ch] text-body leading-relaxed text-muted">
@@ -142,7 +147,7 @@ export function CompanyProfileBody({
 
       {ratings.length > 0 ? (
         <section aria-labelledby="evaluari" className="mt-8">
-          <h2 id="evaluari" className="text-lg">
+          <h2 id="evaluari" className="text-h3">
             {ratingsCopy.profile.latest}
           </h2>
           <div className="mt-2">
@@ -161,7 +166,7 @@ export function CompanyProfileBody({
           {c.cta.quote}
         </h2>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+          <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
             {c.cta.quote}
           </Link>
           {/* The reveal is tied to a departure, because that is what the
@@ -180,7 +185,7 @@ export function CompanyProfileBody({
       </section>
 
       <section aria-labelledby="raportare" className="mt-12 border-t border-border pt-8">
-        <h2 id="raportare" className="text-lg">
+        <h2 id="raportare" className="text-h3">
           {c.report.title}
         </h2>
         <p className="mt-2 max-w-[60ch] text-body leading-relaxed text-muted">
@@ -257,7 +262,7 @@ function Capabilities({
 
   return (
     <section aria-labelledby="capabilitati" className="mt-10">
-      <h2 id="capabilitati" className="text-lg">
+      <h2 id="capabilitati" className="text-h3">
         {cc.title}
       </h2>
 
@@ -313,10 +318,10 @@ function Shield({
 }) {
   return (
     <section aria-labelledby="conformitate" className="mt-10">
-      <h2 id="conformitate" className="text-lg">
+      <h2 id="conformitate" className="text-h3">
         {c.shield.title}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.shield.lede}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.shield.lede}</p>
 
       <Card className="mt-5 p-5 sm:p-6">
         {documents.length > 0 ? (
@@ -376,10 +381,10 @@ const TONES: Record<DocumentState, StatusTone> = {
 function Routes({ routes }: { routes: CompanyRoute[] }) {
   return (
     <section aria-labelledby="trasee" className="mt-10">
-      <h2 id="trasee" className="text-lg">
+      <h2 id="trasee" className="text-h3">
         {c.routes.title}
       </h2>
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-body text-muted">
         {routes.length > 0 ? c.routes.lede : c.routes.empty}
       </p>
 
@@ -437,7 +442,7 @@ function Logo({ company, logoUrl }: { company: PublicCompany; logoUrl: string | 
       aria-hidden="true"
       className={cn(
         'flex size-18 flex-none items-center justify-center rounded-full',
-        'border border-border bg-ground-alt font-mono text-lg text-muted',
+        'border border-border bg-ground-alt font-mono text-body-lg text-muted',
       )}
     >
       {monogram(company.name)}

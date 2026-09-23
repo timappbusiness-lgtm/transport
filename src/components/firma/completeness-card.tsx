@@ -28,7 +28,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
         {c.title}
       </h2>
 
-      <p className="mt-2 text-sm text-muted">
+      <p className="mt-2 text-body text-muted">
         {c.progress(`${completeness.done} din ${completeness.total}`)}
       </p>
 
@@ -37,7 +37,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
         className="mt-3 h-1.5 overflow-hidden rounded-pill bg-ground-alt"
       >
         <div
-          className="h-full rounded-pill bg-foreground"
+          className="h-full rounded-pill bg-accent"
           style={{ width: `${completeness.percent}%` }}
         />
       </div>
@@ -45,10 +45,10 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
       <p className="mt-3 max-w-[52ch] text-small text-muted">{c.lede}</p>
 
       {missing.length === 0 ? (
-        <p className="mt-4 text-sm">{c.done}</p>
+        <p className="mt-4 text-body">{c.done}</p>
       ) : (
         <>
-          <p className="mt-4 text-sm font-medium">{c.missing}</p>
+          <p className="mt-4 text-body font-medium">{c.missing}</p>
           <ul className="mt-2 flex flex-col gap-1.5">
             {missing.map((item) => (
               <li key={item.label} className="text-small">

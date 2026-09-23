@@ -40,11 +40,11 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       {jobLate === true ? (
-        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
           {c.jobWarning}
         </p>
       ) : null}
@@ -54,7 +54,8 @@ export default async function Page() {
           Cereri
         </h2>
         {rows.length === 0 ? (
-          <p className="text-sm text-muted">{c.empty}</p>
+          // Deletions: words only, no drawing.
+          <p className="rounded-card border border-border bg-surface p-6 text-body text-muted">{c.empty}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {rows.map((row) => (
@@ -63,24 +64,24 @@ export default async function Page() {
                 className={`rounded-card border p-4 ${TONES[row.status] ?? 'border-border bg-surface'}`}
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="text-sm font-medium">
+                  <p className="text-body font-medium">
                     {c.kinds[row.kind]} · {c.statuses[row.status]}
                   </p>
-                  <p className="text-xs text-muted">
+                  <p className="text-small text-muted">
                     cerută {when(row.requested_at)}
                     {row.scheduled_for !== null ? ` · programată ${when(row.scheduled_for)}` : ''}
                     {row.completed_at !== null ? ` · finalizată ${when(row.completed_at)}` : ''}
                   </p>
                 </div>
-                <p className="mt-1 break-all font-mono text-xs text-muted">
+                <p className="mt-1 break-all font-mono text-small text-muted">
                   {row.user_id ?? 'cont șters'}
                   {row.company_id !== null ? ` · firmă ${row.company_id}` : ''}
                 </p>
                 {row.reason_blocked !== null ? (
-                  <p className="mt-2 text-sm">{row.reason_blocked}</p>
+                  <p className="mt-2 text-body">{row.reason_blocked}</p>
                 ) : null}
                 {row.staff_reason !== null ? (
-                  <p className="mt-2 text-sm text-muted">Motiv staff: {row.staff_reason}</p>
+                  <p className="mt-2 text-body text-muted">Motiv staff: {row.staff_reason}</p>
                 ) : null}
                 {row.status === 'scheduled' || row.status === 'blocked' ? (
                   <div className="mt-3">
@@ -100,7 +101,7 @@ export default async function Page() {
         <h2 id="anonimizare" className="text-h3">
           {c.anonymiseTitle}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.anonymiseBody}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.anonymiseBody}</p>
         <div className="mt-4">
           <AnonymiseAccount />
         </div>

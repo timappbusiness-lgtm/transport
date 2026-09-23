@@ -35,7 +35,7 @@ export function FaqBody({ entries }: { entries: FaqEntry[] }) {
 
         <FaqAccordion entries={entries} className="mt-10 lg:grid-cols-2" />
 
-        <p className="mt-8 text-sm">
+        <p className="mt-8 text-body">
           <Link
             href={ROUTES.faq}
             className="link-accent"

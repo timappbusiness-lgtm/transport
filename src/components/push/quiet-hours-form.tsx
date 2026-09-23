@@ -19,13 +19,13 @@ export function QuietHoursForm({ quiet }: { quiet: QuietHours }) {
     <form action={action} className="flex flex-col gap-4" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
-        <p className="mt-1.5 max-w-[60ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[60ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <FormError>{state.error}</FormError>
       {state.notice ? <FormNotice>{state.notice}</FormNotice> : null}
 
-      <label className="flex items-start gap-3 text-sm">
+      <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"
           name="quietHoursEnabled"
@@ -45,7 +45,7 @@ export function QuietHoursForm({ quiet }: { quiet: QuietHours }) {
           defaultValue={String(quiet.maxPerHour)}
         />
       </div>
-      <p className="-mt-2 text-xs text-muted">
+      <p className="-mt-2 text-small text-muted">
         {c.zone} {c.capHint}
       </p>
 

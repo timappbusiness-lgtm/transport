@@ -131,7 +131,7 @@ export function PricingBody({
           ))}
         </ul>
       ) : (
-        <p className="mt-8 text-sm text-muted">{c.card.noPeriod}</p>
+        <p className="mt-8 text-body text-muted">{c.card.noPeriod}</p>
       )}
 
       <PlanComparison plans={shown} />
@@ -173,14 +173,14 @@ function actionFor(
 function NeverPay() {
   return (
     <section aria-labelledby="niciodata" className="mt-16">
-      <h2 id="niciodata" className="text-xl">
+      <h2 id="niciodata" className="text-h3">
         {c.never.title}
       </h2>
       <ul className="mt-6 grid gap-4 sm:grid-cols-3">
         {c.never.items.map((item) => (
           <li key={item.title} className="rounded-card border border-border bg-surface p-5">
             <h3 className="text-body font-medium">{item.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
+            <p className="mt-2 text-body leading-relaxed text-muted">{item.body}</p>
           </li>
         ))}
       </ul>
@@ -202,11 +202,11 @@ function BillingFaq({ settings }: { settings: PricingSettings }) {
 
   return (
     <section aria-labelledby="facturare" className="mt-16">
-      <h2 id="facturare" className="text-xl">
+      <h2 id="facturare" className="text-h3">
         {c.faq.title}
       </h2>
       <FaqAccordion entries={entries} className="mt-6 lg:grid-cols-2" />
-      <p className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+      <p className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-body">
         {[c.faq.links.faq, c.faq.links.verification].map((link) => (
           <Link
             key={link.href}

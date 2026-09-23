@@ -58,9 +58,9 @@ export function ExportPanel({ latest }: ExportPanelProps) {
       <h2 id="export" className="text-h3">
         {c.title}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.body}</p>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.note}</p>
-      <p className="mt-2 max-w-[62ch] text-xs text-muted">{c.noFiles}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.body}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.note}</p>
+      <p className="mt-2 max-w-[62ch] text-small text-muted">{c.noFiles}</p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button

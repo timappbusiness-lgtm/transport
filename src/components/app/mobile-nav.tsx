@@ -87,7 +87,7 @@ export function MobileNav({
                 aria-current={current === item.href ? 'page' : undefined}
                 className={cn(
                   'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',
-                  'text-xs leading-tight',
+                  'text-small leading-tight',
                   current === item.href ? 'font-medium text-accent' : 'text-muted',
                 )}
               >
@@ -116,7 +116,7 @@ export function MobileNav({
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
-                className="flex h-14 w-full flex-col items-center justify-center gap-0.5 text-xs text-muted"
+                className="flex h-14 w-full flex-col items-center justify-center gap-0.5 text-small text-muted"
               >
                 <Icon as={uiIcon('menu')} size="md" />
                 {c.moreLabel}

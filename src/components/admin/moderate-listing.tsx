@@ -44,7 +44,7 @@ export function ModerateListing({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-small text-muted underline underline-offset-4 hover:text-foreground"
       >
         {hidden ? c.restore : c.hide}
       </button>
@@ -64,18 +64,18 @@ export function ModerateListing({
       <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {hidden ? c.restoreTitle : c.hideTitle}
       </label>
-      {!hidden ? <p className="text-xs text-muted">{c.hideHint}</p> : null}
+      {!hidden ? <p className="text-small text-muted">{c.hideHint}</p> : null}
       <input
         id={`${id}-reason`}
         name="reason"
         required
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
       />
       <FormError>{state.fieldErrors?.reason}</FormError>
 
       <div className="flex flex-wrap gap-1.5">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {hidden ? c.restoreSubmit : c.hideSubmit}
         </button>
         <button

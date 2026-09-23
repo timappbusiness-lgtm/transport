@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { buttonClasses } from '@/components/ui/button';
-import { Card, StatusBadge } from '@/components/ui/primitives';
+import { Figure, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, transportRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -18,6 +18,7 @@ import {
 } from '@/lib/orders';
 import { loadMyOrders, type OrderRow } from '@/lib/orders-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: ordersCopy.list.title };
 export const dynamic = 'force-dynamic';
@@ -57,7 +58,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
     <div className="flex flex-col gap-6">
       <TopBar title={isDriver ? ordersCopy.driver.title : c.title} actions={[]} />
 
-      {!isDriver ? <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p> : null}
+      {!isDriver ? <p className="max-w-[62ch] text-body text-muted">{c.lede}</p> : null}
 
       <nav aria-label="Cutii" className="flex flex-wrap gap-1.5">
         {(Object.keys(BOX_LABELS) as OrderBox[]).map((value) => (
@@ -88,14 +89,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       ) : null}
 
       {orders.length === 0 ? (
-        <Card className="p-6">
-          <h2 className="text-lg">
-            {isDriver && box === 'active' ? ordersCopy.driver.none : c.empty[box]}
-          </h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">
-            {isDriver && box === 'active' ? ordersCopy.driver.noneBody : c.empty[`${box}Body`]}
-          </p>
-        </Card>
+        <EmptyState
+          figure="route"
+          title={isDriver && box === 'active' ? ordersCopy.driver.none : c.empty[box]}
+          body={isDriver && box === 'active' ? ordersCopy.driver.noneBody : c.empty[`${box}Body`]}
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (
@@ -120,7 +118,7 @@ function OrderCard({ order }: { order: OrderRow }) {
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-base font-medium">
+          <p className="text-body font-medium">
             {order.from_city ?? '—'} → {order.to_city ?? '—'}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
@@ -134,9 +132,9 @@ function OrderCard({ order }: { order: OrderRow }) {
         </div>
 
         <div className="flex flex-none flex-col items-end gap-2">
-          <p className="font-display text-lg leading-none tabular-nums">
+          <Figure as="p" size="sm" tone="plain">
             {formatMoney(order.agreed_price, order.currency as never)}
-          </p>
+          </Figure>
           <StatusBadge tone={mine ? 'warning' : 'neutral'}>
             {orderStatusLabel(order.status)}
           </StatusBadge>

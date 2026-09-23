@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'ink' | 'secondary' | 'onDark' | 'onDarkGhost';
+type Variant = 'primary' | 'ink' | 'secondary' | 'onDarkGhost';
 type Size = 'sm' | 'md';
 
 const VARIANTS: Record<Variant, string> = {
@@ -9,13 +9,19 @@ const VARIANTS: Record<Variant, string> = {
   // the accent is 7.09:1, and on the hover shade 9.18:1.
   // This used to be an ink pill, which meant the one action a screen
   // wanted you to take looked like every other dark thing on it.
-  primary: 'bg-accent text-on-accent hover:bg-accent-hover',
+  //
+  // On a dark section the same button takes the bright step, with the
+  // dark ink on it: the petrol fill there measured 1.45:1 against its
+  // ground and ΔE00 14, a button nobody sees. The bright fill is 6.31:1
+  // and ΔE00 55 on the light end of the gradient, and ink on it 8.80:1.
+  primary:
+    'bg-accent text-on-accent hover:bg-accent-hover in-data-[surface=dark]:bg-accent-bright in-data-[surface=dark]:text-on-accent-bright in-data-[surface=dark]:hover:bg-accent-bright-hover',
   // Ink pill, kept for the rare screen where a second filled button sits
   // beside the primary one and must not compete with it.
   ink: 'bg-foreground text-white hover:bg-ink-hover',
   secondary: 'border border-border-strong text-foreground hover:bg-ground-alt',
-  // White pill on the dark sections: ink on white is 14.37:1.
-  onDark: 'bg-white text-foreground hover:bg-ground-alt',
+  // The second action on a dark section: an outline, so the primary is
+  // the only filled thing there.
   onDarkGhost: 'border border-white/45 text-white hover:bg-white/12',
 };
 

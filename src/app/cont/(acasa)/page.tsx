@@ -146,8 +146,8 @@ function NoCompany({ context }: { context: AccountContext }) {
     const c = accountCopy.needsCompany;
     return (
       <Card className="p-6">
-        <h2 className="text-lg">{c.title}</h2>
-        <p className="mt-2 max-w-[52ch] text-sm text-muted">{c.lede}</p>
+        <h2 className="text-h3">{c.title}</h2>
+        <p className="mt-2 max-w-[52ch] text-body text-muted">{c.lede}</p>
         <Link
           href={ROUTES.accountCompanyCreate}
           className={`${buttonClasses('primary', 'md')} mt-5`}
@@ -177,8 +177,8 @@ async function IndividualHome({ context }: { context: AccountContext }) {
           between a request on the board and one waiting as a draft. */}
       {!verified ? (
         <Card className="p-5">
-          <h2 className="text-base">{c.verifyPhone.title}</h2>
-          <p className="mt-1.5 max-w-[52ch] text-sm text-muted">{c.verifyPhone.body}</p>
+          <h2 className="text-h3">{c.verifyPhone.title}</h2>
+          <p className="mt-1.5 max-w-[52ch] text-body text-muted">{c.verifyPhone.body}</p>
           <div className="mt-4">
             <PhoneVerification phone={context.profile?.phone ?? ''} verified={verified} />
           </div>
@@ -191,8 +191,8 @@ async function IndividualHome({ context }: { context: AccountContext }) {
       <RequestsPanel requests={requests} />
 
       <Card className="p-5">
-        <h2 className="text-base">{c.routes.title}</h2>
-        <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.routes.body}</p>
+        <h2 className="text-h3">{c.routes.title}</h2>
+        <p className="mt-1.5 max-w-[56ch] text-body text-muted">{c.routes.body}</p>
         <Link href={ROUTES.routes} className={`${buttonClasses('secondary', 'md')} mt-4`}>
           {c.routes.action}
         </Link>
@@ -229,8 +229,8 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
   if (requests.length === 0) {
     return (
       <Card className="p-5">
-        <h2 className="text-base">{c.noRequests.title}</h2>
-        <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.noRequests.body}</p>
+        <h2 className="text-h3">{c.noRequests.title}</h2>
+        <p className="mt-1.5 max-w-[56ch] text-body text-muted">{c.noRequests.body}</p>
         <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} mt-4`}>
           {c.noRequests.action}
         </Link>
@@ -241,10 +241,10 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-base">{c.requests.title}</h2>
+        <h2 className="text-h3">{c.requests.title}</h2>
         <Link
           href={ROUTES.accountRequests}
-          className="text-sm text-muted underline-offset-4 hover:underline"
+          className="text-body text-muted underline-offset-4 hover:underline"
         >
           {c.requests.all}
         </Link>
@@ -256,9 +256,9 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
             key={request.id}
             className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border py-3 last:border-b-0"
           >
-            <span className="min-w-0 text-sm">
+            <span className="min-w-0 text-body">
               {request.fromCity} → {request.toCity}
-              <span className="block text-xs text-muted">
+              <span className="block text-small text-muted">
                 {formatWindow(request.loadingFrom, request.loadingTo)}
               </span>
             </span>
@@ -269,7 +269,7 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
         ))}
       </ul>
 
-      <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'sm')} mt-5`}>
+      <Link href={ROUTES.newRequest} className={`${buttonClasses('secondary', 'sm')} mt-5`}>
         {c.noRequests.action}
       </Link>
     </Card>
@@ -280,8 +280,8 @@ function DriverHome() {
   const c = appCopy.driver;
   return (
     <Card className="p-5">
-      <h2 className="text-base">{c.title}</h2>
-      <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted">{c.body}</p>
+      <h2 className="text-h3">{c.title}</h2>
+      <p className="mt-1.5 max-w-[60ch] text-body leading-relaxed text-muted">{c.body}</p>
     </Card>
   );
 }

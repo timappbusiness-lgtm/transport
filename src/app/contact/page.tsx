@@ -46,12 +46,12 @@ export default function Page() {
           <p>
             <StatusBadge tone="warning">{c.missing.title}</StatusBadge>
           </p>
-          <p className="mt-3 max-w-[62ch] text-sm">{c.missing.body}</p>
+          <p className="mt-3 max-w-[62ch] text-body">{c.missing.body}</p>
         </section>
       ) : null}
 
       <section aria-labelledby="canale" className="mt-8">
-        <h2 id="canale" className="text-lg">
+        <h2 id="canale" className="text-h3">
           {c.channels.title}
         </h2>
         <dl className="mt-4 flex flex-col gap-4">
@@ -82,14 +82,14 @@ export default function Page() {
         <h2 id="raspuns" className="text-h3">
           {c.response.title}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.response.body}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.response.body}</p>
       </section>
 
       <section aria-labelledby="operator" className="mt-8">
-        <h2 id="operator" className="text-lg">
+        <h2 id="operator" className="text-h3">
           {c.operator.title}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.operator.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.operator.lede}</p>
         <dl className="mt-4 grid gap-3 sm:grid-cols-2">
           <Detail label={c.operator.legalName} value={operatorField('legalName')} />
           <Detail label={c.operator.cui} value={operatorField('cui')} />
@@ -99,7 +99,7 @@ export default function Page() {
       </section>
 
       <section aria-labelledby="singur" className="mt-8">
-        <h2 id="singur" className="text-lg">
+        <h2 id="singur" className="text-h3">
           {c.selfService.title}
         </h2>
         <ul className="mt-4 flex flex-col gap-3">
@@ -137,7 +137,7 @@ function Channel({
 }) {
   return (
     <div className="rounded-card border border-border bg-surface p-4">
-      <dt className="text-xs uppercase tracking-[0.08em] text-muted">{label}</dt>
+      <dt className="text-small uppercase tracking-[0.08em] text-muted">{label}</dt>
       <dd className="mt-1.5">
         {href === null ? (
           <span className="text-muted">{value}</span>
@@ -146,7 +146,7 @@ function Channel({
             {value}
           </a>
         )}
-        <p className="mt-1 max-w-[54ch] text-sm text-muted">{hint}</p>
+        <p className="mt-1 max-w-[54ch] text-body text-muted">{hint}</p>
       </dd>
     </div>
   );
@@ -155,7 +155,7 @@ function Channel({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-border bg-surface p-4">
-      <dt className="text-xs uppercase tracking-[0.08em] text-muted">{label}</dt>
+      <dt className="text-small uppercase tracking-[0.08em] text-muted">{label}</dt>
       <dd className={value === TO_BE_FILLED ? 'mt-1.5 text-muted' : 'mt-1.5'}>{value}</dd>
     </div>
   );
@@ -167,7 +167,7 @@ function SelfServe({ href, label, hint }: { href: string; label: string; hint: s
       <Link href={href} className="link-accent">
         {label}
       </Link>
-      <p className="mt-1 max-w-[54ch] text-sm text-muted">{hint}</p>
+      <p className="mt-1 max-w-[54ch] text-body text-muted">{hint}</p>
     </li>
   );
 }

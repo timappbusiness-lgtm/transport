@@ -297,7 +297,7 @@ test.describe('the photo is never taken without being asked', () => {
     await expect(page.getByLabel('Marca')).toHaveValue('Opel');
 
     await expect(page.getByLabel(/Atașează și poza/)).toHaveCount(0);
-    await expect(page.getByText(/după ce intri în cont/)).toBeVisible();
+    await expect(page.getByText(/Poza se poate atașa după ce intri în cont/)).toBeVisible();
   });
 });
 

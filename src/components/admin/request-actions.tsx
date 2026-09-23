@@ -39,7 +39,7 @@ export function RequestActions({ id, status }: { id: string; status: 'new' | 'co
 
       <form action={activate}>
         <input type="hidden" name="id" value={id} />
-        <button type="submit" className={buttonClasses('primary', 'sm')}>
+        <button type="submit" className={buttonClasses('ink', 'sm')}>
           {c.activate}
         </button>
       </form>

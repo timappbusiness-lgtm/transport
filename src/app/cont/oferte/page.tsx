@@ -8,7 +8,7 @@ import { OfferThread } from '@/components/offers/offer-thread';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import { WithdrawOffer } from '@/components/offers/withdraw-offer';
 import { buttonClasses } from '@/components/ui/button';
-import { Card, StatusBadge } from '@/components/ui/primitives';
+import { Figure, StatusBadge } from '@/components/ui/primitives';
 import { HelpLink } from '@/components/help/help-link';
 import { favouritesCopy } from '@/content/favoriti';
 import { loadFavouriteIds } from '@/lib/favourites-source';
@@ -27,6 +27,7 @@ import {
 } from '@/lib/offers';
 import { loadMyOffers, loadOfferThread, type MyOffer, type OfferBox } from '@/lib/offers-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: offersCopy.meta.title };
 export const dynamic = 'force-dynamic';
@@ -152,7 +153,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       </nav>
 
       {only !== null && offers.length > 0 ? (
-        <p className="text-sm">
+        <p className="text-body">
           <Link href={`${ROUTES.accountOffers}?cutie=${box}`} className="link-accent">
             Vezi toate ofertele
           </Link>
@@ -160,19 +161,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       ) : null}
 
       {offers.length === 0 ? (
-        <Card className="p-6">
-          <h2 className="text-h3">
-            {box === 'trimise' ? offersCopy.sent.empty : offersCopy.received.empty}
-          </h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">
-            {box === 'trimise' ? offersCopy.sent.emptyBody : offersCopy.received.emptyBody}
-          </p>
-          {box === 'trimise' ? (
-            <Link href={ROUTES.requests} className={`${buttonClasses('primary', 'md')} mt-5`}>
-              {offersCopy.sent.emptyAction}
-            </Link>
-          ) : null}
-        </Card>
+        <EmptyState
+          figure={box === 'trimise' ? 'search' : 'list'}
+          title={box === 'trimise' ? offersCopy.sent.empty : offersCopy.received.empty}
+          body={box === 'trimise' ? offersCopy.sent.emptyBody : offersCopy.received.emptyBody}
+          action={
+            box === 'trimise' ? (
+              <Link href={ROUTES.requests} className={buttonClasses('primary', 'md')}>
+                {offersCopy.sent.emptyAction}
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-4">
           {offers.map((offer) => (
@@ -212,11 +212,11 @@ function Row({
               {offer.request_title ?? `${offer.from_city} — ${offer.to_city}`}
             </Link>
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-body text-muted">
             {offer.from_city} — {offer.to_city} · încărcare de la {formatDay(offer.loading_from)}
           </p>
           {offer.counterparty !== null ? (
-            <p className="mt-0.5 text-sm text-muted">{offer.counterparty}</p>
+            <p className="mt-0.5 text-body text-muted">{offer.counterparty}</p>
           ) : null}
         </div>
 
@@ -224,21 +224,16 @@ function Row({
           {/* The price is the key number while the offer is alive or won;
               on one that was refused, withdrawn or ran out it is history,
               and history is ink. */}
-          <p
-            className={cn(
-              'font-display text-xl leading-none tabular-nums',
-              isLive(offer.status) || offer.status === 'accepted' ? 'text-accent' : 'text-foreground',
-            )}
-          >
+          <Figure as="p" size="sm" tone={isLive(offer.status) || offer.status === 'accepted' ? 'accent' : 'plain'}>
             {formatMoney(offer.price_amount, offer.currency)}
-          </p>
+          </Figure>
           <p className="mt-1.5">
             <StatusBadge tone={TONES[offer.status]}>
               {OFFER_STATUS_LABELS[offer.status]}
             </StatusBadge>
           </p>
           {isLive(offer.status) ? (
-            <p className={cn('mt-1 text-xs', urgent ? 'text-danger' : 'text-muted')}>
+            <p className={cn('mt-1 text-small', urgent ? 'text-danger' : 'text-muted')}>
               {timeLeft(offer.valid_until, now)}
             </p>
           ) : null}
@@ -257,7 +252,7 @@ function Row({
             <OrderContacts offerId={offer.id} />
           </div>
           {offer.transport_id !== null ? (
-            <p className="mt-3 text-sm">
+            <p className="mt-3 text-body">
               <Link href={transportRoute(offer.transport_id)} className="link-accent">
                 {offersCopy.sent.seeOrder}
               </Link>

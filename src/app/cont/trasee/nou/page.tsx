@@ -36,7 +36,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[54ch] text-body text-muted">{c.lede}</p>
         <p className="mt-2">
           <HelpLink topic="routeForm" />
         </p>
@@ -44,7 +44,7 @@ export default async function Page() {
 
       {vehicles.length === 0 ? (
         <section className="rounded-card border border-warning/40 bg-warning/8 p-5">
-          <p className="text-sm">{c.noVehicle}</p>
+          <p className="text-body">{c.noVehicle}</p>
           <div className="mt-4">
             <Link href={ROUTES.accountFleet} className={buttonClasses('primary', 'sm')}>
               {c.noVehicleAction}

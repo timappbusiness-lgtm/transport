@@ -49,8 +49,8 @@ export function ReturnLeg({
 
   return (
     <Card className="p-4">
-      <h2 className="text-base">{c.title}</h2>
-      <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.lede}</p>
+      <h2 className="text-h3">{c.title}</h2>
+      <p className="mt-1 max-w-[60ch] text-body text-muted">{c.lede}</p>
 
       <p className="mt-3 text-small text-muted">
         {prefill.fromCity} → {prefill.toCity} · {prefill.availableFrom}

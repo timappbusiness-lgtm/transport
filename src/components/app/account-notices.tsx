@@ -19,9 +19,9 @@ export function AccountNotices({ profile }: { profile: Profile | null }) {
       {profile.is_test ? (
         <div
           role="status"
-          className="mb-4 flex flex-wrap items-center gap-2 rounded-card border border-border-strong bg-ground-alt px-4 py-3 text-sm"
+          className="mb-4 flex flex-wrap items-center gap-2 rounded-card border border-border-strong bg-ground-alt px-4 py-3 text-body"
         >
-          <span className="rounded-full border border-border-strong px-2 py-0.5 font-mono text-xs uppercase tracking-[0.08em]">
+          <span className="rounded-full border border-border-strong px-2 py-0.5 font-mono text-small uppercase tracking-[0.08em]">
             Cont de test
           </span>
           <span className="text-muted">
@@ -34,7 +34,7 @@ export function AccountNotices({ profile }: { profile: Profile | null }) {
       {profile.email_undeliverable_at !== null ? (
         <div
           role="alert"
-          className="mb-4 rounded-card border border-danger/45 bg-danger/8 px-4 py-3 text-sm"
+          className="mb-4 rounded-card border border-danger/45 bg-danger/8 px-4 py-3 text-body"
         >
           <p>
             <strong>Nu putem trimite e-mailuri la adresa ta.</strong> Furnizorul ne-a spus că

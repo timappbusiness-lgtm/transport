@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: ReviewState = {};
 const c = adminReviewCopy;
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+  'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * Approving or rejecting one document.
@@ -51,7 +51,7 @@ export function DocumentReview({
           </label>
           <textarea id={`${id}-reason`} name="reason" rows={2} className={cn(CONTROL, 'resize-y')} />
           {state.fieldErrors?.reason ? (
-            <p className="text-xs text-danger">{state.fieldErrors.reason}</p>
+            <p className="text-small text-danger">{state.fieldErrors.reason}</p>
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -89,15 +89,15 @@ export function DocumentReview({
             defaultValue={extractedValidUntil ?? ''}
             className={cn(CONTROL, 'max-w-[12rem]')}
           />
-          <p className="text-xs text-muted">{c.documents.validUntilHint}</p>
+          <p className="text-small text-muted">{c.documents.validUntilHint}</p>
           {state.fieldErrors?.valid_until ? (
-            <p className="text-xs text-danger">{state.fieldErrors.valid_until}</p>
+            <p className="text-small text-danger">{state.fieldErrors.valid_until}</p>
           ) : null}
         </div>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={buttonClasses('primary', 'sm')}>
+        <button type="submit" className={buttonClasses('ink', 'sm')}>
           {c.documents.approve}
         </button>
         <button
@@ -137,9 +137,9 @@ export function CompanyReview({ companyId }: { companyId: string }) {
             {c.companies.rejectReason}
           </label>
           <textarea id={`${id}-reason`} name="reason" rows={2} className={cn(CONTROL, 'resize-y')} />
-          <p className="text-xs text-muted">{c.companies.rejectHint}</p>
+          <p className="text-small text-muted">{c.companies.rejectHint}</p>
           {state.fieldErrors?.reason ? (
-            <p className="text-xs text-danger">{state.fieldErrors.reason}</p>
+            <p className="text-small text-danger">{state.fieldErrors.reason}</p>
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -163,7 +163,7 @@ export function CompanyReview({ companyId }: { companyId: string }) {
     <form action={action} className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="company_id" value={companyId} />
       <input type="hidden" name="decision" value="approve" />
-      <button type="submit" className={buttonClasses('primary', 'sm')}>
+      <button type="submit" className={buttonClasses('ink', 'sm')}>
         {c.companies.approve}
       </button>
       <button

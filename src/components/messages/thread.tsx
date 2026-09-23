@@ -87,7 +87,7 @@ export function Thread({
 
       {groups.map((group) => (
         <section key={group.day} aria-label={group.label} className="flex flex-col gap-2">
-          <p className="text-center text-xs text-muted">{group.label}</p>
+          <p className="text-center text-small text-muted">{group.label}</p>
           {group.messages.map((message) => (
             <Bubble key={message.id} message={message} urls={urls} />
           ))}
@@ -100,7 +100,7 @@ export function Thread({
 function Bubble({ message, urls }: { message: Message; urls: Record<string, string> }) {
   if (message.hidden_at !== null) {
     return (
-      <p className="self-center text-xs text-muted">
+      <p className="self-center text-small text-muted">
         <StatusBadge tone="neutral">{c.hidden}</StatusBadge>
       </p>
     );
@@ -111,16 +111,16 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
       className={cn(
         'max-w-[min(34rem,85%)] rounded-card border px-3.5 py-2.5',
         message.mine
-          ? 'self-end border-transparent bg-foreground text-ground'
+          ? 'self-end border-transparent bg-foreground text-white'
           : 'self-start border-border bg-surface',
       )}
     >
       {!message.mine ? (
-        <p className="text-xs text-muted">{message.sender_name ?? '—'}</p>
+        <p className="text-small text-muted">{message.sender_name ?? '—'}</p>
       ) : null}
 
       {message.body !== null && message.body !== '' ? (
-        <p className="whitespace-pre-line text-body">{message.body}</p>
+        <p className="whitespace-pre-line break-words text-body">{message.body}</p>
       ) : null}
 
       {message.attachments.length > 0 ? (
@@ -146,8 +146,8 @@ function Bubble({ message, urls }: { message: Message; urls: Record<string, stri
 
       <p
         className={cn(
-          'mt-1 text-xs',
-          message.mine ? 'text-ground/70' : 'text-muted',
+          'mt-1 text-small',
+          message.mine ? 'text-white/70' : 'text-muted',
         )}
       >
         {formatTime(message.created_at)}

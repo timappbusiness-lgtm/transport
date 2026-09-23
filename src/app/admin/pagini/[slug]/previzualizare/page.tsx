@@ -31,7 +31,7 @@ export default async function Page({ params }: { params: Params }) {
   return (
     <>
       <div className="mb-4 rounded-card border border-border-strong bg-ground-alt px-4 py-3">
-        <p className="text-sm">
+        <p className="text-body">
           Previzualizare{page.isPublished ? '' : ' a unei ciorne'}. Nu este vizibilă public.{' '}
           <Link
             href={`${ROUTES.adminPages}/${page.slug}`}

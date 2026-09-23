@@ -28,24 +28,24 @@ export function RatingCard({
         {rating.after_dispute ? (
           <StatusBadge tone="warning">{c.profile.afterDispute}</StatusBadge>
         ) : null}
-        <span className="text-xs text-muted">
+        <span className="text-small text-muted">
           {rating.rater_name ?? '—'} · {formatDate(rating.created_at)}
           {rating.edited ? ` · ${c.form.edited}` : ''}
         </span>
       </div>
 
       {rating.comment !== null ? (
-        <p className="mt-2 whitespace-pre-line text-body">{rating.comment}</p>
+        <p className="mt-2 whitespace-pre-line break-words text-body">{rating.comment}</p>
       ) : null}
 
       <SubScoreRow rating={rating} />
 
       {rating.reply_body !== null ? (
         <div className="mt-3 border-l-2 border-border-strong pl-3">
-          <p className="text-xs font-medium text-muted">
+          <p className="text-small font-medium text-muted">
             {c.reply.label} · {formatDate(rating.reply_at)}
           </p>
-          <p className="mt-1 whitespace-pre-line text-sm">{rating.reply_body}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{rating.reply_body}</p>
         </div>
       ) : null}
 
@@ -69,7 +69,7 @@ function SubScoreRow({ rating }: { rating: PublicRating }) {
   if (given.length === 0) return null;
 
   return (
-    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-small text-muted">
       {given.map((s) => (
         <li key={s.label}>
           {s.label}: <span className="font-mono tabular-nums">{s.value}/5</span>

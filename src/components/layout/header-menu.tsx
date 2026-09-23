@@ -10,47 +10,8 @@ import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { signOutAction } from '@/app/auth-actions';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
-import type { BadgedNavItem } from '@/lib/navigation';
+import { PUBLIC_NAV, currentPublicHref, type BadgedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
-
-/** Anchors that only mean anything on the homepage. */
-const SECTIONS = [
-  { href: '#cum-functioneaza', label: 'Cum funcționează' },
-  { href: '#transportatori', label: 'Transportatori' },
-  { href: '#siguranta', label: 'Siguranță' },
-] as const;
-
-/**
- * Real pages, so they belong in the bar on every route rather than only
- * where an anchor happens to resolve. Prețuri used to be the homepage
- * `#tarife` anchor; it is a page now, and a link that leaves the homepage
- * has to work from the other pages too.
- */
-/**
- * The public bar.
- *
- * The two boards come first, because they are the product: a carrier who
- * lands on the homepage and cannot find the requests has no reason to
- * come back, and until 20260920 there was no link to `/cereri` anywhere
- * on an empty platform — the only one sat inside a block that is hidden
- * below the activity threshold.
- *
- * Prețuri is not here. The page exists and is reachable by link, but
- * `price_settings.is_published` is false and a visitor who clicks a menu
- * item to be told there is nothing to see has learned not to trust the
- * menu. It goes back the moment the team publishes the table — see
- * docs/configurare-externa.md.
- */
-const PAGES = [
-  { href: ROUTES.requests, label: 'Cereri' },
-  { href: ROUTES.routes, label: 'Trasee' },
-  { href: ROUTES.companies, label: 'Firme' },
-  { href: ROUTES.plans, label: 'Abonamente' },
-  // The fifth and last: somewhere a first-time visitor can find out what
-  // this is before deciding whether to sign up. Four product pages and
-  // no explanation is a menu that assumes everybody already knows.
-  { href: ROUTES.faq, label: 'Cum funcționează' },
-] as const;
 
 export interface HeaderUser {
   name: string;
@@ -62,11 +23,15 @@ export interface HeaderUser {
   items: readonly BadgedNavItem[];
 }
 
-/** Pill button sized for the floating bar, in its on-dark colours. */
+/**
+ * The bar's one filled pill — „Publică o cerere", or „Contul meu" — in the
+ * bright accent, because it is the primary action on a dark surface. Dark
+ * ink on it is 8.80:1, and the pill against the bar 6.12:1 and ΔE00 55.
+ */
 // `whitespace-nowrap` is load-bearing: without it a label wraps to two or
 // three lines on a phone and the pill grows taller than the bar it sits in.
 const PILL_SOLID =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-small font-medium text-foreground transition-[background-color] duration-150 hover:bg-ground-alt sm:px-4';
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-accent-bright px-3 py-1.5 text-small font-semibold text-on-accent-bright transition-[background-color,transform] duration-(--duration-quick) hover:bg-accent-bright-hover motion-safe:active:scale-[0.98] sm:px-4';
 const PILL_QUIET =
   'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-small text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
 
@@ -100,6 +65,16 @@ export function badgeLabel(count: number): string {
 }
 
 /**
+ * The letter on the avatar. The first letter of the name, upper-cased,
+ * and a neutral dot when there is no letter to take — an e-mail address
+ * that starts with a digit is still a person.
+ */
+export function initialOf(name: string): string {
+  const letter = name.trim().match(/\p{L}/u)?.[0];
+  return letter === undefined ? '·' : letter.toLocaleUpperCase('ro-RO');
+}
+
+/**
  * Whether the thing pointing at this page is a finger.
  *
  * On a touch screen there is no hover, so the name in the bar has to do
@@ -127,9 +102,17 @@ function useCoarsePointer(): boolean {
   );
 }
 
+/** The header's right half, reading the path from the router. */
 export function HeaderNav({ user }: { user: HeaderUser | null }) {
-  const pathname = usePathname();
-  const onHome = pathname === ROUTES.home;
+  return <HeaderNavView user={user} pathname={usePathname() ?? ROUTES.home} />;
+}
+
+/**
+ * The same, with the path passed in — so a test can draw the bar for any
+ * page and any name without a router, and measure it with the real
+ * stylesheet at every width.
+ */
+export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pathname: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLAnchorElement>(null);
@@ -221,66 +204,34 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
 
   const signedIn = user !== null;
   const showAccountButton = signedIn && !insideAccount(pathname);
+  const currentHref = currentPublicHref(pathname);
 
   return (
     <>
-      {/* Below 900px this used to disappear entirely, which meant a
-          visitor on a phone — most of this market — had no way to reach
-          either board from the header at all. It stays now and scrolls
-          sideways inside itself: the row scrolls, the page does not.
-          The in-page anchors drop out first, because on a phone they are
-          the least useful of the two kinds and the ones that fit worst. */}
-      <nav
-        aria-label="Navigare"
-        className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[900px]:flex-none"
-      >
-        {onHome
-          ? SECTIONS.map((section) => (
-              <a
-                key={section.href}
-                href={section.href}
-                className={cn(PILL_QUIET, 'hidden min-[900px]:inline-flex')}
-              >
-                {section.label}
-              </a>
-            ))
-          : null}
-        {PAGES.map((page) => {
-          // The page you are on, in the accent's dark step and with a bar
-          // under it: the state is said by `aria-current` and shown by
-          // more than colour.
-          const current = pathname === page.href || pathname.startsWith(`${page.href}/`);
-          return (
-            <Link
-              key={page.href}
-              href={page.href}
-              aria-current={current ? 'page' : undefined}
-              className={cn(
-                PILL_QUIET,
-                'whitespace-nowrap',
-                current &&
-                  'text-accent-on-dark underline decoration-accent-on-dark decoration-2 underline-offset-4 hover:text-accent-on-dark',
-              )}
-            >
-              {page.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <PublicNav currentHref={currentHref} />
 
       {user ? (
-        <div className="flex items-center gap-1.5">
-          {/* The one visible way back in from a public page. Hidden on a
-              phone, where the bar has no room for it and the menu's first
-              item says the same thing. */}
+        <div className="flex min-w-0 flex-none items-center gap-1.5">
+          {/* The one visible way back in from a public page. Only where
+              there is room for it beside five links and a name: below
+              `xl` the name itself is the link to /cont, and the menu's
+              first item says the same thing. */}
           {showAccountButton ? (
-            <Link href={ROUTES.account} className={cn(PILL_SOLID, 'hidden sm:inline-flex')}>
+            <Link href={ROUTES.account} className={cn(PILL_SOLID, 'hidden xl:inline-flex')}>
               {accountCopy.nav.dashboard}
             </Link>
           ) : null}
 
-          <div ref={menuRef} className="relative">
-            <div className={cn(PILL_QUIET, 'gap-1 border border-white/30 p-0 pr-1 sm:pr-1.5')}>
+          <div ref={menuRef} className="relative min-w-0">
+            {/* The pill never grows past its content and never pushes the
+                bar: the avatar and the chevron are `flex-none`, the name
+                is the one part that gives, with an ellipsis at a width
+                that still reads as a name, and the full name is its
+                `title` and its accessible text. */}
+            <div
+              data-account-pill
+              className={cn(PILL_QUIET, 'min-w-0 max-w-full gap-1 border border-white/30 p-0 pr-1 sm:px-0 sm:pr-1.5')}
+            >
               {/* The name is a link, so a click goes where a name in a
                   header has always gone. The chevron beside it is the
                   button, so opening the menu is still one press for
@@ -291,6 +242,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 aria-controls={menuOpen ? menuId : undefined}
+                title={user.name}
                 onClick={(event) => {
                   if (!coarsePointer) return;
                   // No hover on a touch screen, so the tap has to open the
@@ -305,15 +257,23 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                     openWithKeyboard();
                   }
                 }}
-                className="flex items-center gap-2 rounded-pill py-1.5 pl-2 pr-1 sm:pl-3"
+                className="flex min-w-0 items-center gap-2 rounded-pill py-1.5 pl-1.5 pr-1 sm:pl-2"
               >
                 <span
                   aria-hidden="true"
-                  className="flex size-5 flex-none items-center justify-center rounded-full bg-white text-xs font-medium text-foreground"
+                  data-account-avatar
+                  className="flex size-6 flex-none items-center justify-center rounded-full bg-accent-bright text-small font-semibold text-on-accent-bright"
                 >
-                  {user.name.slice(0, 1).toUpperCase()}
+                  {initialOf(user.name)}
                 </span>
-                <span className="hidden max-w-[9rem] truncate sm:inline">{user.name}</span>
+                {/* Below `sm` the name is read, not drawn: the bar holds
+                    the mark, five links and this pill inside 360px. */}
+                <span
+                  data-account-name
+                  className="sr-only sm:not-sr-only sm:block sm:min-w-0 sm:max-w-[7.5rem] sm:truncate xl:max-w-[11rem]"
+                >
+                  {user.name}
+                </span>
               </Link>
 
               <button
@@ -331,6 +291,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 aria-haspopup="menu"
                 aria-controls={menuOpen ? menuId : undefined}
                 aria-label={accountCopy.nav.menu}
+                data-account-chevron
                 className="flex size-7 flex-none items-center justify-center rounded-full text-white/85 hover:bg-white/12 hover:text-white"
               >
                 <Icon as={uiIcon('expand')} size="sm" />
@@ -357,7 +318,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                       aria-current={current ? 'page' : undefined}
                       onClick={() => setMenuOpen(false)}
                       className={cn(
-                        'flex items-center justify-between gap-3 px-4 py-2.5 text-sm',
+                        'flex items-center justify-between gap-3 px-4 py-2.5 text-body',
                         'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
                         current ? 'bg-accent-subtle font-medium text-accent' : 'hover:bg-ground-alt',
                       )}
@@ -378,7 +339,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                   <button
                     type="submit"
                     role="menuitem"
-                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-ground-alt focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground"
+                    className="w-full px-4 py-2.5 text-left text-body text-danger hover:bg-ground-alt focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground"
                   >
                     {accountCopy.nav.signOut}
                   </button>
@@ -403,6 +364,97 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
           </Link>
         </div>
       )}
+    </>
+  );
+}
+
+/**
+ * The public bar: five links, built once in `PUBLIC_NAV`, drawn once.
+ *
+ * From `lg` they sit in the bar. Below it they do not fit — measured, the
+ * five links need 880px signed out beside the two actions — and the row
+ * used to scroll sideways inside itself, which on a phone showed
+ * „Cereri, Trase" and nothing to say there was more. So below `lg` the
+ * same list is a panel under the bar, opened by „Meniu": a word beside
+ * the icon, never the icon alone. It closes on a choice, on Escape and on
+ * a press outside it.
+ */
+function PublicNav({ currentHref }: { currentHref: string | null }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (navRef.current?.contains(target) || toggleRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setOpen(false);
+      toggleRef.current?.focus();
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={toggleRef}
+        type="button"
+        data-nav-toggle
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30 lg:hidden')}
+      >
+        <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
+        Meniu
+      </button>
+      <nav
+        ref={navRef}
+        id={id}
+        aria-label="Navigare"
+        data-open={open ? 'true' : undefined}
+        className={cn(
+          // Below lg: a panel under the bar, shown only when open.
+          'absolute inset-x-0 top-full mt-2 hidden flex-col gap-0.5 rounded-card border border-white/15 bg-dark-from p-2 shadow-float data-[open=true]:flex',
+          // From lg: the row inside the bar.
+          'lg:static lg:mt-0 lg:flex lg:flex-none lg:flex-row lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none',
+        )}
+      >
+        {PUBLIC_NAV.map((page) => {
+          // The page you are on, in the bright accent with a bar under
+          // it: the state is said by `aria-current` and shown by more
+          // than colour.
+          const current = page.href === currentHref;
+          return (
+            <Link
+              key={page.href}
+              href={page.href}
+              onClick={() => setOpen(false)}
+              aria-current={current ? 'page' : undefined}
+              className={cn(
+                PILL_QUIET,
+                'max-lg:justify-start max-lg:rounded-input max-lg:px-3 max-lg:py-3 max-lg:text-body',
+                current &&
+                  'text-accent-bright underline decoration-accent-bright decoration-2 underline-offset-[6px] hover:text-accent-bright',
+              )}
+            >
+              {page.label}
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }

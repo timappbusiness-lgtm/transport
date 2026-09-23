@@ -114,18 +114,19 @@ test.describe('arriving at the request form from the calculator', () => {
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     // SUV is a pricing class; the board files it under autoturism.
-    await expect(page.getByLabel('Categoria')).toHaveValue('autoturism');
+    await expect(page.getByRole('radio', { name: 'Autoturism / SUV' })).toBeChecked();
     await page.getByLabel('Marca').fill('Volkswagen');
     await page.getByLabel('Modelul').fill('Touareg');
     await page.getByLabel('Anul fabricației').fill('2018');
-    await page.getByRole('button', { name: 'Continuă' }).click();
 
     // "Nu pornește" in the calculator has to mean the same three things
     // here, or the carrier is told the opposite of what was priced.
-    await expect(page.getByLabel('Pornește și se deplasează')).not.toBeChecked();
+    await expect(page.getByRole('radio', { name: 'Nu pornește sau nu se deplasează' })).toBeChecked();
     await expect(page.getByLabel('Roțile se învârt')).not.toBeChecked();
     await expect(page.getByLabel('Direcția funcționează')).not.toBeChecked();
     await expect(page.getByText('Transportatorul vine pregătit cu troliu.')).toBeVisible();
+    await page.getByRole('button', { name: 'Continuă' }).click();
+
     await expect(page.getByRole('radio', { name: 'Expres' })).toBeChecked();
   });
 

@@ -108,7 +108,7 @@ export default async function Page({ params }: { params: Promise<{ tip: string }
             >
               {c.later}
             </Link>
-            <p className="text-xs text-muted">{c.laterNote}</p>
+            <p className="text-small text-muted">{c.laterNote}</p>
           </>
         )}
         <p className="text-small">

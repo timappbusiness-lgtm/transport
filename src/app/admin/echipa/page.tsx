@@ -37,7 +37,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.hero.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
       <section aria-labelledby="cine" className="flex flex-col gap-3">
@@ -46,7 +46,7 @@ export default async function Page() {
         </h2>
 
         {members.length === 0 ? (
-          <p className="rounded-card border border-warning/45 bg-warning/8 p-4 text-sm">
+          <p className="rounded-card border border-warning/45 bg-warning/8 p-4 text-body">
             {c.list.empty}
           </p>
         ) : (
@@ -64,19 +64,19 @@ export default async function Page() {
                         ) : null}
                       </p>
                       {member.email !== null ? (
-                        <p className="mt-0.5 break-all text-sm text-muted">{member.email}</p>
+                        <p className="mt-0.5 break-all text-body text-muted">{member.email}</p>
                       ) : null}
                     </div>
                     <StatusBadge tone="neutral">{STAFF_ROLE_LABELS[member.role]}</StatusBadge>
                   </div>
 
-                  <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                  <dl className="mt-4 grid gap-3 text-body sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-muted">{c.list.grantedAt}</dt>
+                      <dt className="text-small text-muted">{c.list.grantedAt}</dt>
                       <dd className="mt-0.5">{when(member.granted_at)}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-muted">{c.list.grantedBy}</dt>
+                      <dt className="text-small text-muted">{c.list.grantedBy}</dt>
                       <dd className="mt-0.5">
                         {member.granted_by_name ?? c.list.grantedByUnknown}
                       </dd>
@@ -85,7 +85,7 @@ export default async function Page() {
 
                   <div className="mt-4">
                     {last ? (
-                      <p className="text-sm text-muted">{c.list.lastAdmin}</p>
+                      <p className="text-body text-muted">{c.list.lastAdmin}</p>
                     ) : (
                       <RevokeStaff member={member} />
                     )}
@@ -101,7 +101,7 @@ export default async function Page() {
         <h2 id="adauga" className="text-h3">
           {c.add.title}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.add.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.add.lede}</p>
         <GrantStaff />
       </section>
 
@@ -109,14 +109,14 @@ export default async function Page() {
         <h2 id="poate" className="text-h3">
           {c.abilities.title}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.abilities.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.abilities.lede}</p>
 
         {STAFF_ROLES.map((role) => (
           <div key={role} className="mt-4">
-            <p className="text-sm font-medium">{STAFF_ROLE_LABELS[role]}</p>
+            <p className="text-body font-medium">{STAFF_ROLE_LABELS[role]}</p>
             <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
               {STAFF_ROLE_ABILITIES[role].map((line) => (
-                <li key={line} className="text-sm text-muted">
+                <li key={line} className="text-body text-muted">
                   {line}
                 </li>
               ))}
@@ -125,7 +125,7 @@ export default async function Page() {
         ))}
 
         {STAFF_ROLES.length === 1 ? (
-          <p className="mt-4 max-w-[62ch] text-sm text-muted">{c.abilities.oneRole}</p>
+          <p className="mt-4 max-w-[62ch] text-body text-muted">{c.abilities.oneRole}</p>
         ) : null}
       </section>
     </div>

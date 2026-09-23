@@ -33,13 +33,20 @@ import { cn } from '@/lib/utils';
  * that refuses them.
  */
 const CONTROL =
-  'w-full rounded-input border border-border bg-surface px-3 py-2 text-body ' +
+  'w-full rounded-input border border-border-strong bg-surface px-3 py-2.5 text-body ' +
   'outline-none focus-visible:border-border-strong focus-visible:outline-2 ' +
   'focus-visible:outline-offset-[-2px] focus-visible:outline-foreground';
 
 export interface LocalityValue {
   city: string;
   country: string;
+  /**
+   * Where the chosen place is, when it was chosen from the list; null
+   * while somebody is typing. For display only — the publish form draws
+   * the route and the distance with it. The server resolves the city
+   * again on its own and never trusts a coordinate from the browser.
+   */
+  point?: { lat: number; lng: number } | null;
 }
 
 export function LocalityPicker({
@@ -49,6 +56,7 @@ export function LocalityPicker({
   near = null,
   placeholder,
   describedBy,
+  invalid = false,
 }: {
   id: string;
   value: LocalityValue;
@@ -56,7 +64,9 @@ export function LocalityPicker({
   /** The origin, once it is chosen: nearby destinations rank higher. */
   near?: { lat: number; lng: number } | null;
   placeholder?: string;
-  describedBy?: string;
+  describedBy?: string | undefined;
+  /** The field has a message: the control says so to a screen reader and draws the danger edge. */
+  invalid?: boolean;
 }) {
   const [items, setItems] = useState<readonly Locality[]>([]);
   const [open, setOpen] = useState(false);
@@ -130,7 +140,11 @@ export function LocalityPicker({
   const choose = useCallback(
     (locality: Locality) => {
       justChose.current = true;
-      onChange({ city: locality.name, country: locality.country });
+      onChange({
+        city: locality.name,
+        country: locality.country,
+        point: { lat: locality.lat, lng: locality.lng },
+      });
       setOpen(false);
       setActive(-1);
     },
@@ -192,7 +206,9 @@ export function LocalityPicker({
         <input
           id={id}
           value={query}
-          onChange={(event) => onChange({ city: event.target.value, country: value.country })}
+          onChange={(event) =>
+            onChange({ city: event.target.value, country: value.country, point: null })
+          }
           onKeyDown={onKeyDown}
           onFocus={() => flat.length > 0 && setOpen(true)}
           placeholder={placeholder ?? localitiesCopy.placeholder}
@@ -203,7 +219,8 @@ export function LocalityPicker({
           aria-autocomplete="list"
           aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
           aria-describedby={describedBy}
-          className={cn(CONTROL, 'pl-9')}
+          aria-invalid={invalid ? true : undefined}
+          className={cn(CONTROL, 'pl-9 aria-[invalid=true]:border-danger')}
         />
       </div>
 
@@ -244,7 +261,7 @@ export function LocalityPicker({
                       >
                         <span className="min-w-0">
                           <span className="block truncate">{locality.name}</span>
-                          <span className="block truncate text-xs text-muted">
+                          <span className="block truncate text-small text-muted">
                             {subtitleOf(locality)}
                           </span>
                         </span>

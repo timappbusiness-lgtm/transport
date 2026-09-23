@@ -23,7 +23,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <ReviewQueue documents={documents} companies={companies} />

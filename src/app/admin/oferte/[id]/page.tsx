@@ -17,7 +17,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
       <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-sm">{children}</dd>
+      <dd className="min-w-0 text-body">{children}</dd>
     </div>
   );
 }
@@ -43,7 +43,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link href={ROUTES.adminOffers} className="text-muted underline-offset-4 hover:underline">
             ← {c.back}
           </Link>
@@ -55,7 +55,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {OFFER_STATUS_LABELS[offer.status]}
           </StatusBadge>
         </h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.readOnly}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.readOnly}</p>
       </div>
 
       <section className="rounded-card border border-border bg-surface p-5">
@@ -88,12 +88,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
           {offer.conditions !== null ? (
             <Row label={offersCopy.received.conditions}>
-              <span className="whitespace-pre-line">{offer.conditions}</span>
+              <span className="whitespace-pre-line break-words">{offer.conditions}</span>
             </Row>
           ) : null}
           {offer.message !== null ? (
             <Row label={offersCopy.form.message}>
-              <span className="whitespace-pre-line">{offer.message}</span>
+              <span className="whitespace-pre-line break-words">{offer.message}</span>
             </Row>
           ) : null}
         </dl>
@@ -105,13 +105,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <Row label={c.carrier}>
             {offer.company_name ?? offersCopy.admin.list.individual}
             {offer.bidder_name !== null ? (
-              <span className="block text-xs text-muted">{offer.bidder_name}</span>
+              <span className="block text-small text-muted">{offer.bidder_name}</span>
             ) : null}
           </Row>
           <Row label={c.client}>
             {offer.client_company ?? offer.client_name ?? '—'}
             {offer.client_company !== null && offer.client_name !== null ? (
-              <span className="block text-xs text-muted">{offer.client_name}</span>
+              <span className="block text-small text-muted">{offer.client_name}</span>
             ) : null}
           </Row>
           <Row label={c.request}>
@@ -125,7 +125,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 {offer.loading_from !== null ? (
                   <span className="text-muted"> · {formatDay(offer.loading_from)}</span>
                 ) : null}
-                <span className="mt-1 flex flex-wrap gap-3 text-xs">
+                <span className="mt-1 flex flex-wrap gap-3 text-small">
                   <Link href={requestRoute(offer.request_id)} className="underline underline-offset-4">
                     {requestsCopy.card.open}
                   </Link>
@@ -163,7 +163,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <section className="rounded-card border border-border bg-surface p-5">
         <h2 className="text-h3">{c.thread}</h2>
         {thread.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">{c.threadEmpty}</p>
+          <p className="mt-3 text-body text-muted">{c.threadEmpty}</p>
         ) : (
           <ul className="mt-4 flex flex-col gap-4">
             {thread.map((message) => (
@@ -180,7 +180,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                     <StatusBadge tone="danger">{c.hiddenBadge}</StatusBadge>
                   ) : null}
                 </p>
-                <p className="mt-2 whitespace-pre-line text-sm">{message.body}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{message.body}</p>
                 {message.is_hidden ? null : (
                   <div className="mt-2">
                     <HideMessage messageId={message.id} offerId={offer.id} />

@@ -212,9 +212,15 @@ export function seatsSentence(departure: PublicDeparture): string | null {
  * is that an estimate says it is an estimate.
  */
 export function priceSentence(departure: PublicDeparture): string | null {
+  const amount = priceAmount(departure);
+  return amount === null ? null : `${amount} orientativ`;
+}
+
+/** The amount and the currency alone, for where „orientativ" is its own label beside it. */
+export function priceAmount(departure: PublicDeparture): string | null {
   if (departure.price_indicative === null) return null;
   const amount = new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(
     departure.price_indicative,
   );
-  return `${amount} ${departure.currency} orientativ`;
+  return `${amount} ${departure.currency}`;
 }

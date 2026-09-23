@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { MyRequestCard } from '@/components/requests/my-request-card';
 import { buttonClasses } from '@/components/ui/button';
-import { Card } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -12,6 +11,7 @@ import type { MyRequest } from '@/lib/my-requests';
 import { loadMatchingCounts, loadMyRequests } from '@/lib/my-requests-source';
 import { loadPendingOfferCounts } from '@/lib/offers-source';
 import { isoToday } from '@/lib/request-form';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: requestsCopy.mine.title };
 
@@ -48,13 +48,17 @@ export default async function Page() {
       />
 
       {requests.length === 0 ? (
-        <Card className="p-6">
-          <h2 className="text-lg">{c.empty}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.emptyBody}</p>
-          <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} mt-5`}>
-            {c.publish}
-          </Link>
-        </Card>
+        // The bar above already carries „Publică" as the primary action;
+        // the way out here is the same link, quieter.
+        <EmptyState
+          title={c.empty}
+          body={c.emptyBody}
+          action={
+            <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
+              {c.publish}
+            </Link>
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-4">
           {requests.map((request) => (

@@ -31,7 +31,7 @@ export function InviteMemberForm() {
           error={state.fieldErrors?.email}
         />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="invite-role" className="text-sm font-medium">
+          <label htmlFor="invite-role" className="text-body font-medium">
             {c.inviteRole}
           </label>
           <select
@@ -73,14 +73,14 @@ export function TransferOwnership({
   return (
     <section className="rounded-card border border-danger/40 bg-danger/6 p-5">
       <h2 className="text-h3">{c.transfer}</h2>
-      <p className="mt-1 max-w-[54ch] text-sm text-muted">{c.transferHint}</p>
+      <p className="mt-1 max-w-[54ch] text-body text-muted">{c.transferHint}</p>
 
       {open ? (
         <form action={action} className="mt-4 flex flex-col gap-4" noValidate>
           <FormError>{state.error}</FormError>
           <FormNotice>{state.notice}</FormNotice>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="transfer-to" className="text-sm font-medium">
+            <label htmlFor="transfer-to" className="text-body font-medium">
               {c.transferConfirm}
             </label>
             <select
@@ -102,7 +102,7 @@ export function TransferOwnership({
             name="reason"
             required={false}
           />
-          <p className="text-sm">
+          <p className="text-body">
             Confirmi transferul către <strong>{selectedName}</strong>?
           </p>
           <div className="flex flex-wrap gap-3">

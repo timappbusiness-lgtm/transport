@@ -29,7 +29,6 @@ function over(a: string, b: string, t: number): string {
 }
 
 const BODY = 4.5;
-const LARGE = 3;
 
 const INK = token('foreground');
 const MUTED = token('muted');
@@ -47,13 +46,14 @@ const DARK_TO = token('dark-to');
 const WARNING = token('warning');
 
 /**
- * The header is ink at this opacity over whatever scrolls behind it. The
- * number lives in the component as `bg-foreground/80`; this and that must
- * agree, and `site-header.tsx` is checked for it below.
+ * The header is the dark petrol ground at this opacity over whatever
+ * scrolls behind it. The number lives in `header-shell.ts` as
+ * `bg-dark-from/88`; the full set of dark-surface measurements is in
+ * `accent-dark.test.ts`, which checks the component against it.
  */
-const HEADER_ALPHA = 0.8;
-const HEADER_WORST = over(INK, SURFACE, HEADER_ALPHA);
-const HEADER_BEST = over(INK, DARK_FROM, HEADER_ALPHA);
+const HEADER_ALPHA = 0.88;
+const HEADER_WORST = over(DARK_FROM, SURFACE, HEADER_ALPHA);
+const HEADER_BEST = over(DARK_FROM, DARK_FROM, HEADER_ALPHA);
 
 describe('the accent scale on light surfaces', () => {
   it.each([
@@ -79,7 +79,7 @@ describe('the accent scale on light surfaces', () => {
   });
 });
 
-describe('the one dark step', () => {
+describe('the pale dark step', () => {
   it('reads as body text on the header in the worst case, white behind it', () => {
     expect(contrast(ON_DARK, HEADER_WORST)).toBeGreaterThanOrEqual(BODY);
   });
@@ -88,22 +88,16 @@ describe('the one dark step', () => {
     expect(contrast(ON_DARK, HEADER_BEST)).toBeGreaterThanOrEqual(BODY);
   });
 
-  it('but NOT on the light end of the dark gradient, which is why it is not used there', () => {
-    // 3.03:1 — the large-text floor and no more, and text laid over a
-    // gradient crosses both ends of it. If this ever reaches 4.5 the
-    // rule in design/README.md can be relaxed; until then the gradient
-    // sections keep white.
-    expect(contrast(ON_DARK, DARK_TO)).toBeLessThan(BODY);
-    expect(contrast(ON_DARK, DARK_TO)).toBeGreaterThanOrEqual(LARGE);
+  it('and now on both ends of the dark gradient too', () => {
+    // It used to measure 3.03:1 on the light end, which kept it off the
+    // gradient sections. The gradient is deeper now, and it clears body
+    // text on both ends, so the soft half of a headline there can carry it.
+    expect(contrast(ON_DARK, DARK_TO)).toBeGreaterThanOrEqual(BODY);
+    expect(contrast(ON_DARK, DARK_FROM)).toBeGreaterThanOrEqual(BODY);
   });
 
-  it('white on the header gains from 80%, it does not lose', () => {
+  it('white on the header clears 7:1 in the worst case', () => {
     expect(contrast(SURFACE, HEADER_WORST)).toBeGreaterThanOrEqual(7);
-  });
-
-  it('and the header component uses the opacity measured here', () => {
-    const header = readFileSync('src/components/layout/site-header.tsx', 'utf8');
-    expect(header).toContain(`bg-foreground/${Math.round(HEADER_ALPHA * 100)}`);
   });
 });
 

@@ -38,8 +38,8 @@ export default async function Page({ params }: { params: Promise<{ token: string
     return (
       <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-4 px-4 py-16">
         <h1 className="text-h2">{c.invalid}</h1>
-        <p className="text-sm text-muted">{c.invalidBody}</p>
-        <p className="text-sm">
+        <p className="text-body text-muted">{c.invalidBody}</p>
+        <p className="text-body">
           <Link href={ROUTES.contact} className="link-accent">
             Scrie-ne
           </Link>
@@ -55,17 +55,17 @@ export default async function Page({ params }: { params: Promise<{ token: string
         <h1 className="mt-2 text-h2">
           {c.title(preview.company_name)}
         </h1>
-        <p className="mt-2 text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 text-body text-muted">{c.lede}</p>
       </div>
 
       <Card className="p-4">
-        <h2 className="text-sm font-medium">{c.filled}</h2>
+        <h2 className="text-body font-medium">{c.filled}</h2>
         <ul className="mt-2 flex flex-col gap-1 text-small text-muted">
           <li>· {c.nothingYet}</li>
           {preview.documents_count > 0 ? <li>· {c.documents(preview.documents_count)}</li> : null}
           {preview.vehicles_count > 0 ? <li>· {c.vehicles(preview.vehicles_count)}</li> : null}
         </ul>
-        <p className="mt-3 text-xs text-muted">{c.expires(expiryLabel(preview.expires_at))}</p>
+        <p className="mt-3 text-small text-muted">{c.expires(expiryLabel(preview.expires_at))}</p>
       </Card>
 
       <ClaimForm
@@ -75,7 +75,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
       />
 
       <Card className="p-4">
-        <h2 className="text-sm font-medium">{c.notYou}</h2>
+        <h2 className="text-body font-medium">{c.notYou}</h2>
         <p className="mt-1 text-small text-muted">{c.notYouBody}</p>
       </Card>
     </main>

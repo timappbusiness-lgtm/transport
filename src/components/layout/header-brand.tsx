@@ -14,19 +14,22 @@ import { brandHref } from './header-menu';
  * the account it is the dashboard; everywhere else it is the homepage.
  */
 export function HeaderBrand({ signedIn }: { signedIn: boolean }) {
-  const pathname = usePathname();
+  return <HeaderBrandView signedIn={signedIn} pathname={usePathname() ?? '/'} />;
+}
 
+/** The same, with the path passed in, for the header's layout test. */
+export function HeaderBrandView({ signedIn, pathname }: { signedIn: boolean; pathname: string }) {
   return (
     <Link
       href={brandHref(signedIn, pathname)}
-      // The brand is the one place on the dark bar that carries the
-      // accent: its pale step, 5.37:1 over the bar even with a white page
-      // behind it. Everything else on the bar stays white.
-      className="mr-auto flex items-center gap-2.5 font-display text-body-lg font-medium tracking-[-0.02em] text-accent-on-dark"
+      // The wordmark carries the accent's pale step: 7.44:1 over the bar
+      // even with a white page behind it. Interactive things on the bar
+      // take the bright step; the name of the place takes the calm one.
+      className="mr-auto flex flex-none items-center gap-2.5 font-display text-body-lg font-semibold tracking-[-0.02em] text-accent-on-dark"
     >
       <BrandMark className="flex-none" />
       {/* Below `sm` the word is read but not drawn. The bar is brand,
-          navigation and two pills inside 390px, and the word was taking
+          navigation and two pills inside 360px, and the word was taking
           the room the navigation needed — with it there, the first menu
           item rendered as „Ce". The mark still identifies the brand and
           still links home, and `sr-only` rather than `hidden` keeps the

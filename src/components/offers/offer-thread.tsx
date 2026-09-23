@@ -87,11 +87,11 @@ export function OfferThread({
 
   return (
     <div className="mt-4 rounded-card border border-border bg-ground-alt p-4">
-      <h4 className="text-sm font-medium">{c.title}</h4>
-      <p className="mt-1 max-w-[58ch] text-xs text-muted">{c.lede}</p>
+      <h4 className="text-body font-medium">{c.title}</h4>
+      <p className="mt-1 max-w-[58ch] text-small text-muted">{c.lede}</p>
 
       {messages.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">{c.empty}</p>
+        <p className="mt-3 text-body text-muted">{c.empty}</p>
       ) : (
         <ul className="mt-3 flex flex-col gap-3">
           {messages.map((message) => (
@@ -102,14 +102,14 @@ export function OfferThread({
                 message.is_mine ? 'border-border bg-surface' : 'border-border-strong bg-surface',
               )}
             >
-              <p className="text-xs text-muted">
+              <p className="text-small text-muted">
                 {message.is_mine ? 'Tu' : message.sender_name} · {when(message.created_at)}
               </p>
-              <p className={cn('mt-1 whitespace-pre-line text-sm', message.is_hidden && 'text-muted')}>
+              <p className={cn('mt-1 whitespace-pre-line break-words text-body', message.is_hidden && 'text-muted')}>
                 {message.body}
               </p>
               {message.was_masked && message.is_mine ? (
-                <p className="mt-1.5 text-xs text-muted">{c.masked}</p>
+                <p className="mt-1.5 text-small text-muted">{c.masked}</p>
               ) : null}
             </li>
           ))}
@@ -129,10 +129,10 @@ export function OfferThread({
           value={body}
           onChange={(event) => setBody(event.target.value)}
           placeholder={c.placeholder}
-          className="w-full resize-y rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+          className="w-full resize-y rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
         />
         {warns ? (
-          <p role="status" className="text-xs text-muted">
+          <p role="status" className="text-small text-muted">
             {c.willMask}
           </p>
         ) : null}
@@ -147,7 +147,7 @@ export function OfferThread({
           </button>
         </div>
         {state.error !== undefined ? (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-body text-danger">
             {state.error}
           </p>
         ) : null}

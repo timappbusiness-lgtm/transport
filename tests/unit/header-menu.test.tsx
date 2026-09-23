@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '@/config/routes';
-import { NO_NAV_COUNTS, headerMenu, type NavContext } from '@/lib/navigation';
+import { FOOTER_NAV, NO_NAV_COUNTS, PUBLIC_NAV, headerMenu, type NavContext } from '@/lib/navigation';
 
 /**
  * The header's account area, rendered to markup without a browser.
@@ -22,7 +22,7 @@ vi.mock('@/app/auth-actions', () => ({ signOutAction: async () => {} }));
 
 let mockPathname = '/';
 
-const { HeaderNav, badgeLabel, brandHref } = await import('@/components/layout/header-menu');
+const { HeaderNav, badgeLabel, brandHref, initialOf } = await import('@/components/layout/header-menu');
 
 function context(over: Partial<NavContext> = {}): NavContext {
   return {
@@ -157,5 +157,101 @@ describe('what the menu is given to draw', () => {
     const html = render({ name: 'Ana' });
     expect(html).not.toContain('role="menu"');
     expect(html).not.toContain('Ieșire');
+  });
+});
+
+describe('the public bar', () => {
+
+  it('is five links, each once — built in one place', () => {
+    expect(PUBLIC_NAV.map((l) => l.label)).toEqual([
+      'Cereri',
+      'Trasee',
+      'Firme',
+      'Abonamente',
+      'Cum funcționează',
+    ]);
+    expect(new Set(PUBLIC_NAV.map((l) => l.href)).size).toBe(PUBLIC_NAV.length);
+    expect(new Set(PUBLIC_NAV.map((l) => l.label)).size).toBe(PUBLIC_NAV.length);
+  });
+
+  it('the footer has no duplicate either', () => {
+    expect(new Set(FOOTER_NAV.map((l) => l.href)).size).toBe(FOOTER_NAV.length);
+    expect(new Set(FOOTER_NAV.map((l) => l.label)).size).toBe(FOOTER_NAV.length);
+  });
+
+  it.each(['/', '/cereri', '/intrebari-frecvente', '/cont'])(
+    'on %s says „Cum funcționează" exactly once and nothing else twice',
+    (pathname) => {
+      for (const user of [null, { name: 'Ana' }] as const) {
+        const html = render(user, pathname);
+        const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
+        const labels = [...nav.matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((m) => m[1]);
+        expect(labels).toEqual(PUBLIC_NAV.map((l) => l.label));
+        expect(html.match(/Cum funcționează/g)).toHaveLength(1);
+      }
+    },
+  );
+
+  it('carries no homepage anchors any more', () => {
+    const html = render(null, '/');
+    expect(html).not.toContain('href="#');
+  });
+
+  it('marks the page you are on, and only that one', () => {
+    const html = render(null, '/cereri/abc');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page"[^>]*>Cereri</);
+  });
+
+  it('is one list: a row from lg, a panel behind „Meniu" below it', () => {
+    // Below lg the five links do not fit, and a row that scrolls inside
+    // itself showed „Cereri, Trase" with nothing to say there was more.
+    for (const user of [null, { name: 'Ana' }] as const) {
+      const html = render(user, '/');
+      expect(html.match(/<nav /g)).toHaveLength(1);
+      const toggle = html.match(/<button[^>]*data-nav-toggle[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+      expect(toggle).toContain('aria-expanded="false"');
+      expect(toggle).toContain('lg:hidden');
+      // A word beside the icon, never the icon alone.
+      expect(toggle).toMatch(/>Meniu<\/button>$/);
+      const controls = toggle.match(/aria-controls="([^"]+)"/)?.[1];
+      const nav = html.match(/<nav [^>]*>/)?.[0] ?? '';
+      expect(nav).toContain(`id="${controls}"`);
+      // Closed below lg, always shown from lg.
+      expect(nav).toMatch(/class="[^"]*\bhidden\b/);
+      expect(nav).toContain('lg:flex');
+      expect(nav).not.toContain('data-open');
+      expect(nav).not.toContain('overflow-x-auto');
+    }
+  });
+});
+
+describe('a long name', () => {
+  const LONG = 'Constantin-Alexandru Popescu-Ionescu';
+
+  it('is cut with an ellipsis at a width that still reads as a name, and whole in its title', () => {
+    const html = render({ name: LONG });
+    const name = html.match(/<span data-account-name="true" class="([^"]+)">([^<]+)<\/span>/);
+    expect(name?.[2]).toBe(LONG);
+    expect(name?.[1]).toMatch(/\bsm:truncate\b/);
+    expect(name?.[1]).toMatch(/\bsm:min-w-0\b/);
+    expect(name?.[1]).toMatch(/sm:max-w-\[[\d.]+rem\]/);
+    expect(html).toContain(`title="${LONG}"`);
+  });
+
+  it('never takes the avatar or the chevron with it', () => {
+    const html = render({ name: LONG });
+    expect(html).toMatch(/data-account-avatar="true" class="[^"]*\bflex-none\b/);
+    expect(html).toMatch(/data-account-chevron="true" class="[^"]*\bflex-none\b/);
+    // The pill and the link can shrink, so the name is the part that gives.
+    expect(html).toMatch(/data-account-pill="true" class="[^"]*\bmin-w-0\b/);
+  });
+
+  it('has an initial for the avatar, even when it does not start with a letter', () => {
+    expect(initialOf(LONG)).toBe('C');
+    expect(initialOf('ștefan')).toBe('Ș');
+    expect(initialOf('  ana')).toBe('A');
+    expect(initialOf('123@firma.ro')).toBe('F');
+    expect(initialOf('42')).toBe('·');
   });
 });

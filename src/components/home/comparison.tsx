@@ -27,7 +27,7 @@ function Row({
     >
       <h3
         className={cn(
-          'text-lg font-normal',
+          'text-h3 font-semibold',
           tone === 'new' ? 'text-white' : 'text-foreground',
         )}
       >
@@ -39,7 +39,9 @@ function Row({
             <span
               className={cn(
                 'font-mono text-label uppercase tracking-[0.12em]',
-                tone === 'new' ? 'text-white/65' : 'text-muted',
+                // The pale step on the dark card: the numbered steps are
+                // the new way, and they read as the brand's, not as grey.
+                tone === 'new' ? 'text-accent-on-dark' : 'text-muted',
               )}
             >
               {c.stepLabel} {index + 1}

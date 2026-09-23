@@ -65,11 +65,11 @@ export function PushPermissionCard({
       <h2 id="notificari-card" className="text-h3">
         {needsInstall ? c.iosTitle : c.title}
       </h2>
-      <p className="mt-2 max-w-[56ch] text-sm text-muted">
+      <p className="mt-2 max-w-[56ch] text-body text-muted">
         {needsInstall ? c.iosBody : audience === 'carrier' ? c.carrierBody : c.clientBody}
       </p>
 
-      {push.error ? <p className="mt-3 text-sm text-danger">{push.error}</p> : null}
+      {push.error ? <p className="mt-3 text-body text-danger">{push.error}</p> : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
         {needsInstall ? (

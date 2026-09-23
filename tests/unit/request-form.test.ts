@@ -11,6 +11,7 @@ import {
   coordinatesFor,
   draftFromPrefill,
   emptyDraft,
+  estimatedKm,
   firstStepWithError,
   isoToday,
   parseDraft,
@@ -219,6 +220,27 @@ describe('coordinates', () => {
     // The request is still valid; it just has no distance on its card.
     expect(coordinatesFor('Mizil', 'RO')).toBeNull();
     expect(coordinatesFor('', 'RO')).toBeNull();
+  });
+});
+
+describe('the distance the route step shows', () => {
+  const MUNCHEN = { lat: 48.1374, lng: 11.5755 };
+  const CLUJ = { lat: 46.7712, lng: 23.6236 };
+
+  it('waits for both places', () => {
+    // A typed name has no coordinates, and a guessed distance is an
+    // invented number.
+    expect(estimatedKm(MUNCHEN, null)).toBeNull();
+    expect(estimatedKm(null, CLUJ)).toBeNull();
+  });
+
+  it('is the straight line in whole kilometres, like the board', () => {
+    // estimated_km in the database is round(distance_km(...)), with no
+    // road factor: the number on the form is the one on the card.
+    const km = estimatedKm(MUNCHEN, CLUJ);
+    expect(Number.isInteger(km)).toBe(true);
+    expect(km).toBeGreaterThan(900);
+    expect(km).toBeLessThan(960);
   });
 });
 

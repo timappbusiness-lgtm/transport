@@ -38,14 +38,14 @@ export function ClaimForm({
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="full_name" value={fullName} />
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 text-body font-medium">
         E-mail
         <input type="email" name="email" required autoComplete="email" className={FIELD} />
-        <span className="text-xs font-normal text-muted">{c.emailHint(emailHint)}</span>
+        <span className="text-small font-normal text-muted">{c.emailHint(emailHint)}</span>
       </label>
       <FormError>{state.fieldErrors?.email}</FormError>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 text-body font-medium">
         {c.password}
         <input
           type="password"
@@ -55,11 +55,11 @@ export function ClaimForm({
           autoComplete="new-password"
           className={FIELD}
         />
-        <span className="text-xs font-normal text-muted">{c.passwordHint}</span>
+        <span className="text-small font-normal text-muted">{c.passwordHint}</span>
       </label>
       <FormError>{state.fieldErrors?.password}</FormError>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 text-body font-medium">
         {c.passwordAgain}
         <input
           type="password"

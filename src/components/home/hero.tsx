@@ -48,13 +48,13 @@ export function Hero() {
             as="h1"
             strong={c.strong}
             soft={c.soft}
-            className="mt-6 text-display text-white [&_span:last-child]:text-white/60"
+            className="mt-6 text-display text-white"
           />
           <p className="mt-5 max-w-[46ch] text-body-lg leading-relaxed text-white/80">
             {c.subtitle}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={ROUTES.newRequest} className={buttonClasses('onDark', 'md')}>
+            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
               {c.primary}
             </Link>
             <Link href={ROUTES.routes} className={buttonClasses('onDarkGhost', 'md')}>

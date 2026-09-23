@@ -15,6 +15,8 @@ import {
   scaleToFit,
 } from '@/lib/photo-upload';
 import { cn } from '@/lib/utils';
+import { Icon } from '@/components/ui/icon';
+import { iconForAction } from '@/lib/icons';
 
 export interface ChosenPhoto {
   /** The path in the bucket, which is what the form submits. */
@@ -89,6 +91,7 @@ export function PhotoPanel({
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [dragging, setDragging] = useState(false);
   const remaining = remainingPhotoSlots(photos.length);
 
   async function add(files: FileList) {
@@ -123,33 +126,38 @@ export function PhotoPanel({
     void removeRequestPhotoAction(photo.path);
   }
 
+  function pick(files: FileList | null) {
+    if (files === null || files.length === 0) return;
+    startTransition(() => {
+      void add(files);
+    });
+  }
+
   return (
-    <div className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
-      <div>
-        <p className="text-sm font-medium">{c.title}</p>
-        <p className="mt-1 max-w-[58ch] text-xs text-muted">{c.hint}</p>
-      </div>
+    <div data-photo-panel className="flex flex-col gap-3">
+      <p className="max-w-[58ch] text-small text-muted">{c.hint}</p>
 
       {photos.length > 0 ? (
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {photos.map((photo) => (
-            <li key={photo.path} className="relative">
+          {photos.map((photo, index) => (
+            <li
+              key={photo.path}
+              data-photo
+              className="relative overflow-hidden rounded-input border border-border bg-surface"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element -- a blob: URL from this browser, never a remote one */}
-              <img
-                src={photo.preview}
-                alt=""
-                className="aspect-square w-full rounded-input object-cover"
-              />
+              <img src={photo.preview} alt="" className="aspect-square w-full object-cover" />
+              {/* A word, not a cross: the button says what it does. */}
               <button
                 type="button"
                 onClick={() => remove(photo)}
-                aria-label={c.remove}
-                className="absolute right-1 top-1 rounded-full bg-surface/90 px-2 py-0.5 text-xs shadow-sm"
+                aria-label={c.removeOf(index + 1)}
+                className="absolute bottom-1.5 right-1.5 rounded-pill bg-surface/95 px-2.5 py-1 text-small font-medium text-foreground shadow-card hover:bg-surface"
               >
-                ✕
+                {c.removeVisible}
               </button>
               {photo.fromImport === true ? (
-                <span className="absolute bottom-1 left-1 rounded-full bg-surface/90 px-2 py-0.5 text-xs">
+                <span className="absolute left-1.5 top-1.5 rounded-pill bg-surface/95 px-2 py-0.5 text-small text-foreground">
                   {c.fromImport}
                 </span>
               ) : null}
@@ -159,10 +167,38 @@ export function PhotoPanel({
       ) : null}
 
       {remaining > 0 ? (
-        <div className="flex flex-col gap-2">
-          <label htmlFor={id} className="sr-only">
-            {c.add}
-          </label>
+        // The whole area is the control: a click opens the picker, a
+        // drop adds the files. On a phone „drag" means nothing and the
+        // tap opens the camera roll, which is what the words say.
+        <label
+          htmlFor={id}
+          data-drop
+          data-dragging={dragging ? 'true' : undefined}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            pick(event.dataTransfer.files);
+          }}
+          className={cn(
+            'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-card border-2 border-dashed px-4 py-6 text-center',
+            'has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-foreground',
+            dragging
+              ? 'border-accent bg-accent-subtle'
+              : 'border-border-strong bg-surface hover:border-accent hover:bg-accent-subtle',
+          )}
+        >
+          <span className="flex size-10 items-center justify-center rounded-full bg-accent-subtle text-accent">
+            <Icon as={iconForAction('upload')} size="md" />
+          </span>
+          <span className="text-body font-medium text-foreground">{c.drop}</span>
+          <span className="text-small text-muted">
+            {pending ? c.uploading : `${c.dropHint} ${c.remaining(remaining, MAX_PHOTOS)}`}
+          </span>
           <input
             id={id}
             ref={input}
@@ -170,36 +206,46 @@ export function PhotoPanel({
             multiple
             accept={ACCEPTED_PHOTO_TYPES.join(',')}
             disabled={pending}
-            onChange={(event) => {
-              const files = event.target.files;
-              if (files !== null && files.length > 0) {
-                startTransition(() => {
-                  void add(files);
-                });
-              }
-            }}
-            className={cn(
-              'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2 text-sm',
-              'file:mr-3 file:rounded-input file:border-0 file:bg-ground file:px-3 file:py-1.5 file:text-sm',
-            )}
+            aria-label={c.add}
+            onChange={(event) => pick(event.target.files)}
+            className="sr-only"
           />
-          <p className="text-xs text-muted">
-            {pending ? c.uploading : c.remaining(remaining, MAX_PHOTOS)}
-          </p>
-        </div>
+        </label>
       ) : (
-        <p className="text-xs text-muted">{c.full(MAX_PHOTOS)}</p>
+        <p className="text-small text-muted">{c.full(MAX_PHOTOS)}</p>
       )}
 
       {error !== null ? (
-        <p role="alert" className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-sm">
+        <p role="alert" className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body">
           {error}
         </p>
       ) : null}
 
-      {photos.map((photo) => (
-        <input key={photo.path} type="hidden" name="photo_paths" value={photo.path} />
-      ))}
+    </div>
+  );
+}
+
+/**
+ * The same area for somebody not signed in yet.
+ *
+ * Photos go into a folder of the person's own in our bucket, so they need
+ * an account; the account is asked for at the last step, and asking for
+ * it here would be the sign-up wall in front of the form that this flow
+ * exists to avoid. So the area is shown, says when the photos can be
+ * added, and says the rest is kept.
+ */
+export function PhotoPanelLocked() {
+  const c = requestsCopy.form.photos;
+  return (
+    <div
+      data-photo-panel
+      data-locked="true"
+      className="flex flex-col items-center gap-2 rounded-card border-2 border-dashed border-border bg-background px-4 py-6 text-center"
+    >
+      <span className="flex size-10 items-center justify-center rounded-full bg-ground-alt text-muted">
+        <Icon as={iconForAction('upload')} size="md" />
+      </span>
+      <p className="max-w-[46ch] text-small text-muted">{c.signedOut}</p>
     </div>
   );
 }

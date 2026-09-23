@@ -25,7 +25,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
       <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-sm">{children}</dd>
+      <dd className="min-w-0 text-body">{children}</dd>
     </div>
   );
 }
@@ -61,7 +61,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link href={ROUTES.adminOrders} className="text-muted underline-offset-4 hover:underline">
             ← {ordersCopy.admin.title}
           </Link>
@@ -85,11 +85,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <>
           <section className="rounded-card border border-warning/45 bg-warning/8 p-5">
             <h2 className="text-h3">{ordersCopy.dispute.openTitle}</h2>
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1 text-small text-muted">
               {ordersCopy.dispute.openedAt} {formatMoment(order.disputed_at)} ·{' '}
               {order.dispute_category}
             </p>
-            <p className="mt-2 whitespace-pre-line text-sm">{order.dispute_reason}</p>
+            <p className="mt-2 whitespace-pre-line break-words text-body">{order.dispute_reason}</p>
           </section>
           <ResolveDispute orderId={order.id} />
         </>
@@ -98,10 +98,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {order.dispute_resolution !== null ? (
         <section className="rounded-card border border-border bg-surface p-5">
           <h2 className="text-h3">{ordersCopy.dispute.decision}</h2>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-small text-muted">
             {ordersCopy.dispute.resolvedAt} {formatMoment(order.dispute_resolved_at)}
           </p>
-          <p className="mt-2 whitespace-pre-line text-sm">{order.dispute_resolution}</p>
+          <p className="mt-2 whitespace-pre-line break-words text-body">{order.dispute_resolution}</p>
         </section>
       ) : null}
 
@@ -156,7 +156,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </dl>
           </section>
 
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="flex flex-col gap-2 text-body">
             <Link href={transportRoute(order.id)} className="underline underline-offset-4">
               {ordersCopy.list.open}
             </Link>

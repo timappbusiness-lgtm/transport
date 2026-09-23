@@ -23,7 +23,7 @@ export function WithdrawOffer({ offerId }: { offerId: string }) {
         {pending ? offersCopy.sent.withdrawing : offersCopy.sent.withdraw}
       </button>
       {state.error !== undefined ? (
-        <p role="alert" className="mt-2 text-sm text-danger">
+        <p role="alert" className="mt-2 text-body text-danger">
           {state.error}
         </p>
       ) : null}

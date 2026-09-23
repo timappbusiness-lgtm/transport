@@ -31,8 +31,10 @@ Defined once in `src/app/globals.css`, under Tailwind's `@theme`.
 --color-ink-soft:   #7b8b93;  /*  3.28:1 — large headlines only */
 
 /* dark sections */
---color-dark-from: #33434b;   /* white 10.27:1 */
---color-dark-to:   #69787f;   /* white  4.57:1 */
+--color-dark-from:  #132329;  /* white 16.15:1 */
+--color-dark-to:    #1f3d46;  /* white 11.58:1 */
+--color-photo-from: #1c3139;  /* the photograph panels */
+--color-photo-to:   #34535d;
 
 /* status */
 --color-success: #2f8f5b;
@@ -52,7 +54,10 @@ Defined once in `src/app/globals.css`, under Tailwind's `@theme`.
 --color-accent-subtle:  #e6f1f2;  /* a tinted background; accent on it 6.15:1, ink 13.39:1 */
 --color-accent-border:  #9cc5cb;  /* the edge of a tinted chip; decorative, never the only boundary */
 --color-on-accent:      #ffffff;  /* text on a filled accent: 7.09:1 */
---color-accent-on-dark: #a3dce3;  /* the dark header: 5.37:1 on its worst case */
+--color-accent-on-dark: #a3dce3;  /* pale step: wordmark, eyebrows, soft half — 7.44:1 on the bar */
+--color-accent-bright:        #4fd1d8;  /* interactive on dark: 8.80 / 6.31 / 6.12:1 on from / to / bar */
+--color-accent-bright-hover:  #7fdfe3;  /* ink on it 10.43:1 */
+--color-on-accent-bright:     #132329;  /* ink on a filled bright button: 8.80:1 */
 --color-ink-hover:      #2a3740;
 
 /* category grounds — one per vehicle family, all quieter than the accent */
@@ -103,7 +108,7 @@ than 90° away from the warning's.
 | Where | What carries it |
 |---|---|
 | The wordmark | `header-brand.tsx`, `--color-accent-on-dark` on the dark header |
-| The primary action | `buttonClasses('primary')`: filled, `text-on-accent` |
+| The primary action | `buttonClasses('primary')`: filled, `text-on-accent`; on a dark surface the bright step with ink on it |
 | Active navigation and tabs | header link (`aria-current`, underline), sidebar, phone bar, `TabLink` |
 | Key numbers | distance on a request, free seats and price on a route, a live offer's price, the dashboard's counts (`DataRow tone="accent"`), `Figure` |
 | The current step of an order | the timeline rail |
@@ -121,13 +126,40 @@ it; they are `ink` now, and `accent-scale.test.ts` names each of them.
 legal pages and the 404 — with a positive control that proves the detector
 sees the accent where it is.
 
-**On the dark header** the accent is `--color-accent-on-dark`. The header
-itself went from ink at 72% to ink at 80%, so that on the palest part of any
-page behind it the wordmark still measures 5.37:1. On the gradient sections
-the pale step measures only 3.03:1 at the light end, so those keep white.
+### Two accents: deep for light surfaces, bright for dark ones
 
-**The soft half of a two-tone headline is never the accent.** It is the part
-somebody may skip, and the accent marks what they should not.
+Petrol was chosen for light surfaces and it is right there — 7.09:1 on
+white. On the dark sections it was nearly the same value as the ground, and
+the interface read grey on grey. Measured, not eyeballed: contrast (WCAG)
+and the perceptual difference ΔE00 (CIEDE2000), where 40 is the floor this
+system sets for „seen at a glance".
+
+| On the dark surfaces | Before | After |
+|---|---|---|
+| The primary button against its ground | petrol on `#33434b`: **1.45:1, ΔE 13.9** | `#4fd1d8` on `#132329`: **8.80:1, ΔE 63.7** |
+| … at the light end of the gradient | petrol on `#69787f`: 1.55:1, ΔE 16.1 | on `#1f3d46`: 6.31:1, ΔE 55.2 |
+| … on the header bar (ink at 88% over white) | — | 6.12:1, ΔE 55.4 |
+| Text on the filled button | white on petrol | ink `#132329` on bright: 8.80:1; on hover 10.43:1 |
+| The soft half of a headline | white at 60% on `#69787f`: **2.73:1, ΔE 25.9** | pale `#a3dce3`: 7.66:1 on `#1f3d46`, 10.69:1 on `#132329` |
+| White body text | 4.57:1 at the light end | 11.58:1 at the light end, 16.15:1 at the dark |
+
+So there are two accents, one per kind of surface, and neither goes on the
+other: the bright step measures **1.83:1 on white**, and
+`tests/unit/accent-dark.test.ts` fails if it appears outside the dark files
+without an `in-data-[surface=dark]:` prefix. Every dark section says so
+with `data-surface="dark"` — the header included, which is why its focus
+ring is the bright step (6.12:1) rather than ink on ink, as it was.
+
+On a dark surface the bright step carries: the primary button, the current
+page in the header (with a 2px underline, so it is said by more than
+colour), key numbers (`Figure`), links in text (`link-accent`) and the focus
+ring. The pale step carries the wordmark, eyebrow pills and the soft half
+of a two-tone headline.
+
+**The soft half of a two-tone headline is never the bright accent.** It is
+the part somebody may skip. On light surfaces it is `ink-soft`; on dark ones
+the pale step, because white at 60% was the grey-on-grey this pass was
+about.
 
 ### Three values differ from the original brief
 
@@ -168,10 +200,13 @@ rather than a class plus two corrections.
 
 Nothing in `src/` writes an arbitrary size any more — there were 676 of them
 across 195 files, in seventeen steps, plus 65 hand-written clamps in eighteen
-variants for what were all page titles. Where an existing size fell between
-two steps, the Tailwind step of exactly that value is used rather than the
-nearest token: nudging 126 sites by a sixteenth of a rem to tidy a scale is a
-layout change, and the pass that introduced this was not one.
+variants for what were all page titles. The first pass kept Tailwind's own
+`text-sm` (14px) and `text-xs` (12px) where a size fell between two steps,
+because moving them was a layout change. The visual pass was that change:
+1134 sites in 201 files now use `text-body` and `text-small`, section
+headings written as `text-lg`/`xl`/`base` use `text-h3`, and counters and
+prices use `Figure`. `tests/unit/design-tokens.test.ts` fails on any
+Tailwind default size, radius or shadow in `src/`.
 
 **Bold carries meaning, never decoration.** The key number in a sentence, the
 route cities, the price, the deadline, the status word. Never a whole
@@ -325,15 +360,80 @@ the interface copy in `src/content` — `tests/unit/tone.test.tsx` enforces it
 
 ## Focus
 
-2px ink with a 2px offset on light ground; white on dark sections, switched by
-`[data-surface="dark"]`. Never the hairline border, which is 1.25:1 and
-invisible as an indicator.
+2px ink with a 2px offset on light ground; the bright accent on dark
+sections (6.12:1 on the header bar, 8.80:1 on the darkest ground), switched
+by `[data-surface="dark"]`. White was 11:1 but also the colour of every label
+there, so a focused link looked like any other. Never the hairline border,
+which is 1.25:1 and invisible as an indicator.
+
+A control whose input is hidden — a card-radio, a pill-radio, a camera
+button over a file input — draws the ring on its label
+(`has-[input:focus-visible]:outline-2`, or `[&:has(+input:focus-visible)]`
+when the input follows the label).
 
 The focus ring never transitions. Tailwind v4's `transition-colors` includes
 `outline-color`, so a component using it makes the ring fade in from the
 element's own text colour — on a primary button that means it starts
 invisible. Both the base layer and the button primitive guard against it, and
 an end-to-end test asserts the computed colour.
+
+## The header
+
+`PUBLIC_NAV` in `src/lib/navigation.ts` is the public menu, built once:
+Cereri, Trasee, Firme, Abonamente, Cum funcționează. Everything else lives
+in `FOOTER_NAV`. From `lg` the five links sit in the bar; below it they do
+not fit beside the two actions (measured: 880px signed out), and a row that
+scrolled inside itself used to show „Cereri, Trase" and hide the rest from
+360 to 840px. Below `lg` the same list is a panel under the bar, opened by
+„Meniu" — the word beside the icon, never the icon alone — and closed by a
+choice, Escape or a press outside.
+
+The account pill keeps the avatar and the chevron whole at every width and
+lets the name give: an ellipsis at 7.5rem, 11rem from `xl`, the whole name
+in its `title`, and the name read but not drawn below `sm`.
+`tests/e2e/aspect-modern.spec.ts` sweeps 360 to 1920 in 40px steps, signed
+out on the real page and signed in with „Constantin-Alexandru
+Popescu-Ionescu" through a golden file of the real components, and fails on
+overflow, a wrapped or clipped control, a link hidden inside the row, or a
+duplicate entry.
+
+## The publishing flow
+
+`/cerere/noua` is four named steps — Traseu, Vehicul, Serviciu, Contact —
+with a stepper that marks the current step in the accent, ticks the
+finished ones and lets them be pressed to go back; a step ahead is not a
+button, because going forward runs the checks. Each step opens with a plain
+heading and one line on why it asks.
+
+- **Traseu**: the two places side by side from `md`, stacked below, and a
+  drawing that fills in as they are chosen. The distance appears as a key
+  number only when both were picked from the list — the straight line the
+  board uses, never a guess for a typed name.
+- **Vehicul**: the categories as cards with their drawing and weight range;
+  runs / does not run as two cards that say what each means; photos as a
+  drop area with thumbnails and a „Scoate" on each. Signed out, the area
+  says when photos can be added.
+- **Serviciu**: Standard and Expres as two comparison cards, with what each
+  means and its effect on the price; visibility the same way.
+- **Contact**: short, and a summary of the rest whose blocks open in place
+  and run the same checks when closed.
+
+Every card is a native radio underneath (`ChoiceCard`). A field says what
+is wrong when it is left, not at the end, and the message goes as soon as
+it is right; Continue with something missing moves the focus to it and
+says how many are left. On a phone the Back / Continue bar stays on the
+bottom of the screen. The rules are `validateDraft`, unchanged.
+
+## Guards added by the visual pass
+
+- Every colour class names a colour that exists (`token-usage.test.ts`).
+  `text-ground` and `bg-ground` named none, so Tailwind generated nothing:
+  a sent message, two admin filters and a wizard step were ink on ink.
+- No Tailwind default size, radius or shadow (`design-tokens.test.ts`).
+- No accent in `src/components/admin`: every button there is a staff
+  decision (`design-tokens.test.ts`).
+- Text somebody typed may always break (`break-words` beside every
+  `whitespace-pre-line`), so a pasted link cannot push a phone sideways.
 
 ## Motion
 
@@ -441,6 +541,24 @@ described above, not a regression. One regression this pass did cause and
 then removed: a board skeleton drawn as grey bars pushed the lede — the
 element a phone paints as largest — behind the rows, and cost `/cereri` six
 points. The skeleton now draws the page's real heading and lede.
+
+### After the visual pass
+
+`main` and this branch side by side on the same machine, production builds,
+mobile preset, the same sample rows behind both. Performance is the median
+of three runs (seven for `/cerere/noua` under `devtools`, where the first
+three overlapped); accessibility, best practices and SEO were identical on
+both sides.
+
+| Page | `simulate` main → branch | `devtools` main → branch | A11y | BP |
+|---|---|---|---|---|
+| `/` | 86 → 86 | 89 → 91 | 100 | 100 |
+| `/cereri` | 89 → 89 | 95 → 96 | 100 | 100 |
+| `/cerere/noua` | 87 → 89 | 91 → 91 (7 runs each: 89–97 / 90–97) | 100 | 96 |
+
+CLS stayed under 0.01 everywhere. `/cerere/noua` is bimodal on both sides —
+LCP lands at about 1.85 s or 2.65 s depending on which element paints
+largest — which is why it needed more runs to compare.
 
 SEO scores 63 because `robots` is `noindex, nofollow` until launch. That is
 the one line to flip in `src/app/layout.tsx`, and there is a TODO on it.

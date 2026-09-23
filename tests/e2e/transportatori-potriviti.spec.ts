@@ -33,7 +33,7 @@ test.describe('the preview in the last step', () => {
     // There is nothing for the database to count the call against, and a
     // button that always fails is worse than no button.
     await toLastStep(page);
-    await expect(page.getByText('Cum te găsește transportatorul')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Unde te găsim?' })).toBeVisible();
     await expect(
       page.getByRole('button', { name: /Vezi câți transportatori/ }),
     ).toHaveCount(0);

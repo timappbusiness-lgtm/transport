@@ -60,6 +60,13 @@ export const offersCopy = {
   entry: {
     signIn: 'Intră în cont ca să trimiți o ofertă.',
     signInAction: 'Intră în cont',
+    /** A visitor on a request page: one card, one primary action. */
+    visitor: {
+      body: 'Ofertele și datele de contact sunt pentru transportatorii verificați.',
+      signIn: 'Intră în cont ca să trimiți o ofertă',
+      join: 'Ești transportator și nu ai cont?',
+      joinAction: 'Înscrie firma gratuit',
+    },
     needsCompany: 'Ofertele pe cererile de transport se trimit dintr-un cont de firmă.',
     needsCompanyAction: 'Adaugă firma',
     unverified: 'Firma trebuie verificată înainte de a trimite oferte.',

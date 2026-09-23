@@ -598,3 +598,66 @@ export function activeHref(items: readonly NavItem[], pathname: string): string 
     .sort((a, b) => b.href.length - a.href.length);
   return matches[0]?.href ?? null;
 }
+
+// ---------------------------------------------------------------------
+// The public bar and the footer
+// ---------------------------------------------------------------------
+
+/** A link on a public page: a destination and the word for it. */
+export interface PublicLink {
+  href: string;
+  label: string;
+}
+
+/**
+ * The public bar, in the order it is read. Built here once, drawn by the
+ * header, and checked for duplicates by `tests/unit/navigation.test.ts`.
+ *
+ * Five and no more. The two boards first, because they are the product;
+ * then the directory and the plans; then one „Cum funcționează" — the
+ * explanation a first-time visitor looks for before deciding anything.
+ *
+ * It used to be longer on the homepage, where three in-page anchors sat
+ * in front of these: „Cum funcționează" was one of them, so the bar said
+ * „Cum funcționează" twice, and at 1280 with a name on the right the row
+ * did not fit. The sections are still on the homepage, a scroll away,
+ * and the footer links the pages they summarise.
+ *
+ * Prețuri is not here. The page exists and the footer links it, but
+ * `price_settings.is_published` is false and a menu item that opens onto
+ * „nimic publicat" teaches people not to trust the menu.
+ */
+export const PUBLIC_NAV: readonly PublicLink[] = [
+  { href: ROUTES.requests, label: 'Cereri' },
+  { href: ROUTES.routes, label: 'Trasee' },
+  { href: ROUTES.companies, label: 'Firme' },
+  { href: ROUTES.plans, label: 'Abonamente' },
+  { href: ROUTES.faq, label: 'Cum funcționează' },
+];
+
+/**
+ * The footer: everything the bar leaves out, plus the two boards again
+ * under their longer names, because a footer is where somebody looks
+ * when the bar did not have what they wanted.
+ */
+export const FOOTER_NAV: readonly PublicLink[] = [
+  { href: ROUTES.requests, label: 'Cereri de transport' },
+  { href: ROUTES.routes, label: 'Trasee disponibile' },
+  { href: ROUTES.prices, label: 'Prețuri orientative' },
+  { href: ROUTES.verification, label: 'Cum verificăm firmele' },
+  { href: ROUTES.plans, label: 'Abonamente' },
+  { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
+  { href: ROUTES.contact, label: 'Contact' },
+  { href: ROUTES.terms, label: 'Termeni' },
+  { href: ROUTES.privacy, label: 'Confidențialitate' },
+  { href: ROUTES.cookies, label: 'Cookie-uri' },
+];
+
+/** The link in `PUBLIC_NAV` a path belongs to, or null. One at most. */
+export function currentPublicHref(pathname: string | null): string | null {
+  if (pathname === null) return null;
+  const match = PUBLIC_NAV.find(
+    (link) => pathname === link.href || pathname.startsWith(`${link.href}/`),
+  );
+  return match?.href ?? null;
+}

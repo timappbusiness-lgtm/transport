@@ -34,7 +34,7 @@ export function MatchingForm({
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Field
@@ -87,7 +87,7 @@ function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -100,12 +100,12 @@ function Field({
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
         className={cn(
-          'w-full rounded-input border bg-surface px-3 py-2 text-sm',
+          'w-full rounded-input border bg-surface px-3 py-2 text-body',
           error ? 'border-danger' : 'border-border-strong',
         )}
       />
-      <p className="text-xs text-muted">{hint}</p>
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      <p className="text-small text-muted">{hint}</p>
+      {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }

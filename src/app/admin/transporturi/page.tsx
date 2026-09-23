@@ -12,11 +12,12 @@ import {
   type AdminOrderQuery,
 } from '@/lib/orders-source';
 import { formatNumber } from '@/lib/requests';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = ordersCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /** Everything the filter may offer, the run plus the two side states. */
 const FILTERABLE: readonly OrderStatus[] = [...ORDER_STEPS, 'disputed', 'cancelled'];
@@ -95,7 +96,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[66ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[66ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <form
@@ -103,11 +104,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         action={ROUTES.adminOrders}
         className="rounded-card border border-border bg-surface p-5"
       >
-        <h2 className="mb-4 text-sm font-medium">{c.filters.title}</h2>
+        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-status" className="text-xs font-medium">
+            <label htmlFor="at-status" className="text-small font-medium">
               {c.filters.status}
             </label>
             <select id="at-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
@@ -121,7 +122,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-company" className="text-xs font-medium">
+            <label htmlFor="at-company" className="text-small font-medium">
               {c.filters.company}
             </label>
             <select
@@ -140,7 +141,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-from" className="text-xs font-medium">
+            <label htmlFor="at-from" className="text-small font-medium">
               {c.filters.from}
             </label>
             <input
@@ -153,7 +154,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-to" className="text-xs font-medium">
+            <label htmlFor="at-to" className="text-small font-medium">
               {c.filters.to}
             </label>
             <input
@@ -166,7 +167,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </div>
         </div>
 
-        <label className="mt-3 flex items-center gap-2 text-sm">
+        <label className="mt-3 flex items-center gap-2 text-body">
           <input type="checkbox" name="dispute" value="da" defaultChecked={query.disputedOnly} />
           {c.filters.disputed}
         </label>
@@ -176,7 +177,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             {c.filters.apply}
           </button>
           {filtered ? (
-            <a href={ROUTES.adminOrders} className="text-sm text-muted underline-offset-4 hover:underline">
+            <a href={ROUTES.adminOrders} className="text-body text-muted underline-offset-4 hover:underline">
               {c.filters.clear}
             </a>
           ) : null}
@@ -184,26 +185,29 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       </form>
 
       {page.error !== null ? (
-        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
           Nu se pot citi comenzile acum.
         </p>
       ) : null}
 
-      {page.rows.length === 0 ? (
-        <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
-          <h2 className="text-h3">{c.empty.title}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
-          {filtered ? (
-            <p className="mt-5 text-sm">
-              <Link href={ROUTES.adminOrders} className="underline underline-offset-4">
+      {/* A failed read already says so above; an empty state under it
+          would claim there is nothing, which nobody knows. */}
+      {page.error !== null ? null : page.rows.length === 0 ? (
+        <EmptyState
+          figure={filtered ? 'search' : 'list'}
+          title={c.empty.title}
+          body={c.empty.body}
+          action={
+            filtered ? (
+              <Link href={ROUTES.adminOrders} className={buttonClasses('secondary', 'sm')}>
                 {c.filters.clear}
               </Link>
-            </p>
-          ) : null}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <>
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             {c.list.total(formatNumber(page.total))} · {c.list.page(query.page, lastPage)}
           </p>
 

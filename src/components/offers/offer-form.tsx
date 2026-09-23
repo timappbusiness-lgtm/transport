@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 const EMPTY: OfferState = {};
 const c = offersCopy.form;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * „Trimite ofertă".
@@ -51,7 +51,7 @@ export function OfferForm({
 
   if (state.notice !== undefined) {
     return (
-      <p role="status" className="rounded-card border border-success/45 bg-success/8 p-4 text-sm">
+      <p role="status" className="rounded-card border border-success/45 bg-success/8 p-4 text-body">
         {state.notice}{' '}
         <Link href={ROUTES.accountOffers} className="link-accent">
           Vezi ofertele trimise
@@ -80,14 +80,14 @@ export function OfferForm({
 
       <div>
         <h3 className="text-h3">{c.title}</h3>
-        <p className="mt-1.5 max-w-[58ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[58ch] text-body text-muted">{c.lede}</p>
         {priceRange !== undefined ? (
-          <p className="mt-2 text-sm text-muted">{c.priceRange(priceRange.low, priceRange.high)}</p>
+          <p className="mt-2 text-body text-muted">{c.priceRange(priceRange.low, priceRange.high)}</p>
         ) : null}
       </div>
 
       {noVehicle ? (
-        <p className="rounded-card border border-warning/45 bg-warning/8 p-3 text-sm">
+        <p className="rounded-card border border-warning/45 bg-warning/8 p-3 text-body">
           {c.vehicleNone}{' '}
           <Link href={ROUTES.accountFleet} className="link-accent">
             Deschide Flota
@@ -106,7 +106,7 @@ export function OfferForm({
           required
         />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-currency`} className="text-sm font-medium">
+          <label htmlFor={`${id}-currency`} className="text-body font-medium">
             {c.currency}
           </label>
           <select
@@ -143,11 +143,11 @@ export function OfferForm({
           min={loadingFrom}
         />
       </div>
-      <p className="-mt-2 text-xs text-muted">{c.datesHint}</p>
+      <p className="-mt-2 text-small text-muted">{c.datesHint}</p>
 
       {needsVehicle ? (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-vehicle`} className="text-sm font-medium">
+          <label htmlFor={`${id}-vehicle`} className="text-body font-medium">
             {c.vehicle}
           </label>
           <select
@@ -164,14 +164,14 @@ export function OfferForm({
               </option>
             ))}
           </select>
-          <p className="text-xs text-muted">{c.vehicleHint}</p>
+          <p className="text-small text-muted">{c.vehicleHint}</p>
           {state.fieldErrors?.vehicleId ? (
-            <p className="text-xs text-danger">{state.fieldErrors.vehicleId}</p>
+            <p className="text-small text-danger">{state.fieldErrors.vehicleId}</p>
           ) : null}
         </div>
       ) : null}
 
-      <label htmlFor={`${id}-conditions`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-conditions`} className="flex flex-col gap-1.5 text-body font-medium">
         {c.conditions}
         <textarea
           id={`${id}-conditions`}
@@ -180,7 +180,7 @@ export function OfferForm({
           maxLength={1000}
           className={cn(CONTROL, 'resize-y font-normal')}
         />
-        <span className="text-xs font-normal text-muted">{c.conditionsHint}</span>
+        <span className="text-small font-normal text-muted">{c.conditionsHint}</span>
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -192,7 +192,7 @@ export function OfferForm({
           error={state.fieldErrors?.paymentTermDays}
         />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-validity`} className="text-sm font-medium">
+          <label htmlFor={`${id}-validity`} className="text-body font-medium">
             {c.validity}
           </label>
           <select
@@ -215,12 +215,12 @@ export function OfferForm({
               ))}
           </select>
           {state.fieldErrors?.validityHours ? (
-            <p className="text-xs text-danger">{state.fieldErrors.validityHours}</p>
+            <p className="text-small text-danger">{state.fieldErrors.validityHours}</p>
           ) : null}
         </div>
       </div>
 
-      <label htmlFor={`${id}-message`} className="flex flex-col gap-1.5 text-sm font-medium">
+      <label htmlFor={`${id}-message`} className="flex flex-col gap-1.5 text-body font-medium">
         {c.message}
         <textarea
           id={`${id}-message`}
@@ -229,7 +229,7 @@ export function OfferForm({
           maxLength={1000}
           className={cn(CONTROL, 'resize-y font-normal')}
         />
-        <span className="text-xs font-normal text-muted">{c.messageHint}</span>
+        <span className="text-small font-normal text-muted">{c.messageHint}</span>
       </label>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -243,14 +243,14 @@ export function OfferForm({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-sm text-muted underline underline-offset-4"
+          className="text-body text-muted underline underline-offset-4"
         >
           {c.cancel}
         </button>
       </div>
 
       {state.error !== undefined ? (
-        <div role="alert" className="text-sm text-danger">
+        <div role="alert" className="text-body text-danger">
           <p>{state.error}</p>
           {state.quotaReached === true ? (
             <p className="mt-1 text-foreground">
@@ -288,7 +288,7 @@ function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -301,8 +301,8 @@ function Field({
         aria-invalid={error ? true : undefined}
         className={cn(CONTROL, error && 'border-danger')}
       />
-      {hint !== undefined ? <p className="text-xs text-muted">{hint}</p> : null}
-      {error !== undefined ? <p className="text-xs text-danger">{error}</p> : null}
+      {hint !== undefined ? <p className="text-small text-muted">{hint}</p> : null}
+      {error !== undefined ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }

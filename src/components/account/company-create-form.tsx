@@ -32,7 +32,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
     <div className="flex flex-col gap-6">
       <section className="rounded-card border border-border bg-surface p-5">
         <h2 className="text-h3">Caută firma după CUI</h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-body text-muted">
           Verificăm la ANAF că firma există și este activă, apoi completăm ce putem.
         </p>
         <form action={lookupAction} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" noValidate>
@@ -74,9 +74,9 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
           />
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium">Tip activitate</legend>
+            <legend className="mb-1 text-body font-medium">Tip activitate</legend>
             {TYPES.map((type) => (
-              <label key={type} className="flex items-center gap-2.5 text-sm">
+              <label key={type} className="flex items-center gap-2.5 text-body">
                 <input
                   type="radio"
                   name="companyType"
@@ -88,7 +88,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
               </label>
             ))}
             {create.fieldErrors?.companyType ? (
-              <p className="text-xs text-danger">{create.fieldErrors.companyType}</p>
+              <p className="text-small text-danger">{create.fieldErrors.companyType}</p>
             ) : null}
           </fieldset>
 

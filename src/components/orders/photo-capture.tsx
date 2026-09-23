@@ -83,10 +83,10 @@ export function PhotoCapture({
       ) : null}
 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm font-medium">
+        <p className="text-body font-medium">
           {complete ? c.uploaded : (prompts[have] ?? c.add)}
         </p>
-        <p className="text-xs text-muted">{c.promptHint(Math.min(have + 1, total), total)}</p>
+        <p className="text-small text-muted">{c.promptHint(Math.min(have + 1, total), total)}</p>
       </div>
 
       {/* The progress reads as four boxes rather than a bar: a driver
@@ -138,7 +138,7 @@ export function PhotoCapture({
               {geoDenied ? c.locationDenied : c.location}
             </p>
           )}
-          <p className="text-xs text-muted">{c.locationHint}</p>
+          <p className="text-small text-muted">{c.locationHint}</p>
         </>
       ) : (
         done
@@ -147,7 +147,7 @@ export function PhotoCapture({
       {state.error !== undefined ? (
         <div className="rounded-input border border-danger/40 bg-danger/8 p-3">
           <FormError>{state.error}</FormError>
-          <p className="mt-1 text-xs text-muted">{c.failed}</p>
+          <p className="mt-1 text-small text-muted">{c.failed}</p>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

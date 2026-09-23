@@ -3,7 +3,7 @@ import { ROUTES } from '@/config/routes';
 import { directoryCopy } from '@/content/directory';
 import { hasFilters, type DirectoryFilters } from '@/lib/directory';
 
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 const c = directoryCopy.page.filters;
 
@@ -28,7 +28,7 @@ export function DirectoryFiltersForm({
         <legend className="sr-only">{c.legend}</legend>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="d-search" className="text-xs font-medium">
+          <label htmlFor="d-search" className="text-small font-medium">
             {c.search}
           </label>
           <input
@@ -44,7 +44,7 @@ export function DirectoryFiltersForm({
 
         {counties.length > 0 ? (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="d-county" className="text-xs font-medium">
+            <label htmlFor="d-county" className="text-small font-medium">
               {c.county}
             </label>
             <select id="d-county" name="judet" defaultValue={filters.county ?? ''} className={CONTROL}>
@@ -59,7 +59,7 @@ export function DirectoryFiltersForm({
         ) : null}
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="d-type" className="text-xs font-medium">
+          <label htmlFor="d-type" className="text-small font-medium">
             {c.type}
           </label>
           <select id="d-type" name="tip" defaultValue={filters.companyType ?? ''} className={CONTROL}>
@@ -70,7 +70,7 @@ export function DirectoryFiltersForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="d-scope" className="text-xs font-medium">
+          <label htmlFor="d-scope" className="text-small font-medium">
             {c.scope}
           </label>
           <select id="d-scope" name="acoperire" defaultValue={filters.scope ?? ''} className={CONTROL}>
@@ -88,7 +88,7 @@ export function DirectoryFiltersForm({
       {hasFilters(filters) ? (
         <a
           href={ROUTES.companies}
-          className="text-center text-sm text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
+          className="text-center text-body text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
         >
           {c.clear}
         </a>

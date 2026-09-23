@@ -45,7 +45,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="flex min-h-[70vh] flex-col gap-4">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link
             href={ROUTES.accountMessages}
             className="text-muted underline-offset-4 hover:underline"

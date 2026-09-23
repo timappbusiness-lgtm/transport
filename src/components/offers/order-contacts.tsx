@@ -30,31 +30,31 @@ export function OrderContacts({ offerId, label }: { offerId: string; label?: str
     const { displayName, name, phone, email, transportId } = state.contacts;
     return (
       <div className="rounded-input border border-success/40 bg-success/8 px-4 py-3">
-        <p className="text-xs text-muted">{c.title}</p>
-        {displayName ? <p className="mt-1 text-sm font-medium">{displayName}</p> : null}
+        <p className="text-small text-muted">{c.title}</p>
+        {displayName ? <p className="mt-1 text-body font-medium">{displayName}</p> : null}
         {name !== null && name !== displayName ? (
-          <p className="text-sm">
+          <p className="text-body">
             <span className="text-muted">{c.name}: </span>
             {name}
           </p>
         ) : null}
         {phone ? (
-          <p className="font-mono text-sm tabular-nums">
+          <p className="font-mono text-body tabular-nums">
             <a href={`tel:${phone}`} className="link-accent">
               {phone}
             </a>
           </p>
         ) : null}
         {email ? (
-          <p className="text-sm">
+          <p className="text-body">
             <a href={`mailto:${email}`} className="link-accent">
               {email}
             </a>
           </p>
         ) : null}
-        <p className="mt-2 text-xs text-muted">{c.free}</p>
+        <p className="mt-2 text-small text-muted">{c.free}</p>
         {transportId !== null ? (
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-body">
             <Link href={transportRoute(transportId)} className="link-accent">
               {offersCopy.sent.seeOrder}
             </Link>
@@ -70,7 +70,7 @@ export function OrderContacts({ offerId, label }: { offerId: string; label?: str
       <button type="submit" className={buttonClasses('primary', 'sm')}>
         {label ?? c.open}
       </button>
-      <p className="text-xs text-muted">{c.free}</p>
+      <p className="text-small text-muted">{c.free}</p>
       <FormError>{state.error}</FormError>
     </form>
   );

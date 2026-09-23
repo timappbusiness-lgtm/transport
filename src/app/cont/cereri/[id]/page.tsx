@@ -82,16 +82,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <Card className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-muted">
+            <p className="text-body text-muted">
               {request.loading_city} ({request.loading_country}) — {request.unloading_city} (
               {request.unloading_country})
             </p>
-            <p className="mt-1 text-sm text-muted">
+            <p className="mt-1 text-body text-muted">
               Încărcare de la {formatDay(request.loading_from)}
               {request.loading_to !== null ? ` până la ${formatDay(request.loading_to)}` : ''}
             </p>
             {request.category !== null ? (
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-body text-muted">
                 {CARGO_CATEGORY_LABELS[request.category]}
               </p>
             ) : null}
@@ -100,7 +100,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             {requestStateLabel(request.status, pending)}
           </StatusBadge>
         </div>
-        <p className="mt-4 text-sm">
+        <p className="mt-4 text-body">
           <Link href={requestRoute(request.id)} className="link-accent">
             Vezi cum o văd transportatorii
           </Link>
@@ -112,7 +112,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       ) : null}
 
       <section aria-labelledby="oferte" className="flex flex-col gap-4">
-        <h2 id="oferte" className="text-lg">
+        <h2 id="oferte" className="text-h3">
           {offersCopy.received.title}
         </h2>
         <ReceivedOffers

@@ -84,7 +84,7 @@ export function SendOffer({
   // then reads.
   if (quota !== null && quota.allowed !== null && quota.used >= quota.allowed) {
     return (
-      <div className="rounded-card border border-warning/45 bg-warning/8 p-4 text-sm">
+      <div className="rounded-card border border-warning/45 bg-warning/8 p-4 text-body">
         <p className="font-medium">{offersCopy.quota.title}</p>
         <p className="mt-1 text-muted">
           {offersCopy.quota.body(quota.planName, quota.allowed)}
@@ -119,7 +119,7 @@ export function SendOffer({
 
 function Note({ body, href, action }: { body: string; href?: string; action?: string }) {
   return (
-    <div className="rounded-card border border-border bg-ground-alt p-4 text-sm text-muted">
+    <div className="rounded-card border border-border bg-ground-alt p-4 text-body text-muted">
       <p>{body}</p>
       {href !== undefined && action !== undefined ? (
         <Link href={href} className={`${buttonClasses('secondary', 'sm')} mt-3`}>

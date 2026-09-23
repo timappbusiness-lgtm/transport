@@ -37,7 +37,7 @@ function Choice({
         </span>
         <h2 className="text-h3">{title}</h2>
       </div>
-      <p className="text-sm text-muted">{body}</p>
+      <p className="text-body text-muted">{body}</p>
       <Link href={href} className={cn(buttonClasses(variant, 'md'), 'w-full')}>
         {cta}
       </Link>

@@ -70,6 +70,60 @@ describe('components name tokens, never values', () => {
   });
 });
 
+describe('every colour class names a colour that exists', () => {
+  // `text-ground` and `bg-ground` were written in seven places and there
+  // has never been a `--color-ground`: Tailwind generates nothing for a
+  // name it does not know, silently. So the sent message in a
+  // conversation, the chosen filter on two admin lists and the current
+  // step of the assisted sign-up were ink text on an ink pill, and the
+  // message composer's sticky bar let the thread scroll through it.
+  const TOKENS = new Set(
+    [...CSS.matchAll(/^\s*--color-([a-z0-9-]+):/gm)].map((m) => m[1]!),
+  );
+  const BUILTIN = new Set(['white', 'black', 'transparent', 'current', 'inherit']);
+  /** What each family also means that is not a colour. */
+  const NOT_COLOUR: Record<string, RegExp> = {
+    text: /^(?:display|h[123]|body(?:-lg)?|small|label|figure(?:-sm|-lg)?|left|center|right|justify|start|end|balance|pretty|wrap|nowrap|ellipsis|clip)$/,
+    bg: /^(?:linear-.+|gradient-to-.+|radial.*|conic.*|cover|contain|center|top|bottom|left|right|no-repeat|repeat.*|fixed|local|scroll|none|clip-.+|origin-.+)$/,
+    border: /^(?:[0-9]+|[xytblrse](?:-[0-9]+)?|dashed|solid|dotted|double|hidden|none|collapse|separate|spacing.*)$/,
+    ring: /^(?:[0-9]+|inset|offset-.+)$/,
+    fill: /^none$/,
+    stroke: /^(?:[0-9]+|none)$/,
+    outline: /^(?:[0-9]+|none|hidden|dashed|dotted|double|solid|offset-.+)$/,
+    decoration: /^(?:[0-9]+|solid|dashed|dotted|double|wavy|auto|from-font|clone|slice)$/,
+    divide: /^(?:[xy](?:-[0-9]+)?|[0-9]+|reverse|solid|dashed|dotted|double|none)$/,
+    from: /^[0-9]+%$/,
+    via: /^[0-9]+%$/,
+    to: /^[0-9]+%$/,
+  };
+  const CLASS =
+    /(?:^|[\s"'`:])(text|bg|border(?:-[xytblrse])?|ring|fill|stroke|outline|decoration|divide|from|via|to|placeholder|caret|accent)-([a-z][a-z0-9-]*[a-z0-9%])(?:\/[0-9]+)?(?=[\s"'`]|$)/g;
+
+  it('knows the tokens it checks against', () => {
+    expect(TOKENS.has('foreground')).toBe(true);
+    expect(TOKENS.has('ground-alt')).toBe(true);
+    expect(TOKENS.has('ground')).toBe(false);
+  });
+
+  it('in every component, page and helper', () => {
+    const offenders = FILES.flatMap((file) =>
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .filter((line) => !/^\s*(?:\/\/|\*|\/\*|\{\/\*)/.test(line))
+        .flatMap((line) =>
+          [...line.matchAll(CLASS)]
+            .filter(([, family, name]) => {
+              const base = family!.startsWith('border') ? 'border' : family!;
+              if (TOKENS.has(name!) || BUILTIN.has(name!)) return false;
+              return !(NOT_COLOUR[base]?.test(name!) ?? false);
+            })
+            .map(([match]) => `${file}: ${match.trim()}`),
+        ),
+    );
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+});
+
 describe('the two copies that have to be hexes agree with the stylesheet', () => {
   it('the theme colour is the ink token', () => {
     expect(THEME_COLOR.toLowerCase()).toBe(token('foreground'));

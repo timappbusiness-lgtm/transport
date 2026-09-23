@@ -54,7 +54,7 @@ export function EmailForm({ email }: { email: string }) {
       <form action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           {c.email}: <span className="font-mono text-foreground">{email}</span>
         </p>
         <Field
@@ -107,7 +107,7 @@ export function SignOutEverywhere() {
   return (
     <Card title={c.signOutEverywhere}>
       <form action={signOutEverywhereAction} className="flex flex-col gap-3">
-        <p className="max-w-[54ch] text-sm text-muted">{c.signOutEverywhereHint}</p>
+        <p className="max-w-[54ch] text-body text-muted">{c.signOutEverywhereHint}</p>
         <button type="submit" className={`${buttonClasses('secondary', 'md')} self-start`}>
           {c.signOutEverywhere}
         </button>

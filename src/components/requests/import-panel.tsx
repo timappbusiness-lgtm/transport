@@ -97,9 +97,9 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
 
   const tabClasses = (active: boolean): string =>
     cn(
-      'rounded-input px-3.5 py-2 text-sm',
+      'rounded-input px-3.5 py-2 text-body',
       active
-        ? 'bg-surface font-medium text-foreground shadow-sm'
+        ? 'bg-surface font-medium text-foreground shadow-card'
         : 'text-muted hover:text-foreground',
     );
 
@@ -107,13 +107,13 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
     <div className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
       <div>
         <p className="text-body font-medium">{c.title}</p>
-        <p className="mt-1 max-w-[56ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1 max-w-[56ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <div
         role="tablist"
         aria-label={c.title}
-        className="flex w-fit gap-1 rounded-input bg-ground p-1"
+        className="flex w-fit gap-1 rounded-input bg-background p-1"
       >
         <button
           type="button"
@@ -137,7 +137,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
 
       {tab === 'link' ? (
         <div className="flex flex-col gap-2">
-          <label htmlFor={`${id}-url`} className="text-sm">
+          <label htmlFor={`${id}-url`} className="text-body">
             {c.link.label}
           </label>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -159,11 +159,11 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
               {pending ? c.link.working : c.link.submit}
             </button>
           </div>
-          <p className="text-xs text-muted">{c.link.hint}</p>
+          <p className="text-small text-muted">{c.link.hint}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <label htmlFor={`${id}-photo`} className="text-sm">
+          <label htmlFor={`${id}-photo`} className="text-body">
             {c.photo.label}
           </label>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -172,7 +172,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
               ref={fileInput}
               type="file"
               accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2 text-sm file:mr-3 file:rounded-input file:border-0 file:bg-ground file:px-3 file:py-1.5 file:text-sm"
+              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2 text-body file:mr-3 file:rounded-input file:border-0 file:bg-ground-alt file:px-3 file:py-1.5 file:text-body"
             />
             <button
               type="button"
@@ -183,34 +183,34 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
               {pending ? c.photo.working : c.photo.submit}
             </button>
           </div>
-          <p className="text-xs text-muted">{c.photo.hint}</p>
+          <p className="text-small text-muted">{c.photo.hint}</p>
         </div>
       )}
 
       {error !== null ? (
         <p
           role="alert"
-          className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-sm"
+          className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body"
         >
           {error}
         </p>
       ) : null}
 
       {notice !== null ? (
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-body text-muted">
           {notice}
         </p>
       ) : null}
 
       {remaining !== null ? (
-        <p className="text-xs text-muted">
+        <p className="text-small text-muted">
           {remaining === 1 ? c.remaining.last : c.remaining.some(remaining)}
         </p>
       ) : null}
 
-      {!signedIn ? <p className="text-xs text-muted">{c.attach.needsAccount}</p> : null}
+      {!signedIn ? <p className="text-small text-muted">{c.attach.needsAccount}</p> : null}
 
-      <p className="text-xs text-muted">{c.manual}</p>
+      <p className="text-small text-muted">{c.manual}</p>
     </div>
   );
 }
@@ -222,7 +222,7 @@ export function AutoChip() {
       title={importCopy.autoChipTitle}
       // The design has no brand accent on purpose, so the chip is made of
       // weight and a border rather than a colour nothing else uses.
-      className="ml-2 rounded-full border border-warning/45 bg-warning/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-foreground"
+      className="ml-2 rounded-full border border-warning/45 bg-warning/10 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-foreground"
     >
       {importCopy.autoChip}
     </span>
@@ -240,7 +240,7 @@ export function ImportDisclaimer() {
   return (
     <p
       role="status"
-      className="rounded-input border border-warning/45 bg-warning/10 px-3.5 py-2.5 text-sm"
+      className="rounded-input border border-warning/45 bg-warning/10 px-3.5 py-2.5 text-body"
     >
       {importCopy.disclaimer}
     </p>

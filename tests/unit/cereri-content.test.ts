@@ -85,7 +85,10 @@ describe('request copy rules', () => {
   });
 
   it('says plainly that the telephone number is not on the advert', () => {
-    expect(requestsCopy.form.contact.lede).toMatch(/nu apare pe anunț/i);
+    // The contact step opens with it, and the telephone field repeats
+    // that every opening of the number is logged.
+    expect(requestsCopy.form.stepHeads.contact.why).toMatch(/nu apare pe cerere/i);
+    expect(requestsCopy.form.contact.phoneHint).toMatch(/se înregistrează/);
   });
 
   it('says the estimate step is optional and the carrier decides', () => {

@@ -73,7 +73,7 @@ export function MessageActions({
         id={`${id}-message`}
         name="message_id"
         required
-        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
       >
         {messages.map((m) => (
           <option key={m.id} value={m.id}>
@@ -82,14 +82,14 @@ export function MessageActions({
         ))}
       </select>
 
-      <p className="text-xs text-muted">{c.reportHint}</p>
+      <p className="text-small text-muted">{c.reportHint}</p>
       <textarea
         name="reason"
         rows={3}
         required
         minLength={10}
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
       />
       <FormError>{state.fieldErrors?.reason}</FormError>
 
@@ -165,7 +165,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
     >
       <input type="hidden" name="user_id" value={userId} />
       <p className="text-small font-medium">{c.blockTitle}</p>
-      <p className="max-w-[52ch] text-xs text-muted">{c.blockHint}</p>
+      <p className="max-w-[52ch] text-small text-muted">{c.blockHint}</p>
 
       <label htmlFor={`${id}-reason`} className="sr-only">
         {c.blockTitle}
@@ -174,7 +174,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
         id={`${id}-reason`}
         name="reason"
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-body"
       />
 
       <div className="flex flex-wrap gap-2">

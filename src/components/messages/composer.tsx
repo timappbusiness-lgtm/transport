@@ -61,14 +61,14 @@ export function Composer({ conversationId }: { conversationId: string }) {
     <form
       ref={formRef}
       action={action}
-      className="sticky bottom-0 border-t border-border bg-ground px-3 py-3 sm:px-0"
+      className="sticky bottom-0 border-t border-border bg-background px-3 py-3 sm:px-0"
     >
       <input type="hidden" name="conversation_id" value={conversationId} />
 
-      {offline ? <p className="mb-2 text-xs font-medium text-foreground">{c.offline}</p> : null}
+      {offline ? <p className="mb-2 text-small font-medium text-foreground">{c.offline}</p> : null}
 
       {files.length > 0 ? (
-        <ul className="mb-2 flex flex-wrap gap-1.5 text-xs text-muted">
+        <ul className="mb-2 flex flex-wrap gap-1.5 text-small text-muted">
           {files.map((file) => (
             <li key={file.name} className="rounded-pill border border-border px-2 py-0.5">
               {file.name}
@@ -116,9 +116,9 @@ export function Composer({ conversationId }: { conversationId: string }) {
             className="sr-only"
           />
         </label>
-        <span className="text-xs text-muted">{c.hint}</span>
+        <span className="text-small text-muted">{c.hint}</span>
       </div>
-      <p className="mt-1 text-xs text-muted">{c.attachHint}</p>
+      <p className="mt-1 text-small text-muted">{c.attachHint}</p>
 
       <FormError>{problem ?? state.fieldErrors?.body ?? state.fieldErrors?.attachments}</FormError>
       <FormError>{state.error}</FormError>

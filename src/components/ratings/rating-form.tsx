@@ -56,7 +56,7 @@ export function RatingForm({
       <h2 className="text-h3">
         {editing ? c.editTitle : side === 'client' ? c.title : c.titleCarrier}
       </h2>
-      {editing ? <p className="mt-1 text-xs text-muted">{c.editHint}</p> : null}
+      {editing ? <p className="mt-1 text-small text-muted">{c.editHint}</p> : null}
 
       <form action={action} className="mt-4 flex flex-col gap-5">
         <input type="hidden" name="order_id" value={orderId} />
@@ -92,7 +92,7 @@ export function RatingForm({
             <label htmlFor={`${id}-comment`} className="text-body font-medium">
               {c.comment}
             </label>
-            <p className="text-xs text-muted">{c.commentHint}</p>
+            <p className="text-small text-muted">{c.commentHint}</p>
             <textarea
               id={`${id}-comment`}
               name="comment"
@@ -102,7 +102,7 @@ export function RatingForm({
               onChange={(e) => setComment(e.target.value)}
               className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
             />
-            <p className="text-xs text-muted">{c.charsLeft(charsLeft(comment))}</p>
+            <p className="text-small text-muted">{c.charsLeft(charsLeft(comment))}</p>
             <FormError>{state.fieldErrors?.comment}</FormError>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function RatingForm({
             <div className="mt-2">
               {score !== null ? <Stars score={score} /> : null}
               {comment.trim() !== '' ? (
-                <p className="mt-2 whitespace-pre-line text-sm">{comment}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{comment}</p>
               ) : null}
             </div>
           </div>
@@ -132,7 +132,7 @@ export function RatingForm({
           </button>
         </div>
 
-        {left !== null ? <p className="text-xs text-muted">{c.editable(left)}</p> : null}
+        {left !== null ? <p className="text-small text-muted">{c.editable(left)}</p> : null}
         <FormError>{state.error}</FormError>
       </form>
     </Card>

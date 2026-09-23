@@ -44,11 +44,11 @@ export default async function Page() {
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.hero.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
       {error !== null ? (
-        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
           Nu se pot citi alertele acum.
         </p>
       ) : null}
@@ -58,8 +58,8 @@ export default async function Page() {
           <p>
             <StatusBadge tone="warning">{c.quota.title}</StatusBadge>
           </p>
-          <p className="mt-2 text-sm">{quotaMessage(quota)}</p>
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-body">{quotaMessage(quota)}</p>
+          <p className="mt-2 text-body">
             <Link href={ROUTES.plans} className="link-accent">
               {c.quota.action}
             </Link>{' '}
@@ -71,7 +71,7 @@ export default async function Page() {
       {searches.length === 0 ? (
         <div className="rounded-card border border-dashed border-border-strong bg-surface p-6 sm:p-8">
           <h2 className="text-h3">{c.empty.title}</h2>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.empty.body}</p>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.empty.body}</p>
           <p className="mt-5">
             <Link href={ROUTES.requests} className={buttonClasses('primary', 'md')}>
               {c.empty.action}
@@ -91,7 +91,7 @@ export default async function Page() {
             ))}
           </ul>
 
-          <p className="text-sm text-muted">
+          <p className="text-body text-muted">
             Vrei încă una?{' '}
             <Link href={ROUTES.requests} className="link-accent">
               Filtrează pe panou

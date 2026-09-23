@@ -28,7 +28,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-2 text-xs text-muted underline underline-offset-4 hover:text-foreground"
+        className="mt-2 text-small text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.action}
       </button>
@@ -42,7 +42,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
       <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {c.title}
       </label>
-      <p className="text-xs text-muted">{c.hint}</p>
+      <p className="text-small text-muted">{c.hint}</p>
       <textarea
         id={`${id}-reason`}
         name="reason"
@@ -50,7 +50,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
         required
         minLength={10}
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
       />
       <FormError>{state.fieldErrors?.reason}</FormError>
 

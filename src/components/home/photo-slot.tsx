@@ -32,7 +32,9 @@ import { cn } from '@/lib/utils';
 /** One carried car. Light weight — it is the load, not the vehicle. */
 function Car({ x, y }: { x: number; y: number }) {
   return (
-    <g transform={`translate(${x} ${y})`} opacity="0.72">
+    // The load is what the platform is about, so it is the one thing in
+    // the drawing in the bright accent; the rig stays white line-work.
+    <g transform={`translate(${x} ${y})`} opacity="0.9" className="text-accent-bright">
       <path
         d="M2 0v-9l8-9h23l9 9v9"
         fill="none"

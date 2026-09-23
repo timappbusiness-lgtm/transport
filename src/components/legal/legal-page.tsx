@@ -24,7 +24,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
     <Container className="max-w-[46rem] py-12 sm:py-16">
       <EyebrowPill tone="quiet">Document legal</EyebrowPill>
       <h1 className="mt-4 text-h1">{document.title}</h1>
-      <p className="mt-3 text-sm text-muted">
+      <p className="mt-3 text-body text-muted">
         Versiunea {document.version}, în vigoare din{' '}
         {new Date(document.effectiveFrom).toLocaleDateString('ro-RO', {
           day: 'numeric',
@@ -41,8 +41,8 @@ export function LegalPage({ document }: { document: LegalDocument }) {
           role="note"
           className="mt-6 rounded-card border border-warning/45 bg-warning/8 p-4 sm:p-5"
         >
-          <p className="text-sm font-medium">{DRAFT_NOTICE.title}</p>
-          <p className="mt-1 text-sm">{DRAFT_NOTICE.body}</p>
+          <p className="text-body font-medium">{DRAFT_NOTICE.title}</p>
+          <p className="mt-1 text-body">{DRAFT_NOTICE.body}</p>
         </div>
       ) : null}
 
@@ -51,7 +51,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
           role="note"
           className="mt-4 rounded-card border border-border bg-ground-alt p-4 sm:p-5"
         >
-          <p className="text-sm">
+          <p className="text-body">
             Datele de identificare ale operatorului nu sunt încă completate. Locurile marcate cu{' '}
             <span className="font-mono text-small">[de completat]</span> se completează în{' '}
             <span className="font-mono text-small">src/config/company.ts</span> înainte de
@@ -63,7 +63,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
       <div className="mt-10 flex flex-col gap-8">
         {document.sections.map((section, index) => (
           <section key={section.title} aria-labelledby={`sec-${index + 1}`}>
-            <h2 id={`sec-${index + 1}`} className="text-lg">
+            <h2 id={`sec-${index + 1}`} className="text-h3">
               <span className="text-muted">{index + 1}.</span> {section.title}
             </h2>
             {section.body.map((paragraph) => (
@@ -92,7 +92,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
         ))}
       </div>
 
-      <nav aria-label="Celelalte documente" className="mt-12 flex flex-wrap gap-5 text-sm">
+      <nav aria-label="Celelalte documente" className="mt-12 flex flex-wrap gap-5 text-body">
         {[
           { href: ROUTES.terms, label: 'Termeni și condiții' },
           { href: ROUTES.privacy, label: 'Confidențialitate' },

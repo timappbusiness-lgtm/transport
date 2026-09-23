@@ -56,7 +56,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       {open.length > 0 ? (
@@ -66,7 +66,7 @@ export default async function Page() {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted">{c.empty}</p>
+        <p className="text-body text-muted">{c.empty}</p>
       )}
 
       {closed.length > 0 ? (
@@ -100,7 +100,7 @@ function Row({ row }: { row: QueueRow & { status: OpenStatus } }) {
           <p className="font-medium">{row.companyName}</p>
           <StatusBadge tone={TONES[row.status]}>{c.status[row.status]}</StatusBadge>
         </div>
-        <p className="mt-1 font-mono text-xs text-muted">CUI {row.companyCui}</p>
+        <p className="mt-1 font-mono text-small text-muted">CUI {row.companyCui}</p>
 
         <dl className="mt-3 grid gap-1 text-small">
           <div className="flex gap-2">

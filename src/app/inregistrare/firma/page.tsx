@@ -20,10 +20,10 @@ export default function Page() {
       }
     >
       <CompanySignUpForm />
-      <p className="mt-5 rounded-card border border-border bg-surface px-3.5 py-2.5 text-xs text-muted">
+      <p className="mt-5 rounded-card border border-border bg-surface px-3.5 py-2.5 text-small text-muted">
         {c.nextStep}
       </p>
-      <p className="mt-3 text-xs text-muted">
+      <p className="mt-3 text-small text-muted">
         {c.verifyIntro} <TextLink href={ROUTES.verification}>{c.verifyLink}</TextLink>
       </p>
     </AuthCard>

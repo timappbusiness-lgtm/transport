@@ -31,10 +31,10 @@ export default async function Page({
           <span aria-hidden="true" className="mt-0.5 text-success">
             <Icon as={uiIcon('mail')} size="md" />
           </span>
-          <p className="text-sm text-muted">{c.checkSpam}</p>
+          <p className="text-body text-muted">{c.checkSpam}</p>
         </div>
         <div>
-          <p className="mb-3 text-sm font-medium">{c.noEmail}</p>
+          <p className="mb-3 text-body font-medium">{c.noEmail}</p>
           <ResendConfirmationForm email={email ?? ''} />
         </div>
       </div>

@@ -106,7 +106,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
           <h1 className="mt-2 font-mono text-h2">
             {formatPlate(vehicle.plate_number)}
           </h1>
-          <p className="mt-2 max-w-[54ch] text-sm text-muted">
+          <p className="mt-2 max-w-[54ch] text-body text-muted">
             {VEHICLE_TYPE_LABELS[vehicle.vehicle_type]}
             {vehicle.vin ? (
               <>
@@ -128,7 +128,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.vehicleDocuments}</h2>
+            <h2 className="text-body font-medium">{c.vehicleDocuments}</h2>
             <div className="mt-3">
               <RequirementList rows={requirements} />
             </div>
@@ -138,14 +138,14 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
           </section>
 
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="mb-4 text-sm font-medium">{accountCopy.documents.history}</h2>
+            <h2 className="mb-4 text-body font-medium">{accountCopy.documents.history}</h2>
             <DocumentHistory rows={(historyResult.data ?? []) as HistoryRow[]} labels={labels} />
           </section>
         </div>
 
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="mb-4 text-sm font-medium">{c.specs}</h2>
+            <h2 className="mb-4 text-body font-medium">{c.specs}</h2>
             <EditVehicleForm
               vehicleId={vehicleId}
               specs={vehicle}
@@ -155,13 +155,13 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
           </section>
 
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-sm font-medium">{c.routes}</h2>
-            <p className="mt-1.5 mb-4 text-sm text-muted">
+            <h2 className="text-body font-medium">{c.routes}</h2>
+            <p className="mt-1.5 mb-4 text-body text-muted">
               Coridoarele pe care vehiculul circulă de obicei. Le folosim ca să îți arătăm cererile
               potrivite.
             </p>
             {routes.length > 0 ? (
-              <ul className="mb-4 divide-y divide-border text-sm">
+              <ul className="mb-4 divide-y divide-border text-body">
                 {routes.map((route) => (
                   <li key={route.id} className="flex items-center justify-between gap-2 py-2">
                     <span>
@@ -176,7 +176,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
                       <input type="hidden" name="route_id" value={route.id} />
                       <button
                         type="submit"
-                        className="text-xs text-danger underline-offset-4 hover:underline"
+                        className="text-small text-danger underline-offset-4 hover:underline"
                       >
                         {c.removeRoute}
                       </button>
@@ -185,7 +185,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
                 ))}
               </ul>
             ) : (
-              <p className="mb-4 text-sm text-muted">{c.noRoutes}</p>
+              <p className="mb-4 text-body text-muted">{c.noRoutes}</p>
             )}
             <AddRouteForm vehicleId={vehicleId} />
           </section>

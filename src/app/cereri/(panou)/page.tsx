@@ -134,7 +134,7 @@ export default async function Page({
 
         <section aria-label={c.title}>
           {filters.mine && !canFilterByCompany ? (
-            <p className="mb-4 rounded-card border border-border bg-surface p-4 text-sm text-muted">
+            <p className="mb-4 rounded-card border border-border bg-surface p-4 text-body text-muted">
               {requestsCopy.filters.mineNoCompany}
             </p>
           ) : null}

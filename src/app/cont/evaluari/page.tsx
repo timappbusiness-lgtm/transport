@@ -50,7 +50,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   return (
     <div className="flex flex-col gap-6">
       <TopBar title={c.title} actions={[]} />
-      <p className="max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <nav aria-label={c.title} className="flex flex-wrap gap-2">
         {BOXES.map((b) => (
@@ -69,7 +69,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       {rows.length === 0 ? (
         <Card className="p-6">
           <p className="text-body-lg">{c.empty[box]}</p>
-          <p className="mt-1 text-sm text-muted">{c.empty[`${box}Body`]}</p>
+          <p className="mt-1 text-body text-muted">{c.empty[`${box}Body`]}</p>
         </Card>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -95,10 +95,10 @@ function PendingRow({ row }: { row: PendingRating }) {
   return (
     <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-base">
+        <p className="text-body">
           {row.from_city ?? '—'} → {row.to_city ?? '—'}
         </p>
-        <p className="mt-0.5 text-sm text-muted">
+        <p className="mt-0.5 text-body text-muted">
           {row.counterparty_name ?? '—'}
           {row.after_dispute ? ` · ${ratingsCopy.profile.afterDispute}` : ''}
         </p>
@@ -132,24 +132,24 @@ function GivenOrReceivedRow({ row, box }: { row: PendingRating; box: RatingBox }
         {row.hidden ? (
           <StatusBadge tone="danger">{ratingsCopy.admin.list.hiddenLabel}</StatusBadge>
         ) : null}
-        <span className="text-xs text-muted">
+        <span className="text-small text-muted">
           {box === 'primite' ? (row.rater_name ?? '—') : (row.counterparty_name ?? '—')} ·{' '}
           {formatDate(row.created_at)}
         </span>
       </div>
 
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-body text-muted">
         {row.from_city ?? '—'} → {row.to_city ?? '—'}
       </p>
 
       {row.comment !== null ? (
-        <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
+        <p className="mt-2 whitespace-pre-line break-words text-body">{row.comment}</p>
       ) : null}
 
       {row.reply_body !== null ? (
         <div className="mt-3 border-l-2 border-border-strong pl-3">
-          <p className="text-xs font-medium text-muted">{ratingsCopy.reply.label}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{row.reply_body}</p>
+          <p className="text-small font-medium text-muted">{ratingsCopy.reply.label}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.reply_body}</p>
         </div>
       ) : null}
 

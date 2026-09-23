@@ -1,24 +1,10 @@
 import Link from 'next/link';
 import { BRAND_NAME } from '@/config/brand';
-import { ROUTES } from '@/config/routes';
+import { FOOTER_NAV } from '@/lib/navigation';
 import { loadPublishedPages } from '@/lib/seo-pages-source';
 import { SEO_ROOT } from '@/lib/seo-pages';
 import { Container } from './container';
 
-const LINKS = [
-  // "Trasee și prețuri" was one link because prices lived on the board.
-  // They are two pages now, so they are two links.
-  { href: ROUTES.requests, label: 'Cereri de transport' },
-  { href: ROUTES.routes, label: 'Trasee disponibile' },
-  { href: ROUTES.prices, label: 'Prețuri orientative' },
-  { href: ROUTES.verification, label: 'Cum verificăm firmele' },
-  { href: ROUTES.plans, label: 'Abonamente' },
-  { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
-  { href: ROUTES.contact, label: 'Contact' },
-  { href: ROUTES.terms, label: 'Termeni' },
-  { href: ROUTES.privacy, label: 'Confidențialitate' },
-  { href: ROUTES.cookies, label: 'Cookie-uri' },
-] as const;
 
 /**
  * The landing-page hub is linked only once at least one page is published.
@@ -37,7 +23,7 @@ export async function SiteFooter() {
           {BRAND_NAME} — bursă de transport auto pentru România și Europa.
         </span>
         <nav aria-label="Secundar" className="flex flex-wrap gap-5">
-          {LINKS.map((l) => (
+          {FOOTER_NAV.map((l) => (
             <Link key={l.href} href={l.href} className="hover:text-foreground">
               {l.label}
             </Link>

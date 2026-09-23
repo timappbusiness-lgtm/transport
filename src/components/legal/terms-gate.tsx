@@ -39,7 +39,7 @@ export function TermsGate({ version }: { version: string }) {
     <main className="mx-auto flex w-full max-w-[42rem] flex-col gap-4 px-4 py-16">
       <h1 className="text-h2">{c.title}</h1>
       <p className="text-body">{c.body(version)}</p>
-      <p className="text-sm text-muted">{c.why}</p>
+      <p className="text-body text-muted">{c.why}</p>
 
       <div className="mt-2 flex flex-wrap gap-3">
         <button
@@ -57,7 +57,7 @@ export function TermsGate({ version }: { version: string }) {
 
       {error !== undefined ? <FormError>{error}</FormError> : null}
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-4 text-body text-muted">
         {c.leave}{' '}
         <Link href={ROUTES.accountPersonalData} className="underline underline-offset-2">
           {c.leaveLink}

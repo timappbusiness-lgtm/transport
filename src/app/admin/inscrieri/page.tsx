@@ -18,6 +18,7 @@ import {
 } from '@/lib/onboarding';
 import { loadOnboardings, stepsOf } from '@/lib/onboarding-source';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: onboardingCopy.admin.meta.title };
 export const dynamic = 'force-dynamic';
@@ -55,7 +56,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <div>
           <EyebrowPill>{c.eyebrow}</EyebrowPill>
           <h1 className="mt-2 text-h2">{c.title}</h1>
-          <p className="mt-2 max-w-[68ch] text-sm text-muted">{c.lede}</p>
+          <p className="mt-2 max-w-[68ch] text-body text-muted">{c.lede}</p>
         </div>
         <Link href={ROUTES.adminOnboardingNew} className={buttonClasses('primary', 'md')}>
           {c.add}
@@ -75,7 +76,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             className={cn(
               'rounded-pill border px-3.5 py-1.5 text-small',
               option === status
-                ? 'border-transparent bg-foreground text-ground'
+                ? 'border-transparent bg-foreground text-white'
                 : 'border-border-strong text-muted hover:text-foreground',
             )}
           >
@@ -85,12 +86,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       </nav>
 
       {rows.length === 0 ? (
-        <Card className="p-6">
-          <p className="text-body-lg">{status === null ? c.empty : c.emptyFiltered}</p>
-          <p className="mt-1 max-w-[56ch] text-sm text-muted">
-            {status === null ? c.emptyBody : c.emptyFilteredBody}
-          </p>
-        </Card>
+        <EmptyState
+          figure={status === null ? 'document' : 'search'}
+          title={status === null ? c.empty : c.emptyFiltered}
+          body={status === null ? c.emptyBody : c.emptyFilteredBody}
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => {
@@ -101,7 +101,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 <Card className="p-4 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
+                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body">
                         <span className="font-medium">{row.company_name ?? c.noCompany}</span>
                         <StatusBadge tone={tone(row.status)}>
                           {STATUS_LABELS[row.status]}
@@ -111,14 +111,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                       <p className="mt-1 text-small text-muted">
                         {row.contact_name} · {row.contact_phone} · {row.contact_email}
                       </p>
-                      <p className="mt-0.5 text-xs text-muted">
+                      <p className="mt-0.5 text-small text-muted">
                         {c.columns.staff}: {row.staff_name} · {c.columns.contact.toLowerCase()}{' '}
                         {CONSENT_LABELS[row.consent_channel].toLowerCase()}
                       </p>
                     </div>
 
                     <div className="flex flex-col items-end gap-1.5">
-                      <span className="text-xs text-muted">
+                      <span className="text-small text-muted">
                         {c.steps(doneCount(state), STEPS.length)}
                       </span>
                       {row.status !== 'revendicat' ? (
@@ -137,7 +137,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                       <li
                         key={step}
                         className={cn(
-                          'rounded-pill border px-2.5 py-0.5 text-xs',
+                          'rounded-pill border px-2.5 py-0.5 text-small',
                           state[step]
                             ? 'border-success/45 bg-success/8 text-foreground'
                             : 'border-border text-muted',
@@ -149,7 +149,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   </ol>
 
                   {row.status === 'trimis' ? (
-                    <p className="mt-2 text-xs text-muted">
+                    <p className="mt-2 text-small text-muted">
                       {c.columns.link}: {expiryLabel(row.claim_expires_at)} ·{' '}
                       {c.purgeIn(daysUntilPurge(row.created_at))}
                     </p>
@@ -162,7 +162,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   ) : null}
 
                   {row.solo_reviews > 0 ? (
-                    <p className="mt-2 text-xs font-medium text-foreground">{c.soloReviews(row.solo_reviews)}</p>
+                    <p className="mt-2 text-small font-medium text-foreground">{c.soloReviews(row.solo_reviews)}</p>
                   ) : null}
                 </Card>
               </li>

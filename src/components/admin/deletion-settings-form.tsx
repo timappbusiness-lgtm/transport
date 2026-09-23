@@ -32,7 +32,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
       <h2 id={`${id}-title`} className="text-h3">
         {c.title}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       <form action={action} className="mt-4 rounded-card border border-border bg-surface p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -103,7 +103,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -115,9 +115,9 @@ function Field({
         {...(inputMode ? { inputMode } : {})}
         className={CONTROL}
       />
-      <p className="text-xs text-muted">{hint}</p>
+      <p className="text-small text-muted">{hint}</p>
       {error ? (
-        <p role="alert" className="text-xs text-danger">
+        <p role="alert" className="text-small text-danger">
           {error}
         </p>
       ) : null}

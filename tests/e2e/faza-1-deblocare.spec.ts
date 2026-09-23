@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { settled } from './settled';
+import { openMenu, settled } from './settled';
 
 /**
  * What the Faza 1 unblocking changed, from a browser and with no database.
@@ -17,6 +17,8 @@ const MOBILE = { width: 390, height: 844 };
 test.describe('the boards are findable', () => {
   test('both are in the public bar, requests first', async ({ page }) => {
     await page.goto('/');
+    // On a phone the five links are behind „Meniu".
+    await openMenu(page);
     const nav = page.getByRole('navigation', { name: 'Navigare' });
     await expect(nav.getByRole('link', { name: 'Cereri', exact: true })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Trasee', exact: true })).toBeVisible();
@@ -176,8 +178,8 @@ test.describe('the contact page', () => {
 test.describe('the request form', () => {
   test('lets the client choose how long it stays up', async ({ page }) => {
     await page.goto('/cerere/noua');
-    // The control is on the last step; walking there is the only way to
-    // see it, and walking there is what a person does.
+    // The control is on the service step; walking there is the only way
+    // to see it, and walking there is what a person does.
     await page.getByLabel('Oraș de plecare').fill('München');
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByLabel('Oraș de destinație').fill('Cluj-Napoca');
@@ -186,7 +188,6 @@ test.describe('the request form', () => {
     await page.getByLabel('Marca').fill('Volkswagen');
     await page.getByLabel('Modelul').fill('Golf');
     await page.getByLabel('Anul fabricației').fill('2018');
-    await page.getByRole('button', { name: 'Continuă' }).click();
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     const duration = page.getByLabel('Cât timp stă pe panou');

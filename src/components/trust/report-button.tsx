@@ -78,7 +78,7 @@ export function ReportButton({
   return (
     <form action={action} className="mt-5 flex max-w-[34rem] flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${id}-reason`} className="text-sm font-medium">
+        <label htmlFor={`${id}-reason`} className="text-body font-medium">
           {c.form.reason}
         </label>
         <select id={`${id}-reason`} name="reason" className={CONTROL} defaultValue="">
@@ -90,26 +90,26 @@ export function ReportButton({
           ))}
         </select>
         {state.fieldErrors?.reason ? (
-          <p className="text-xs text-danger">{state.fieldErrors.reason}</p>
+          <p className="text-small text-danger">{state.fieldErrors.reason}</p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${id}-company`} className="text-sm font-medium">
+        <label htmlFor={`${id}-company`} className="text-body font-medium">
           {c.form.company}
         </label>
         <input id={`${id}-company`} name="company" type="text" className={CONTROL} />
-        <p className="text-xs text-muted">{c.form.companyHint}</p>
+        <p className="text-small text-muted">{c.form.companyHint}</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${id}-details`} className="text-sm font-medium">
+        <label htmlFor={`${id}-details`} className="text-body font-medium">
           {c.form.details}
         </label>
         <textarea id={`${id}-details`} name="details" rows={4} className={cn(CONTROL, 'resize-y')} />
-        <p className="text-xs text-muted">{c.form.detailsHint}</p>
+        <p className="text-small text-muted">{c.form.detailsHint}</p>
         {state.fieldErrors?.details ? (
-          <p className="text-xs text-danger">{state.fieldErrors.details}</p>
+          <p className="text-small text-danger">{state.fieldErrors.details}</p>
         ) : null}
       </div>
 

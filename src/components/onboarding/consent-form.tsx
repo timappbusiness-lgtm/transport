@@ -10,7 +10,7 @@ import { CONSENT_CHANNELS, CONSENT_LABELS, MAX_CONSENT_NOTE } from '@/lib/onboar
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.consent;
 const FIELD =
-  'rounded-input border border-border-strong bg-surface px-3 py-2 text-sm font-normal';
+  'rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal';
 
 /** Today, as the date input wants it. */
 function today(): string {
@@ -23,27 +23,27 @@ export function ConsentForm() {
   return (
     <form action={action} className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.name}
           <input name="contact_name" required className={FIELD} />
-          <span className="text-xs font-normal text-muted">{c.nameHint}</span>
+          <span className="text-small font-normal text-muted">{c.nameHint}</span>
           <FormError>{state.fieldErrors?.name}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.email}
           <input type="email" name="contact_email" required className={FIELD} />
-          <span className="text-xs font-normal text-muted">{c.emailHint}</span>
+          <span className="text-small font-normal text-muted">{c.emailHint}</span>
           <FormError>{state.fieldErrors?.email}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.phone}
           <input name="contact_phone" required className={FIELD} />
           <FormError>{state.fieldErrors?.phone}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.channel}
           <select name="consent_channel" required defaultValue="" className={FIELD}>
             <option value="" disabled>
@@ -58,17 +58,17 @@ export function ConsentForm() {
           <FormError>{state.fieldErrors?.channel}</FormError>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.date}
           <input type="date" name="consent_date" required defaultValue={today()} className={FIELD} />
           <FormError>{state.fieldErrors?.consentDate}</FormError>
         </label>
       </div>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium">
+      <label className="flex flex-col gap-1.5 text-body font-medium">
         {c.note}
         <textarea name="consent_note" rows={2} maxLength={MAX_CONSENT_NOTE} className={FIELD} />
-        <span className="text-xs font-normal text-muted">{c.noteHint}</span>
+        <span className="text-small font-normal text-muted">{c.noteHint}</span>
       </label>
 
       <label className="flex items-start gap-2.5 rounded-input border border-border-strong bg-ground-alt p-3 text-small">

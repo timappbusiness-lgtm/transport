@@ -32,7 +32,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[60ch] text-body text-muted">{c.lede}</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <StatusBadge tone={published ? 'success' : 'neutral'}>
@@ -66,14 +66,14 @@ export default async function Page() {
 
           <section>
             <h2 className="text-h3">{c.preview.title}</h2>
-            <p className="mt-1 text-sm text-muted">{c.preview.lede}</p>
+            <p className="mt-1 text-body text-muted">{c.preview.lede}</p>
             <div className="mt-4">
               <RateTable rates={rates} settings={settings} express={false} />
             </div>
           </section>
         </>
       ) : (
-        <p className="rounded-card border border-border bg-surface p-5 text-sm text-muted">
+        <p className="rounded-card border border-border bg-surface p-5 text-body text-muted">
           {pricesCopy.unpublished.title}
         </p>
       )}
@@ -87,10 +87,10 @@ export default async function Page() {
                 key={entry.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border py-2.5 last:border-b-0"
               >
-                <span className="font-mono text-xs tabular-nums text-muted">
+                <span className="font-mono text-small tabular-nums text-muted">
                   {formatMoment(entry.created_at)}
                 </span>
-                <span className="text-sm">
+                <span className="text-body">
                   {c.history.actions[entry.action] ?? entry.action}
                   {entry.subject ? ` · ${entry.subject}` : ''}
                 </span>
@@ -101,7 +101,7 @@ export default async function Page() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-muted">{c.history.empty}</p>
+          <p className="mt-3 text-body text-muted">{c.history.empty}</p>
         )}
       </section>
     </div>

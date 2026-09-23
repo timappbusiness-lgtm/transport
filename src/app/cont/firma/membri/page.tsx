@@ -80,7 +80,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[54ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <section className="overflow-hidden rounded-card border border-border bg-surface">
@@ -91,12 +91,12 @@ export default async function Page() {
             return (
               <li key={member.user_id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-body font-medium">
                     {name}
-                    {isSelf ? <span className="ml-2 text-xs text-muted">(tu)</span> : null}
+                    {isSelf ? <span className="ml-2 text-small text-muted">(tu)</span> : null}
                   </p>
                   {member.profile?.email ? (
-                    <p className="truncate font-mono text-xs text-muted">{member.profile.email}</p>
+                    <p className="truncate font-mono text-small text-muted">{member.profile.email}</p>
                   ) : null}
                 </div>
 
@@ -110,7 +110,7 @@ export default async function Page() {
                       id={`role-${member.user_id}`}
                       name="role"
                       defaultValue={member.role}
-                      className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-xs"
+                      className="rounded-input border border-border-strong bg-surface px-2.5 py-1.5 text-small"
                     >
                       {ROLE_OPTIONS.map((role) => (
                         <option key={role} value={role}>
@@ -123,7 +123,7 @@ export default async function Page() {
                     </button>
                   </form>
                 ) : (
-                  <span className="font-mono text-xs text-muted">
+                  <span className="font-mono text-small text-muted">
                     {MEMBER_ROLE_LABELS[member.role] ?? member.role}
                   </span>
                 )}
@@ -131,7 +131,7 @@ export default async function Page() {
                 {canManage && member.role !== 'owner' && !isSelf ? (
                   <form action={removeMemberAction}>
                     <input type="hidden" name="userId" value={member.user_id} />
-                    <button type="submit" className="text-xs text-danger underline-offset-4 hover:underline">
+                    <button type="submit" className="text-small text-danger underline-offset-4 hover:underline">
                       {c.remove}
                     </button>
                   </form>
@@ -141,7 +141,7 @@ export default async function Page() {
           })}
         </ul>
         {members.length <= 1 ? (
-          <p className="border-t border-border px-5 py-4 text-sm text-muted">{c.empty}</p>
+          <p className="border-t border-border px-5 py-4 text-body text-muted">{c.empty}</p>
         ) : null}
       </section>
 
@@ -152,8 +152,8 @@ export default async function Page() {
             {invitations.map((invitation) => (
               <li key={invitation.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-sm">{invitation.invited_email}</p>
-                  <p className="text-xs text-muted">
+                  <p className="truncate font-mono text-body">{invitation.invited_email}</p>
+                  <p className="text-small text-muted">
                     {MEMBER_ROLE_LABELS[invitation.role] ?? invitation.role} ·{' '}
                     {accountCopy.invitations.expires}{' '}
                     {dateFormat.format(new Date(invitation.expires_at))}
@@ -162,7 +162,7 @@ export default async function Page() {
                 {canManage ? (
                   <form action={revokeInvitationAction}>
                     <input type="hidden" name="invitationId" value={invitation.id} />
-                    <button type="submit" className="text-xs text-danger underline-offset-4 hover:underline">
+                    <button type="submit" className="text-small text-danger underline-offset-4 hover:underline">
                       {c.revoke}
                     </button>
                   </form>
@@ -181,7 +181,7 @@ export default async function Page() {
           </div>
         </section>
       ) : (
-        <p className="rounded-card border border-border bg-surface px-5 py-4 text-sm text-muted">
+        <p className="rounded-card border border-border bg-surface px-5 py-4 text-body text-muted">
           {c.onlyManagers}
         </p>
       )}

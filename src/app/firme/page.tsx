@@ -52,14 +52,14 @@ export default async function Page({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
         <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">{c.filters.legend}</h2>
+          <h2 className="mb-4 text-body font-medium">{c.filters.legend}</h2>
           <DirectoryFiltersForm filters={filters} counties={counties} />
         </aside>
 
         <section aria-label={c.meta.title}>
           {companies.length > 0 ? (
             <>
-              <p className="mb-4 text-sm text-muted">{c.count(formatCompanies(total))}</p>
+              <p className="mb-4 text-body text-muted">{c.count(formatCompanies(total))}</p>
               <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {companies.map((company) => (
                   <li key={company.slug} className="min-w-0">
@@ -99,7 +99,7 @@ export default async function Page({
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-lg">{filtered ? c.emptyFiltered : c.empty}</h2>
+      <h2 className="text-h3">{filtered ? c.emptyFiltered : c.empty}</h2>
       <div className="mt-5 flex flex-wrap gap-3">
         {filtered ? (
           <Link href={ROUTES.companies} className={buttonClasses('secondary', 'md')}>
@@ -127,7 +127,7 @@ function Pagination({ filters, pages }: { filters: DirectoryFilters; pages: numb
   return (
     <nav aria-label={c.pagination.status(filters.page, pages)} className="mt-8 flex items-center gap-3">
       <PageLink href={previous === null ? null : link(previous)}>{c.pagination.previous}</PageLink>
-      <p className="text-sm text-muted">{c.pagination.status(filters.page, pages)}</p>
+      <p className="text-body text-muted">{c.pagination.status(filters.page, pages)}</p>
       <PageLink href={next === null ? null : link(next)}>{c.pagination.next}</PageLink>
     </nav>
   );

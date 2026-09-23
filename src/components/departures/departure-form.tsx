@@ -45,12 +45,12 @@ function Labelled({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
+      <label htmlFor={htmlFor} className="text-body font-medium">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {hint ? <p className="text-small text-muted">{hint}</p> : null}
+      {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }
@@ -78,14 +78,14 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
   return (
     <form action={action} className="flex flex-col gap-6" noValidate>
       <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-medium">{c.direction}</legend>
+        <legend className="mb-1 text-body font-medium">{c.direction}</legend>
         {(
           [
             ['retur', c.directionRetur],
             ['tur', c.directionTur],
           ] as const
         ).map(([value, label]) => (
-          <label key={value} className="flex items-center gap-2.5 text-sm">
+          <label key={value} className="flex items-center gap-2.5 text-body">
             <input
               type="radio"
               name="direction"
@@ -97,7 +97,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
           </label>
         ))}
         {state.fieldErrors?.direction ? (
-          <p className="text-xs text-danger">{state.fieldErrors.direction}</p>
+          <p className="text-small text-danger">{state.fieldErrors.direction}</p>
         ) : null}
       </fieldset>
 
@@ -197,10 +197,10 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">{c.accepted}</legend>
+        <legend className="mb-1 text-body font-medium">{c.accepted}</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {OFFERED_CATEGORIES.map((category) => (
-            <label key={category} className="flex items-center gap-2.5 text-sm">
+            <label key={category} className="flex items-center gap-2.5 text-body">
               <input
                 type="checkbox"
                 name="accepted_vehicle_types"
@@ -213,14 +213,14 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
           ))}
         </div>
         {state.fieldErrors?.accepted_vehicle_types ? (
-          <p className="text-xs text-danger">{state.fieldErrors.accepted_vehicle_types}</p>
+          <p className="text-small text-danger">{state.fieldErrors.accepted_vehicle_types}</p>
         ) : null}
       </fieldset>
 
       <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-1 text-sm font-medium">{c.services}</legend>
+        <legend className="mb-1 text-body font-medium">{c.services}</legend>
         {(['pe_sens', 'expres', 'tractare'] as const).map((service) => (
-          <label key={service} className="flex items-start gap-2.5 text-sm">
+          <label key={service} className="flex items-start gap-2.5 text-body">
             <input
               type="checkbox"
               name="service_types"
@@ -230,17 +230,17 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
             />
             <span>
               <span className="font-medium">{SERVICE_TYPE_LABELS[service]}</span>
-              <span className="block text-xs text-muted">{SERVICE_TYPE_NOTES[service]}</span>
+              <span className="block text-small text-muted">{SERVICE_TYPE_NOTES[service]}</span>
             </span>
           </label>
         ))}
         {state.fieldErrors?.service_types ? (
-          <p className="text-xs text-danger">{state.fieldErrors.service_types}</p>
+          <p className="text-small text-danger">{state.fieldErrors.service_types}</p>
         ) : null}
       </fieldset>
 
       <fieldset className="flex flex-col gap-3 rounded-card border border-border p-4">
-        <label className="flex items-start gap-2.5 text-sm">
+        <label className="flex items-start gap-2.5 text-body">
           <input
             type="checkbox"
             name="repeats"
@@ -251,7 +251,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
           />
           <span>
             <span className="font-medium">{r.repeat}</span>
-            <span className="block text-xs text-muted">{r.repeatHint}</span>
+            <span className="block text-small text-muted">{r.repeatHint}</span>
           </span>
         </label>
 
@@ -264,7 +264,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                   ['la_n_zile', r.kindEveryN],
                 ] as const
               ).map(([value, label]) => (
-                <label key={value} className="flex items-center gap-2 text-sm">
+                <label key={value} className="flex items-center gap-2 text-body">
                   <input
                     type="radio"
                     name="recurrence_kind"
@@ -280,7 +280,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
 
             {kind === 'saptamanal' ? (
               <fieldset className="flex flex-col gap-2">
-                <legend className="mb-1 text-sm font-medium">{r.weekdays}</legend>
+                <legend className="mb-1 text-body font-medium">{r.weekdays}</legend>
                 <div className="flex flex-wrap gap-1.5">
                   {WEEKDAY_SHORT.map((short, day) => (
                     <label
@@ -299,7 +299,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                   ))}
                 </div>
                 {state.fieldErrors?.weekdays ? (
-                  <p className="text-xs text-danger">{state.fieldErrors.weekdays}</p>
+                  <p className="text-small text-danger">{state.fieldErrors.weekdays}</p>
                 ) : null}
               </fieldset>
             ) : (

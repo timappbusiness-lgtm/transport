@@ -28,13 +28,22 @@ export function Headline({
           colour separated them, and at 3.25rem that read as one long
           light sentence rather than as a claim and its qualifier.
 
-          The soft half is never the accent. It is the part somebody may
-          skip; the accent marks what they should not. */}
+          On a light ground the soft half is never the accent: it is the
+          part somebody may skip, and the accent marks what they should
+          not. On a dark surface it takes the pale step instead of a grey
+          — white at 60% on the old gradient was ΔE00 26 from its ground,
+          grey on grey, and the pale step is 58 — so the two halves read
+          as a claim and a brand-coloured qualifier. */}
       <span className="font-semibold">{strong}</span>
       {soft ? (
         <>
           {' '}
-          <span className="font-light text-ink-soft">{soft}</span>
+          <span
+            data-soft
+            className="font-light text-ink-soft in-data-[surface=dark]:text-accent-on-dark"
+          >
+            {soft}
+          </span>
         </>
       ) : null}
     </Tag>
@@ -64,7 +73,7 @@ export function EyebrowPill({
         'inline-flex items-center rounded-pill border px-3 py-1',
         'font-mono text-label uppercase',
         tone === 'dark'
-          ? 'border-white/35 text-white/85'
+          ? 'border-accent-on-dark/45 text-accent-on-dark'
           : tone === 'quiet'
           ? 'border-border-strong/45 text-muted'
           : // The fifth place the accent is spent: the pill that names a
@@ -313,7 +322,11 @@ export function Figure({
         size === 'lg' && 'text-figure-lg',
         size === 'md' && 'text-figure',
         size === 'sm' && 'text-figure-sm',
-        tone === 'accent' ? 'text-accent' : 'text-foreground',
+        // On a dark section the key number takes the bright step: the
+        // petrol base is ΔE00 14 from that ground and would not be seen.
+        tone === 'accent'
+          ? 'text-accent in-data-[surface=dark]:text-accent-bright'
+          : 'text-foreground in-data-[surface=dark]:text-white',
         className,
       )}
     >

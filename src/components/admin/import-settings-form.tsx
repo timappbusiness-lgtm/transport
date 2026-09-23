@@ -33,7 +33,7 @@ function Field({
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -46,7 +46,7 @@ function Field({
         {...(step === undefined ? {} : { step })}
         className={CONTROL}
       />
-      <p className="text-xs text-muted">{hint}</p>
+      <p className="text-small text-muted">{hint}</p>
     </div>
   );
 }
@@ -68,9 +68,9 @@ export function ImportSettingsForm({ settings }: { settings: ImportSettings }) {
           defaultChecked={settings.is_enabled}
           className="mt-0.5 size-4"
         />
-        <label htmlFor={enabledId} className="text-sm">
+        <label htmlFor={enabledId} className="text-body">
           <span className="font-medium">Completarea automată este pornită</span>
-          <span className="mt-1 block text-xs text-muted">
+          <span className="mt-1 block text-small text-muted">
             Oprită, cele două file dispar din formular. Restul formularului rămâne neatins.
           </span>
         </label>

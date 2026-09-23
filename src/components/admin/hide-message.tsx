@@ -31,7 +31,7 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-small text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.hide}
       </button>
@@ -43,7 +43,7 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
       <input type="hidden" name="message_id" value={messageId} />
       <input type="hidden" name="offer_id" value={offerId} />
 
-      <label htmlFor={`${id}-reason`} className="text-xs font-medium">
+      <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {c.hideReason}
       </label>
       <input
@@ -51,12 +51,12 @@ export function HideMessage({ messageId, offerId }: { messageId: string; offerId
         name="reason"
         required
         maxLength={500}
-        className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+        className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
       />
-      <p className="text-xs text-muted">{c.hideReasonHint}</p>
+      <p className="text-small text-muted">{c.hideReasonHint}</p>
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.hideSubmit}
         </button>
         <button

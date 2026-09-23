@@ -26,10 +26,10 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
 
   return (
     <section aria-labelledby="comparatie" className="mt-16">
-      <h2 id="comparatie" className="text-xl">
+      <h2 id="comparatie" className="text-h3">
         {c.title}
       </h2>
-      <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+      <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
       {/* Desktop: one table, header sticky under the site header. */}
       <div className="mt-6 hidden overflow-x-auto rounded-card border border-border bg-surface md:block">
@@ -46,7 +46,7 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
                 <th
                   key={plan.code}
                   scope="col"
-                  className="border-b border-border px-5 py-3.5 text-left text-sm font-medium"
+                  className="border-b border-border px-5 py-3.5 text-left text-body font-medium"
                 >
                   {plan.name}
                 </th>
@@ -105,7 +105,7 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
                   </p>
                   <ul className="mt-2 flex flex-col gap-2">
                     {section.rows.map((row) => (
-                      <li key={row.key} className="flex items-start gap-2.5 text-sm">
+                      <li key={row.key} className="flex items-start gap-2.5 text-body">
                         <Mark status={featureStatus(plan, row.key)} />
                         <span
                           className={cn(

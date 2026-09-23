@@ -37,14 +37,14 @@ export function DocumentHistory({
   labels: Record<string, string>;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-muted">Niciun document încărcat încă.</p>;
+    return <p className="text-body text-muted">Niciun document încărcat încă.</p>;
   }
 
   return (
     <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-[520px] text-sm">
+      <table className="w-full min-w-[520px] text-body">
         <thead>
-          <tr className="border-b border-border text-left text-xs text-muted">
+          <tr className="border-b border-border text-left text-small text-muted">
             <th scope="col" className="py-2 pr-3 font-medium">
               Document
             </th>
@@ -68,15 +68,15 @@ export function DocumentHistory({
                 <td className="py-2.5 pr-3">
                   {labels[document.kind] ?? document.kind}
                   {document.status === 'rejected' && document.rejection_reason ? (
-                    <span className="block text-xs text-danger">
+                    <span className="block text-small text-danger">
                       Motiv: {document.rejection_reason}
                     </span>
                   ) : null}
                 </td>
-                <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
+                <td className="py-2.5 pr-3 font-mono text-small tabular-nums">
                   {formatDateRo(document.created_at)}
                 </td>
-                <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
+                <td className="py-2.5 pr-3 font-mono text-small tabular-nums">
                   {formatDateRo(document.valid_until)}
                 </td>
                 <td className="py-2.5">

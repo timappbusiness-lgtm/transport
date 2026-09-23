@@ -26,10 +26,10 @@ export function PreferenceRow({ type }: { type: NotificationType }) {
       <div className="min-w-[14rem] flex-1">
         <p className="text-body">{type.label}</p>
         {type.description ? (
-          <p className="mt-0.5 text-xs text-muted">{type.description}</p>
+          <p className="mt-0.5 text-small text-muted">{type.description}</p>
         ) : null}
-        {type.isMandatory ? <p className="mt-1 text-xs text-muted">{c.lockedHint}</p> : null}
-        {state.error ? <p className="mt-1 text-xs text-danger">{state.error}</p> : null}
+        {type.isMandatory ? <p className="mt-1 text-small text-muted">{c.lockedHint}</p> : null}
+        {state.error ? <p className="mt-1 text-small text-danger">{state.error}</p> : null}
       </div>
 
       <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -79,9 +79,9 @@ function Channel({
 }) {
   if (locked) {
     return (
-      <span className="flex flex-col gap-0.5 text-xs text-muted">
+      <span className="flex flex-col gap-0.5 text-small text-muted">
         <span>{label}</span>
-        <span className="text-xs">{c.locked}</span>
+        <span className="text-small">{c.locked}</span>
       </span>
     );
   }
@@ -91,7 +91,7 @@ function Channel({
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="channel" value={channel} />
       <input type="hidden" name="enabled" value={checked ? 'false' : 'true'} />
-      <label className="flex items-center gap-2 text-xs">
+      <label className="flex items-center gap-2 text-small">
         <input
           type="checkbox"
           checked={checked}

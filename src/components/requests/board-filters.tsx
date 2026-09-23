@@ -286,7 +286,7 @@ export function BoardFilters({
               />
               <span>
                 {c.mine}
-                <span className="mt-0.5 block text-xs text-muted">{c.mineHint}</span>
+                <span className="mt-0.5 block text-small text-muted">{c.mineHint}</span>
               </span>
             </label>
           ) : null}

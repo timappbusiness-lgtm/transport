@@ -44,7 +44,7 @@ export function OrderTimeline({
 
       <ol className="mt-4 flex flex-col">
         {rows.map((row) => (
-          <li key={row.status} className="flex gap-3 pb-4 last:pb-0">
+          <li key={row.status} className="group flex gap-3 pb-4 last:pb-0">
             {/* The rail: the step's own icon rather than a dot, which is
                 what `ORDER_STEP_ICONS` was written for — seven steps read
                 from top to bottom are exactly the case where recognising
@@ -79,7 +79,10 @@ export function OrderTimeline({
                 className={cn(
                   'w-px flex-1',
                   row.state === 'done' ? 'bg-success/40' : 'bg-border',
-                  'last:hidden',
+                  // The rail runs between steps and stops at the last one.
+                  // `last:` here matched the line itself, which is always
+                  // the last thing in its column, so it was never drawn.
+                  'group-last:hidden',
                 )}
               />
             </div>
@@ -87,23 +90,23 @@ export function OrderTimeline({
             <div className="min-w-0 pb-1">
               <p
                 className={cn(
-                  'text-sm',
+                  'text-body',
                   row.state === 'todo' ? 'text-muted' : 'font-medium',
                 )}
               >
                 {row.label}
                 {row.state === 'current' ? (
-                  <span className="ml-2 text-xs font-normal text-muted">{c.waiting}</span>
+                  <span className="ml-2 text-small font-normal text-muted">{c.waiting}</span>
                 ) : null}
               </p>
               {row.at !== null ? (
-                <p className="mt-0.5 text-xs text-muted">
+                <p className="mt-0.5 text-small text-muted">
                   {formatMoment(row.at)}
                   {row.who !== null ? ` · ${row.who}` : ''}
                 </p>
               ) : null}
               {row.note !== null ? (
-                <p className="mt-1 whitespace-pre-line text-small">{row.note}</p>
+                <p className="mt-1 whitespace-pre-line break-words text-small">{row.note}</p>
               ) : null}
             </div>
           </li>
@@ -116,7 +119,7 @@ export function OrderTimeline({
 
       {aside.length > 0 ? (
         <>
-          <h3 className="mt-5 text-sm font-medium">{c.aside}</h3>
+          <h3 className="mt-5 text-body font-medium">{c.aside}</h3>
           <ul className="mt-2 flex flex-col gap-2">
             {aside.map((event) => (
               <li key={event.id} className="text-small">
@@ -128,7 +131,7 @@ export function OrderTimeline({
                     : ''}
                 </span>
                 {event.note !== null ? (
-                  <span className="block whitespace-pre-line text-muted">{event.note}</span>
+                  <span className="block whitespace-pre-line break-words text-muted">{event.note}</span>
                 ) : null}
               </li>
             ))}

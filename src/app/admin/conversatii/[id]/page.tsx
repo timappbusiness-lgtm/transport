@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm">
+      <p className="text-body">
         <Link
           href={ROUTES.adminConversations}
           className="text-muted underline-offset-4 hover:underline"
@@ -45,13 +45,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="flex flex-col gap-4">
         {groups.map((group) => (
           <section key={group.day} aria-label={group.label} className="flex flex-col gap-2">
-            <p className="text-center text-xs text-muted">{group.label}</p>
+            <p className="text-center text-small text-muted">{group.label}</p>
             {group.messages.map((message) => (
               <article
                 key={message.id}
                 className="rounded-card border border-border bg-surface px-4 py-3"
               >
-                <p className="flex flex-wrap items-baseline gap-2 text-xs text-muted">
+                <p className="flex flex-wrap items-baseline gap-2 text-small text-muted">
                   <span className="font-medium text-foreground">
                     {message.sender_name ?? '—'}
                   </span>
@@ -65,11 +65,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 </p>
 
                 {message.body !== null && message.body !== '' ? (
-                  <p className="mt-1.5 whitespace-pre-line text-body">{message.body}</p>
+                  <p className="mt-1.5 whitespace-pre-line break-words text-body">{message.body}</p>
                 ) : null}
 
                 {message.attachments.length > 0 ? (
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-1 text-small text-muted">
                     {message.attachments.length === 1
                       ? 'o imagine'
                       : `${message.attachments.length} imagini`}

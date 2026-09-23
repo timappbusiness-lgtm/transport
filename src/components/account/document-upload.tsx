@@ -126,7 +126,8 @@ export function DocumentUpload({
 
           <label
             htmlFor={`${id}-camera`}
-            className={`${buttonClasses('primary', 'md')} w-full cursor-pointer justify-center sm:w-auto`}
+            // The file input after it is hidden; the label draws its focus.
+            className={`${buttonClasses('primary', 'md')} w-full cursor-pointer justify-center sm:w-auto [&:has(+input:focus-visible)]:outline-2 [&:has(+input:focus-visible)]:outline-offset-2 [&:has(+input:focus-visible)]:outline-foreground`}
           >
             {onboardingCopy.documents.camera}
           </label>
@@ -144,7 +145,7 @@ export function DocumentUpload({
 
           <label
             htmlFor={`${id}-file`}
-            className="cursor-pointer text-small text-muted underline underline-offset-4"
+            className="cursor-pointer text-small text-muted underline underline-offset-4 hover:text-foreground [&:has(+input:focus-visible)]:outline-2 [&:has(+input:focus-visible)]:outline-offset-2 [&:has(+input:focus-visible)]:outline-foreground"
           >
             {onboardingCopy.documents.file}
           </label>
@@ -157,12 +158,12 @@ export function DocumentUpload({
             onChange={(event) => event.currentTarget.form?.requestSubmit()}
           />
 
-          <p className="text-xs text-muted">PDF sau fotografie, cel mult 10 MB.</p>
+          <p className="text-small text-muted">PDF sau fotografie, cel mult 10 MB.</p>
         </>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-kind`} className="text-sm font-medium">
+            <label htmlFor={`${id}-kind`} className="text-body font-medium">
               Tipul documentului
             </label>
             <select id={`${id}-kind`} name="kind" defaultValue="" required className={FIELD_CLASSES}>
@@ -178,7 +179,7 @@ export function DocumentUpload({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-file`} className="text-sm font-medium">
+            <label htmlFor={`${id}-file`} className="text-body font-medium">
               Fișier
             </label>
             <input
@@ -188,9 +189,9 @@ export function DocumentUpload({
               required
               accept={ACCEPTED_DOCUMENT_TYPES.join(',')}
               aria-describedby={`${id}-file-hint`}
-              className={`${FIELD_CLASSES} file:mr-3 file:rounded-tight file:border-0 file:bg-foreground/10 file:px-2 file:py-1 file:text-sm`}
+              className={`${FIELD_CLASSES} file:mr-3 file:rounded-tight file:border-0 file:bg-foreground/10 file:px-2 file:py-1 file:text-body`}
             />
-            <p id={`${id}-file-hint`} className="text-xs text-muted">
+            <p id={`${id}-file-hint`} className="text-small text-muted">
               PDF sau fotografie, cel mult 10 MB.
             </p>
           </div>

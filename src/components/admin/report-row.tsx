@@ -56,7 +56,7 @@ export function ReportRow({ row }: { row: Row }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-h3">{row.reason}</h3>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-small text-muted">
             {REPORT_KIND_LABELS[row.kind]} · {c.row.opened} {when(row.created_at)}
             {closed ? ` · ${c.row.closed} ${when(row.resolved_at)}` : ''}
           </p>
@@ -74,48 +74,48 @@ export function ReportRow({ row }: { row: Row }) {
         <StatusBadge tone={TONES[row.status]}>{REPORT_STATUS_LABELS[row.status]}</StatusBadge>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+      <dl className="mt-4 grid gap-3 text-body sm:grid-cols-3">
         <div>
-          <dt className="text-xs text-muted">{c.row.reported}</dt>
+          <dt className="text-small text-muted">{c.row.reported}</dt>
           <dd className="mt-0.5 break-words">{entity ?? '—'}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">{c.row.reporter}</dt>
+          <dt className="text-small text-muted">{c.row.reporter}</dt>
           <dd className="mt-0.5 break-words">
             {row.reporter_name ?? row.reporter_email ?? row.reporter_user_id}
           </dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">{c.row.assigned}</dt>
+          <dt className="text-small text-muted">{c.row.assigned}</dt>
           <dd className="mt-0.5">{row.assigned_name ?? c.row.unassigned}</dd>
         </div>
       </dl>
 
       {row.details !== null ? (
         <div className="mt-4">
-          <p className="text-xs text-muted">{c.row.details}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{row.details}</p>
+          <p className="text-small text-muted">{c.row.details}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.details}</p>
         </div>
       ) : null}
 
       {row.evidence_path !== null ? (
-        <p className="mt-3 break-all font-mono text-xs text-muted">
+        <p className="mt-3 break-all font-mono text-small text-muted">
           {c.row.evidence}: {row.evidence_path}
         </p>
       ) : null}
 
       {row.internal_notes !== null ? (
         <div className="mt-4 rounded-card border border-border bg-ground-alt p-3">
-          <p className="text-xs text-muted">{c.row.notes}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{row.internal_notes}</p>
+          <p className="text-small text-muted">{c.row.notes}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.internal_notes}</p>
         </div>
       ) : null}
 
       {row.resolution !== null ? (
         <div className="mt-4">
-          <p className="text-xs text-muted">{c.row.resolution}</p>
-          <p className="mt-1 whitespace-pre-line text-sm">{row.resolution}</p>
-          <p className="mt-1.5 text-xs text-muted">
+          <p className="text-small text-muted">{c.row.resolution}</p>
+          <p className="mt-1 whitespace-pre-line break-words text-body">{row.resolution}</p>
+          <p className="mt-1.5 text-small text-muted">
             {row.reporter_notified_at === null
               ? c.row.notNotified
               : `${c.row.notified} · ${when(row.reporter_notified_at)}`}
@@ -128,7 +128,7 @@ export function ReportRow({ row }: { row: Row }) {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="text-sm text-muted underline underline-offset-4"
+            className="text-body text-muted underline underline-offset-4"
           >
             Redeschide
           </button>
@@ -139,32 +139,32 @@ export function ReportRow({ row }: { row: Row }) {
         <form action={action} className="mt-5 flex flex-col gap-3 border-t border-border pt-4">
           <input type="hidden" name="report_id" value={row.id} />
 
-          <label htmlFor={`${id}-res`} className="flex flex-col gap-1.5 text-sm">
+          <label htmlFor={`${id}-res`} className="flex flex-col gap-1.5 text-body">
             {c.form.resolution}
             <textarea
               id={`${id}-res`}
               name="resolution"
               rows={3}
               defaultValue={row.resolution ?? ''}
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             />
-            <span className="text-xs text-muted">{c.form.resolutionHint}</span>
+            <span className="text-small text-muted">{c.form.resolutionHint}</span>
           </label>
 
-          <label htmlFor={`${id}-notes`} className="flex flex-col gap-1.5 text-sm">
+          <label htmlFor={`${id}-notes`} className="flex flex-col gap-1.5 text-body">
             {c.form.notes}
             <textarea
               id={`${id}-notes`}
               name="internal_notes"
               rows={2}
               defaultValue={row.internal_notes ?? ''}
-              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+              className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
             />
-            <span className="text-xs text-muted">{c.row.notesHint}</span>
+            <span className="text-small text-muted">{c.row.notesHint}</span>
           </label>
 
           {row.assigned_to === null ? (
-            <label className="flex items-center gap-2.5 text-sm">
+            <label className="flex items-center gap-2.5 text-body">
               <input
                 type="checkbox"
                 name="assign_to_me"
@@ -191,7 +191,7 @@ export function ReportRow({ row }: { row: Row }) {
               name="status"
               value="resolved"
               disabled={pending}
-              className={buttonClasses('primary', 'sm')}
+              className={buttonClasses('ink', 'sm')}
             >
               {c.form.resolve}
             </button>
@@ -207,12 +207,12 @@ export function ReportRow({ row }: { row: Row }) {
           </div>
 
           {state.error !== undefined ? (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-body text-danger">
               {state.error}
             </p>
           ) : null}
           {state.notice !== undefined ? (
-            <p role="status" className="text-sm text-muted">
+            <p role="status" className="text-body text-muted">
               {state.notice}
             </p>
           ) : null}

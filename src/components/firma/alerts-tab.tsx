@@ -40,12 +40,12 @@ export function AlertsTab({ company }: { company: Company }) {
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <FormError>{state.error}</FormError>
 
-      <label className="flex items-start gap-3 text-sm">
+      <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"
           name="alertsEnabled"
@@ -54,11 +54,11 @@ export function AlertsTab({ company }: { company: Company }) {
         />
         <span>
           {c.enable}
-          <span className="mt-1 block text-xs text-muted">{c.enableHint}</span>
+          <span className="mt-1 block text-small text-muted">{c.enableHint}</span>
         </span>
       </label>
 
-      {!verified ? <p className="text-sm text-muted">{c.unverified}</p> : null}
+      {!verified ? <p className="text-body text-muted">{c.unverified}</p> : null}
 
       <Field
         label={c.email}
@@ -73,7 +73,7 @@ export function AlertsTab({ company }: { company: Company }) {
       />
 
       <div className="border-t border-border pt-5">
-        <p className="text-sm font-medium">{c.whatMatches}</p>
+        <p className="text-body font-medium">{c.whatMatches}</p>
         <ul className="mt-2 flex flex-col gap-1.5">
           {c.rules.map((rule) => (
             <li key={rule} className="text-small text-muted">
@@ -88,9 +88,9 @@ export function AlertsTab({ company }: { company: Company }) {
           screen, and somebody reading this tab is the person looking
           for them. */}
       <div className="border-t border-border pt-5">
-        <p className="text-sm font-medium">{c.savedTitle}</p>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.savedLede}</p>
-        <p className="mt-2.5 text-sm">
+        <p className="text-body font-medium">{c.savedTitle}</p>
+        <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.savedLede}</p>
+        <p className="mt-2.5 text-body">
           <Link href={ROUTES.accountAlerts} className="link-accent">
             {c.savedAction}
           </Link>

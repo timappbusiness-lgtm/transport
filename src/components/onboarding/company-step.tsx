@@ -16,7 +16,7 @@ const EMPTY: OnboardingState = {};
 const EMPTY_LOOKUP: CuiLookupState = {};
 const c = onboardingCopy.wizard.company;
 const FIELD =
-  'rounded-input border border-border-strong bg-surface px-3 py-2 text-sm font-normal';
+  'rounded-input border border-border-strong bg-surface px-3 py-2 text-body font-normal';
 
 /**
  * Datele firmei, cu aceeași căutare la ANAF ca la înscrierea obișnuită.
@@ -34,7 +34,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
   return (
     <div className="flex flex-col gap-5">
       <form action={lookupAction} className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.cui}
           <input
             name="cui"
@@ -58,7 +58,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
         <input type="hidden" name="onboarding_id" value={onboardingId} />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.cui}
             <input
               name="cui"
@@ -69,7 +69,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
             <FormError>{state.fieldErrors?.cui}</FormError>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.legalName}
             <input
               name="legal_name"
@@ -80,7 +80,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
             <FormError>{state.fieldErrors?.legal_name}</FormError>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.type}
             <select name="company_type" required defaultValue="" className={FIELD}>
               <option value="" disabled>
@@ -95,7 +95,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
             <FormError>{state.fieldErrors?.company_type}</FormError>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.county}
             <select name="county" defaultValue="" className={FIELD}>
               <option value="">—</option>
@@ -107,23 +107,23 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.city}
             <input name="city" className={FIELD} />
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.contactEmail}
             <input type="email" name="contact_email" className={FIELD} />
           </label>
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
+          <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.contactPhone}
             <input name="contact_phone" className={FIELD} />
           </label>
         </div>
 
-        <p className="text-xs text-muted">{c.contactHint}</p>
+        <p className="text-small text-muted">{c.contactHint}</p>
 
         <div>
           <button type="submit" disabled={pending} className={buttonClasses('primary', 'md')}>

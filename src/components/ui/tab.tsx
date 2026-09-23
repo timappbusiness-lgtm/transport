@@ -20,7 +20,7 @@ export function tabClasses(active: boolean, size: 'sm' | 'md' = 'md'): string {
     'inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border',
     'transition-[background-color,border-color,color,transform] duration-(--duration-quick) ease-(--ease-soft)',
     'active:scale-[0.98] motion-reduce:active:scale-100',
-    size === 'sm' ? 'px-3 py-1 text-small' : 'px-3.5 py-1.5 text-sm',
+    size === 'sm' ? 'px-3 py-1 text-small' : 'px-3.5 py-1.5 text-body',
     active
       ? 'border-accent bg-accent font-medium text-on-accent'
       : 'border-border-strong text-muted hover:border-accent-border hover:bg-accent-subtle hover:text-foreground',

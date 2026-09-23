@@ -10,6 +10,8 @@ import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
 import { createClient } from '@/lib/supabase/server';
 import { VEHICLE_TYPE_LABELS, formatPlate } from '@/lib/vehicles';
+import { EmptyState } from '@/components/ui/empty-state';
+import { buttonClasses } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: accountCopy.fleet.title };
 
@@ -55,20 +57,27 @@ export default async function Page() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
-        <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
+          <h1 className="mt-2 text-h2">{c.title}</h1>
+          <p className="mt-2 max-w-[54ch] text-body text-muted">{c.lede}</p>
+        </div>
+        {/* The screen's one action, where it is seen first; the form it
+            leads to sits under the list. */}
+        <a href="#adauga-vehicul" className={buttonClasses('primary', 'sm')}>
+          {c.addVehicle}
+        </a>
       </div>
 
       <section className="overflow-hidden rounded-card border border-border bg-surface">
-        <h2 className="border-b border-border px-5 py-3.5 text-sm font-medium">
+        <h2 className="border-b border-border px-5 py-3.5 text-body font-medium">
           <IconLabel as={iconForContent('comanda')} size="sm" tone="strong">
             {c.vehicles}
           </IconLabel>
         </h2>
         {vehicles.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-muted">{c.noVehicles}</p>
+          <EmptyState title={c.noVehicles} className="rounded-none border-0 py-8" />
         ) : (
           <ul className="divide-y divide-border">
             {vehicles.map((vehicle) => (
@@ -78,12 +87,12 @@ export default async function Page() {
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-3.5 hover:bg-ground-alt"
                 >
                   <span className="min-w-0">
-                    <span className="block font-mono text-sm font-medium">
+                    <span className="block font-mono text-body font-medium">
                       <IconLabel as={iconForContent('comanda')} size="sm" tone="strong">
                         {formatPlate(vehicle.plate_number)}
                       </IconLabel>
                     </span>
-                    <span className="block text-xs text-muted">
+                    <span className="block text-small text-muted">
                       {VEHICLE_TYPE_LABELS[vehicle.vehicle_type]}
                       {vehicle.make ? ` · ${vehicle.make}${vehicle.model ? ` ${vehicle.model}` : ''}` : ''}
                       {vehicle.assigned_driver_id
@@ -102,19 +111,19 @@ export default async function Page() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="mb-4 text-sm font-medium">{c.addVehicle}</h2>
+        <section id="adauga-vehicul" className="scroll-mt-24 rounded-card border border-border bg-surface p-5">
+          <h2 className="mb-4 text-body font-medium">{c.addVehicle}</h2>
           <NewVehicleForm />
         </section>
 
         <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="mb-4 text-sm font-medium">{c.drivers}</h2>
+          <h2 className="mb-4 text-body font-medium">{c.drivers}</h2>
           {drivers.length > 0 ? (
-            <ul className="mb-4 divide-y divide-border text-sm">
+            <ul className="mb-4 divide-y divide-border text-body">
               {drivers.map((driver) => (
                 <li key={driver.id} className="flex justify-between gap-2 py-2">
                   <span>{driver.full_name}</span>
-                  <span className="font-mono text-xs text-muted">{driver.phone ?? '—'}</span>
+                  <span className="font-mono text-small text-muted">{driver.phone ?? '—'}</span>
                 </li>
               ))}
             </ul>

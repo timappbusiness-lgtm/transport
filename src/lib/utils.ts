@@ -6,7 +6,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
  *
  * This list is not decoration. `twMerge` groups utilities so that a later
  * one beats an earlier one in the same group, and it works that out from
- * the class name. It knows `text-sm` is a font size and `text-white` is a
+ * the class name. It knows `text-body` is a font size and `text-white` is a
  * colour because both are in its built-in table; it has never heard of
  * `text-h1`, so it guesses — and it guesses that `text-h1` and
  * `text-white` are the same kind of thing and keeps only the last.

@@ -66,22 +66,22 @@ export function CarrierPreview({ draft, signedIn }: { draft: RequestDraft; signe
 
       {asked && count !== null ? (
         <>
-          <p className="text-sm">{carrierCountSentence(count)}</p>
+          <p className="text-body">{carrierCountSentence(count)}</p>
           {none ? (
             <Link
               href={ROUTES.routes}
-              className="mt-1 inline-block text-sm underline underline-offset-2"
+              className="mt-1 inline-block text-body underline underline-offset-2"
             >
               {CARRIER_COUNT_COPY.zeroLinkLabel}
             </Link>
           ) : (
-            <p className="mt-1 text-xs text-muted">{CARRIER_COUNT_COPY.how}</p>
+            <p className="mt-1 text-small text-muted">{CARRIER_COUNT_COPY.how}</p>
           )}
         </>
       ) : null}
 
       {error !== null ? (
-        <p role="alert" className="mt-1 text-sm">
+        <p role="alert" className="mt-1 text-body">
           {error}
         </p>
       ) : null}

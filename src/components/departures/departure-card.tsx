@@ -94,7 +94,7 @@ export function DepartureCard({ departure, now }: { departure: PublicDeparture; 
           </div>
 
           {waypoints.length > 0 ? (
-            <p className="text-xs text-muted">prin {waypoints.map((w) => w.city).join(' · ')}</p>
+            <p className="text-small text-muted">prin {waypoints.map((w) => w.city).join(' · ')}</p>
           ) : null}
 
           {/* Free seats and the price are the two numbers a client opens a

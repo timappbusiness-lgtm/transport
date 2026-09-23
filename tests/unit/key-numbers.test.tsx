@@ -88,7 +88,7 @@ describe('the key numbers are in the accent', () => {
 
   it('the price of an offer, while it is alive or won', () => {
     const page = readFileSync('src/app/cont/oferte/page.tsx', 'utf8');
-    expect(page).toContain("isLive(offer.status) || offer.status === 'accepted' ? 'text-accent' : 'text-foreground'");
+    expect(page).toContain("tone={isLive(offer.status) || offer.status === 'accepted' ? 'accent' : 'plain'}");
   });
 
   it('the distance on the request page, beside the same drawing as the card', () => {

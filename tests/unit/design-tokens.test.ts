@@ -43,6 +43,30 @@ describe('components use tokens, not values', () => {
     expect(offenders, `arbitrary radius or shadow in:\n${offenders.join('\n')}`).toEqual([]);
   });
 
+  it('no size, radius or shadow from outside the scale either', () => {
+    // Tailwind's own steps are values too. `text-sm` (14px) and `text-xs`
+    // (12px) sat between the scale's body (15) and small (13) on 1134
+    // sites in 201 files; `shadow-sm` was a fourth shadow nobody chose.
+    // A size is a step of the scale, a radius is card, input or pill, a
+    // shadow is card, raised or float — or `none` to take one away.
+    const outside =
+      /(?<![\w-])(?:[a-z0-9-]+:)*(?:text-(?:xs|sm|base|lg|[2-9]?xl)|rounded(?:-[trblse]{1,2})?-(?:xs|sm|md|lg|[2-9]?xl)|shadow-(?:xs|sm|md|lg|[2-9]?xl|inner))(?![\w-])/;
+    // `shadow` and `rounded` on their own are steps too, but also English
+    // words, so those two are looked for inside quoted class strings only.
+    // A class string is lower-case words, colons, dashes, slashes and
+    // brackets and nothing else — never an interpolation or a sentence.
+    const bare =
+      /['"`][a-z0-9:\-/.[\]() ]*(?<![\w-])(?:[a-z0-9-]+:)*(?:shadow|rounded)(?![\w-])[a-z0-9:\-/.[\]() ]*['"`]/;
+    const offenders = FILES.flatMap((f) => {
+      const hits = readFileSync(f, 'utf8')
+        .split('\n')
+        .filter((line) => !/^\s*(?:\/\/|\*|\/\*|\{\/\*)/.test(line))
+        .filter((line) => outside.test(line) || bare.test(line));
+      return hits.map((line) => `${f}: ${line.trim()}`);
+    });
+    expect(offenders, `outside the scale:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('no raw hex colour in a component', () => {
     // No exceptions. The hover shades that used to be written as hexes
     // are `--color-accent-hover` and `--color-ink-hover`; the third was
@@ -70,6 +94,22 @@ describe('components use tokens, not values', () => {
     for (const step of declared) {
       expect(TEXT_SCALE as readonly string[], `--text-${step} is not in TEXT_SCALE`).toContain(step);
     }
+  });
+});
+
+describe('text somebody typed', () => {
+  it('may always break, so a long link cannot push a phone screen sideways', () => {
+    // `whitespace-pre-line` keeps the writer's line breaks — and keeps a
+    // pasted URL on one line. Thirty places showed messages, notes,
+    // conditions and dispute reasons that way with nothing to let them
+    // break, each one a sideways scroll at 390px waiting for its link.
+    const offenders = FILES.flatMap((f) =>
+      readFileSync(f, 'utf8')
+        .split('\n')
+        .filter((line) => /whitespace-pre-(?:line|wrap)/.test(line) && !/break-(?:words|all)/.test(line))
+        .map((line) => `${f}: ${line.trim()}`),
+    );
+    expect(offenders, offenders.join('\n')).toEqual([]);
   });
 });
 
@@ -200,6 +240,20 @@ describe('where the accent may not go', () => {
       }
       expect(body, `${file} uses the accent`).not.toMatch(/\b(?:text|bg|border|ring)-accent\b/);
     }
+  });
+
+  it('nor on a staff decision', () => {
+    // Approve, hide, restore, resolve, grant access, activate: every
+    // button in src/components/admin is a decision somebody on staff takes
+    // about somebody else, and the accent would make it read as the happy
+    // path. Ten of them were filled accent until this pass.
+    const dir = 'src/components/admin';
+    const offenders = readdirSync(dir)
+      .filter((f) => f.endsWith('.tsx'))
+      .filter((f) => /buttonClasses\('primary'|\b(?:bg|border)-accent\b/.test(readFileSync(`${dir}/${f}`, 'utf8')));
+    expect(offenders, `the accent on a staff decision in: ${offenders.join(', ')}`).toEqual([]);
+    const reports = readFileSync('src/app/admin/sesizari/page.tsx', 'utf8');
+    expect(reports).not.toMatch(/\b(?:bg|border)-accent\b/);
   });
 
   it('nor on a suspension, a rejection or a deletion', () => {

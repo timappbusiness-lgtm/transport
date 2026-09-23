@@ -78,7 +78,7 @@ export default async function Page({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link
             href={ROUTES.adminOnboardings}
             className="text-muted underline-offset-4 hover:underline"
@@ -96,7 +96,7 @@ export default async function Page({
         <p className="mt-1 text-small text-muted">
           {row.contact_name} · {row.contact_email} · {row.contact_phone}
         </p>
-        <p className="mt-0.5 text-xs text-muted">
+        <p className="mt-0.5 text-small text-muted">
           Acord: {CONSENT_LABELS[row.consent_channel]},{' '}
           {new Date(row.consent_at).toLocaleDateString('ro-RO')} · {row.staff_name}
         </p>
@@ -111,7 +111,7 @@ export default async function Page({
             className={cn(
               'rounded-pill border px-3.5 py-1.5 text-small',
               option === step
-                ? 'border-transparent bg-foreground text-ground'
+                ? 'border-transparent bg-foreground text-white'
                 : state[option]
                   ? 'border-success/45 bg-success/8 text-foreground'
                   : 'border-border-strong text-muted hover:text-foreground',
@@ -126,7 +126,7 @@ export default async function Page({
           className={cn(
             'rounded-pill border px-3.5 py-1.5 text-small',
             step === 'link'
-              ? 'border-transparent bg-foreground text-ground'
+              ? 'border-transparent bg-foreground text-white'
               : 'border-border-strong text-muted hover:text-foreground',
           )}
         >
@@ -134,14 +134,14 @@ export default async function Page({
         </Link>
       </nav>
 
-      <p className="text-xs text-muted">
+      <p className="text-small text-muted">
         {onboardingCopy.admin.steps(doneCount(state), STEPS.length)}
       </p>
 
       {step === 'firma' ? (
         <Card className="p-5">
           <h2 className="text-h3">{c.company.title}</h2>
-          <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.company.lede}</p>
+          <p className="mt-1 max-w-[66ch] text-body text-muted">{c.company.lede}</p>
           {row.company_id === null ? (
             <div className="mt-5">
               <CompanyStep onboardingId={row.id} />
@@ -157,24 +157,24 @@ export default async function Page({
       {step === 'documente' ? (
         <Card className="p-5">
           <h2 className="text-h3">{c.documents.title}</h2>
-          <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.documents.lede}</p>
+          <p className="mt-1 max-w-[66ch] text-body text-muted">{c.documents.lede}</p>
           <p className="mt-3 max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
             {c.documents.fourEyes}
           </p>
 
           {contents.documents.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">{c.documents.empty}</p>
+            <p className="mt-4 text-body text-muted">{c.documents.empty}</p>
           ) : (
             <ul className="mt-4 flex flex-col gap-2">
               {contents.documents.map((doc) => (
                 <li
                   key={doc.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-input border border-border p-2.5 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-input border border-border p-2.5 text-body"
                 >
                   <span>
                     {doc.label}
                     {doc.uploaded_on_behalf ? (
-                      <span className="ml-2 text-xs text-muted">
+                      <span className="ml-2 text-small text-muted">
                         · {c.documents.onBehalf}
                       </span>
                     ) : null}
@@ -196,7 +196,7 @@ export default async function Page({
             , cu aceleași câmpuri ca la o firmă obișnuită. {c.documents.skipHint}
           </p>
 
-          <p className="mt-4 text-sm">
+          <p className="mt-4 text-body">
             <Link
               href={onboardingRoute(row.id, 'vehicule')}
               className="underline underline-offset-4"
@@ -210,10 +210,10 @@ export default async function Page({
       {step === 'vehicule' ? (
         <Card className="p-5">
           <h2 className="text-h3">{c.vehicles.title}</h2>
-          <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.vehicles.lede}</p>
+          <p className="mt-1 max-w-[66ch] text-body text-muted">{c.vehicles.lede}</p>
 
           {contents.vehicles.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">{c.vehicles.empty}</p>
+            <p className="mt-4 text-body text-muted">{c.vehicles.empty}</p>
           ) : (
             <ul className="mt-4 flex flex-wrap gap-2">
               {contents.vehicles.map((vehicle) => (
@@ -236,7 +236,7 @@ export default async function Page({
             </div>
           ) : null}
 
-          <p className="mt-4 text-sm">
+          <p className="mt-4 text-body">
             <Link href={onboardingRoute(row.id, 'profil')} className="underline underline-offset-4">
               {c.vehicles.skip} →
             </Link>
@@ -247,7 +247,7 @@ export default async function Page({
       {step === 'profil' && row.company_id !== null ? (
         <Card className="p-5">
           <h2 className="text-h3">{c.profile.title}</h2>
-          <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.profile.lede}</p>
+          <p className="mt-1 max-w-[66ch] text-body text-muted">{c.profile.lede}</p>
           <div className="mt-5">
             <ProfileStep
               onboardingId={row.id}
@@ -268,7 +268,7 @@ export default async function Page({
       {step === 'link' ? (
         <Card className="p-5">
           <h2 className="text-h3">{c.finish.title}</h2>
-          <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.finish.lede}</p>
+          <p className="mt-1 max-w-[66ch] text-body text-muted">{c.finish.lede}</p>
           <div className="mt-5">
             <ClaimLink
               onboardingId={row.id}

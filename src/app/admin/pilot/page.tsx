@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
+import { EyebrowPill, Figure as KeyFigure, StatusBadge } from '@/components/ui/primitives';
 import { pilotCopy } from '@/content/pilot';
 import {
   chartCeiling,
@@ -63,38 +63,38 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.hero.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
       <form className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-ground-alt p-4">
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-body">
           {c.range.from}
           <input
             type="date"
             name="de-la"
             defaultValue={from}
-            className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+            className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-body">
           {c.range.to}
           <input
             type="date"
             name="pana-la"
             defaultValue={to}
-            className="rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
+            className="rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
           />
         </label>
         <button
           type="submit"
-          className="rounded-pill border border-border-strong px-4 py-2 text-sm"
+          className="rounded-pill border border-border-strong px-4 py-2 text-body"
         >
           {c.range.submit}
         </button>
       </form>
 
       {error !== null ? (
-        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-sm">
+        <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
           {c.error}
         </p>
       ) : null}
@@ -104,7 +104,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           <h2 id="criterii" className="text-h3">
             {c.criteria.title}
           </h2>
-          <p className="mt-1 max-w-[70ch] text-sm text-muted">{c.criteria.lede}</p>
+          <p className="mt-1 max-w-[70ch] text-body text-muted">{c.criteria.lede}</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -120,7 +120,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           />
         </div>
 
-        <p className="text-xs text-muted">{c.criteria.definition}</p>
+        <p className="text-small text-muted">{c.criteria.definition}</p>
       </section>
 
       <section aria-labelledby="inscrisi" className="flex flex-col gap-3">
@@ -131,7 +131,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           <Figure label={c.verified.carriers} value={overview?.verified_carriers ?? 0} />
           <Figure label={c.verified.forwarders} value={overview?.verified_forwarders ?? 0} />
         </div>
-        <p className="text-xs text-muted">{c.verified.note}</p>
+        <p className="text-small text-muted">{c.verified.note}</p>
       </section>
 
       <section aria-labelledby="flux" className="flex flex-col gap-3">
@@ -167,7 +167,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
           <h2 id="asistate" className="text-h3">
             {c.assisted.title}
           </h2>
-          <p className="mt-1 max-w-[70ch] text-sm text-muted">{c.assisted.lede}</p>
+          <p className="mt-1 max-w-[70ch] text-body text-muted">{c.assisted.lede}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Figure label={c.assisted.started} value={assisted?.started ?? 0} />
@@ -205,13 +205,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Sea
         </h2>
 
         {ordered.length === 0 ? (
-          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-sm text-muted">
+          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-body text-muted">
             {c.weekly.empty}
           </p>
         ) : (
           <>
             {!enoughHistory(ordered) ? (
-              <p className="rounded-card border border-border-strong bg-surface p-4 text-sm text-muted">
+              <p className="rounded-card border border-border-strong bg-surface p-4 text-body text-muted">
                 {c.weekly.tooShort}
               </p>
             ) : null}
@@ -234,10 +234,10 @@ function Criterion({
 }) {
   return (
     <div className="rounded-card border border-border bg-surface p-5">
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-small text-muted">{label}</p>
       <p className="mt-2 font-mono text-figure-sm tabular-nums">
         {p.current}
-        <span className="text-base text-muted"> / {p.target}</span>
+        <span className="text-body text-muted"> / {p.target}</span>
       </p>
 
       <div
@@ -251,7 +251,7 @@ function Criterion({
         />
       </div>
 
-      <p className="mt-3 text-sm">
+      <p className="mt-3 text-body">
         {p.met ? (
           <StatusBadge tone="success">{pilotCopy.criteria.met}</StatusBadge>
         ) : (
@@ -284,10 +284,12 @@ function Figure({
         tone === 'warning' ? 'border-warning/45' : 'border-border',
       )}
     >
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-1 font-mono text-xl tabular-nums">{text ?? value ?? 0}</p>
+      <p className="text-small text-muted">{label}</p>
+      <KeyFigure as="p" size="sm" tone="plain" className="mt-1">
+        {text ?? value ?? 0}
+      </KeyFigure>
       {note !== undefined ? (
-        <p className="mt-2 max-w-[42ch] text-xs text-muted">{note}</p>
+        <p className="mt-2 max-w-[42ch] text-small text-muted">{note}</p>
       ) : null}
     </div>
   );
@@ -297,8 +299,8 @@ function WeeklyTable({ weeks }: { weeks: PilotWeek[] }) {
   const ceiling = chartCeiling(weeks);
   return (
     <div className="overflow-x-auto rounded-card border border-border bg-surface">
-      <table className="w-full min-w-[40rem] text-sm">
-        <thead className="border-b border-border text-left text-xs text-muted">
+      <table className="w-full min-w-[40rem] text-body">
+        <thead className="border-b border-border text-left text-small text-muted">
           <tr>
             <th className="px-4 py-3 font-medium">Săptămâna</th>
             <th className="px-4 py-3 font-medium">{pilotCopy.weekly.carriers}</th>
@@ -310,7 +312,7 @@ function WeeklyTable({ weeks }: { weeks: PilotWeek[] }) {
         <tbody className="divide-y divide-border">
           {weeks.map((week) => (
             <tr key={week.week_start}>
-              <td className="px-4 py-3 whitespace-nowrap font-mono text-xs">{week.week_start}</td>
+              <td className="px-4 py-3 whitespace-nowrap font-mono text-small">{week.week_start}</td>
               <td className="px-4 py-3">
                 <Bar value={week.active_carriers} ceiling={ceiling} />
               </td>

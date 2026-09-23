@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { openMenu, settled } from './settled';
 
 /**
  * The warmth pass, checked in a browser: where the accent is and is not,
@@ -17,8 +17,18 @@ import { settled } from './settled';
 /** The tokens, as the stylesheet defines them. */
 const ACCENT = 'rgb(21, 97, 109)';
 const ACCENT_ON_DARK = 'rgb(163, 220, 227)';
-/** Every step of the scale that could read as „accent" on a light page. */
-const ACCENT_FAMILY = [ACCENT, 'rgb(17, 79, 89)', 'rgb(230, 241, 242)', 'rgb(156, 197, 203)', ACCENT_ON_DARK];
+/** The bright step, for interactive things on the dark surfaces only. */
+const ACCENT_BRIGHT = 'rgb(79, 209, 216)';
+/** Every step of the scale that could read as „accent" anywhere. */
+const ACCENT_FAMILY = [
+  ACCENT,
+  'rgb(17, 79, 89)',
+  'rgb(230, 241, 242)',
+  'rgb(156, 197, 203)',
+  ACCENT_ON_DARK,
+  ACCENT_BRIGHT,
+  'rgb(127, 223, 227)',
+];
 
 /** Elements inside `root` whose text, fill or border is in the accent family. */
 async function accentedIn(page: Page, root: string): Promise<string[]> {
@@ -72,7 +82,9 @@ test.describe('the accent', () => {
     await settled(page);
     const current = page.locator('header a[aria-current="page"]');
     await expect(current).toHaveCount(1);
-    await expect(current).toHaveCSS('color', ACCENT_ON_DARK);
+    // The bright step, underlined: the pale one was 3:1 on the old bar
+    // and read as one more grey link.
+    await expect(current).toHaveCSS('color', ACCENT_BRIGHT);
   });
 
   test('the detector below finds it where it is', async ({ page }) => {
@@ -137,15 +149,16 @@ for (const [width, height] of [
       await page.getByLabel('Poate fi încărcat de la').fill(loadingDate);
       await page.getByRole('button', { name: 'Continuă' }).click();
 
-      const tile = page.locator('[data-category-tile]').first();
-      await expect(tile).toBeVisible();
-      await expect(tile).toHaveAttribute('data-category-tile', 'autoturism');
-      const art = tile.locator('svg[data-category-art]');
-      const box = await art.boundingBox();
+      // Every category is a card with its drawing; the chosen one is
+      // marked, and choosing another moves the mark.
+      const chosen = page.locator('[data-choice][data-checked] [data-category-tile]');
+      await expect(chosen).toHaveCount(1);
+      await expect(chosen).toHaveAttribute('data-category-tile', 'autoturism');
+      const box = await chosen.locator('svg[data-category-art]').boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(40);
 
-      await page.getByLabel('Categoria', { exact: true }).selectOption('rulota');
-      await expect(tile).toHaveAttribute('data-category-tile', 'rulota');
+      await page.locator('[data-choice="rulota"]').click();
+      await expect(chosen).toHaveAttribute('data-category-tile', 'rulota');
       expect(await overflow(page)).toBeLessThanOrEqual(1);
     });
 
@@ -176,7 +189,28 @@ test.describe('a slow page', () => {
       },
     );
 
-    await page.locator('a[href="/cereri"]:visible').first().click();
+    // The bar's own link: on a phone it is behind „Meniu", and opening
+    // the menu is what brings it on screen and prefetches it.
+    // Opening the menu prefetches its pages — the route tree, then the
+    // segments that carry the loading shell. Wait for all of the board's.
+    const inflight = new Set<unknown>();
+    let finished = 0;
+    const isBoardPrefetch = (request: import('@playwright/test').Request) =>
+      new URL(request.url()).pathname === '/cereri' && request.headers()['next-router-prefetch'] !== undefined;
+    page.on('request', (request) => {
+      if (isBoardPrefetch(request)) inflight.add(request);
+    });
+    // Next reads what it needs of a prefetch and aborts the rest, so an
+    // abort is as done as a finish.
+    for (const event of ['requestfinished', 'requestfailed'] as const) {
+      page.on(event, (request) => {
+        if (inflight.delete(request)) finished += 1;
+      });
+    }
+    if (await openMenu(page)) {
+      await expect.poll(() => finished > 0 && inflight.size === 0, { timeout: 10_000 }).toBe(true);
+    }
+    await page.locator('header a[href="/cereri"]:visible').first().click();
     const skeleton = page.locator('[data-skeleton]');
     await expect(skeleton).toBeVisible();
     await expect(skeleton).toHaveAttribute('aria-busy', 'true');

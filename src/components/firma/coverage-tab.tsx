@@ -37,15 +37,15 @@ export function CoverageTab({ company }: { company: Company }) {
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <FormError>{state.error}</FormError>
 
       <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-1 text-sm font-medium">{c.scope}</legend>
+        <legend className="mb-1 text-body font-medium">{c.scope}</legend>
         {COVERAGE_SCOPES.map((option) => (
-          <label key={option} className="flex items-start gap-2.5 text-sm">
+          <label key={option} className="flex items-start gap-2.5 text-body">
             <input
               type="radio"
               name="coverageScope"
@@ -56,7 +56,7 @@ export function CoverageTab({ company }: { company: Company }) {
             />
             <span>
               {c.scopes[option]}
-              <span className="mt-0.5 block text-xs text-muted">{c.scopeHints[option]}</span>
+              <span className="mt-0.5 block text-small text-muted">{c.scopeHints[option]}</span>
             </span>
           </label>
         ))}
@@ -65,8 +65,8 @@ export function CoverageTab({ company }: { company: Company }) {
 
       {scope === 'judetean' ? (
         <fieldset className="flex flex-col gap-2.5 border-t border-border pt-5">
-          <legend className="mb-1 text-sm font-medium">{c.counties}</legend>
-          <p className="text-xs text-muted">{c.countiesHint}</p>
+          <legend className="mb-1 text-body font-medium">{c.counties}</legend>
+          <p className="text-small text-muted">{c.countiesHint}</p>
           <CheckboxGrid
             name="coverageCounties"
             columns={3}
@@ -79,8 +79,8 @@ export function CoverageTab({ company }: { company: Company }) {
 
       {scope === 'international' ? (
         <fieldset className="flex flex-col gap-2.5 border-t border-border pt-5">
-          <legend className="mb-1 text-sm font-medium">{c.countries}</legend>
-          <p className="text-xs text-muted">{c.countriesHint}</p>
+          <legend className="mb-1 text-body font-medium">{c.countries}</legend>
+          <p className="text-small text-muted">{c.countriesHint}</p>
           <CheckboxGrid
             name="coverageCountries"
             columns={3}

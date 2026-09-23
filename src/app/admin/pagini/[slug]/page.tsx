@@ -18,7 +18,7 @@ export default async function Page({ params }: { params: Params }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-sm">
+        <p className="text-body">
           <Link
             href={ROUTES.adminPages}
             className="text-muted underline underline-offset-4 decoration-border-strong hover:text-foreground"
@@ -33,8 +33,8 @@ export default async function Page({ params }: { params: Params }) {
           </StatusBadge>
         </div>
         <h1 className="mt-2 text-h2">{page.h1}</h1>
-        <p className="mt-2 font-mono text-xs text-muted">{pageHref(page)}</p>
-        <p className="mt-3 text-sm">
+        <p className="mt-2 font-mono text-small text-muted">{pageHref(page)}</p>
+        <p className="mt-3 text-body">
           <Link
             href={
               page.isPublished

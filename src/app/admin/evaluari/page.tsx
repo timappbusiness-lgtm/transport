@@ -13,11 +13,12 @@ import {
 } from '@/lib/ratings-source';
 import { loadAdminOrderCompanies } from '@/lib/orders-source';
 import { formatNumber } from '@/lib/requests';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = ratingsCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -74,14 +75,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <div>
         <EyebrowPill>{c.eyebrow}</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[64ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[64ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <form
         method="get"
         className="grid gap-3 rounded-card border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.score}
           <select name="nota" defaultValue={one(params, 'nota') ?? ''} className={CONTROL}>
             <option value="">{c.filters.any}</option>
@@ -93,7 +94,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-xs text-muted">
+        <label className="flex flex-col gap-1 text-small text-muted">
           {c.filters.company}
           <select name="firma" defaultValue={one(params, 'firma') ?? ''} className={CONTROL}>
             <option value="">{c.filters.any}</option>
@@ -108,7 +109,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           </select>
         </label>
 
-        <label className="flex items-center gap-2 text-sm sm:mt-5">
+        <label className="flex items-center gap-2 text-body sm:mt-5">
           <input
             type="checkbox"
             name="ascunse"
@@ -118,7 +119,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           {c.filters.hidden}
         </label>
 
-        <label className="flex items-center gap-2 text-sm sm:mt-5">
+        <label className="flex items-center gap-2 text-body sm:mt-5">
           <input
             type="checkbox"
             name="dispute"
@@ -135,17 +136,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           <Link href={ROUTES.adminRatings} className={buttonClasses('secondary', 'sm')}>
             {c.filters.clear}
           </Link>
-          <span className="text-xs text-muted">{c.list.total(formatNumber(total))}</span>
+          <span className="text-small text-muted">{c.list.total(formatNumber(total))}</span>
         </div>
       </form>
 
       {error !== null ? (
-        <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-sm">{error}</p>
+        <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>
       ) : rows.length === 0 ? (
-        <div className="rounded-card border border-border bg-surface p-6">
-          <p className="text-body-lg">{c.empty.title}</p>
-          <p className="mt-1 text-sm text-muted">{c.empty.body}</p>
-        </div>
+        <EmptyState figure="search" title={c.empty.title} body={c.empty.body} />
       ) : (
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (
@@ -161,32 +159,32 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 {row.report_count > 0 ? (
                   <StatusBadge tone="warning">{c.list.reports(row.report_count)}</StatusBadge>
                 ) : null}
-                <span className="text-xs text-muted">
+                <span className="text-small text-muted">
                   {row.rater_name ?? '—'} → {row.rated_name ?? '—'} · {formatMoment(row.created_at)}
                   {row.edited_at !== null ? ` · ${ratingsCopy.form.edited}` : ''}
                 </span>
               </div>
 
               {row.comment !== null ? (
-                <p className="mt-2 whitespace-pre-line text-body">{row.comment}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-body">{row.comment}</p>
               ) : null}
               {row.was_masked ? (
-                <p className="mt-1 text-xs text-muted">{c.list.masked}</p>
+                <p className="mt-1 text-small text-muted">{c.list.masked}</p>
               ) : null}
 
               {row.hidden_reason !== null ? (
-                <p className="mt-2 rounded-input border border-border-strong bg-ground-alt px-3 py-2 text-xs">
+                <p className="mt-2 rounded-input border border-border-strong bg-ground-alt px-3 py-2 text-small">
                   {row.hidden_reason}
                 </p>
               ) : null}
 
               {row.reply_body !== null ? (
                 <div className="mt-3 border-l-2 border-border-strong pl-3">
-                  <p className="text-xs font-medium text-muted">
+                  <p className="text-small font-medium text-muted">
                     {ratingsCopy.reply.label}
                     {row.reply_hidden_at !== null ? ` · ${c.list.hiddenLabel}` : ''}
                   </p>
-                  <p className="mt-1 whitespace-pre-line text-sm">{row.reply_body}</p>
+                  <p className="mt-1 whitespace-pre-line break-words text-body">{row.reply_body}</p>
                   {row.reply_id !== null && row.reply_hidden_at === null ? (
                     <div className="mt-1.5">
                       <ModerateRating kind="hideReply" replyId={row.reply_id} />
@@ -228,7 +226,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       )}
 
       {lastPage > 1 ? (
-        <nav aria-label={c.title} className="flex flex-wrap items-center gap-3 text-sm">
+        <nav aria-label={c.title} className="flex flex-wrap items-center gap-3 text-body">
           {page > 1 ? (
             <Link
               href={`${ROUTES.adminRatings}?pagina=${page - 1}`}

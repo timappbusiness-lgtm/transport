@@ -98,7 +98,7 @@ export default async function Page({
         {active === 'public' ? (
           <>
             <h2 className="mb-1 text-h3">{firmaCopy.publicProfile.title}</h2>
-            <p className="mb-4 max-w-[62ch] text-sm text-muted">{firmaCopy.publicProfile.lede}</p>
+            <p className="mb-4 max-w-[62ch] text-body text-muted">{firmaCopy.publicProfile.lede}</p>
             <PublicProfileForm company={company} logoUrl={companyLogoUrl(company.logo_path)} />
           </>
         ) : null}

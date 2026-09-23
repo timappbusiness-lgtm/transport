@@ -34,12 +34,12 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">Pagini de destinație</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">
+        <p className="mt-2 max-w-[62ch] text-body text-muted">
           Paginile care aduc clienți din căutări. Nimic nu se publică automat: citește
           pagina, corectează ce trebuie, apoi public-o. O pagină nepublicată nu apare
           nicăieri — nici în sitemap, nici în legături, nici la adresa ei.
         </p>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-body text-muted">
           {pages.filter((page) => page.isPublished).length} publicate din {pages.length}.
         </p>
       </div>
@@ -54,7 +54,7 @@ export default async function Page() {
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <h2 id={type} className="text-h3">
                 {TITLES[type]}{' '}
-                <span className="text-sm text-muted">
+                <span className="text-body text-muted">
                   ({inType.length - drafts}/{inType.length})
                 </span>
               </h2>

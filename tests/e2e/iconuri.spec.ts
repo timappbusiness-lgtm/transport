@@ -77,8 +77,10 @@ test.describe('every screen that should have icons has them', () => {
 test.describe('and they are large enough to see', () => {
   test('nothing is drawn below the smallest size in the scale', async ({ page }) => {
     await page.goto('/');
+    // Drawn ones only: the „Meniu" icon is in the document at every
+    // width and on screen only below lg.
     const widths = await page.locator('svg.lucide').evaluateAll((nodes) =>
-      nodes.map((n) => Math.round(n.getBoundingClientRect().width)),
+      nodes.map((n) => Math.round(n.getBoundingClientRect().width)).filter((w) => w > 0),
     );
     expect(widths.length, 'no lucide icon on the homepage at all').toBeGreaterThan(0);
     for (const width of widths) {

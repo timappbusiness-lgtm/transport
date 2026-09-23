@@ -154,11 +154,11 @@ export function FilterField({
 }) {
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-xs font-medium">
+      <label htmlFor={id} className="text-small font-medium">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-xs text-muted">{hint}</p> : null}
+      {hint ? <p className="text-small text-muted">{hint}</p> : null}
     </div>
   );
 }

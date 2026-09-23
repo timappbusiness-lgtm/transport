@@ -1,5 +1,5 @@
 import { ImportSettingsForm } from '@/components/admin/import-settings-form';
-import { EyebrowPill } from '@/components/ui/primitives';
+import { EyebrowPill, Figure } from '@/components/ui/primitives';
 import { REFUSALS } from '@/lib/listing-import';
 import { loadImportAdminData } from '@/lib/import-settings-source';
 
@@ -22,7 +22,7 @@ export default async function Page() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="text-h2">Import din anunț</h1>
-        <p className="text-sm text-muted">
+        <p className="text-body text-muted">
           Setările nu se pot citi. Verifică legătura cu baza de date.
         </p>
       </div>
@@ -38,7 +38,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">Import din anunț</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">
+        <p className="mt-2 max-w-[62ch] text-body text-muted">
           Cât consumă completarea automată a formularului de cerere și unde se schimbă limitele.
           Nu păstrăm nimic din paginile citite — nici adresa, nici textul.
         </p>
@@ -50,29 +50,29 @@ export default async function Page() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Consumat</p>
-            <p className="mt-1 font-mono text-xl">${spent.toFixed(2)}</p>
-            <p className="mt-1 text-xs text-muted">
+            <p className="text-small text-muted">Consumat</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">${spent.toFixed(2)}</Figure>
+            <p className="mt-1 text-small text-muted">
               din ${cap.toFixed(2)}
               {pct === null || pct === undefined ? '' : ` — ${pct}%`}
             </p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Încercări</p>
-            <p className="mt-1 font-mono text-xl">{budget?.extractions ?? 0}</p>
-            <p className="mt-1 text-xs text-muted">reușite și eșuate, împreună</p>
+            <p className="text-small text-muted">Încercări</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">{budget?.extractions ?? 0}</Figure>
+            <p className="mt-1 text-small text-muted">reușite și eșuate, împreună</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
-            <p className="text-xs text-muted">Cost mediu</p>
-            <p className="mt-1 font-mono text-xl">
+            <p className="text-small text-muted">Cost mediu</p>
+            <Figure as="p" size="sm" tone="plain" className="mt-1">
               {(budget?.extractions ?? 0) === 0
                 ? '—'
                 : `$${(spent / (budget?.extractions ?? 1)).toFixed(4)}`}
-            </p>
-            <p className="mt-1 text-xs text-muted">pe încercare</p>
+            </Figure>
+            <p className="mt-1 text-small text-muted">pe încercare</p>
           </div>
         </div>
-        <p className="text-xs text-muted">
+        <p className="text-small text-muted">
           Luna se socotește pe ora Bucureștiului. Un buget care se resetează la 02:00 pe 1 ale
           lunii nu se potrivește cu nicio factură.
         </p>
@@ -90,13 +90,13 @@ export default async function Page() {
           Ultimele încercări
         </h2>
         {attempts.length === 0 ? (
-          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-sm text-muted">
+          <p className="rounded-card border border-dashed border-border-strong bg-surface p-4 text-body text-muted">
             Nicio încercare încă.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-card border border-border bg-surface">
-            <table className="w-full min-w-[42rem] text-sm">
-              <thead className="border-b border-border text-left text-xs text-muted">
+            <table className="w-full min-w-[42rem] text-body">
+              <thead className="border-b border-border text-left text-small text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Când</th>
                   <th className="px-4 py-3 font-medium">Sursă</th>
@@ -117,7 +117,7 @@ export default async function Page() {
                       })}
                     </td>
                     <td className="px-4 py-3">{row.source_type === 'link' ? 'Link' : 'Poză'}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{row.source_host ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-small">{row.source_host ?? '—'}</td>
                     <td className="px-4 py-3">
                       {row.status === 'ok' ? (
                         <span>
@@ -131,10 +131,10 @@ export default async function Page() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs">
+                    <td className="px-4 py-3 font-mono text-small">
                       {row.duration_ms === null ? '—' : `${row.duration_ms} ms`}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs">
+                    <td className="px-4 py-3 font-mono text-small">
                       ${Number(row.cost_usd).toFixed(4)}
                     </td>
                   </tr>

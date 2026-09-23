@@ -81,7 +81,7 @@ export function Sidebar({
                       href={item.href}
                       aria-current={current === item.href ? 'page' : undefined}
                       className={cn(
-                        'flex items-center justify-between gap-2 rounded-input px-3 py-2 text-sm',
+                        'flex items-center justify-between gap-2 rounded-input px-3 py-2 text-body',
                         'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
                         current === item.href
                           ? 'bg-surface font-medium text-accent shadow-card'

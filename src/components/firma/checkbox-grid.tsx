@@ -25,12 +25,12 @@ export function CheckboxGrid({
     <ul
       className={cn(
         'grid gap-x-4 gap-y-2.5',
-        columns === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-2',
+        columns === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2',
       )}
     >
       {options.map((option) => (
         <li key={option.code}>
-          <label className="flex items-start gap-2.5 text-sm">
+          <label className="flex items-start gap-2.5 text-body">
             <input
               type="checkbox"
               name={name}
@@ -41,7 +41,7 @@ export function CheckboxGrid({
             <span className="min-w-0">
               {option.label}
               {option.hint ? (
-                <span className="mt-0.5 block text-xs text-muted">{option.hint}</span>
+                <span className="mt-0.5 block text-small text-muted">{option.hint}</span>
               ) : null}
             </span>
           </label>

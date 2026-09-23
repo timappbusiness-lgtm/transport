@@ -39,7 +39,7 @@ export function PhoneVerification({
         </span>
         <div>
           <p className="font-display text-body font-medium">{c.title}</p>
-          <p className="mt-1 text-sm text-muted">{c.bodyDone}</p>
+          <p className="mt-1 text-body text-muted">{c.bodyDone}</p>
         </div>
       </section>
     );
@@ -53,7 +53,7 @@ export function PhoneVerification({
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-body font-medium">{c.title}</p>
-          <p className="mt-1 text-sm text-muted">{c.body}</p>
+          <p className="mt-1 text-body text-muted">{c.body}</p>
           <p className="mt-1 font-mono text-label text-muted">{c.why}</p>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function PhoneVerification({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="mt-4 text-sm link-accent"
+          className="mt-4 text-body link-accent"
         >
           {c.action}
         </button>

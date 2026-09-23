@@ -26,7 +26,7 @@ export default async function Page() {
       <div>
         <EyebrowPill>Staff</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
       <section aria-labelledby="dotari">
@@ -41,7 +41,7 @@ export default async function Page() {
           ))}
         </ul>
         <div className="mt-4 rounded-card border border-dashed border-border-strong bg-surface px-4 sm:px-5">
-          <p className="pt-4 text-sm font-medium">{c.addEquipment}</p>
+          <p className="pt-4 text-body font-medium">{c.addEquipment}</p>
           <OptionForm kind="equipment" />
         </div>
       </section>
@@ -58,7 +58,7 @@ export default async function Page() {
           ))}
         </ul>
         <div className="mt-4 rounded-card border border-dashed border-border-strong bg-surface px-4 sm:px-5">
-          <p className="pt-4 text-sm font-medium">{c.addService}</p>
+          <p className="pt-4 text-body font-medium">{c.addService}</p>
           <OptionForm kind="service" />
         </div>
       </section>

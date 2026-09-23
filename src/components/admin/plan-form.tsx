@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.plans;
 
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 export interface EditablePlan extends Plan {
   isPublic: boolean;
@@ -41,7 +41,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
         <input type="hidden" name="code" value={plan.code} />
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-base">{plan.name}</h3>
+          <h3 className="text-h3">{plan.name}</h3>
           <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
             {plan.code}
           </p>
@@ -66,7 +66,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
           />
 
           <div className="flex min-w-0 flex-col gap-1.5">
-            <label htmlFor={`${id}-audience`} className="text-sm font-medium">
+            <label htmlFor={`${id}-audience`} className="text-body font-medium">
               {c.audience}
             </label>
             <select
@@ -82,7 +82,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
           </div>
 
           <div className="flex flex-col justify-end gap-2">
-            <label className="flex items-center gap-2.5 text-sm">
+            <label className="flex items-center gap-2.5 text-body">
               <input
                 type="checkbox"
                 name="is_public"
@@ -91,7 +91,7 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
               />
               {c.columns.visible}
             </label>
-            <label className="flex items-center gap-2.5 text-sm">
+            <label className="flex items-center gap-2.5 text-body">
               <input
                 type="checkbox"
                 name="highlight"
@@ -100,11 +100,11 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
               />
               {c.highlight}
             </label>
-            <p className="text-xs text-muted">{c.highlightHint}</p>
+            <p className="text-small text-muted">{c.highlightHint}</p>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
-            <label htmlFor={`${id}-features`} className="text-sm font-medium">
+            <label htmlFor={`${id}-features`} className="text-body font-medium">
               {c.columns.features}
             </label>
             <textarea
@@ -114,8 +114,8 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
               defaultValue={featuresToText(plan.features)}
               className={cn(CONTROL, 'font-mono text-small')}
             />
-            <p className="text-xs text-muted">{c.featuresHelp}</p>
-            <p className="text-xs text-muted">{c.featuresHint}</p>
+            <p className="text-small text-muted">{c.featuresHelp}</p>
+            <p className="text-small text-muted">{c.featuresHint}</p>
           </div>
         </div>
 
@@ -148,8 +148,8 @@ export function PlanForm({ plan }: { plan: EditablePlan }) {
 function Periods({ plan }: { plan: EditablePlan }) {
   return (
     <section className="mt-6 border-t border-border pt-5">
-      <h4 className="text-sm font-medium">{c.periods}</h4>
-      <p className="mt-1 max-w-[60ch] text-xs text-muted">{c.periodsHint}</p>
+      <h4 className="text-body font-medium">{c.periods}</h4>
+      <p className="mt-1 max-w-[60ch] text-small text-muted">{c.periodsHint}</p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {BILLING_MONTHS.map((months) => (
@@ -174,7 +174,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
       <input type="hidden" name="code" value={plan.code} />
       <input type="hidden" name="months" value={months} />
 
-      <label htmlFor={`${id}-total`} className="text-xs font-medium">
+      <label htmlFor={`${id}-total`} className="text-small font-medium">
         {c.periodMonths(months)}
       </label>
       <input
@@ -189,7 +189,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
         className={cn(CONTROL, 'mt-1.5')}
       />
 
-      <label className="mt-2 flex items-center gap-2 text-xs">
+      <label className="mt-2 flex items-center gap-2 text-small">
         <input
           type="checkbox"
           name="is_public"
@@ -200,7 +200,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
       </label>
 
       {months > 1 && saving > 0 ? (
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-2 text-small text-muted">
           {free !== null ? freeMonthsLabel(free) : `−${formatLei(saving)}`}
         </p>
       ) : null}
@@ -209,11 +209,11 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
         {c.savePeriod}
       </button>
       {state.notice ? (
-        <p className="mt-2 text-xs text-muted">{state.notice}</p>
+        <p className="mt-2 text-small text-muted">{state.notice}</p>
       ) : null}
-      {state.error ? <p className="mt-2 text-xs text-danger">{state.error}</p> : null}
+      {state.error ? <p className="mt-2 text-small text-danger">{state.error}</p> : null}
       {state.fieldErrors?.total_price_ron ? (
-        <p className="mt-2 text-xs text-danger">{state.fieldErrors.total_price_ron}</p>
+        <p className="mt-2 text-small text-danger">{state.fieldErrors.total_price_ron}</p>
       ) : null}
     </form>
   );
@@ -238,7 +238,7 @@ function Field({
 }) {
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className="text-body font-medium">
         {label}
       </label>
       <input
@@ -252,7 +252,7 @@ function Field({
         aria-invalid={error ? true : undefined}
         className={cn(CONTROL, error && 'border-danger')}
       />
-      {error ? <p className="text-xs text-danger">{error}</p> : null}
+      {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 import { buttonClasses } from '@/components/ui/button';
 
 const EMPTY: StaffToolState = {};
-const CONTROL = 'rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
+const CONTROL = 'rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /**
  * The two things a person on the team does during a pilot.
@@ -34,18 +34,18 @@ function VerifyPhone() {
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <div>
         <h3 className="text-body">Confirmă un număr de telefon</h3>
-        <p className="mt-1 max-w-[58ch] text-sm text-muted">
+        <p className="mt-1 max-w-[58ch] text-body text-muted">
           Singura cale, cât timp nu avem furnizor de SMS. Fără număr confirmat, o persoană fizică
           poate publica, dar nu poate deschide datele de contact ale unui transportator.
         </p>
       </div>
 
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-1.5 text-body">
         Contul (id)
         <input name="user_id" required autoComplete="off" className={CONTROL} />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-1.5 text-body">
         Cum ai confirmat
         <input
           name="note"
@@ -54,7 +54,7 @@ function VerifyPhone() {
           placeholder="sunat 20.09, a răspuns Maria Ion"
           className={CONTROL}
         />
-        <span className="text-xs text-muted">
+        <span className="text-small text-muted">
           Se scrie în jurnalul de audit. „Verificat” fără să spui cum este exact afirmația pe care
           o criticăm la concurență.
         </span>
@@ -72,27 +72,27 @@ function MarkTest() {
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <div>
         <h3 className="text-body">Marchează un cont ca al nostru</h3>
-        <p className="mt-1 max-w-[58ch] text-sm text-muted">
+        <p className="mt-1 max-w-[58ch] text-body text-muted">
           Iese din panourile publice, din lista de firme, din numerele de pe prima pagină și din
           toate cifrele de pe pagina asta.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-1.5 text-body">
           Ce este
           <select name="kind" defaultValue="company" className={CONTROL}>
             <option value="company">Firmă</option>
             <option value="user">Cont</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-1.5 text-body">
           Id
           <input name="id" required autoComplete="off" className={CONTROL} />
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-body">
         <input type="checkbox" name="is_test" value="yes" defaultChecked className="size-4" />
         Este contul nostru de test
       </label>
@@ -117,12 +117,12 @@ function Result({
         {pending ? 'Se salvează…' : label}
       </button>
       {state.error !== undefined ? (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-body text-danger">
           {state.error}
         </p>
       ) : null}
       {state.notice !== undefined ? (
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-body text-muted">
           {state.notice}
         </p>
       ) : null}

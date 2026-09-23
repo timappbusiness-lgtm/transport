@@ -56,11 +56,11 @@ export default async function Page() {
       <div>
         <EyebrowPill>Cont</EyebrowPill>
         <h1 className="mt-2 text-h2">{c.title}</h1>
-        <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
+        <p className="mt-2 max-w-[54ch] text-body text-muted">{c.lede}</p>
       </div>
 
       {invitations.length === 0 ? (
-        <p className="rounded-card border border-border bg-surface px-5 py-8 text-center text-sm text-muted">
+        <p className="rounded-card border border-border bg-surface px-5 py-8 text-center text-body text-muted">
           {c.empty}
         </p>
       ) : (
@@ -74,7 +74,7 @@ export default async function Page() {
                 <p className="font-display text-body font-medium">
                   {invitation.company?.display_name ?? invitation.company?.legal_name ?? '—'}
                 </p>
-                <p className="mt-0.5 text-xs text-muted">
+                <p className="mt-0.5 text-small text-muted">
                   {c.invitedAs} {MEMBER_ROLE_LABELS[invitation.role] ?? invitation.role} · {c.expires}{' '}
                   {dateFormat.format(new Date(invitation.expires_at))}
                 </p>
