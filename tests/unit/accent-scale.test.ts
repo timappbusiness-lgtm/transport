@@ -230,3 +230,54 @@ describe('every badge is readable on its own ground', () => {
     expect(contrast(fg, bg)).toBeGreaterThanOrEqual(BODY);
   });
 });
+
+describe('status colours are never text', () => {
+  /**
+   * The warning colour is 3.64:1 on white and the success colour 4.04:1
+   * — both under the 4.5 body text needs. They were drawn as text in six
+   * places anyway: „Platformă plină", the booking countdown, a return
+   * leg's missing vehicle, the composer's offline notice, the help
+   * page's „lipsă" and the checklist's „gata". The colour belongs on a
+   * dot, a chip's tint or a glyph, which need 3:1; the word is ink.
+   */
+  function walkAll(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) out.push(...walkAll(path));
+      else if (/\.tsx$/.test(entry.name)) out.push(path);
+    }
+    return out;
+  }
+
+  it('no class string pairs a status colour with a text size or weight', () => {
+    const offenders: string[] = [];
+    for (const file of walkAll('src')) {
+      const body = readFileSync(file, 'utf8');
+      for (const m of body.matchAll(/(['"`])([^'"`]*\btext-(?:warning|success)\b[^'"`]*)\1/g)) {
+        const cls = m[2]!;
+        if (/\b(?:text-(?:xs|sm|small|label|body|base)|font-(?:medium|mono|semibold))\b/.test(cls)) {
+          offenders.push(`${file}: ${cls}`);
+        }
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
+  it('and the six that were fixed stay fixed', () => {
+    for (const file of [
+      'src/components/departures/departure-card.tsx',
+      'src/components/orders/return-leg.tsx',
+      'src/components/messages/composer.tsx',
+      'src/app/cont/ajutor/page.tsx',
+    ]) {
+      expect(readFileSync(file, 'utf8'), file).not.toMatch(/\btext-warning\b/);
+    }
+    expect(readFileSync('src/components/account/checklist.tsx', 'utf8')).not.toMatch(
+      /font-mono text-label text-success/,
+    );
+    expect(readFileSync('src/components/app/dashboard/carrier.tsx', 'utf8')).not.toMatch(
+      /hours < 3 \? 'text-warning'/,
+    );
+  });
+});
