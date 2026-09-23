@@ -230,7 +230,10 @@ R **da** · Î **da** · A — · S n/a · C **da** · E **da**.
 
 ## Defecte prinse pe drum, în reparația însăși
 
-Fiecare are acum un test care cade dacă revine.
+Toate cinci au fost prinse de teste: primele două și ultimul cad
+determinist dacă revin; al treilea și al patrulea apăreau intermitent în
+`continuitate-cerere.spec.ts` (pasul corectat, telefonul la 390 px), care
+le prind în continuare la rulări repetate.
 
 - **Editarea rezumatului de la pasul 4 arunca la pasul 1.** Corecția
   pasului rula la fiecare schimbare a ciornei; golirea unui câmp în rezumat
