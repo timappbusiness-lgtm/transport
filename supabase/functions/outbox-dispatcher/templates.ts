@@ -212,7 +212,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Ați primit cel puțin o ofertă pentru cererea {{ title }} ({{ from_city }} — {{ to_city }}).",
       "Deschideți cererea ca să le vedeți pe toate, cu preț, date estimate și condiții, și ca să le comparați.",
     ],
-    action: { label: "Vezi ofertele", href: "{{ site_url }}/cont/cereri/{{ request_id }}" },
+    action: { label: "Vezi ofertele", href: "{{ site_url }}/cont/cereri/{{ request_id }}#oferte" },
     unsubscribable: true,
   },
 
@@ -422,7 +422,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Cineva v-a scris despre {{ context }}. Mesajul este în căsuța dumneavoastră de pe platformă.",
       "Primiți cel mult un e-mail la 15 minute pentru aceeași conversație, indiferent câte mesaje vin — nu vă umplem inboxul.",
     ],
-    action: { label: "Deschide mesajele", href: "{{ site_url }}/cont/mesaje" },
+    action: { label: "Deschide conversația", href: "{{ site_url }}/cont/mesaje/{{ conversation_id }}" },
     unsubscribable: true,
   },
 
@@ -462,7 +462,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Puteți răspunde o singură dată, public, sub evaluare. Răspunsul rămâne așa cum îl scrieți — nu se mai poate schimba după publicare, la fel ca evaluarea la care răspunde.",
       "Dacă evaluarea încalcă regulile platformei, o puteți sesiza din aceeași pagină. Nu ștergem evaluări pentru că sunt mici.",
     ],
-    action: { label: "Vezi evaluarea", href: "{{ site_url }}/cont/evaluari?cutie=primite" },
+    action: { label: "Vezi evaluarea", href: "{{ site_url }}/cont/evaluari?cutie=primite#evaluare-{{ rating_id }}" },
     unsubscribable: true,
   },
 
@@ -473,7 +473,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Firma {{ company_name }} a răspuns public la evaluarea pe care ați lăsat-o după transport.",
       "Răspunsul apare sub evaluare, pe profilul firmei. Evaluarea dumneavoastră rămâne neschimbată.",
     ],
-    action: { label: "Vezi răspunsul", href: "{{ site_url }}/cont/evaluari?cutie=date" },
+    action: { label: "Vezi răspunsul", href: "{{ site_url }}/cont/evaluari?cutie=date#evaluare-{{ rating_id }}" },
     unsubscribable: true,
   },
 
@@ -485,7 +485,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Durează un minut: o notă de la 1 la 5 și, dacă vreți, câteva cuvinte. Evaluarea este publică și ajută pe cine caută un transportator după aceea.",
       "Dacă nu vreți să evaluați, nu trebuie. Mesajul acesta este singurul pe care îl primiți despre transportul acesta.",
     ],
-    action: { label: "Evaluează transportul", href: "{{ site_url }}/cont/evaluari" },
+    action: { label: "Evaluează transportul", href: "{{ site_url }}/cont/transporturi/{{ order_id }}#evaluare" },
     unsubscribable: true,
   },
 

@@ -14,6 +14,7 @@ import {
 import { loadAdminOrderCompanies } from '@/lib/orders-source';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
+import { withParam } from '@/lib/continuity/query';
 
 export const dynamic = 'force-dynamic';
 
@@ -229,7 +230,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <nav aria-label={c.title} className="flex flex-wrap items-center gap-3 text-body">
           {page > 1 ? (
             <Link
-              href={`${ROUTES.adminRatings}?pagina=${page - 1}`}
+              href={withParam(ROUTES.adminRatings, params, 'pagina', page - 1 > 1 ? String(page - 1) : null)}
               className="underline underline-offset-4"
             >
               {ratingsCopy.profile.previous}
@@ -238,7 +239,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           <span className="text-muted">{`${page} / ${lastPage}`}</span>
           {page < lastPage ? (
             <Link
-              href={`${ROUTES.adminRatings}?pagina=${page + 1}`}
+              href={withParam(ROUTES.adminRatings, params, 'pagina', String(page + 1))}
               className="underline underline-offset-4"
             >
               {ratingsCopy.profile.next}

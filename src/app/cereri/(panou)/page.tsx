@@ -38,6 +38,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { REQUEST_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortRequests } from '@/lib/board-sort';
 import { carrierStage } from '@/lib/carrier-onboarding';
+import { RememberBoard } from '@/components/continuity/board-memory';
 
 export const metadata: Metadata = {
   title: 'Cereri de transport',
@@ -100,6 +101,8 @@ export default async function Page({
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
+      {/* The way back from a detail page returns to these filters. */}
+      <RememberBoard board={ROUTES.requests} />
       <header className="max-w-[46rem]">
         <h1 className="text-h1">{c.title}</h1>
         <p className="mt-3 text-body-lg text-muted">{c.lede}</p>

@@ -250,7 +250,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             />
           ) : null}
 
-          <OrderRatingCard orderId={order.id} state={rating} />
+          {/* The reminder e-mail links here: `#evaluare`. */}
+          <div id="evaluare" className="scroll-mt-24">
+            <OrderRatingCard orderId={order.id} state={rating} />
+          </div>
 
           <Card className="p-5">
             <h2 className="text-h3">{c.summary}</h2>

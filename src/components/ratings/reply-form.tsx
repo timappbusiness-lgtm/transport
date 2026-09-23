@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { draftKey } from '@/lib/continuity/drafts';
 import { useTextDraft } from '@/lib/continuity/use-text-draft';
 import { replyToRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
@@ -12,6 +12,11 @@ import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: RatingState = {};
+
+function subscribeHash(onChange: () => void) {
+  window.addEventListener('hashchange', onChange);
+  return () => window.removeEventListener('hashchange', onChange);
+}
 const c = ratingsCopy.reply;
 
 /** Răspunsul firmei evaluate. Unul singur, și rămâne cum a fost scris. */
@@ -21,7 +26,13 @@ export function ReplyForm({ ratingId, slug }: { ratingId: string; slug: string |
   // the form by itself with the words in it.
   const [body, setBody, clearBody] = useTextDraft(draftKey('raspuns', ratingId));
   const [chosen, setOpen] = useState<boolean | null>(null);
-  const open = chosen ?? body !== '';
+  // Opened from the e-mail about this rating: the form is already open.
+  const linked = useSyncExternalStore(
+    subscribeHash,
+    () => window.location.hash === `#evaluare-${ratingId}`,
+    () => false,
+  );
+  const open = chosen ?? (body !== '' || linked);
   const id = useId();
   const sent = state.notice !== undefined;
   useEffect(() => {

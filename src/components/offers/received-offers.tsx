@@ -3,6 +3,7 @@
 import { successCopy } from '@/content/success';
 import { SuccessMoment } from '@/components/ui/success-moment';
 import { useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   acceptOfferAction,
@@ -73,7 +74,20 @@ export function ReceivedOffers({
   /** The snapshot's clock, so countdowns are stable across a render. */
   now: string;
 }) {
-  const [sort, setSort] = useState<OfferSort>('pret');
+  // The order is in the address (`?ordine=livrare`), so it survives a
+  // refresh, the way back from a carrier's profile and a shared link.
+  // It used to be component state, and every one of those reset it.
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fromUrl = searchParams.get('ordine');
+  const sort: OfferSort = fromUrl !== null && fromUrl in SORT_LABELS ? (fromUrl as OfferSort) : 'pret';
+  function setSort(next: OfferSort) {
+    const params = new URLSearchParams(window.location.search);
+    if (next === 'pret') params.delete('ordine');
+    else params.set('ordine', next);
+    const query = params.toString();
+    window.history.replaceState(null, '', `${pathname}${query === '' ? '' : `?${query}`}${window.location.hash}`);
+  }
   const [comparing, setComparing] = useState(false);
 
   const live = offers.filter((offer) => isLive(offer.status));

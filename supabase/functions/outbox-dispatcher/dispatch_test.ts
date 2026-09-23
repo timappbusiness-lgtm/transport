@@ -62,6 +62,10 @@ const SAMPLE: Record<string, string> = {
   carrier_name: "Transport Ardeal SRL",
   offer_id: "7b4a2c88-0000-4000-8000-000000000004",
   order_id: "c1d9e4a5-0000-4000-8000-000000000005",
+  // The e-mails that link to one conversation or one rating carry its id,
+  // as the queueing functions write it into the payload.
+  conversation_id: "e8b1f2c3-0000-4000-8000-000000000006",
+  rating_id: "a4c7d9e1-0000-4000-8000-000000000007",
   deadline_hours: "48",
   plate: "CJ 12 ABC",
   deadline: "5 octombrie 2026",

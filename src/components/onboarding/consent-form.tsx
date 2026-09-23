@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 import { startOnboardingAction, type OnboardingState } from '@/app/admin/inscrieri/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -7,6 +9,8 @@ import { onboardingCopy } from '@/content/inscrieri';
 import { CONSENT_CHANNELS, CONSENT_LABELS, MAX_CONSENT_NOTE } from '@/lib/onboarding';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { DraftRestored } from '@/components/continuity/draft-status';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 
 const EMPTY: OnboardingState = {};
 const c = onboardingCopy.wizard.consent;
@@ -20,9 +24,16 @@ function today(): string {
 
 export function ConsentForm() {
   const [state, action, pending] = useKeptActionState(startOnboardingAction, EMPTY);
+  // Kept on every change, on the account too: the contact and the consent, typed while on the phone with the carrier
+  // survive a refresh or a dropped connection. Cleared once the step is saved.
+  const draftRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(draftRef, { form: 'inscriere-asistata', signedIn: true });
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-4">
+    <KeepingForm ref={draftRef} action={action} className="flex flex-col gap-4">
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-body font-medium">
           {c.name}
