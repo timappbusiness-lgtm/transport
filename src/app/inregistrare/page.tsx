@@ -6,6 +6,7 @@ import { AuthCard, TextLink } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { authCopy } from '@/content/auth';
+import { safeNextPath, withNext } from '@/lib/auth/next-path';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Înregistrare' };
@@ -49,12 +50,17 @@ function Choice({
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ tip?: string }>;
+  searchParams: Promise<{ tip?: string; next?: string }>;
 }) {
-  const { tip } = await searchParams;
-  const companyHref = tip
-    ? `${ROUTES.signUpCompany}?tip=${encodeURIComponent(tip)}`
-    : ROUTES.signUpCompany;
+  const { tip, next: rawNext } = await searchParams;
+  // Somebody sent here from the middle of a form goes back to it, which
+  // ever account they choose — so both choices, and the sign-in link,
+  // carry the place.
+  const next = safeNextPath(rawNext, '');
+  const companyHref = withNext(
+    tip ? `${ROUTES.signUpCompany}?tip=${encodeURIComponent(tip)}` : ROUTES.signUpCompany,
+    next,
+  );
 
   return (
     <AuthCard
@@ -63,13 +69,13 @@ export default async function Page({
       footer={
         <p>
           {authCopy.individualSignUp.hasAccount}{' '}
-          <TextLink href={ROUTES.signIn}>{authCopy.individualSignUp.signIn}</TextLink>
+          <TextLink href={withNext(ROUTES.signIn, next)}>{authCopy.individualSignUp.signIn}</TextLink>
         </p>
       }
     >
       <div className="flex flex-col gap-4">
         <Choice
-          href={ROUTES.signUpIndividual}
+          href={withNext(ROUTES.signUpIndividual, next)}
           icon={<Icon as={uiIcon('person')} size="md" />}
           title={c.individual.title}
           body={c.individual.body}

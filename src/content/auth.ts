@@ -14,6 +14,8 @@ export const authCopy = {
     forgot: 'Ai uitat parola?',
     noAccount: 'Nu ai cont încă?',
     createAccount: 'Creează un cont',
+    linkExpired:
+      'Linkul din e-mail a expirat sau a fost deja folosit. Intră în cont cu parola — te ducem înapoi unde rămăseseși.',
   },
   chooseType: {
     title: 'Ce fel de cont îți trebuie?',
@@ -77,6 +79,8 @@ export const authCopy = {
     resend: 'Trimite din nou',
     resent: 'Am trimis din nou e-mailul de confirmare.',
     emailLabel: 'Adresa de e-mail',
+    sameDevice:
+      'Deschide linkul pe acest dispozitiv: aici te așteaptă ce ai completat, la pasul la care ai rămas.',
   },
   resetPassword: {
     title: 'Resetare parolă',

@@ -325,6 +325,15 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, step, requested, pathname, store, today]);
 
+  // Typed on this device before signing in — or newer here than on the
+  // account: from now on it follows the account to the other device.
+  useEffect(() => {
+    if (!hydrated || !signedIn) return;
+    const found = store.getRestored();
+    if (found === null || (serverDraft !== null && found.savedAt <= serverDraft.savedAt)) return;
+    accountCopy.schedule(found.payload, found.step);
+  }, [hydrated, signedIn, store, serverDraft, accountCopy]);
+
   // A link from the price calculator seeds the draft once. From then on
   // the draft is the truth, so the choices come off the address: a
   // refresh, or the way back from sign-in, must not seed it again over

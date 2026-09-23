@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { safeNextPath } from '@/lib/auth/next-path';
+import { safeNextPath, withNext } from '@/lib/auth/next-path';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -16,8 +16,12 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const next = safeNextPath(searchParams.get('next'));
 
+  // A link that did not work still knows where it was going: the sign-in
+  // page says the link expired and, after the password, goes there.
+  const failed = `${origin}${withNext('/autentificare?eroare=link', next)}`;
+
   if (!code) {
-    return NextResponse.redirect(`${origin}/autentificare?eroare=link`);
+    return NextResponse.redirect(failed);
   }
 
   const supabase = await createClient();
@@ -26,7 +30,7 @@ export async function GET(request: NextRequest) {
   if (error) {
     // No detail in the URL: the reason is for the log, not for the address bar.
     console.error('[authCallback] code exchange failed', { code: error.code });
-    return NextResponse.redirect(`${origin}/autentificare?eroare=link`);
+    return NextResponse.redirect(failed);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

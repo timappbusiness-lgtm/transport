@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { withNext } from '@/lib/auth/next-path';
 import type { AuthActionState } from '@/app/auth-actions';
 import {
   signInAction,
@@ -68,7 +69,7 @@ export function SignInForm({ next }: { next: string }) {
         error={state.fieldErrors?.password}
       />
       <div className="-mt-1 text-right text-body">
-        <TextLink href={ROUTES.resetPassword}>{c.forgot}</TextLink>
+        <TextLink href={withNext(ROUTES.resetPassword, next)}>{c.forgot}</TextLink>
       </div>
       <SubmitButton>{c.submit}</SubmitButton>
     </form>
@@ -151,12 +152,13 @@ export function CompanySignUpForm({ next = '' }: { next?: string }) {
   return <SignUpForm action={signUpCompanyAction} copy={authCopy.companySignUp} next={next} />;
 }
 
-export function ResendConfirmationForm({ email }: { email: string }) {
+export function ResendConfirmationForm({ email, next = '' }: { email: string; next?: string }) {
   const [state, action] = useActionState(resendConfirmationAction, EMPTY);
   const c = authCopy.confirmEmail;
 
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
       <Field
@@ -173,12 +175,13 @@ export function ResendConfirmationForm({ email }: { email: string }) {
   );
 }
 
-export function RequestPasswordResetForm() {
+export function RequestPasswordResetForm({ next = '' }: { next?: string }) {
   const [state, action] = useActionState(requestPasswordResetAction, EMPTY);
   const c = authCopy.resetPassword;
 
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
       <Field
@@ -195,12 +198,13 @@ export function RequestPasswordResetForm() {
   );
 }
 
-export function NewPasswordForm() {
+export function NewPasswordForm({ next = '' }: { next?: string }) {
   const [state, action] = useActionState(updatePasswordAction, EMPTY);
   const c = authCopy.newPassword;
 
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormError>{state.error}</FormError>
       <Field
         label={c.password}
