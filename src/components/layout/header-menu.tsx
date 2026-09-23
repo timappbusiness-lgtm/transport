@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { signInLinkFor } from '@/lib/auth/next-path';
 import { Badge } from '@/components/ui/badge';
 import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
@@ -105,7 +106,8 @@ function useCoarsePointer(): boolean {
 
 /** The header's right half, reading the path from the router. */
 export function HeaderNav({ user }: { user: HeaderUser | null }) {
-  return <HeaderNavView user={user} pathname={usePathname() ?? ROUTES.home} />;
+  const search = useSearchParams()?.toString() ?? '';
+  return <HeaderNavView user={user} pathname={usePathname() ?? ROUTES.home} search={search} />;
 }
 
 /**
@@ -113,7 +115,16 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
  * page and any name without a router, and measure it with the real
  * stylesheet at every width.
  */
-export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pathname: string }) {
+export function HeaderNavView({
+  user,
+  pathname,
+  search = '',
+}: {
+  user: HeaderUser | null;
+  pathname: string;
+  /** The page's query, so „Autentificare" comes back to the same place. */
+  search?: string;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLAnchorElement>(null);
@@ -353,7 +364,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
         <div className="flex items-center gap-1.5">
           {/* Visible at every width: off the homepage there is no other way
               into sign-in from the header on a phone. */}
-          <Link href={ROUTES.signIn} className={PILL_QUIET}>
+          <Link href={signInLinkFor(pathname, search)} className={PILL_QUIET}>
             Autentificare
           </Link>
           <Link href={ROUTES.newRequest} className={PILL_SOLID}>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTH_PAGES, returnPathAfterAuth, withNext } from '@/lib/auth/next-path';
+import { AUTH_PAGES, returnPathAfterAuth, signInLinkFor, withNext } from '@/lib/auth/next-path';
 import { boardHref, cleanBoardQuery, rememberBoard } from '@/lib/continuity/board-return';
 import {
   DONE_PARAM,
@@ -141,6 +141,20 @@ describe('where a sign-in returns to', () => {
       expect(returnPathAfterAuth(`${page}?next=/cont`)).toBe('/cont');
     }
     expect(returnPathAfterAuth('/inregistrare/firma')).toBe('/cont');
+  });
+
+  it('is where the header\'s „Autentificare" was pressed', () => {
+    expect(signInLinkFor('/cerere/noua', 'pas=contact')).toBe(
+      '/autentificare?next=%2Fcerere%2Fnoua%3Fpas%3Dcontact',
+    );
+    expect(signInLinkFor('/cereri', '?tara-plecare=DE')).toBe('/autentificare?next=%2Fcereri%3Ftara-plecare%3DDE');
+    expect(signInLinkFor('/', '')).toBe('/autentificare');
+    // On a sign-up page it keeps that page's own way back, never itself.
+    expect(signInLinkFor('/inregistrare', 'next=%2Fcerere%2Fnoua%3Fpas%3Dcontact')).toBe(
+      '/autentificare?next=%2Fcerere%2Fnoua%3Fpas%3Dcontact',
+    );
+    expect(signInLinkFor('/autentificare', '')).toBe('/autentificare');
+    expect(signInLinkFor('/reconectat', '')).toBe('/autentificare');
   });
 
   it('is carried by every link on the way, nested for the password reset', () => {

@@ -128,3 +128,22 @@ export function returnPathAfterAuth(raw: string | null | undefined): string {
   const safe = safeNextPath(raw, DEFAULT_NEXT);
   return isAuthPage(safe) ? DEFAULT_NEXT : safe;
 }
+
+/**
+ * The header's „Autentificare", from the page it is pressed on.
+ *
+ * Pressed in the middle of a form, it used to open a sign-in that came
+ * back to the dashboard. Now it comes back to the page — the step, the
+ * filters — and on a sign-in or sign-up page it keeps the `next` that
+ * page already carries instead of pointing at itself. On the homepage
+ * there is nothing to come back to.
+ */
+export function signInLinkFor(pathname: string, search: string): string {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  if (isAuthPage(pathname) || pathname === '/reconectat') {
+    return withNext('/autentificare', params.get('next'));
+  }
+  if (pathname === '/') return '/autentificare';
+  const query = params.toString();
+  return withNext('/autentificare', `${pathname}${query === '' ? '' : `?${query}`}`);
+}
