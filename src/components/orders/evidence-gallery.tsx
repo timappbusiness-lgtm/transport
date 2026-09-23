@@ -37,7 +37,7 @@ export function EvidenceGallery({
   if (rows.length === 0) {
     return (
       <section aria-labelledby="dovezi" className="rounded-card border border-border bg-surface p-5">
-        <h2 id="dovezi" className="text-[1.0625rem]">
+        <h2 id="dovezi" className="text-h3">
           {c.title}
         </h2>
         <p className="mt-2 text-sm text-muted">{c.empty}</p>
@@ -53,10 +53,10 @@ export function EvidenceGallery({
 
   return (
     <section aria-labelledby="dovezi" className="rounded-card border border-border bg-surface p-5">
-      <h2 id="dovezi" className="text-[1.0625rem]">
+      <h2 id="dovezi" className="text-h3">
         {c.title}
       </h2>
-      <p className="mt-1 max-w-[62ch] text-[0.8125rem] text-muted">{c.lede}</p>
+      <p className="mt-1 max-w-[62ch] text-small text-muted">{c.lede}</p>
 
       <div className="mt-5 flex flex-col gap-6">
         {groups.map((group) => (
@@ -106,7 +106,7 @@ export function EvidencePhoto({ row, url }: { row: EvidenceRow; url: string | un
     <figure className="min-w-0">
       <div className="relative aspect-[4/3] overflow-hidden rounded-input border border-border bg-ground-alt">
         {row.is_hidden || url === undefined ? (
-          <span className="absolute inset-0 flex items-center justify-center p-2 text-center text-[0.6875rem] text-muted">
+          <span className="absolute inset-0 flex items-center justify-center p-2 text-center text-xs text-muted">
             {row.is_hidden ? c.hidden : '—'}
           </span>
         ) : (
@@ -120,7 +120,7 @@ export function EvidencePhoto({ row, url }: { row: EvidenceRow; url: string | un
           />
         )}
       </div>
-      <figcaption className="mt-1 text-[0.6875rem] leading-tight text-muted">
+      <figcaption className="mt-1 text-xs leading-tight text-muted">
         {formatMoment(row.captured_at)}
         <span className="block">{row.author_name}</span>
         {row.lat !== null ? <span className="block">{c.location}</span> : null}
@@ -141,7 +141,7 @@ function ChecklistCard({
       <p className="text-sm font-medium">{summariseChecklist(payload)}</p>
       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
         {CONDITION_CHECKLIST.map((item) => (
-          <div key={item.key} className="flex items-baseline justify-between gap-2 text-[0.8125rem]">
+          <div key={item.key} className="flex items-baseline justify-between gap-2 text-small">
             <dt className="text-muted">{item.label}</dt>
             <dd className="tabular-nums">{payload[item.key] ?? '—'}</dd>
           </div>
@@ -183,7 +183,7 @@ export function ComparisonView({
 
   return (
     <section className="rounded-card border border-border bg-surface p-5">
-      <h3 className="text-[1.0625rem]">{title}</h3>
+      <h3 className="text-h3">{title}</h3>
       <div className="mt-4 grid gap-5 lg:grid-cols-2">
         <div>
           <p className="text-sm font-medium text-muted">{leftLabel}</p>
@@ -203,7 +203,7 @@ export function ComparisonView({
                       />
                     ) : null}
                   </div>
-                  <p className="mt-1 text-[0.6875rem] text-muted">{c.fromClient}</p>
+                  <p className="mt-1 text-xs text-muted">{c.fromClient}</p>
                 </li>
               ) : (
                 <li key={item.id} className="min-w-0">

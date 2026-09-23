@@ -35,13 +35,13 @@ function Choice({
         <span aria-hidden="true" className="text-muted">
           {icon}
         </span>
-        <h2 className="text-[1.0625rem]">{title}</h2>
+        <h2 className="text-h3">{title}</h2>
       </div>
       <p className="text-sm text-muted">{body}</p>
       <Link href={href} className={cn(buttonClasses(variant, 'md'), 'w-full')}>
         {cta}
       </Link>
-      <p className="text-center font-mono text-[0.6875rem] text-muted">{note}</p>
+      <p className="text-center font-mono text-label text-muted">{note}</p>
     </div>
   );
 }

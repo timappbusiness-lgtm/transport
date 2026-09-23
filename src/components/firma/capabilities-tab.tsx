@@ -49,7 +49,7 @@ export function CapabilitiesTab({
   return (
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
-        <h2 className="text-[1.0625rem]">{c.title}</h2>
+        <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 

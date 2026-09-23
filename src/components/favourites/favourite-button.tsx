@@ -38,7 +38,7 @@ export function FavouriteButton({
         type="submit"
         disabled={pending}
         aria-pressed={isFavourite}
-        className="inline-flex items-center gap-1.5 text-[0.8125rem] text-muted underline-offset-4 hover:text-foreground hover:underline"
+        className="inline-flex items-center gap-1.5 text-small text-muted underline-offset-4 hover:text-foreground hover:underline"
       >
         <span aria-hidden="true">{isFavourite ? '★' : '☆'}</span>
         {state.notice ?? (isFavourite ? c.added : c.add)}

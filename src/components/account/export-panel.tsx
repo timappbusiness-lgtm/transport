@@ -55,7 +55,7 @@ export function ExportPanel({ latest }: ExportPanelProps) {
       aria-labelledby="export"
       className="rounded-card border border-border bg-surface p-5 sm:p-6"
     >
-      <h2 id="export" className="text-[1.0625rem]">
+      <h2 id="export" className="text-h3">
         {c.title}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.body}</p>

@@ -19,7 +19,7 @@ export function FinalCta() {
           soft={c.soft}
           className="mx-auto max-w-[24ch] text-white [&_span:last-child]:text-white/60"
         />
-        <p className="mx-auto mt-5 max-w-[48ch] text-[1.0625rem] text-white/80">{c.lede}</p>
+        <p className="mx-auto mt-5 max-w-[48ch] text-body-lg text-white/80">{c.lede}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href={ROUTES.newRequest} className={buttonClasses('onDark', 'md')}>
             {c.primary}

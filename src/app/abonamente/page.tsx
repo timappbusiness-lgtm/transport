@@ -90,7 +90,7 @@ export function PricingBody({
         <EyebrowPill>{c.header.eyebrow}</EyebrowPill>
         <Headline as="h1" strong={c.header.strong} soft={c.header.soft} className="mt-5" />
         <Lede className="mt-4">{c.header.subtitle}</Lede>
-        <p className="mt-3 text-[0.9375rem] text-muted">
+        <p className="mt-3 text-body text-muted">
           {pricing.settings.trialDays > 0
             ? c.header.trust(pluralRo(pricing.settings.trialDays, 'zi', 'zile'))
             : c.header.noTrial}
@@ -174,14 +174,14 @@ function actionFor(
 function NeverPay() {
   return (
     <section aria-labelledby="niciodata" className="mt-16">
-      <h2 id="niciodata" className="text-[1.25rem]">
+      <h2 id="niciodata" className="text-xl">
         {c.never.title}
       </h2>
       <ul className="mt-6 grid gap-4 sm:grid-cols-3">
         {c.never.items.map((item) => (
           <li key={item.title} className="rounded-card border border-border bg-surface p-5">
-            <h3 className="text-[0.9375rem] font-medium">{item.title}</h3>
-            <p className="mt-2 text-[0.875rem] leading-relaxed text-muted">{item.body}</p>
+            <h3 className="text-body font-medium">{item.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{item.body}</p>
           </li>
         ))}
       </ul>
@@ -203,7 +203,7 @@ function BillingFaq({ settings }: { settings: PricingSettings }) {
 
   return (
     <section aria-labelledby="facturare" className="mt-16">
-      <h2 id="facturare" className="text-[1.25rem]">
+      <h2 id="facturare" className="text-xl">
         {c.faq.title}
       </h2>
       <FaqAccordion entries={entries} className="mt-6 lg:grid-cols-2" />

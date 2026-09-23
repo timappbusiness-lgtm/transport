@@ -15,7 +15,7 @@ const c = messagesCopy.owner;
  */
 export function HiddenNotice({ reason }: { reason: string | null }) {
   return (
-    <div className="mt-3 rounded-input border border-warning/45 bg-warning/8 p-3 text-[0.8125rem]">
+    <div className="mt-3 rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
       <p className="font-medium">{c.hidden}</p>
       {reason !== null && reason !== '' ? (
         <p className="mt-1">

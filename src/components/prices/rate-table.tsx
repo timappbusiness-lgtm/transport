@@ -35,7 +35,7 @@ export function RateTable({
   return (
     <>
       <div className="hidden overflow-hidden rounded-card border border-border bg-surface sm:block">
-        <table className="w-full border-collapse text-[0.9375rem]">
+        <table className="w-full border-collapse text-body">
           <caption className="sr-only">{c.caption}</caption>
           <thead>
             <tr>
@@ -45,7 +45,7 @@ export function RateTable({
                     key={heading}
                     scope="col"
                     className={cn(
-                      'border-b border-border px-5 py-3.5 font-mono text-[0.625rem] font-normal uppercase tracking-[0.12em] text-muted',
+                      'border-b border-border px-5 py-3.5 font-mono text-label font-normal uppercase tracking-[0.12em] text-muted',
                       index === 0 ? 'text-left' : 'text-right',
                     )}
                   >
@@ -63,7 +63,7 @@ export function RateTable({
                     <VehicleIcon vehicleClass={rate.vehicle_class} />
                     <span className="min-w-0">
                       <span className="block">{VEHICLE_CLASS_LABELS[rate.vehicle_class]}</span>
-                      <span className="block text-[0.8125rem] text-muted">
+                      <span className="block text-small text-muted">
                         {rate.weight_label} · {formatMinimums(rate)}
                       </span>
                     </span>
@@ -90,7 +90,7 @@ export function RateTable({
                 <span className="block font-medium">
                   {VEHICLE_CLASS_LABELS[rate.vehicle_class]}
                 </span>
-                <span className="block text-[0.8125rem] text-muted">{rate.weight_label}</span>
+                <span className="block text-small text-muted">{rate.weight_label}</span>
               </span>
             </p>
             <dl className="mt-3 flex flex-col">
@@ -123,10 +123,10 @@ function Cell({ value }: { value: string }) {
 function Line({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className="flex items-center gap-3 border-b border-border py-2 last:border-b-0">
-      <dt className="min-w-0 flex-1 text-[0.8125rem] text-muted">{label}</dt>
+      <dt className="min-w-0 flex-1 text-small text-muted">{label}</dt>
       <dd
         className={cn(
-          'font-mono text-[0.8125rem] tabular-nums',
+          'font-mono text-small tabular-nums',
           muted ? 'text-muted' : 'text-foreground',
         )}
       >

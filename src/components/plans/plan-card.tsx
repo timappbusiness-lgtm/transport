@@ -70,45 +70,45 @@ export function PlanCard({
       )}
     >
       {plan.highlight ? (
-        <p className="mb-4 inline-flex w-fit rounded-pill border border-border-strong/45 px-3 py-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+        <p className="mb-4 inline-flex w-fit rounded-pill border border-border-strong/45 px-3 py-1 font-mono text-label uppercase tracking-[0.12em] text-muted">
           {recommendedLabel}
         </p>
       ) : null}
 
-      <h3 className="text-[1.125rem]">{plan.name}</h3>
+      <h3 className="text-lg">{plan.name}</h3>
       {plan.description ? (
-        <p className="mt-1.5 text-[0.875rem] leading-relaxed text-muted">{plan.description}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-muted">{plan.description}</p>
       ) : null}
 
       <div className="mt-5">
         {isFree ? (
-          <p className="font-display text-[2.25rem] leading-none font-light tracking-[-0.03em]">
+          <p className="font-display text-figure tabular-nums text-accent">
             {c.free}
           </p>
         ) : price ? (
           <>
             <p className="flex items-baseline gap-2">
-              <span className="font-display text-[2.25rem] leading-none font-light tracking-[-0.03em]">
+              <span className="font-display text-figure tabular-nums text-accent">
                 {formatLei(price.perMonth)}
               </span>
-              <span className="text-[0.9375rem] text-muted">{c.perMonth}</span>
+              <span className="text-body text-muted">{c.perMonth}</span>
             </p>
             {price.months > 1 ? (
-              <p className="mt-2 text-[0.875rem] text-muted">{c.billed(totalLabel(price))}</p>
+              <p className="mt-2 text-sm text-muted">{c.billed(totalLabel(price))}</p>
             ) : null}
             {price.freeMonths !== null ? (
-              <p className="mt-2 inline-flex rounded-pill border border-success/35 bg-success/8 px-2.5 py-1 text-[0.8125rem]">
+              <p className="mt-2 inline-flex rounded-pill border border-success/35 bg-success/8 px-2.5 py-1 text-small">
                 {freeMonthsLabel(price.freeMonths)}
               </p>
             ) : price.saving > 0 ? (
-              <p className="mt-2 text-[0.8125rem] text-muted">{savingLabel(price.saving)}</p>
+              <p className="mt-2 text-small text-muted">{savingLabel(price.saving)}</p>
             ) : null}
             {settings.vatLabel ? (
-              <p className="mt-2 text-[0.75rem] text-muted">{settings.vatLabel}</p>
+              <p className="mt-2 text-xs text-muted">{settings.vatLabel}</p>
             ) : null}
           </>
         ) : (
-          <p className="text-[0.875rem] text-muted">{c.noPeriod}</p>
+          <p className="text-sm text-muted">{c.noPeriod}</p>
         )}
       </div>
 
@@ -117,7 +117,7 @@ export function PlanCard({
       {cardFeatures(plan).length > 0 ? (
         <ul className="mt-5 grid gap-2.5">
           {cardFeatures(plan).map((feature) => (
-            <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
+            <li key={feature.key} className="flex gap-2.5 text-body text-muted">
               {feature.status === 'coming_soon' ? (
                 <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
               ) : (
@@ -152,8 +152,8 @@ function Limits({ plan }: { plan: Plan }) {
     <dl className="mt-5 grid gap-1.5 border-t border-border pt-5">
       {rows.map(([label, value]) => (
         <div key={label} className="flex items-baseline gap-3">
-          <dt className="min-w-0 flex-1 text-[0.8125rem] text-muted">{label}</dt>
-          <dd className="font-mono text-[0.8125rem] tabular-nums">{value.trim()}</dd>
+          <dt className="min-w-0 flex-1 text-small text-muted">{label}</dt>
+          <dd className="font-mono text-small tabular-nums">{value.trim()}</dd>
         </div>
       ))}
     </dl>
@@ -219,7 +219,7 @@ function Action({
       );
 
     case 'notManager':
-      return <p className="text-center text-[0.8125rem] text-muted">{c.cta.notManager}</p>;
+      return <p className="text-center text-small text-muted">{c.cta.notManager}</p>;
   }
 }
 

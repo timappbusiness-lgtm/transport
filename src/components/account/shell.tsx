@@ -65,7 +65,7 @@ export function CompanySwitcher({ context }: { context: AccountContext }) {
 
   return (
     <form action={setActiveCompanyAction} className="flex flex-col gap-1.5">
-      <label htmlFor="company-switcher" className="font-mono text-[0.6875rem] uppercase tracking-[0.15em] text-muted">
+      <label htmlFor="company-switcher" className="font-mono text-label uppercase tracking-[0.15em] text-muted">
         {accountCopy.switcher.label}
       </label>
       <select
@@ -96,7 +96,7 @@ export function CompanySummary({ context }: { context: AccountContext }) {
 
   return (
     <div className="rounded-card border border-border bg-surface p-4">
-      <p className="font-display text-[0.9375rem] font-medium">{companyDisplayName(company)}</p>
+      <p className="font-display text-body font-medium">{companyDisplayName(company)}</p>
       <p className="mt-0.5 font-mono text-xs text-muted">
         CUI {company.cui} · {COMPANY_TYPE_LABELS[company.company_type] ?? company.company_type}
       </p>

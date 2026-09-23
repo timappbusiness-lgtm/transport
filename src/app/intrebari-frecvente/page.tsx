@@ -36,7 +36,7 @@ export default async function Page() {
 
       {groups.map((group) => (
         <section key={group.id} aria-labelledby={group.id} className="mt-12">
-          <h2 id={group.id} className="text-[1.125rem]">
+          <h2 id={group.id} className="text-lg">
             {group.title}
           </h2>
           <FaqAccordion entries={group.entries} className="mt-5 lg:grid-cols-2" />

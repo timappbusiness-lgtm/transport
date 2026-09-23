@@ -48,8 +48,8 @@ const c = ordersCopy.detail;
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
-      <dt className="text-[0.8125rem] text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-[0.875rem]">{children}</dd>
+      <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
@@ -145,7 +145,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
           {capturing ? (
             <Card className="p-5">
-              <h2 className="text-[1.0625rem]">{ordersCopy.capture.title}</h2>
+              <h2 className="text-h3">{ordersCopy.capture.title}</h2>
               <div className="mt-4 max-w-[26rem]">
                 <PhotoCapture
                   orderId={order.id}
@@ -232,7 +232,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <OrderRatingCard orderId={order.id} state={rating} />
 
           <Card className="p-5">
-            <h2 className="text-[1.0625rem]">{c.summary}</h2>
+            <h2 className="text-h3">{c.summary}</h2>
             <dl className="mt-3 flex flex-col">
               <Row label={c.price}>{formatMoney(order.agreed_price, order.currency as never)}</Row>
               {order.payment_term_days !== null ? (
@@ -249,7 +249,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </Card>
 
           <Card className="p-5">
-            <h2 className="text-[1.0625rem]">{c.crew}</h2>
+            <h2 className="text-h3">{c.crew}</h2>
             <dl className="mt-3 flex flex-col">
               <Row label={c.driver}>{order.driver_name ?? c.noCrew}</Row>
               <Row label={c.vehicle}>{order.plate_number ?? c.noCrew}</Row>
@@ -278,7 +278,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
 
           <Card className="p-5">
-            <h2 className="text-[1.0625rem]">{c.parties}</h2>
+            <h2 className="text-h3">{c.parties}</h2>
             <dl className="mt-3 flex flex-col">
               <Row label={c.client}>{order.client_name ?? '—'}</Row>
               <Row label={c.carrier}>

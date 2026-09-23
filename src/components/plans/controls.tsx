@@ -65,7 +65,7 @@ function href(audience: PlanAudience, months: BillingMonths): string {
 function Segmented({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="mb-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+      <p className="mb-2 font-mono text-label uppercase tracking-[0.12em] text-muted">
         {label}
       </p>
       <nav aria-label={label} className="flex flex-wrap gap-1.5">

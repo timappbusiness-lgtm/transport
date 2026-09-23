@@ -17,7 +17,7 @@ import type { Database } from '@/lib/supabase/database.types';
 type DocumentKind = Database['public']['Enums']['document_kind'];
 
 const FIELD_CLASSES =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 /**
  * Uploads straight from the browser into documents/<company_id>/, so the
@@ -126,7 +126,7 @@ export function DocumentUpload({
             required
             accept={ACCEPTED_DOCUMENT_TYPES.join(',')}
             aria-describedby={`${id}-file-hint`}
-            className={`${FIELD_CLASSES} file:mr-3 file:rounded-[4px] file:border-0 file:bg-foreground/10 file:px-2 file:py-1 file:text-sm`}
+            className={`${FIELD_CLASSES} file:mr-3 file:rounded-tight file:border-0 file:bg-foreground/10 file:px-2 file:py-1 file:text-sm`}
           />
           <p id={`${id}-file-hint`} className="text-xs text-muted">
             PDF sau fotografie, cel mult 10 MB.

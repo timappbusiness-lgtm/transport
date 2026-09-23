@@ -79,7 +79,7 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{accountCopy.nav.company}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -147,7 +147,7 @@ export default async function Page() {
 
       {invitations.length > 0 ? (
         <section className="overflow-hidden rounded-card border border-border bg-surface">
-          <h2 className="border-b border-border px-5 py-4 text-[1.0625rem]">{c.pending}</h2>
+          <h2 className="border-b border-border px-5 py-4 text-h3">{c.pending}</h2>
           <ul className="divide-y divide-border">
             {invitations.map((invitation) => (
               <li key={invitation.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
@@ -175,7 +175,7 @@ export default async function Page() {
 
       {canManage ? (
         <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="text-[1.0625rem]">{c.invite}</h2>
+          <h2 className="text-h3">{c.invite}</h2>
           <div className="mt-4">
             <InviteMemberForm />
           </div>

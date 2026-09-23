@@ -32,7 +32,7 @@ export function ReputationBlock({
 
   return (
     <section aria-labelledby="reputatie" className="flex flex-col gap-4">
-      <h2 id="reputatie" className="text-[1.125rem]">
+      <h2 id="reputatie" className="text-lg">
         {c.title}
       </h2>
 
@@ -41,13 +41,13 @@ export function ReputationBlock({
           <p className="text-sm text-muted">{c.none}</p>
         ) : average !== null ? (
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="font-mono text-[2rem] tabular-nums leading-none">{average}</span>
+            <span className="font-mono text-figure tabular-nums text-accent">{average}</span>
             <Stars score={Math.round(rep.ratingAvg ?? 0)} />
             <span className="text-sm text-muted">{c.ratingsCount(rep.ratingCount)}</span>
           </div>
         ) : (
           <div>
-            <p className="text-[1.0625rem]">{c.tooFew}</p>
+            <p className="text-body-lg">{c.tooFew}</p>
             <p className="mt-1 text-sm text-muted">{c.tooFewHint(rep.ratingCount)}</p>
           </div>
         )}
@@ -90,8 +90,8 @@ export function ReputationBlock({
       </Card>
 
       <details className="rounded-card border border-border bg-ground-alt p-4">
-        <summary className="cursor-pointer text-[0.9375rem] font-medium">{c.howTitle}</summary>
-        <ul className="mt-3 flex flex-col gap-2 text-[0.875rem] text-muted">
+        <summary className="cursor-pointer text-body font-medium">{c.howTitle}</summary>
+        <ul className="mt-3 flex flex-col gap-2 text-sm text-muted">
           {c.how.map((line) => (
             <li key={line}>{line}</li>
           ))}
@@ -113,7 +113,7 @@ function SubScores({ rep }: { rep: Reputation }) {
   if (rows.length === 0) return null;
 
   return (
-    <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[0.8125rem] text-muted">
+    <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-small text-muted">
       {rows.map((r) => (
         <li key={r.label}>
           {r.label}: <span className="font-mono tabular-nums">{formatScore(r.value)}</span>
@@ -134,8 +134,8 @@ function Figure({
 }) {
   return (
     <div>
-      <dt className="text-[0.8125rem] text-muted">{label}</dt>
-      <dd className="text-[0.9375rem]">
+      <dt className="text-small text-muted">{label}</dt>
+      <dd className="text-body">
         {value ?? <span className="text-muted">{note ?? '—'}</span>}
         {value !== null && note !== undefined ? (
           <span className="ml-1.5 text-xs text-muted">{note}</span>

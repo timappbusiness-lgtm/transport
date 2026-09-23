@@ -24,7 +24,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
       aria-labelledby="completare"
       className="rounded-card border border-border bg-surface p-5"
     >
-      <h2 id="completare" className="text-[1.0625rem]">
+      <h2 id="completare" className="text-h3">
         {c.title}
       </h2>
 
@@ -42,7 +42,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
         />
       </div>
 
-      <p className="mt-3 max-w-[52ch] text-[0.8125rem] text-muted">{c.lede}</p>
+      <p className="mt-3 max-w-[52ch] text-small text-muted">{c.lede}</p>
 
       {missing.length === 0 ? (
         <p className="mt-4 text-sm">{c.done}</p>
@@ -51,7 +51,7 @@ export function CompletenessCard({ completeness }: { completeness: Completeness 
           <p className="mt-4 text-sm font-medium">{c.missing}</p>
           <ul className="mt-2 flex flex-col gap-1.5">
             {missing.map((item) => (
-              <li key={item.label} className="text-[0.8125rem]">
+              <li key={item.label} className="text-small">
                 <Link
                   href={
                     item.tab === 'identitate'

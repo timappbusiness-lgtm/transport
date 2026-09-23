@@ -51,7 +51,7 @@ export default function Page() {
       ) : null}
 
       <section aria-labelledby="canale" className="mt-8">
-        <h2 id="canale" className="text-[1.125rem]">
+        <h2 id="canale" className="text-lg">
           {c.channels.title}
         </h2>
         <dl className="mt-4 flex flex-col gap-4">
@@ -79,14 +79,14 @@ export default function Page() {
       </section>
 
       <section aria-labelledby="raspuns" className="mt-8 rounded-card border border-border bg-surface p-5">
-        <h2 id="raspuns" className="text-[1.0625rem]">
+        <h2 id="raspuns" className="text-h3">
           {c.response.title}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.response.body}</p>
       </section>
 
       <section aria-labelledby="operator" className="mt-8">
-        <h2 id="operator" className="text-[1.125rem]">
+        <h2 id="operator" className="text-lg">
           {c.operator.title}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.operator.lede}</p>
@@ -99,7 +99,7 @@ export default function Page() {
       </section>
 
       <section aria-labelledby="singur" className="mt-8">
-        <h2 id="singur" className="text-[1.125rem]">
+        <h2 id="singur" className="text-lg">
           {c.selfService.title}
         </h2>
         <ul className="mt-4 flex flex-col gap-3">

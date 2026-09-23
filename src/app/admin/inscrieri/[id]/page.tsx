@@ -87,13 +87,13 @@ export default async function Page({
           </Link>
         </p>
         <EyebrowPill>{onboardingCopy.admin.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 flex flex-wrap items-center gap-2 text-[clamp(1.5rem,4vw,2rem)]">
+        <h1 className="mt-2 flex flex-wrap items-center gap-2 text-h2">
           {row.company_name ?? row.contact_name}
           <StatusBadge tone={row.status === 'revendicat' ? 'success' : 'neutral'}>
             {STATUS_LABELS[row.status]}
           </StatusBadge>
         </h1>
-        <p className="mt-1 text-[0.8125rem] text-muted">
+        <p className="mt-1 text-small text-muted">
           {row.contact_name} · {row.contact_email} · {row.contact_phone}
         </p>
         <p className="mt-0.5 text-xs text-muted">
@@ -109,7 +109,7 @@ export default async function Page({
             href={onboardingRoute(row.id, option)}
             aria-current={option === step ? 'page' : undefined}
             className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+              'rounded-pill border px-3.5 py-1.5 text-small',
               option === step
                 ? 'border-transparent bg-foreground text-ground'
                 : state[option]
@@ -124,7 +124,7 @@ export default async function Page({
           href={onboardingRoute(row.id, 'link')}
           aria-current={step === 'link' ? 'page' : undefined}
           className={cn(
-            'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+            'rounded-pill border px-3.5 py-1.5 text-small',
             step === 'link'
               ? 'border-transparent bg-foreground text-ground'
               : 'border-border-strong text-muted hover:text-foreground',
@@ -140,14 +140,14 @@ export default async function Page({
 
       {step === 'firma' ? (
         <Card className="p-5">
-          <h2 className="text-[1.0625rem]">{c.company.title}</h2>
+          <h2 className="text-h3">{c.company.title}</h2>
           <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.company.lede}</p>
           {row.company_id === null ? (
             <div className="mt-5">
               <CompanyStep onboardingId={row.id} />
             </div>
           ) : (
-            <p className="mt-4 rounded-input border border-success/45 bg-success/8 p-3 text-[0.8125rem]">
+            <p className="mt-4 rounded-input border border-success/45 bg-success/8 p-3 text-small">
               {c.company.done}
             </p>
           )}
@@ -156,9 +156,9 @@ export default async function Page({
 
       {step === 'documente' ? (
         <Card className="p-5">
-          <h2 className="text-[1.0625rem]">{c.documents.title}</h2>
+          <h2 className="text-h3">{c.documents.title}</h2>
           <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.documents.lede}</p>
-          <p className="mt-3 max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-[0.8125rem]">
+          <p className="mt-3 max-w-[66ch] rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
             {c.documents.fourEyes}
           </p>
 
@@ -185,7 +185,7 @@ export default async function Page({
             </ul>
           )}
 
-          <p className="mt-4 text-[0.8125rem] text-muted">
+          <p className="mt-4 text-small text-muted">
             Documentele se încarcă din{' '}
             <Link
               href={`${ROUTES.adminCompanies}?firma=${row.company_id ?? ''}`}
@@ -209,7 +209,7 @@ export default async function Page({
 
       {step === 'vehicule' ? (
         <Card className="p-5">
-          <h2 className="text-[1.0625rem]">{c.vehicles.title}</h2>
+          <h2 className="text-h3">{c.vehicles.title}</h2>
           <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.vehicles.lede}</p>
 
           {contents.vehicles.length === 0 ? (
@@ -219,7 +219,7 @@ export default async function Page({
               {contents.vehicles.map((vehicle) => (
                 <li
                   key={vehicle.id}
-                  className="rounded-pill border border-border px-3 py-1 text-[0.8125rem]"
+                  className="rounded-pill border border-border px-3 py-1 text-small"
                 >
                   {vehicle.plate_number} ·{' '}
                   {VEHICLE_TYPE_LABELS[
@@ -246,7 +246,7 @@ export default async function Page({
 
       {step === 'profil' && row.company_id !== null ? (
         <Card className="p-5">
-          <h2 className="text-[1.0625rem]">{c.profile.title}</h2>
+          <h2 className="text-h3">{c.profile.title}</h2>
           <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.profile.lede}</p>
           <div className="mt-5">
             <ProfileStep
@@ -267,7 +267,7 @@ export default async function Page({
 
       {step === 'link' ? (
         <Card className="p-5">
-          <h2 className="text-[1.0625rem]">{c.finish.title}</h2>
+          <h2 className="text-h3">{c.finish.title}</h2>
           <p className="mt-1 max-w-[66ch] text-sm text-muted">{c.finish.lede}</p>
           <div className="mt-5">
             <ClaimLink

@@ -112,7 +112,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       ) : null}
 
       <section aria-labelledby="oferte" className="flex flex-col gap-4">
-        <h2 id="oferte" className="text-[1.125rem]">
+        <h2 id="oferte" className="text-lg">
           {offersCopy.received.title}
         </h2>
         <ReceivedOffers

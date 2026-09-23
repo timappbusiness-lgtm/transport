@@ -55,7 +55,7 @@ export function ReportRow({ row }: { row: Row }) {
     <li className="rounded-card border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[1.0625rem]">{row.reason}</h3>
+          <h3 className="text-h3">{row.reason}</h3>
           <p className="mt-1 text-xs text-muted">
             {REPORT_KIND_LABELS[row.kind]} · {c.row.opened} {when(row.created_at)}
             {closed ? ` · ${c.row.closed} ${when(row.resolved_at)}` : ''}
@@ -64,7 +64,7 @@ export function ReportRow({ row }: { row: Row }) {
               sesizare fără ecran (o firmă) nu are legătură — se rezolvă
               de aici. */}
           {target !== null ? (
-            <p className="mt-1 text-[0.8125rem]">
+            <p className="mt-1 text-small">
               <Link href={target.href} className="underline underline-offset-4">
                 {target.label}
               </Link>

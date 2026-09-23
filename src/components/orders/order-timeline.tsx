@@ -36,7 +36,7 @@ export function OrderTimeline({
 
   return (
     <section aria-labelledby="istoric" className="rounded-card border border-border bg-surface p-5">
-      <h2 id="istoric" className="text-[1.0625rem]">
+      <h2 id="istoric" className="text-h3">
         <IconLabel as={iconForContent('comanda')} size="md" tone="strong">
           {c.title}
         </IconLabel>
@@ -104,7 +104,7 @@ export function OrderTimeline({
                 </p>
               ) : null}
               {row.note !== null ? (
-                <p className="mt-1 whitespace-pre-line text-[0.8125rem]">{row.note}</p>
+                <p className="mt-1 whitespace-pre-line text-small">{row.note}</p>
               ) : null}
             </div>
           </li>
@@ -112,7 +112,7 @@ export function OrderTimeline({
       </ol>
 
       {autoCompleted ? (
-        <p className="mt-2 text-[0.8125rem] text-muted">{c.autoCompleted}</p>
+        <p className="mt-2 text-small text-muted">{c.autoCompleted}</p>
       ) : null}
 
       {aside.length > 0 ? (
@@ -120,7 +120,7 @@ export function OrderTimeline({
           <h3 className="mt-5 text-sm font-medium">{c.aside}</h3>
           <ul className="mt-2 flex flex-col gap-2">
             {aside.map((event) => (
-              <li key={event.id} className="text-[0.8125rem]">
+              <li key={event.id} className="text-small">
                 <span className="text-muted">{formatMoment(event.created_at)} · </span>
                 <span>
                   {event.actor_name ?? sideLabel(event.actor_side)}

@@ -43,7 +43,7 @@ import type { FieldErrors } from '@/lib/validation/auth';
 
 const EMPTY: PublishRequestState = {};
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 export interface RequestFormProps {
   /** The prefilled draft, from the price calculator or empty. */
@@ -285,7 +285,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
       {step === 'ruta' ? (
         <fieldset className="flex flex-col gap-4">
-          <legend className="mb-2 text-[1.0625rem]">{c.route.title}</legend>
+          <legend className="mb-2 text-body-lg">{c.route.title}</legend>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Labelled
@@ -394,7 +394,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
       {step === 'vehicul' ? (
         <fieldset className="flex flex-col gap-4">
-          <legend className="mb-2 text-[1.0625rem]">{c.vehicle.title}</legend>
+          <legend className="mb-2 text-body-lg">{c.vehicle.title}</legend>
 
           <ImportPanel
             onExtracted={onExtracted}
@@ -454,7 +454,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               ranked first, and that the person is told the option
               exists before they find out from an offer. */}
           {suggestsClosedTransport(draft.category) ? (
-            <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-[0.8125rem] text-muted">
+            <p className="rounded-card border border-border bg-ground-alt px-4 py-3 text-small text-muted">
               {c.vehicle.closedSuggestion}
             </p>
           ) : null}
@@ -541,7 +541,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
       {step === 'stare' ? (
         <fieldset className="flex flex-col gap-4">
-          <legend className="mb-1 text-[1.0625rem]">{c.condition.title}</legend>
+          <legend className="mb-1 text-body-lg">{c.condition.title}</legend>
           <p className="max-w-[54ch] text-sm text-muted">{c.condition.lede}</p>
 
           <div className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
@@ -624,7 +624,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
 
       {step === 'contact' ? (
         <fieldset className="flex flex-col gap-4">
-          <legend className="mb-1 text-[1.0625rem]">{c.contact.title}</legend>
+          <legend className="mb-1 text-body-lg">{c.contact.title}</legend>
           <p className="max-w-[54ch] text-sm text-muted">{c.contact.lede}</p>
 
           {/* Last step, on purpose: by here the route and the dates are
@@ -658,7 +658,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
               vedea rândul, în RLS. */}
           <fieldset className="flex flex-col gap-2">
             <legend className="text-sm font-medium">{requestsCopy.visibility.label}</legend>
-            <label className="flex items-start gap-2.5 text-[0.8125rem]">
+            <label className="flex items-start gap-2.5 text-small">
               <input
                 type="radio"
                 name="visibility"
@@ -671,7 +671,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                 <span className="block text-muted">{requestsCopy.visibility.publicHint}</span>
               </span>
             </label>
-            <label className="flex items-start gap-2.5 text-[0.8125rem]">
+            <label className="flex items-start gap-2.5 text-small">
               <input
                 type="radio"
                 name="visibility"
@@ -800,7 +800,7 @@ function Steps({
               disabled={!done && !active}
               aria-current={active ? 'step' : undefined}
               className={cn(
-                'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+                'rounded-pill border px-3.5 py-1.5 text-small',
                 active
                   ? 'border-foreground bg-foreground text-white'
                   : done
@@ -822,7 +822,7 @@ function AccountPanel({ returnTo }: { returnTo: string }) {
   const next = `?next=${encodeURIComponent(returnTo)}`;
   return (
     <section className="rounded-card border border-border-strong bg-ground-alt p-5">
-      <h2 className="text-[1.0625rem]">{c.title}</h2>
+      <h2 className="text-h3">{c.title}</h2>
       <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
       <div className="mt-4 flex flex-wrap gap-3">
         <Link
@@ -849,7 +849,7 @@ function Result({ state }: { state: PublishRequestState }) {
   const published = state.status === 'active';
   return (
     <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-[1.25rem]">{published ? c.published : c.title}</h2>
+      <h2 className="text-xl">{published ? c.published : c.title}</h2>
       {published ? (
         <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.publishedBody}</p>
       ) : (

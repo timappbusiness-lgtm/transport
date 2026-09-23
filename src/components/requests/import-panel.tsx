@@ -106,7 +106,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
   return (
     <div className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
       <div>
-        <p className="text-[0.9375rem] font-medium">{c.title}</p>
+        <p className="text-body font-medium">{c.title}</p>
         <p className="mt-1 max-w-[56ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -148,7 +148,7 @@ export function ImportPanel({ onExtracted, onImageFound, signedIn }: ImportPanel
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               placeholder={c.link.placeholder}
-              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+              className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
             />
             <button
               type="button"
@@ -222,7 +222,7 @@ export function AutoChip() {
       title={importCopy.autoChipTitle}
       // The design has no brand accent on purpose, so the chip is made of
       // weight and a border rather than a colour nothing else uses.
-      className="ml-2 rounded-full border border-warning/45 bg-warning/10 px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-wide text-foreground"
+      className="ml-2 rounded-full border border-warning/45 bg-warning/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-foreground"
     >
       {importCopy.autoChip}
     </span>

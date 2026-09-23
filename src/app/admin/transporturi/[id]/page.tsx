@@ -24,8 +24,8 @@ const c = ordersCopy.detail;
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
-      <dt className="text-[0.8125rem] text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-[0.875rem]">{children}</dd>
+      <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
@@ -67,7 +67,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </Link>
         </p>
         <EyebrowPill>{ordersCopy.admin.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 flex flex-wrap items-center gap-3 text-[clamp(1.375rem,4vw,1.875rem)]">
+        <h1 className="mt-2 flex flex-wrap items-center gap-3 text-h2">
           {order.from_city ?? '—'} → {order.to_city ?? '—'}
           <StatusBadge tone={order.status === 'disputed' ? 'warning' : 'neutral'}>
             {orderStatusLabel(order.status)}
@@ -84,7 +84,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       {order.status === 'disputed' ? (
         <>
           <section className="rounded-card border border-warning/45 bg-warning/8 p-5">
-            <h2 className="text-[1.0625rem]">{ordersCopy.dispute.openTitle}</h2>
+            <h2 className="text-h3">{ordersCopy.dispute.openTitle}</h2>
             <p className="mt-1 text-xs text-muted">
               {ordersCopy.dispute.openedAt} {formatMoment(order.disputed_at)} ·{' '}
               {order.dispute_category}
@@ -97,7 +97,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       {order.dispute_resolution !== null ? (
         <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="text-[1.0625rem]">{ordersCopy.dispute.decision}</h2>
+          <h2 className="text-h3">{ordersCopy.dispute.decision}</h2>
           <p className="mt-1 text-xs text-muted">
             {ordersCopy.dispute.resolvedAt} {formatMoment(order.dispute_resolved_at)}
           </p>
@@ -141,7 +141,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
         <aside className="flex flex-col gap-4">
           <section className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-[1.0625rem]">{c.summary}</h2>
+            <h2 className="text-h3">{c.summary}</h2>
             <dl className="mt-3 flex flex-col">
               <Row label={c.price}>{formatMoney(order.agreed_price, order.currency as never)}</Row>
               <Row label={c.pickupWindow}>{formatWindow(order.pickup_from, order.pickup_to)}</Row>

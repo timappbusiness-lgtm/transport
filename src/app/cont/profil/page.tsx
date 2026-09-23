@@ -20,7 +20,7 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>Cont</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{accountCopy.profile.title}</h1>
+        <h1 className="mt-2 text-h2">{accountCopy.profile.title}</h1>
       </div>
 
       <NameForm fullName={context.profile?.full_name ?? ''} />

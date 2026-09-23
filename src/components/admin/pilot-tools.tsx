@@ -33,7 +33,7 @@ function VerifyPhone() {
   return (
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <div>
-        <h3 className="text-[0.9375rem]">Confirmă un număr de telefon</h3>
+        <h3 className="text-body">Confirmă un număr de telefon</h3>
         <p className="mt-1 max-w-[58ch] text-sm text-muted">
           Singura cale, cât timp nu avem furnizor de SMS. Fără număr confirmat, o persoană fizică
           poate publica, dar nu poate deschide datele de contact ale unui transportator.
@@ -71,7 +71,7 @@ function MarkTest() {
   return (
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
       <div>
-        <h3 className="text-[0.9375rem]">Marchează un cont ca al nostru</h3>
+        <h3 className="text-body">Marchează un cont ca al nostru</h3>
         <p className="mt-1 max-w-[58ch] text-sm text-muted">
           Iese din panourile publice, din lista de firme, din numerele de pe prima pagină și din
           toate cifrele de pe pagina asta.

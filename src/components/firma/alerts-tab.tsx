@@ -35,7 +35,7 @@ export function AlertsTab({ company }: { company: Company }) {
   return (
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
-        <h2 className="text-[1.0625rem]">{c.title}</h2>
+        <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -73,7 +73,7 @@ export function AlertsTab({ company }: { company: Company }) {
         <p className="text-sm font-medium">{c.whatMatches}</p>
         <ul className="mt-2 flex flex-col gap-1.5">
           {c.rules.map((rule) => (
-            <li key={rule} className="text-[0.8125rem] text-muted">
+            <li key={rule} className="text-small text-muted">
               {rule}
             </li>
           ))}

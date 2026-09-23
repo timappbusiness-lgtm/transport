@@ -80,7 +80,7 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
           aria-label={c.publishMenu}
           className={cn(
             'absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border',
-            'bg-surface shadow-[0_24px_48px_-24px_rgba(28,38,43,.4)]',
+            'bg-surface shadow-float',
           )}
         >
           {actions.map((action) => (

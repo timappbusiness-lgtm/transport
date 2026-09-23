@@ -116,7 +116,7 @@ export default async function Page() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <EyebrowPill>{c.eyebrow}</EyebrowPill>
-          <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+          <h1 className="mt-2 text-h2">{c.title}</h1>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.lede}</p>
         </div>
         <Link href={ROUTES.accountDepartureNew} className={buttonClasses('primary', 'sm')}>
@@ -150,7 +150,7 @@ export default async function Page() {
 
       <section className="flex flex-col gap-3">
         <div>
-          <h2 className="text-[1.0625rem]">{departuresCopy.series.title}</h2>
+          <h2 className="text-h3">{departuresCopy.series.title}</h2>
           <p className="mt-1 max-w-[64ch] text-sm text-muted">{departuresCopy.series.lede}</p>
           <p className="mt-2">
             <HelpLink topic="series" />
@@ -159,7 +159,7 @@ export default async function Page() {
 
         {series.length === 0 ? (
           <div className="rounded-card border border-dashed border-border-strong bg-surface p-5">
-            <p className="text-[0.9375rem]">{departuresCopy.series.empty}</p>
+            <p className="text-body">{departuresCopy.series.empty}</p>
             <p className="mt-1 max-w-[54ch] text-sm text-muted">
               {departuresCopy.series.emptyBody}
             </p>

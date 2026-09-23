@@ -41,11 +41,11 @@ export function StarInput({
 }) {
   const [value, setValue] = useState<number | null>(defaultValue);
   const id = useId();
-  const star = size === 'lg' ? 'text-[2rem]' : 'text-[1.25rem]';
+  const star = size === 'lg' ? 'text-figure' : 'text-xl';
 
   return (
     <fieldset className="border-0 p-0" aria-describedby={hint ? `${id}-hint` : undefined}>
-      <legend className="text-[0.9375rem] font-medium">
+      <legend className="text-body font-medium">
         {label}
         {required ? <span aria-hidden="true"> *</span> : null}
       </legend>
@@ -87,14 +87,14 @@ export function StarInput({
         })}
 
         <span
-          className="ml-2 min-w-[7rem] text-[0.8125rem] text-muted"
+          className="ml-2 min-w-[7rem] text-small text-muted"
           aria-live="polite"
         >
           {value === null ? '' : SCORE_LABELS[value]}
         </span>
       </div>
 
-      {error ? <p className="mt-1 text-[0.8125rem] text-danger">{error}</p> : null}
+      {error ? <p className="mt-1 text-small text-danger">{error}</p> : null}
     </fieldset>
   );
 }
@@ -107,7 +107,7 @@ export function Stars({ score, className }: { score: number; className?: string 
         {'★'.repeat(score)}
         <span className="text-border-strong">{'☆'.repeat(5 - score)}</span>
       </span>
-      <span className="text-[0.8125rem] text-muted">{scoreLabel(score)}</span>
+      <span className="text-small text-muted">{scoreLabel(score)}</span>
     </span>
   );
 }

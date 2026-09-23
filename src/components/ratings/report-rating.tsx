@@ -28,7 +28,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-2 text-[0.75rem] text-muted underline underline-offset-4 hover:text-foreground"
+        className="mt-2 text-xs text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.action}
       </button>
@@ -39,7 +39,7 @@ export function ReportRating({ ratingId }: { ratingId: string }) {
     <form action={action} className="mt-2 flex flex-col gap-2 rounded-input border border-border-strong bg-ground-alt p-3">
       <input type="hidden" name="rating_id" value={ratingId} />
 
-      <label htmlFor={`${id}-reason`} className="text-[0.8125rem] font-medium">
+      <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {c.title}
       </label>
       <p className="text-xs text-muted">{c.hint}</p>

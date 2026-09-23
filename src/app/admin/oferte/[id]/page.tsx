@@ -16,8 +16,8 @@ const c = offersCopy.admin.detail;
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-border py-2.5 last:border-b-0 sm:flex-row sm:items-baseline sm:gap-3">
-      <dt className="text-[0.8125rem] text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
-      <dd className="min-w-0 text-[0.875rem]">{children}</dd>
+      <dt className="text-small text-muted sm:w-[12rem] sm:flex-none">{label}</dt>
+      <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
 }
@@ -49,7 +49,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </Link>
         </p>
         <EyebrowPill>{offersCopy.admin.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 flex flex-wrap items-center gap-3 text-[clamp(1.375rem,4vw,1.875rem)]">
+        <h1 className="mt-2 flex flex-wrap items-center gap-3 text-h2">
           {formatMoney(offer.price_amount, offer.currency)}
           <StatusBadge tone={offer.status === 'accepted' ? 'success' : 'neutral'}>
             {OFFER_STATUS_LABELS[offer.status]}
@@ -59,7 +59,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </div>
 
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-[1.0625rem]">{c.terms}</h2>
+        <h2 className="text-h3">{c.terms}</h2>
         <dl className="mt-4 flex flex-col">
           <Row label={c.sentAt}>{new Date(offer.created_at).toLocaleString('ro-RO')}</Row>
           <Row label={c.validUntil}>
@@ -100,7 +100,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </section>
 
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-[1.0625rem]">{c.parties}</h2>
+        <h2 className="text-h3">{c.parties}</h2>
         <dl className="mt-4 flex flex-col">
           <Row label={c.carrier}>
             {offer.company_name ?? offersCopy.admin.list.individual}
@@ -161,14 +161,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </section>
 
       <section className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-[1.0625rem]">{c.thread}</h2>
+        <h2 className="text-h3">{c.thread}</h2>
         {thread.length === 0 ? (
           <p className="mt-3 text-sm text-muted">{c.threadEmpty}</p>
         ) : (
           <ul className="mt-4 flex flex-col gap-4">
             {thread.map((message) => (
               <li key={message.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
-                <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[0.8125rem]">
+                <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-small">
                   <span className="font-medium">{message.sender_name}</span>
                   <span className="text-muted">
                     {new Date(message.created_at).toLocaleString('ro-RO')}

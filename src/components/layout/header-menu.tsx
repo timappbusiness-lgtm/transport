@@ -60,9 +60,9 @@ export interface HeaderUser {
 // `whitespace-nowrap` is load-bearing: without it a label wraps to two or
 // three lines on a phone and the pill grows taller than the bar it sits in.
 const PILL_SOLID =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-[0.8125rem] font-medium text-foreground transition-[background-color] duration-150 hover:bg-[#eef1f2] sm:px-4';
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-small font-medium text-foreground transition-[background-color] duration-150 hover:bg-[#eef1f2] sm:px-4';
 const PILL_QUIET =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-[0.8125rem] text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-small text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
 
 /** Where the account area begins. Inside it, the brand leads to /cont. */
 function insideAccount(pathname: string): boolean {
@@ -286,7 +286,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
               >
                 <span
                   aria-hidden="true"
-                  className="flex size-5 flex-none items-center justify-center rounded-full bg-white text-[0.625rem] font-medium text-foreground"
+                  className="flex size-5 flex-none items-center justify-center rounded-full bg-white text-xs font-medium text-foreground"
                 >
                   {user.name.slice(0, 1).toUpperCase()}
                 </span>
@@ -321,7 +321,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                 role="menu"
                 aria-label={accountCopy.nav.menu}
                 onKeyDown={onMenuKeyDown}
-                className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-[0_24px_48px_-24px_rgba(28,38,43,.5)]"
+                className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-float"
               >
                 {user.items.map((item) => {
                   const current = pathname === item.href;
@@ -344,7 +344,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                         <span className="truncate">{item.label}</span>
                       </span>
                       {item.badge > 0 ? (
-                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-[0.625rem] leading-none text-surface">
+                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-label leading-none text-surface">
                           {badgeLabel(item.badge)}
                           <span className="sr-only"> {accountCopy.nav.waiting}</span>
                         </span>

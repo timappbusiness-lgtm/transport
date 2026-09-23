@@ -55,7 +55,7 @@ export function RequestActions({ id, status }: { id: string; status: 'new' | 'co
           type="text"
           maxLength={200}
           placeholder={c.reasonPlaceholder}
-          className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.8125rem]"
+          className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-small"
         />
         <button type="submit" className={buttonClasses('secondary', 'sm')}>
           {c.reject}

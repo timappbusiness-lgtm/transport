@@ -23,7 +23,7 @@ export function RatingsWidget({ pending }: { pending: readonly PendingRating[] }
 
   return (
     <section aria-labelledby="evaluari-widget">
-      <h2 id="evaluari-widget" className="text-[1.0625rem]">
+      <h2 id="evaluari-widget" className="text-h3">
         {c.title}
       </h2>
 

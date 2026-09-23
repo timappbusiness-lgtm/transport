@@ -76,7 +76,7 @@ export function CarriersBody({
           <SectionHead eyebrow={c.eyebrow} icon={iconForContent('comanda')} strong={c.strong} soft={c.soft}>
             <Lede>{c.lede}</Lede>
             {showCount ? (
-              <p className="mt-4 text-[0.9375rem] text-muted">
+              <p className="mt-4 text-body text-muted">
                 {c.verifiedLine(formatCompanies(stats.verifiedCompanies))}
               </p>
             ) : null}
@@ -84,20 +84,20 @@ export function CarriersBody({
 
           {plan ? (
             <Card className="min-w-0 p-6">
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+              <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
                 {plan.name}
               </p>
               <p className="mt-3 flex items-baseline gap-2">
-                <span className="font-display text-[2.5rem] leading-none font-light tracking-[-0.03em]">
+                <span className="font-display text-figure-lg tabular-nums text-accent">
                   {formatLei(plan.monthlyPrice)}
                 </span>
-                <span className="text-[0.9375rem] text-muted">{c.period}</span>
+                <span className="text-body text-muted">{c.period}</span>
               </p>
 
               {cardFeatures(plan).length > 0 ? (
                 <ul className="mt-6 grid gap-2.5">
                   {cardFeatures(plan).map((feature) => (
-                    <li key={feature.key} className="flex gap-2.5 text-[0.9375rem] text-muted">
+                    <li key={feature.key} className="flex gap-2.5 text-body text-muted">
                       {feature.status === 'coming_soon' ? (
                         <Icon as={uiIcon('pending')} size="md" className="mt-0.5 text-muted" />
                       ) : (
@@ -126,12 +126,12 @@ export function CarriersBody({
               >
                 {c.secondary}
               </Link>
-              <p className="mt-3 text-center text-[0.8125rem] text-muted">
+              <p className="mt-3 text-center text-small text-muted">
                 {settings.trialDays > 0
                   ? c.trial(pluralRo(settings.trialDays, 'zi', 'zile'))
                   : c.noTrial}
               </p>
-              <p className="mt-3 text-center text-[0.8125rem]">
+              <p className="mt-3 text-center text-small">
                 <Link
                   href={ROUTES.plans}
                   className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
@@ -145,7 +145,7 @@ export function CarriersBody({
 
         {showGrid ? (
           <div className="mt-14">
-            <p className="text-[0.9375rem] text-muted">{c.gridNote}</p>
+            <p className="text-body text-muted">{c.gridNote}</p>
             <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {companies.map((company) => (
                 <li key={company.slug} className="min-w-0">

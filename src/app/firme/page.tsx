@@ -100,7 +100,7 @@ export default async function Page({
 function EmptyState({ filtered }: { filtered: boolean }) {
   return (
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-[1.125rem]">{filtered ? c.emptyFiltered : c.empty}</h2>
+      <h2 className="text-lg">{filtered ? c.emptyFiltered : c.empty}</h2>
       <div className="mt-5 flex flex-wrap gap-3">
         {filtered ? (
           <Link href={ROUTES.companies} className={buttonClasses('secondary', 'md')}>

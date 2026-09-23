@@ -49,15 +49,15 @@ export function ReturnLeg({
 
   return (
     <Card className="p-4">
-      <h2 className="text-[1rem]">{c.title}</h2>
+      <h2 className="text-base">{c.title}</h2>
       <p className="mt-1 max-w-[60ch] text-sm text-muted">{c.lede}</p>
 
-      <p className="mt-3 text-[0.8125rem] text-muted">
+      <p className="mt-3 text-small text-muted">
         {prefill.fromCity} → {prefill.toCity} · {prefill.availableFrom}
       </p>
 
       {vehicleId === null ? (
-        <p className="mt-3 text-[0.8125rem] text-warning">{c.noVehicle}</p>
+        <p className="mt-3 text-small text-warning">{c.noVehicle}</p>
       ) : (
         <Link
           href={`${ROUTES.accountDepartureNew}?${returnQuery(prefill)}`}

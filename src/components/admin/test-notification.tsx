@@ -23,7 +23,7 @@ export function TestNotification() {
   return (
     <form action={action} className="flex flex-col gap-3 rounded-card border border-border bg-ground-alt p-4">
       <div>
-        <h3 className="text-[0.9375rem]">Trimite un e-mail de test</h3>
+        <h3 className="text-body">Trimite un e-mail de test</h3>
         <p className="mt-1 max-w-[62ch] text-sm text-muted">
           Pune la coadă un șablon cu date de exemplu. Pleacă pe același drum ca o notificare
           adevărată, deci dacă ajunge, ajung și celelalte.

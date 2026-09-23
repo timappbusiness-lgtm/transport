@@ -38,7 +38,7 @@ export function PhoneVerification({
           <Icon as={uiIcon('check')} size="md" />
         </span>
         <div>
-          <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>
+          <p className="font-display text-body font-medium">{c.title}</p>
           <p className="mt-1 text-sm text-muted">{c.bodyDone}</p>
         </div>
       </section>
@@ -52,9 +52,9 @@ export function PhoneVerification({
           <Icon as={uiIcon('phone')} size="md" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-[0.9375rem] font-medium">{c.title}</p>
+          <p className="font-display text-body font-medium">{c.title}</p>
           <p className="mt-1 text-sm text-muted">{c.body}</p>
-          <p className="mt-1 font-mono text-[0.6875rem] text-muted">{c.why}</p>
+          <p className="mt-1 font-mono text-label text-muted">{c.why}</p>
         </div>
       </div>
 

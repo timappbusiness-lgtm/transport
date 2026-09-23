@@ -14,7 +14,7 @@ import type { DeletionRequest } from '@/lib/account-deletion-source';
 const c = personalDataCopy.deletion;
 const EMPTY: PersonalDataState = {};
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 function onDate(value: string | null): string {
   if (value === null) return '';
@@ -74,7 +74,7 @@ export function DeletionPanel({
       aria-labelledby={`${id}-title`}
       className="rounded-card border border-border bg-surface p-5 sm:p-6"
     >
-      <h2 id={`${id}-title`} className="text-[1.0625rem]">
+      <h2 id={`${id}-title`} className="text-h3">
         {kind === 'company' ? `${c.companyTitle}: ${confirmWith}` : c.title}
       </h2>
       <p className="mt-2 max-w-[62ch] text-sm text-muted">

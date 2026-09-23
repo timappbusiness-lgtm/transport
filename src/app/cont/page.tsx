@@ -146,7 +146,7 @@ function NoCompany({ context }: { context: AccountContext }) {
     const c = accountCopy.needsCompany;
     return (
       <Card className="p-6">
-        <h2 className="text-[1.125rem]">{c.title}</h2>
+        <h2 className="text-lg">{c.title}</h2>
         <p className="mt-2 max-w-[52ch] text-sm text-muted">{c.lede}</p>
         <Link
           href={ROUTES.accountCompanyCreate}
@@ -177,7 +177,7 @@ async function IndividualHome({ context }: { context: AccountContext }) {
           between a request on the board and one waiting as a draft. */}
       {!verified ? (
         <Card className="p-5">
-          <h2 className="text-[1rem]">{c.verifyPhone.title}</h2>
+          <h2 className="text-base">{c.verifyPhone.title}</h2>
           <p className="mt-1.5 max-w-[52ch] text-sm text-muted">{c.verifyPhone.body}</p>
           <div className="mt-4">
             <PhoneVerification phone={context.profile?.phone ?? ''} verified={verified} />
@@ -191,7 +191,7 @@ async function IndividualHome({ context }: { context: AccountContext }) {
       <RequestsPanel requests={requests} />
 
       <Card className="p-5">
-        <h2 className="text-[1rem]">{c.routes.title}</h2>
+        <h2 className="text-base">{c.routes.title}</h2>
         <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.routes.body}</p>
         <Link href={ROUTES.routes} className={`${buttonClasses('secondary', 'md')} mt-4`}>
           {c.routes.action}
@@ -229,7 +229,7 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
   if (requests.length === 0) {
     return (
       <Card className="p-5">
-        <h2 className="text-[1rem]">{c.noRequests.title}</h2>
+        <h2 className="text-base">{c.noRequests.title}</h2>
         <p className="mt-1.5 max-w-[56ch] text-sm text-muted">{c.noRequests.body}</p>
         <Link href={ROUTES.newRequest} className={`${buttonClasses('primary', 'md')} mt-4`}>
           {c.noRequests.action}
@@ -241,7 +241,7 @@ function RequestsPanel({ requests }: { requests: MyRequest[] }) {
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-[1rem]">{c.requests.title}</h2>
+        <h2 className="text-base">{c.requests.title}</h2>
         <Link
           href={ROUTES.accountRequests}
           className="text-sm text-muted underline-offset-4 hover:underline"
@@ -280,7 +280,7 @@ function DriverHome() {
   const c = appCopy.driver;
   return (
     <Card className="p-5">
-      <h2 className="text-[1rem]">{c.title}</h2>
+      <h2 className="text-base">{c.title}</h2>
       <p className="mt-1.5 max-w-[60ch] text-sm leading-relaxed text-muted">{c.body}</p>
     </Card>
   );

@@ -43,7 +43,7 @@ function Banner({
     <div className={cn('flex flex-col gap-3 rounded-card border p-4 sm:flex-row sm:items-start', TONE[tone])}>
       {glyph ? <Icon as={glyph} size="md" className={cn('mt-0.5', ICON_TONE[tone])} /> : null}
       <div className="min-w-0 flex-1">
-        <p className="font-display text-[0.9375rem] font-medium">{title}</p>
+        <p className="font-display text-body font-medium">{title}</p>
         <div className="mt-1 text-sm text-muted">{body}</div>
       </div>
       {action ? (

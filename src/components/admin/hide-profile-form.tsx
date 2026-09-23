@@ -31,7 +31,7 @@ export function HideProfileForm({ companyId }: { companyId: string }) {
         required
         maxLength={200}
         placeholder={c.reasonPlaceholder}
-        className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.875rem]"
+        className="w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm"
       />
       <button type="submit" className={buttonClasses('secondary', 'sm')}>
         {c.hide}

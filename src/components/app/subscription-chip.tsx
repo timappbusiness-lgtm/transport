@@ -39,7 +39,7 @@ export function SubscriptionChip({
       href={ROUTES.accountSubscription}
       className={cn(
         'inline-flex w-fit items-center gap-2 rounded-pill border px-3 py-1',
-        'font-mono text-[0.6875rem] tracking-[0.02em]',
+        'font-mono text-label tracking-[0.02em]',
         trial && subscription.daysLeft <= 7
           ? 'border-warning/45 bg-warning/10 text-foreground'
           : 'border-border text-muted hover:text-foreground',

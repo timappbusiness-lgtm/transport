@@ -70,14 +70,14 @@ export function StatsBandBody({
             // flex-col-reverse so the value reads above the label while the
             // DOM keeps dt before dd, which is what a definition list is.
             <div key={figure.label} className="flex flex-col-reverse justify-end gap-1">
-              <dt className="text-[0.9375rem] text-muted">{figure.label}</dt>
-              <dd className="font-display text-[2.25rem] leading-none font-light tracking-[-0.03em] tabular-nums">
+              <dt className="text-body text-muted">{figure.label}</dt>
+              <dd className="font-display text-figure tabular-nums text-accent">
                 {formatNumber(figure.value)}
               </dd>
             </div>
           ))}
         </dl>
-        <p className="mt-8 font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-muted">
+        <p className="mt-8 font-mono text-label uppercase tracking-[0.12em] text-muted">
           {c.note}
         </p>
       </Container>

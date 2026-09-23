@@ -62,7 +62,7 @@ export function StartConversation({
       ) : null}
       {routeId !== undefined ? <input type="hidden" name="route_id" value={routeId} /> : null}
 
-      <p className="max-w-[46ch] text-[0.8125rem] text-muted">
+      <p className="max-w-[46ch] text-small text-muted">
         {alreadyOpen === true ? c.gateFree : c.gate}
       </p>
 

@@ -37,7 +37,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
   if (preview === null) {
     return (
       <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-4 px-4 py-16">
-        <h1 className="text-[clamp(1.375rem,4vw,1.75rem)]">{c.invalid}</h1>
+        <h1 className="text-h2">{c.invalid}</h1>
         <p className="text-sm text-muted">{c.invalidBody}</p>
         <p className="text-sm">
           <Link href={ROUTES.contact} className="underline underline-offset-4">
@@ -52,7 +52,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
     <main className="mx-auto flex w-full max-w-[34rem] flex-col gap-6 px-4 py-12">
       <div>
         <EyebrowPill>{BRAND_NAME}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.375rem,4vw,1.75rem)]">
+        <h1 className="mt-2 text-h2">
           {c.title(preview.company_name)}
         </h1>
         <p className="mt-2 text-sm text-muted">{c.lede}</p>
@@ -60,7 +60,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
 
       <Card className="p-4">
         <h2 className="text-sm font-medium">{c.filled}</h2>
-        <ul className="mt-2 flex flex-col gap-1 text-[0.8125rem] text-muted">
+        <ul className="mt-2 flex flex-col gap-1 text-small text-muted">
           <li>· {c.nothingYet}</li>
           {preview.documents_count > 0 ? <li>· {c.documents(preview.documents_count)}</li> : null}
           {preview.vehicles_count > 0 ? <li>· {c.vehicles(preview.vehicles_count)}</li> : null}
@@ -76,7 +76,7 @@ export default async function Page({ params }: { params: Promise<{ token: string
 
       <Card className="p-4">
         <h2 className="text-sm font-medium">{c.notYou}</h2>
-        <p className="mt-1 text-[0.8125rem] text-muted">{c.notYouBody}</p>
+        <p className="mt-1 text-small text-muted">{c.notYouBody}</p>
       </Card>
     </main>
   );

@@ -21,8 +21,8 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>Setări</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-[0.9375rem] text-muted">{c.lede}</p>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
         <InstallButton className="mt-4" />
       </div>
 
@@ -32,7 +32,7 @@ export default async function Page() {
         aria-labelledby="canale"
         className="rounded-card border border-border bg-surface px-5 py-2"
       >
-        <h2 id="canale" className="pt-4 text-[1.0625rem]">
+        <h2 id="canale" className="pt-4 text-h3">
           {c.channels.title}
         </h2>
         <ul className="divide-y divide-border">

@@ -38,7 +38,7 @@ export function DepartureCard({ departure }: { departure: PublicDeparture }) {
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.9375rem] font-medium">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body font-medium">
               <span className="inline-flex items-center gap-1.5">
                 <CountryTag cc={departure.from_country} />
                 {departure.from_city}
@@ -96,7 +96,7 @@ export function DepartureCard({ departure }: { departure: PublicDeparture }) {
           {departure.service_types.map((service) => (
             <span
               key={service}
-              className="rounded-pill border border-border px-2.5 py-1 font-mono text-[0.6875rem] tracking-[0.04em] text-muted"
+              className="rounded-pill border border-border px-2.5 py-1 font-mono text-label tracking-[0.04em] text-muted"
             >
               {SERVICE_TYPE_LABELS[service]}
             </span>
@@ -104,7 +104,7 @@ export function DepartureCard({ departure }: { departure: PublicDeparture }) {
           {departure.accepted_vehicle_types.map((category) => (
             <span
               key={category}
-              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-[0.6875rem] text-muted"
+              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-xs text-muted"
             >
               {CARGO_CATEGORY_LABELS[category]}
             </span>

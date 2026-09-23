@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: ReviewState = {};
 const c = adminReviewCopy;
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.875rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-sm';
 
 /**
  * Approving or rejecting one document.
@@ -46,7 +46,7 @@ export function DocumentReview({
         <input type="hidden" name="document_id" value={documentId} />
         <input type="hidden" name="decision" value="reject" />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-reason`} className="text-[0.8125rem] font-medium">
+          <label htmlFor={`${id}-reason`} className="text-small font-medium">
             {c.documents.rejectReason}
           </label>
           <textarea id={`${id}-reason`} name="reason" rows={2} className={cn(CONTROL, 'resize-y')} />
@@ -79,7 +79,7 @@ export function DocumentReview({
 
       {hasExpiry ? (
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-until`} className="text-[0.8125rem] font-medium">
+          <label htmlFor={`${id}-until`} className="text-small font-medium">
             {c.documents.validUntil}
           </label>
           <input
@@ -133,7 +133,7 @@ export function CompanyReview({ companyId }: { companyId: string }) {
         <input type="hidden" name="company_id" value={companyId} />
         <input type="hidden" name="decision" value="reject" />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-reason`} className="text-[0.8125rem] font-medium">
+          <label htmlFor={`${id}-reason`} className="text-small font-medium">
             {c.companies.rejectReason}
           </label>
           <textarea id={`${id}-reason`} name="reason" rows={2} className={cn(CONTROL, 'resize-y')} />

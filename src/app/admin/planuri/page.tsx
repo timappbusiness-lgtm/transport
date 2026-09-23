@@ -30,7 +30,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.lede}</p>
         <p className="mt-3 text-sm">
           <Link
@@ -55,7 +55,7 @@ export default async function Page() {
       )}
 
       <section aria-labelledby="istoric">
-        <h2 id="istoric" className="text-[1.0625rem]">
+        <h2 id="istoric" className="text-h3">
           {c.history}
         </h2>
         {history.length > 0 ? (
@@ -63,9 +63,9 @@ export default async function Page() {
             {history.map((entry) => (
               <li
                 key={entry.id}
-                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-card border border-border bg-surface px-4 py-2.5 text-[0.8125rem]"
+                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-card border border-border bg-surface px-4 py-2.5 text-small"
               >
-                <span className="font-mono text-[0.75rem] text-muted">{entry.at}</span>
+                <span className="font-mono text-xs text-muted">{entry.at}</span>
                 <span>{entry.action}</span>
                 {entry.reason ? <span className="text-muted">· {entry.reason}</span> : null}
               </li>

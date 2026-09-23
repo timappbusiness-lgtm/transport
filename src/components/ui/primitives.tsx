@@ -21,12 +21,20 @@ export function Headline({
   className?: string | undefined;
 }) {
   return (
-    <Tag className={cn('text-[clamp(1.9rem,4.4vw,3.25rem)]', className)}>
-      <span>{strong}</span>
+    <Tag className={cn('text-h1', className)}>
+      {/* The claim at 600 and the qualifier at 300 in the soft tone: a
+          two-tone headline is a weight contrast first and a colour
+          contrast second. It used to be 300 against 300, so only the
+          colour separated them, and at 3.25rem that read as one long
+          light sentence rather than as a claim and its qualifier.
+
+          The soft half is never the accent. It is the part somebody may
+          skip; the accent marks what they should not. */}
+      <span className="font-semibold">{strong}</span>
       {soft ? (
         <>
           {' '}
-          <span className="text-ink-soft">{soft}</span>
+          <span className="font-light text-ink-soft">{soft}</span>
         </>
       ) : null}
     </Tag>
@@ -47,7 +55,7 @@ export function EyebrowPill({
     <span
       className={cn(
         'inline-flex items-center rounded-pill border px-3 py-1',
-        'font-mono text-[0.6875rem] uppercase tracking-[0.12em]',
+        'font-mono text-label uppercase tracking-[0.12em]',
         tone === 'dark'
           ? 'border-white/35 text-white/85'
           : 'border-border-strong/45 text-muted',
@@ -65,20 +73,34 @@ export function Lede({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn('max-w-[58ch] text-[1.0625rem] leading-relaxed text-muted', className)}
+      className={cn('max-w-[58ch] text-body-lg leading-relaxed text-muted', className)}
       {...props}
     />
   );
 }
 
 export function Card({
+  interactive = false,
   className,
   children,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLDivElement> & {
+  /**
+   * Set on a card that is a link or a button. It gets the hover lift and
+   * the stronger border; a card that only holds text does not, because a
+   * surface that reacts to the pointer and then does nothing is a promise
+   * the interface does not keep.
+   */
+  interactive?: boolean | undefined;
+}) {
   return (
     <div
-      className={cn('rounded-card border border-border bg-surface', className)}
+      className={cn(
+        'rounded-card border border-border bg-surface shadow-card',
+        interactive &&
+          'transition-[border-color,box-shadow] duration-150 hover:border-border-strong hover:shadow-raised',
+        className,
+      )}
       {...props}
     >
       {children}
@@ -160,7 +182,7 @@ export function SectionHead({
 /** Country code plate: DE, RO — the way it reads on a number plate. */
 export function CountryTag({ cc }: { cc: string }) {
   return (
-    <span className="rounded-[4px] border border-border-strong/50 px-1.5 py-0.5 align-[1px] font-mono text-[0.625rem] tracking-[0.06em] text-muted">
+    <span className="rounded-tight border border-border-strong/50 px-1.5 py-0.5 align-[1px] font-mono text-label tracking-[0.06em] text-muted">
       {cc}
     </span>
   );
@@ -193,7 +215,7 @@ export function StatusBadge({
     <span
       className={cn(
         'inline-flex items-center gap-2 rounded-pill border px-2.5 py-1',
-        'font-mono text-[0.6875rem] tracking-[0.04em] text-foreground',
+        'font-mono text-label tracking-[0.04em] text-foreground',
         STATUS[tone].shell,
         className,
       )}
@@ -216,10 +238,56 @@ export function DataRow({
 }) {
   return (
     <div className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0">
-      <span className="min-w-0 flex-1 truncate text-[0.8125rem] text-muted">{label}</span>
-      <span className="font-mono text-[0.8125rem] tabular-nums text-foreground">{value}</span>
+      <span className="min-w-0 flex-1 truncate text-small text-muted">{label}</span>
+      <span className="font-mono text-small tabular-nums text-foreground">{value}</span>
       {trailing}
     </div>
+  );
+}
+
+/**
+ * The one number a card exists to show.
+ *
+ * A price, a count of free seats, a distance, a rating average. This is
+ * the first of the six places the accent is spent — see
+ * `design/README.md` — and it is spent here because the figure is what
+ * somebody came to the card to read, and everything around it is
+ * explanation.
+ *
+ * `tone="plain"` for the cases where the figure is not the point: a
+ * disabled plan, a zero, a number inside an already-coloured banner.
+ * Never `accent` on a legal page or beside a suspension, a dispute or a
+ * deletion — `tests/unit/design-tokens.test.ts` checks that.
+ *
+ * Always tabular: a column of prices that shifts by a digit width is a
+ * column somebody has to re-read.
+ */
+export function Figure({
+  size = 'md',
+  tone = 'accent',
+  as: Tag = 'span',
+  className,
+  children,
+}: {
+  size?: 'lg' | 'md' | 'sm' | undefined;
+  tone?: 'accent' | 'plain' | undefined;
+  as?: 'span' | 'p' | 'dd' | undefined;
+  className?: string | undefined;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tag
+      className={cn(
+        'font-display tabular-nums',
+        size === 'lg' && 'text-figure-lg',
+        size === 'md' && 'text-figure',
+        size === 'sm' && 'text-figure-sm',
+        tone === 'accent' ? 'text-accent' : 'text-foreground',
+        className,
+      )}
+    >
+      {children}
+    </Tag>
   );
 }
 
@@ -229,7 +297,7 @@ export function SampleTag({ className }: { className?: string | undefined }) {
     <span
       className={cn(
         'inline-flex items-center rounded-pill border border-border-strong/45 bg-surface/90 px-2 py-0.5',
-        'font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted',
+        'font-mono text-label uppercase tracking-[0.12em] text-muted',
         className,
       )}
     >

@@ -31,7 +31,7 @@ export async function SiteFooter() {
   const hasLandingPages = (await loadPublishedPages()).length > 0;
 
   return (
-    <footer className="py-10 text-[0.8125rem] text-muted">
+    <footer className="py-10 text-small text-muted">
       <Container className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
         <span>
           {BRAND_NAME} — bursă de transport auto pentru România și Europa.

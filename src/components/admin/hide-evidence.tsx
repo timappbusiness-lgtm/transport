@@ -30,7 +30,7 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-1 text-[0.6875rem] text-muted underline underline-offset-4 hover:text-foreground"
+        className="mt-1 text-xs text-muted underline underline-offset-4 hover:text-foreground"
       >
         {c.hide}
       </button>
@@ -45,7 +45,7 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
       <input type="hidden" name="evidence_id" value={evidenceId} />
       <input type="hidden" name="order_id" value={orderId} />
 
-      <label htmlFor={`${id}-reason`} className="text-[0.6875rem] font-medium">
+      <label htmlFor={`${id}-reason`} className="text-xs font-medium">
         {c.hideReason}
       </label>
       <input
@@ -55,7 +55,7 @@ export function HideEvidence({ evidenceId, orderId }: { evidenceId: string; orde
         maxLength={500}
         className="rounded-input border border-border-strong bg-surface px-2 py-1.5 text-xs"
       />
-      <p className="text-[0.625rem] leading-tight text-muted">{c.hideReasonHint}</p>
+      <p className="text-xs leading-tight text-muted">{c.hideReasonHint}</p>
 
       <div className="flex flex-wrap gap-1.5">
         <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>

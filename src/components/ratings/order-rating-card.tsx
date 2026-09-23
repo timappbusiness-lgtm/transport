@@ -38,7 +38,7 @@ export function OrderRatingCard({
     return (
       <div className="flex flex-col gap-2">
         {deadline !== null && !deadline.passed ? (
-          <p className="text-[0.8125rem] text-muted">
+          <p className="text-small text-muted">
             {c.list.deadline(deadline.at)} — {c.list.deadlineLeft(deadline.left)}
           </p>
         ) : null}
@@ -58,17 +58,17 @@ export function OrderRatingCard({
   if (state.rating_id !== null) {
     return (
       <Card className="p-5">
-        <h2 className="text-[1.0625rem]">{c.form.title}</h2>
+        <h2 className="text-h3">{c.form.title}</h2>
         <div className="mt-3">
           {state.score !== null ? <Stars score={state.score} /> : null}
           {state.comment !== null ? (
-            <p className="mt-2 whitespace-pre-line text-[0.9375rem]">{state.comment}</p>
+            <p className="mt-2 whitespace-pre-line text-body">{state.comment}</p>
           ) : null}
         </div>
         <p className="mt-3 text-xs text-muted">{c.form.notEditable}</p>
         <Link
           href={`${ROUTES.accountRatings}?cutie=date`}
-          className="mt-2 inline-block text-[0.8125rem] underline underline-offset-4"
+          className="mt-2 inline-block text-small underline underline-offset-4"
         >
           {c.widget.action}
         </Link>
@@ -82,7 +82,7 @@ export function OrderRatingCard({
 
   return (
     <Card className="p-5">
-      <h2 className="text-[1.0625rem]">{c.form.title}</h2>
+      <h2 className="text-h3">{c.form.title}</h2>
       <p className="mt-2 text-sm text-muted">{why}</p>
     </Card>
   );

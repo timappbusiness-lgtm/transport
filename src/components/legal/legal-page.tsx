@@ -23,7 +23,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
   return (
     <Container className="max-w-[46rem] py-12 sm:py-16">
       <EyebrowPill>Document legal</EyebrowPill>
-      <h1 className="mt-4 text-[clamp(1.75rem,5vw,2.75rem)]">{document.title}</h1>
+      <h1 className="mt-4 text-h1">{document.title}</h1>
       <p className="mt-3 text-sm text-muted">
         Versiunea {document.version}, în vigoare din{' '}
         {new Date(document.effectiveFrom).toLocaleDateString('ro-RO', {
@@ -53,8 +53,8 @@ export function LegalPage({ document }: { document: LegalDocument }) {
         >
           <p className="text-sm">
             Datele de identificare ale operatorului nu sunt încă completate. Locurile marcate cu{' '}
-            <span className="font-mono text-[0.8125rem]">[de completat]</span> se completează în{' '}
-            <span className="font-mono text-[0.8125rem]">src/config/company.ts</span> înainte de
+            <span className="font-mono text-small">[de completat]</span> se completează în{' '}
+            <span className="font-mono text-small">src/config/company.ts</span> înainte de
             lansare.
           </p>
         </div>
@@ -63,16 +63,16 @@ export function LegalPage({ document }: { document: LegalDocument }) {
       <div className="mt-10 flex flex-col gap-8">
         {document.sections.map((section, index) => (
           <section key={section.title} aria-labelledby={`sec-${index + 1}`}>
-            <h2 id={`sec-${index + 1}`} className="text-[1.125rem]">
+            <h2 id={`sec-${index + 1}`} className="text-lg">
               <span className="text-muted">{index + 1}.</span> {section.title}
             </h2>
             {section.body.map((paragraph) => (
-              <p key={paragraph} className="mt-3 text-[0.9375rem] leading-relaxed">
+              <p key={paragraph} className="mt-3 text-body leading-relaxed">
                 {paragraph}
               </p>
             ))}
             {section.list ? (
-              <ul className="mt-3 flex list-disc flex-col gap-1.5 pl-5 text-[0.9375rem] leading-relaxed">
+              <ul className="mt-3 flex list-disc flex-col gap-1.5 pl-5 text-body leading-relaxed">
                 {section.list.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -82,7 +82,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
               <p className="mt-3">
                 <Link
                   href={section.link.href}
-                  className="text-[0.9375rem] underline underline-offset-4"
+                  className="text-body underline underline-offset-4"
                 >
                   {section.link.label}
                 </Link>

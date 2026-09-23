@@ -75,8 +75,8 @@ export default async function Page({
         <EyebrowPill>
           {accountCopy.company.status}: {VERIFICATION_LABELS[company.verification_status]}
         </EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{firmaCopy.title}</h1>
-        <p className="mt-2 max-w-[62ch] text-[0.9375rem] text-muted">{firmaCopy.lede}</p>
+        <h1 className="mt-2 text-h2">{firmaCopy.title}</h1>
+        <p className="mt-2 max-w-[62ch] text-body text-muted">{firmaCopy.lede}</p>
       </div>
 
       <CompletenessCard completeness={progress} />
@@ -97,7 +97,7 @@ export default async function Page({
         {active === 'alerte' ? <AlertsTab company={company} /> : null}
         {active === 'public' ? (
           <>
-            <h2 className="mb-1 text-[1.0625rem]">{firmaCopy.publicProfile.title}</h2>
+            <h2 className="mb-1 text-h3">{firmaCopy.publicProfile.title}</h2>
             <p className="mb-4 max-w-[62ch] text-sm text-muted">{firmaCopy.publicProfile.lede}</p>
             <PublicProfileForm company={company} logoUrl={companyLogoUrl(company.logo_path)} />
           </>

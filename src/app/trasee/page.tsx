@@ -129,7 +129,7 @@ function EmptyState({
   const c = departuresCopy.empty;
   return (
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-[1.125rem]">{c.title}</h2>
+      <h2 className="text-lg">{c.title}</h2>
       <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
 
       <div className="mt-6 flex flex-wrap gap-3">

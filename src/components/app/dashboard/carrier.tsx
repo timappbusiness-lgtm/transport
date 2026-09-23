@@ -71,12 +71,12 @@ export function CarrierHome({
       {!verified ? (
         <div>
           <Checklist title={c.checklist.title} steps={steps(company, data)} />
-          <p className="mt-2 text-[0.8125rem] text-muted">{c.checklist.lede}</p>
+          <p className="mt-2 text-small text-muted">{c.checklist.lede}</p>
         </div>
       ) : null}
 
       <section aria-labelledby="atentie">
-        <h2 id="atentie" className="text-[1.0625rem]">
+        <h2 id="atentie" className="text-h3">
           {h.needsAttention}
         </h2>
 
@@ -91,7 +91,7 @@ export function CarrierHome({
               >
                 <ul className="flex flex-col gap-1">
                   {data.pendingBookings.slice(0, 3).map((booking) => (
-                    <li key={booking.id} className="flex flex-wrap gap-x-2 text-[0.8125rem]">
+                    <li key={booking.id} className="flex flex-wrap gap-x-2 text-small">
                       <span className="text-foreground">
                         {booking.fromCity} → {booking.toCity}
                       </span>
@@ -112,7 +112,7 @@ export function CarrierHome({
                 href={ROUTES.accountDocuments}
                 action={c.documents.action}
               >
-                <ul className="flex flex-col gap-1 text-[0.8125rem]">
+                <ul className="flex flex-col gap-1 text-small">
                   {data.documentsExpiring > 0 ? (
                     <li>{c.documents.expiring(pluralRo(data.documentsExpiring, 'document', 'documente', 'un'))}</li>
                   ) : null}
@@ -130,7 +130,7 @@ export function CarrierHome({
                 href={ROUTES.accountFleet}
                 action={c.vehicles.action}
               >
-                <p className="text-[0.8125rem]">
+                <p className="text-small">
                   {c.vehicles.body(pluralRo(data.vehiclesBlocked, 'vehicul', 'vehicule', 'un'))}
                 </p>
               </Attention>
@@ -148,10 +148,10 @@ export function CarrierHome({
 
       {data.matches.length > 0 ? (
         <section aria-labelledby="potriviri">
-          <h2 id="potriviri" className="text-[1.0625rem]">
+          <h2 id="potriviri" className="text-h3">
             {c.matches.title}
           </h2>
-          <p className="mt-1 text-[0.8125rem] text-muted">{c.matches.lede}</p>
+          <p className="mt-1 text-small text-muted">{c.matches.lede}</p>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {data.matches.map((request) => (
               <li key={request.id} className="flex min-w-0 flex-col">
@@ -181,7 +181,7 @@ export function CarrierHome({
 
       {data.activeRoutes > 0 ? (
         <section aria-labelledby="activitate">
-          <h2 id="activitate" className="text-[1.0625rem]">
+          <h2 id="activitate" className="text-h3">
             {h.activity}
           </h2>
           <Card className="mt-3 px-5 py-2">
@@ -205,7 +205,7 @@ export function CarrierHome({
       ) : null}
 
       <section aria-labelledby="actiuni">
-        <h2 id="actiuni" className="text-[1.0625rem]">
+        <h2 id="actiuni" className="text-h3">
           {h.quickActions}
         </h2>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -257,7 +257,7 @@ function Attention({
 }) {
   return (
     <Card className="flex min-w-0 flex-col p-4">
-      <p className="flex items-center gap-2 text-[0.9375rem] font-medium">
+      <p className="flex items-center gap-2 text-body font-medium">
         <span aria-hidden="true" className="text-warning">
           {icon}
         </span>
@@ -267,7 +267,7 @@ function Attention({
       <p className="mt-3">
         <Link
           href={href}
-          className="text-[0.8125rem] text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
+          className="text-small text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
         >
           {action}
         </Link>
@@ -373,7 +373,7 @@ function MatchReasons({
           {reasons.map((reason) => (
             <li
               key={reason}
-              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-[0.6875rem] text-muted"
+              className="rounded-pill border border-border bg-ground-alt px-2.5 py-1 text-xs text-muted"
             >
               {c.matches.reasons[reason] ?? reason}
             </li>
@@ -385,7 +385,7 @@ function MatchReasons({
           a route name, and a pill that wraps to three lines on a phone is
           not a pill. */}
       {detour !== undefined ? (
-        <p className="mt-2 text-[0.6875rem] text-muted">
+        <p className="mt-2 text-xs text-muted">
           {c.matches.detour(detour.detourKm, detour.toleranceKm, detour.fromCity, detour.toCity)}
         </p>
       ) : null}

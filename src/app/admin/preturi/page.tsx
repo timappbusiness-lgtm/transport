@@ -31,7 +31,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+        <h1 className="mt-2 text-h2">{c.title}</h1>
         <p className="mt-2 max-w-[60ch] text-sm text-muted">{c.lede}</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -39,12 +39,12 @@ export default async function Page() {
             {published ? c.statusPublished : c.statusDraft}
           </StatusBadge>
           {published && data.approvedAt ? (
-            <span className="text-[0.8125rem] text-muted">
+            <span className="text-small text-muted">
               {c.publishedNote(formatMoment(data.approvedAt))}
             </span>
           ) : null}
           {month ? (
-            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.1em] text-muted">
+            <span className="font-mono text-label uppercase tracking-[0.1em] text-muted">
               {pricesCopy.table.updated(month)}
             </span>
           ) : null}
@@ -56,7 +56,7 @@ export default async function Page() {
           <PublishForm published={published} />
 
           <section className="flex flex-col gap-4">
-            <h2 className="text-[1.0625rem]">{c.rates.title}</h2>
+            <h2 className="text-h3">{c.rates.title}</h2>
             {rates.map((rate) => (
               <RateForm key={rate.vehicle_class} rate={rate} />
             ))}
@@ -65,7 +65,7 @@ export default async function Page() {
           <SettingsForm settings={settings} />
 
           <section>
-            <h2 className="text-[1.0625rem]">{c.preview.title}</h2>
+            <h2 className="text-h3">{c.preview.title}</h2>
             <p className="mt-1 text-sm text-muted">{c.preview.lede}</p>
             <div className="mt-4">
               <RateTable rates={rates} settings={settings} express={false} />
@@ -79,7 +79,7 @@ export default async function Page() {
       )}
 
       <section>
-        <h2 className="text-[1.0625rem]">{c.history.title}</h2>
+        <h2 className="text-h3">{c.history.title}</h2>
         {history.length > 0 ? (
           <ul className="mt-4 flex flex-col">
             {history.map((entry) => (
@@ -87,7 +87,7 @@ export default async function Page() {
                 key={entry.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border py-2.5 last:border-b-0"
               >
-                <span className="font-mono text-[0.75rem] tabular-nums text-muted">
+                <span className="font-mono text-xs tabular-nums text-muted">
                   {formatMoment(entry.created_at)}
                 </span>
                 <span className="text-sm">
@@ -95,7 +95,7 @@ export default async function Page() {
                   {entry.subject ? ` · ${entry.subject}` : ''}
                 </span>
                 {entry.reason ? (
-                  <span className="text-[0.8125rem] text-muted">{entry.reason}</span>
+                  <span className="text-small text-muted">{entry.reason}</span>
                 ) : null}
               </li>
             ))}

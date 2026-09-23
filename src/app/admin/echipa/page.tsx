@@ -36,12 +36,12 @@ export default async function Page() {
     <div className="flex flex-col gap-6">
       <div>
         <EyebrowPill>{c.hero.eyebrow}</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.hero.title}</h1>
+        <h1 className="mt-2 text-h2">{c.hero.title}</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.hero.lede}</p>
       </div>
 
       <section aria-labelledby="cine" className="flex flex-col gap-3">
-        <h2 id="cine" className="text-[1.0625rem]">
+        <h2 id="cine" className="text-h3">
           {c.list.title}
         </h2>
 
@@ -57,7 +57,7 @@ export default async function Page() {
                 <li key={member.user_id} className="rounded-card border border-border bg-surface p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[1.0625rem]">
+                      <p className="text-body-lg">
                         {member.full_name ?? member.email ?? member.user_id}
                         {member.user_id === me ? (
                           <span className="text-muted"> ({c.list.you})</span>
@@ -98,7 +98,7 @@ export default async function Page() {
       </section>
 
       <section aria-labelledby="adauga" className="rounded-card border border-border bg-surface p-5">
-        <h2 id="adauga" className="text-[1.0625rem]">
+        <h2 id="adauga" className="text-h3">
           {c.add.title}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.add.lede}</p>
@@ -106,7 +106,7 @@ export default async function Page() {
       </section>
 
       <section aria-labelledby="poate" className="rounded-card border border-border bg-ground-alt p-5">
-        <h2 id="poate" className="text-[1.0625rem]">
+        <h2 id="poate" className="text-h3">
           {c.abilities.title}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">{c.abilities.lede}</p>

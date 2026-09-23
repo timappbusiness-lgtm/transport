@@ -53,7 +53,7 @@ export function RatingForm({
 
   return (
     <Card className="p-5">
-      <h2 className="text-[1.0625rem]">
+      <h2 className="text-h3">
         {editing ? c.editTitle : side === 'client' ? c.title : c.titleCarrier}
       </h2>
       {editing ? <p className="mt-1 text-xs text-muted">{c.editHint}</p> : null}
@@ -75,7 +75,7 @@ export function RatingForm({
           />
 
           <div className="flex flex-col gap-4 border-t border-border pt-4">
-            <p className="text-[0.9375rem] font-medium">{c.subScores}</p>
+            <p className="text-body font-medium">{c.subScores}</p>
             {subScoresFor(side).map((sub) => (
               <StarInput
                 key={sub.key}
@@ -89,7 +89,7 @@ export function RatingForm({
           </div>
 
           <div className="flex flex-col gap-1.5 border-t border-border pt-4">
-            <label htmlFor={`${id}-comment`} className="text-[0.9375rem] font-medium">
+            <label htmlFor={`${id}-comment`} className="text-body font-medium">
               {c.comment}
             </label>
             <p className="text-xs text-muted">{c.commentHint}</p>
@@ -100,7 +100,7 @@ export function RatingForm({
               maxLength={MAX_COMMENT}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+              className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
             />
             <p className="text-xs text-muted">{c.charsLeft(charsLeft(comment))}</p>
             <FormError>{state.fieldErrors?.comment}</FormError>
@@ -109,7 +109,7 @@ export function RatingForm({
 
         {preview ? (
           <div className="rounded-card border border-border bg-ground-alt p-4">
-            <p className="text-[0.8125rem] text-muted">{c.previewTitle}</p>
+            <p className="text-small text-muted">{c.previewTitle}</p>
             <div className="mt-2">
               {score !== null ? <Stars score={score} /> : null}
               {comment.trim() !== '' ? (

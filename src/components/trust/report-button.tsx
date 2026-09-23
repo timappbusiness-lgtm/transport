@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const EMPTY: ReportState = {};
 const c = verificationCopy.report;
 const CONTROL =
-  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+  'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 /**
  * Reporting a company.
@@ -48,7 +48,7 @@ export function ReportButton({
             {c.button}
           </Link>
         )}
-        <p className="mt-3 text-[0.8125rem] text-muted">{c.signedOutNote}</p>
+        <p className="mt-3 text-small text-muted">{c.signedOutNote}</p>
       </div>
     );
   }

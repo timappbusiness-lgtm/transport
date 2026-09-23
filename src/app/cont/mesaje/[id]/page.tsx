@@ -53,11 +53,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             ← {c.back}
           </Link>
         </p>
-        <h1 className="mt-2 flex flex-wrap items-center gap-2 text-[clamp(1.25rem,4vw,1.625rem)]">
+        <h1 className="mt-2 flex flex-wrap items-center gap-2 text-h2">
           {conversation.counterparty_name ?? '—'}
           <StatusBadge tone="neutral">{kindLabel(conversation.kind)}</StatusBadge>
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.8125rem]">
+        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-small">
           {conversation.from_city !== null ? (
             <span className="text-muted">
               {conversation.from_city} → {conversation.to_city ?? '—'}

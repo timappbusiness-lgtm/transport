@@ -74,7 +74,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
             rows={3}
             maxLength={MAX_PUBLIC_DESCRIPTION}
             defaultValue={state.values?.publicDescription ?? company.public_description ?? ''}
-            className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+            className="w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
           />
           <p className="text-xs text-muted">{c.descriptionHint}</p>
           <FormError>{state.fieldErrors?.publicDescription}</FormError>

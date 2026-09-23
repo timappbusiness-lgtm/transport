@@ -52,7 +52,7 @@ export function IdentityTab({ company }: { company: Company }) {
   return (
     <form action={action} className="flex flex-col gap-5" noValidate>
       <div>
-        <h2 className="text-[1.0625rem]">{c.title}</h2>
+        <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-sm text-muted">{c.lede}</p>
       </div>
 
@@ -140,7 +140,7 @@ export function IdentityTab({ company }: { company: Company }) {
             id="field-county"
             name="county"
             defaultValue={company.county ?? ''}
-            className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]"
+            className="rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body"
           >
             <option value="">—</option>
             {COUNTIES.map((county) => (

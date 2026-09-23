@@ -21,7 +21,7 @@ export default async function Page() {
   if (settings === null) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-[clamp(1.5rem,4vw,2rem)]">Import din anunț</h1>
+        <h1 className="text-h2">Import din anunț</h1>
         <p className="text-sm text-muted">
           Setările nu se pot citi. Verifică legătura cu baza de date.
         </p>
@@ -37,7 +37,7 @@ export default async function Page() {
     <div className="flex flex-col gap-8">
       <div>
         <EyebrowPill>Staff</EyebrowPill>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">Import din anunț</h1>
+        <h1 className="mt-2 text-h2">Import din anunț</h1>
         <p className="mt-2 max-w-[62ch] text-sm text-muted">
           Cât consumă completarea automată a formularului de cerere și unde se schimbă limitele.
           Nu păstrăm nimic din paginile citite — nici adresa, nici textul.
@@ -45,13 +45,13 @@ export default async function Page() {
       </div>
 
       <section aria-labelledby="luna" className="flex flex-col gap-3">
-        <h2 id="luna" className="text-[1.0625rem]">
+        <h2 id="luna" className="text-h3">
           Luna curentă
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Consumat</p>
-            <p className="mt-1 font-mono text-[1.25rem]">${spent.toFixed(2)}</p>
+            <p className="mt-1 font-mono text-xl">${spent.toFixed(2)}</p>
             <p className="mt-1 text-xs text-muted">
               din ${cap.toFixed(2)}
               {pct === null || pct === undefined ? '' : ` — ${pct}%`}
@@ -59,12 +59,12 @@ export default async function Page() {
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Încercări</p>
-            <p className="mt-1 font-mono text-[1.25rem]">{budget?.extractions ?? 0}</p>
+            <p className="mt-1 font-mono text-xl">{budget?.extractions ?? 0}</p>
             <p className="mt-1 text-xs text-muted">reușite și eșuate, împreună</p>
           </div>
           <div className="rounded-card border border-border bg-surface p-4">
             <p className="text-xs text-muted">Cost mediu</p>
-            <p className="mt-1 font-mono text-[1.25rem]">
+            <p className="mt-1 font-mono text-xl">
               {(budget?.extractions ?? 0) === 0
                 ? '—'
                 : `$${(spent / (budget?.extractions ?? 1)).toFixed(4)}`}
@@ -79,14 +79,14 @@ export default async function Page() {
       </section>
 
       <section aria-labelledby="limite" className="flex flex-col gap-3">
-        <h2 id="limite" className="text-[1.0625rem]">
+        <h2 id="limite" className="text-h3">
           Limitele
         </h2>
         <ImportSettingsForm settings={settings} />
       </section>
 
       <section aria-labelledby="incercari" className="flex flex-col gap-3">
-        <h2 id="incercari" className="text-[1.0625rem]">
+        <h2 id="incercari" className="text-h3">
           Ultimele încercări
         </h2>
         {attempts.length === 0 ? (

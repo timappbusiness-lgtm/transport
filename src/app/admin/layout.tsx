@@ -58,7 +58,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <Container className="py-8 sm:py-12">
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
         <aside className="lg:w-56 lg:flex-none">
-          <p className="mb-3 font-mono text-[0.6875rem] uppercase tracking-[0.15em] text-muted">
+          <p className="mb-3 font-mono text-label uppercase tracking-[0.15em] text-muted">
             Administrare
           </p>
           <nav aria-label="Administrare" className="flex gap-1 overflow-x-auto lg:flex-col">

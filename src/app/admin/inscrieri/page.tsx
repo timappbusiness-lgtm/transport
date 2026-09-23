@@ -54,7 +54,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <EyebrowPill>{c.eyebrow}</EyebrowPill>
-          <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
+          <h1 className="mt-2 text-h2">{c.title}</h1>
           <p className="mt-2 max-w-[68ch] text-sm text-muted">{c.lede}</p>
         </div>
         <Link href={ROUTES.adminOnboardingNew} className={buttonClasses('primary', 'md')}>
@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             }
             aria-current={option === status ? 'page' : undefined}
             className={cn(
-              'rounded-pill border px-3.5 py-1.5 text-[0.8125rem]',
+              'rounded-pill border px-3.5 py-1.5 text-small',
               option === status
                 ? 'border-transparent bg-foreground text-ground'
                 : 'border-border-strong text-muted hover:text-foreground',
@@ -86,7 +86,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
       {rows.length === 0 ? (
         <Card className="p-6">
-          <p className="text-[1.0625rem]">{status === null ? c.empty : c.emptyFiltered}</p>
+          <p className="text-body-lg">{status === null ? c.empty : c.emptyFiltered}</p>
           <p className="mt-1 max-w-[56ch] text-sm text-muted">
             {status === null ? c.emptyBody : c.emptyFilteredBody}
           </p>
@@ -101,14 +101,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 <Card className="p-4 sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[1rem]">
+                      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
                         <span className="font-medium">{row.company_name ?? c.noCompany}</span>
                         <StatusBadge tone={tone(row.status)}>
                           {STATUS_LABELS[row.status]}
                         </StatusBadge>
                         {chasing ? <StatusBadge tone="danger">{c.chase}</StatusBadge> : null}
                       </p>
-                      <p className="mt-1 text-[0.8125rem] text-muted">
+                      <p className="mt-1 text-small text-muted">
                         {row.contact_name} · {row.contact_phone} · {row.contact_email}
                       </p>
                       <p className="mt-0.5 text-xs text-muted">
@@ -137,7 +137,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                       <li
                         key={step}
                         className={cn(
-                          'rounded-pill border px-2.5 py-0.5 text-[0.6875rem]',
+                          'rounded-pill border px-2.5 py-0.5 text-xs',
                           state[step]
                             ? 'border-success/45 bg-success/8 text-foreground'
                             : 'border-border text-muted',
@@ -156,7 +156,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   ) : null}
 
                   {chasing && row.claim_sent_at !== null ? (
-                    <p className="mt-2 max-w-[62ch] rounded-input border border-warning/45 bg-warning/8 p-2.5 text-[0.8125rem]">
+                    <p className="mt-2 max-w-[62ch] rounded-input border border-warning/45 bg-warning/8 p-2.5 text-small">
                       {c.chaseHint(row.days_open)}
                     </p>
                   ) : null}

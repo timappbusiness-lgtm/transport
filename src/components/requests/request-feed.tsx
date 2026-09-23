@@ -76,7 +76,7 @@ export function RequestFeed({
             }}
             className={cn(
               'inline-flex items-center gap-2 rounded-pill border border-border-strong bg-surface px-3 py-1.5',
-              'text-[0.8125rem] transition-[border-color] duration-150 hover:border-foreground',
+              'text-small transition-[border-color] duration-150 hover:border-foreground',
             )}
           >
             <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />

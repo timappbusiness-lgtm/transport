@@ -37,8 +37,8 @@ export function TermsGate({ version }: { version: string }) {
 
   return (
     <main className="mx-auto flex w-full max-w-[42rem] flex-col gap-4 px-4 py-16">
-      <h1 className="text-[clamp(1.5rem,4vw,2rem)]">{c.title}</h1>
-      <p className="text-[0.9375rem]">{c.body(version)}</p>
+      <h1 className="text-h2">{c.title}</h1>
+      <p className="text-body">{c.body(version)}</p>
       <p className="text-sm text-muted">{c.why}</p>
 
       <div className="mt-2 flex flex-wrap gap-3">

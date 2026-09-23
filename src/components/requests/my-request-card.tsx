@@ -84,14 +84,14 @@ export function MyRequestCard({
     <li className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[1rem]">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base">
             <span className="font-medium">{request.fromCity}</span>
             <CountryTag cc={request.fromCountry} />
             <span className="text-muted">→</span>
             <span className="font-medium">{request.toCity}</span>
             <CountryTag cc={request.toCountry} />
           </p>
-          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted">
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-small text-muted">
             <span>{formatWindow(request.loadingFrom, request.loadingTo)}</span>
             <IconLabel as={iconForCategory(request.category)} size="sm" tone="strong">
               {CARGO_CATEGORY_LABELS[request.category]}
@@ -109,7 +109,7 @@ export function MyRequestCard({
 
       {request.hiddenAt !== null ? <HiddenNotice reason={request.hiddenReason} /> : null}
 
-      {note ? <p className="mt-3 text-[0.8125rem] text-muted">{note}</p> : null}
+      {note ? <p className="mt-3 text-small text-muted">{note}</p> : null}
 
       <CarrierCount count={carrierCount} explain={false} className="mt-3" />
 

@@ -99,7 +99,7 @@ export function SettingsForm({ settings }: { settings: PriceSettings }) {
 
   return (
     <form action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
-      <h2 className="text-[1.0625rem]">{c.settings.title}</h2>
+      <h2 className="text-h3">{c.settings.title}</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <SmallField
@@ -230,7 +230,7 @@ function SmallField({
   const id = useId();
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="text-[0.8125rem] font-medium">
+      <label htmlFor={id} className="text-small font-medium">
         {label}
       </label>
       <input
@@ -241,7 +241,7 @@ function SmallField({
         inputMode={numeric && type === 'text' ? 'decimal' : undefined}
         aria-invalid={error ? true : undefined}
         className={cn(
-          'w-full rounded-input border bg-surface px-3 py-2 text-[0.875rem]',
+          'w-full rounded-input border bg-surface px-3 py-2 text-sm',
           error ? 'border-danger' : 'border-border-strong',
         )}
       />

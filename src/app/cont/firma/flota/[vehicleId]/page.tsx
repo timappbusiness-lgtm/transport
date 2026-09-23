@@ -103,7 +103,7 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <EyebrowPill>{c.title}</EyebrowPill>
-          <h1 className="mt-2 font-mono text-[clamp(1.5rem,4vw,2rem)]">
+          <h1 className="mt-2 font-mono text-h2">
             {formatPlate(vehicle.plate_number)}
           </h1>
           <p className="mt-2 max-w-[54ch] text-sm text-muted">

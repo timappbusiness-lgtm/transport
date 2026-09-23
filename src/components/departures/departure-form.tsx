@@ -21,7 +21,7 @@ import { COUNTRY_OPTIONS, formatPlate } from '@/lib/vehicles';
 import { cn } from '@/lib/utils';
 
 const EMPTY: DepartureActionState = {};
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-[0.9375rem]';
+const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3.5 py-2.5 text-body';
 
 export interface EligibleVehicle {
   id: string;
@@ -285,7 +285,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                   {WEEKDAY_SHORT.map((short, day) => (
                     <label
                       key={short}
-                      className="cursor-pointer rounded-pill border border-border px-3 py-1 text-[0.8125rem]"
+                      className="cursor-pointer rounded-pill border border-border px-3 py-1 text-small"
                     >
                       <input
                         type="checkbox"

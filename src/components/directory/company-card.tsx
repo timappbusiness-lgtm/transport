@@ -50,7 +50,7 @@ export function CompanyCard({
         <Logo company={company} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">
           {company.city ? (
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-muted">
+            <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
               {company.county && company.county !== company.city
                 ? `${company.city} · ${company.county}`
                 : company.city}
@@ -64,14 +64,14 @@ export function CompanyCard({
           `docs/13-iconuri.md` uses this exact case to explain the rule:
           „un scut lângă numele unei firme arată ca o verificare pe care
           firma a câștigat-o". The word does the work. */}
-      <p className="mt-4 inline-flex items-center gap-1.5 text-[0.8125rem] text-muted">
+      <p className="mt-4 inline-flex items-center gap-1.5 text-small text-muted">
         <span className="text-foreground">{c.verified}</span>
         {rating ? <span aria-hidden="true">·</span> : null}
         {rating ? <span className="font-mono tabular-nums">{rating}</span> : null}
       </p>
 
       {detailed ? (
-        <dl className="mt-3 grid gap-1 text-[0.8125rem] text-muted">
+        <dl className="mt-3 grid gap-1 text-small text-muted">
           {since ? (
             <div className="flex gap-1.5">
               <dt className="sr-only">{c.verified}</dt>
@@ -126,7 +126,7 @@ function Logo({ company, logoUrl }: { company: PublicCompany; logoUrl: string | 
       aria-hidden="true"
       className={cn(
         'flex size-11 flex-none items-center justify-center rounded-full',
-        'border border-border bg-ground-alt font-mono text-[0.8125rem] text-muted',
+        'border border-border bg-ground-alt font-mono text-small text-muted',
       )}
     >
       {monogram(company.name)}

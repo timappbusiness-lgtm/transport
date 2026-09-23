@@ -44,7 +44,7 @@ export function ModerateListing({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[0.75rem] text-muted underline underline-offset-4 hover:text-foreground"
+        className="text-xs text-muted underline underline-offset-4 hover:text-foreground"
       >
         {hidden ? c.restore : c.hide}
       </button>
@@ -61,7 +61,7 @@ export function ModerateListing({
       ) : null}
       {routeId !== undefined ? <input type="hidden" name="route_id" value={routeId} /> : null}
 
-      <label htmlFor={`${id}-reason`} className="text-[0.8125rem] font-medium">
+      <label htmlFor={`${id}-reason`} className="text-small font-medium">
         {hidden ? c.restoreTitle : c.hideTitle}
       </label>
       {!hidden ? <p className="text-xs text-muted">{c.hideHint}</p> : null}

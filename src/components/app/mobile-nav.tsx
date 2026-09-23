@@ -85,7 +85,7 @@ export function MobileNav({
                 aria-current={current === item.href ? 'page' : undefined}
                 className={cn(
                   'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',
-                  'text-[0.6875rem] leading-tight',
+                  'text-xs leading-tight',
                   current === item.href ? 'font-medium text-foreground' : 'text-muted',
                 )}
               >
@@ -104,7 +104,7 @@ export function MobileNav({
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
-                className="flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[0.6875rem] text-muted"
+                className="flex h-14 w-full flex-col items-center justify-center gap-0.5 text-xs text-muted"
               >
                 <Icon as={uiIcon('menu')} size="md" />
                 {c.moreLabel}
@@ -130,7 +130,7 @@ export function MobileNav({
             className="absolute inset-x-0 bottom-0 rounded-t-card border-t border-border bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex items-center justify-between">
-              <p className="font-display text-[0.9375rem] font-medium">{c.moreTitle}</p>
+              <p className="font-display text-body font-medium">{c.moreTitle}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -152,7 +152,7 @@ export function MobileNav({
                     aria-current={current === item.href ? 'page' : undefined}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'flex items-center rounded-input px-3 py-2.5 text-[0.9375rem]',
+                      'flex items-center rounded-input px-3 py-2.5 text-body',
                       ICON_GAP,
                       current === item.href ? 'bg-ground-alt font-medium' : 'text-muted',
                     )}

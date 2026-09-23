@@ -88,7 +88,7 @@ export function AlertRow({
               </button>
             </form>
           ) : (
-            <h2 className="text-[1.0625rem]">{search.name}</h2>
+            <h2 className="text-h3">{search.name}</h2>
           )}
 
           <p className="mt-1.5 flex flex-wrap gap-1.5">

@@ -32,8 +32,8 @@ export default async function Page({ params }: { params: Params }) {
             {page.isPublished ? 'Publicată' : 'Ciornă'}
           </StatusBadge>
         </div>
-        <h1 className="mt-2 text-[clamp(1.5rem,4vw,2rem)]">{page.h1}</h1>
-        <p className="mt-2 font-mono text-[0.75rem] text-muted">{pageHref(page)}</p>
+        <h1 className="mt-2 text-h2">{page.h1}</h1>
+        <p className="mt-2 font-mono text-xs text-muted">{pageHref(page)}</p>
         <p className="mt-3 text-sm">
           <Link
             href={

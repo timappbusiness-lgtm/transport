@@ -30,7 +30,7 @@ export function SeatDeck({
           <li
             key={index}
             className={cn(
-              'grid aspect-[3/4] place-items-center rounded-[6px] border',
+              'grid aspect-[3/4] place-items-center rounded-tight border',
               filled
                 ? 'border-border-strong/40 bg-ground-alt'
                 : 'border-dashed border-foreground/45 bg-transparent',
@@ -50,7 +50,7 @@ export function SeatDeck({
                 <circle cx="16" cy="12.5" r="1.6" fill="currentColor" />
               </svg>
             ) : compact ? null : (
-              <span className="font-mono text-[0.5rem] tracking-[0.06em] text-foreground">
+              <span className="font-mono text-label tracking-[0.06em] text-foreground">
                 {freeLabel}
               </span>
             )}

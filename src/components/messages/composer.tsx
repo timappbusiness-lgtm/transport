@@ -95,7 +95,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
             }
           }}
           placeholder={c.placeholder}
-          className="min-h-[2.75rem] flex-1 resize-y rounded-input border border-border-strong bg-surface px-3 py-2 text-[0.9375rem]"
+          className="min-h-[2.75rem] flex-1 resize-y rounded-input border border-border-strong bg-surface px-3 py-2 text-body"
         />
 
         <button type="submit" disabled={pending} className={buttonClasses('primary', 'md')}>
@@ -104,7 +104,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <label className="cursor-pointer text-[0.8125rem] underline underline-offset-4">
+        <label className="cursor-pointer text-small underline underline-offset-4">
           {c.attach}
           <input
             ref={fileRef}
@@ -118,7 +118,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
         </label>
         <span className="text-xs text-muted">{c.hint}</span>
       </div>
-      <p className="mt-1 text-[0.6875rem] text-muted">{c.attachHint}</p>
+      <p className="mt-1 text-xs text-muted">{c.attachHint}</p>
 
       <FormError>{problem ?? state.fieldErrors?.body ?? state.fieldErrors?.attachments}</FormError>
       <FormError>{state.error}</FormError>

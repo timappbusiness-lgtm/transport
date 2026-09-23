@@ -76,7 +76,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <EyebrowPill>{DIRECTION_LABELS[departure.direction]}</EyebrowPill>
-          <h1 className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[clamp(1.5rem,4vw,2.25rem)]">
+          <h1 className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-h2">
             <span className="inline-flex items-center gap-2">
               <CountryTag cc={departure.from_country} />
               {departure.from_city}
@@ -184,7 +184,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 {c.price}
               </IconLabel>
             </h2>
-            <p className="mt-1 font-mono text-[1.125rem] tabular-nums">
+            <p className="mt-1 font-mono text-lg tabular-nums">
               {priceSentence(departure) ?? departuresCopy.card.noPrice}
             </p>
 
@@ -239,7 +239,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       {departed || full ? (
         <section className="mt-12">
-          <h2 className="text-[1.125rem]">{c.similar}</h2>
+          <h2 className="text-lg">{c.similar}</h2>
           {similar.length > 0 ? (
             <ul className="mt-4 flex flex-col gap-4">
               {similar.map((other) => (

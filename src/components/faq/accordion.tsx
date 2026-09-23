@@ -64,7 +64,7 @@ function Item({
 
   return (
     <div className="rounded-card border border-border bg-surface">
-      <h3 className="text-[0.9375rem]">
+      <h3 className="text-body">
         <button
           type="button"
           aria-expanded={open}
@@ -92,7 +92,7 @@ function Item({
       {open ? (
         <div id={panelId} className="px-5 pb-5">
           {entry.answer.map((paragraph) => (
-            <p key={paragraph} className="mt-2 text-[0.9375rem] leading-relaxed text-muted first:mt-0">
+            <p key={paragraph} className="mt-2 text-body leading-relaxed text-muted first:mt-0">
               {paragraph}
             </p>
           ))}

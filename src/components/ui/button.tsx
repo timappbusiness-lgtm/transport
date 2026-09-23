@@ -14,8 +14,8 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  sm: 'px-4 py-2 text-[0.8125rem]',
-  md: 'px-6 py-3 text-[0.9375rem]',
+  sm: 'px-4 py-2 text-small',
+  md: 'px-6 py-3 text-body',
 };
 
 export const buttonClasses = (variant: Variant = 'primary', size: Size = 'md') =>

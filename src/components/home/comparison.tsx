@@ -27,7 +27,7 @@ function Row({
     >
       <h3
         className={cn(
-          'text-[1.125rem] font-normal',
+          'text-lg font-normal',
           tone === 'new' ? 'text-white' : 'text-foreground',
         )}
       >
@@ -38,13 +38,13 @@ function Row({
           <li key={step} className="min-w-0">
             <span
               className={cn(
-                'font-mono text-[0.625rem] uppercase tracking-[0.12em]',
+                'font-mono text-label uppercase tracking-[0.12em]',
                 tone === 'new' ? 'text-white/65' : 'text-muted',
               )}
             >
               {c.stepLabel} {index + 1}
             </span>
-            <p className="mt-1.5 text-[0.9375rem] leading-snug">{step}</p>
+            <p className="mt-1.5 text-body leading-snug">{step}</p>
           </li>
         ))}
       </ol>
