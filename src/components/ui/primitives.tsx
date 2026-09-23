@@ -48,17 +48,34 @@ export function EyebrowPill({
   className,
 }: {
   children: React.ReactNode;
-  tone?: 'light' | 'dark' | undefined;
+  /**
+   * `quiet` is the legal one. The accent may not appear on a legal page,
+   * a suspension, a dispute or a deletion — and „Document legal" above a
+   * set of terms is the first of those. It is a tone rather than an
+   * omission so that the rule is something a call site states out loud;
+   * `tests/e2e/aspect-vizual.spec.ts` fails if a legal page forgets.
+   */
+  tone?: 'light' | 'dark' | 'quiet' | undefined;
   className?: string | undefined;
 }) {
   return (
     <span
       className={cn(
         'inline-flex items-center rounded-pill border px-3 py-1',
-        'font-mono text-label uppercase tracking-[0.12em]',
+        'font-mono text-label uppercase',
         tone === 'dark'
           ? 'border-white/35 text-white/85'
-          : 'border-border-strong/45 text-muted',
+          : tone === 'quiet'
+          ? 'border-border-strong/45 text-muted'
+          : // The fifth place the accent is spent: the pill that names a
+            // section. A touch of colour at the top of each block is what
+            // lets somebody scan a long page by its sections instead of
+            // reading every heading. Measured on the tint it sits on —
+            // 6.48:1 over the ground, 6.12:1 over the alternating band.
+            //
+            // Light surfaces only. On the dark gradient the accent has
+            // nothing to sit against, so that tone is unchanged.
+            'border-accent/30 bg-accent/6 text-accent',
         className,
       )}
     >

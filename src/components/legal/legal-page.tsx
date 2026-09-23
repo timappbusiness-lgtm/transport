@@ -22,7 +22,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
 
   return (
     <Container className="max-w-[46rem] py-12 sm:py-16">
-      <EyebrowPill>Document legal</EyebrowPill>
+      <EyebrowPill tone="quiet">Document legal</EyebrowPill>
       <h1 className="mt-4 text-h1">{document.title}</h1>
       <p className="mt-3 text-sm text-muted">
         Versiunea {document.version}, în vigoare din{' '}

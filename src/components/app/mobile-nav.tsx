@@ -86,7 +86,7 @@ export function MobileNav({
                 className={cn(
                   'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',
                   'text-xs leading-tight',
-                  current === item.href ? 'font-medium text-foreground' : 'text-muted',
+                  current === item.href ? 'font-medium text-accent' : 'text-muted',
                 )}
               >
                 {iconForRoute(item.href) ? (

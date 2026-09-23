@@ -96,7 +96,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
       className={cn(
         'rounded-pill border px-3.5 py-1.5 text-sm',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

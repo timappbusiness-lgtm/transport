@@ -84,7 +84,7 @@ function Option({ href, active, label }: { href: string; active: boolean; label:
         'rounded-pill border px-4 py-1.5 text-sm whitespace-nowrap',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

@@ -53,19 +53,18 @@ export function OrderTimeline({
                 and hollow for what is left. The line stops at the last
                 row so it does not dangle into nothing.
 
-                The „current" marker used to be `border-accent` with a
-                `ring-accent/30`, and there is no `--color-accent` in the
-                theme — `globals.css` says at the top that this design has
-                no accent colour. Both classes resolved to nothing, so the
-                step somebody opened the page to find was the one step not
-                marked. */}
+                The „current" marker once named `border-accent` when no
+                such token existed, so it resolved to nothing and the step
+                somebody opened the page to find was the one step not
+                marked. The token exists now, and marking the current step
+                is one of the six places it is spent. */}
             <div className="flex flex-none flex-col items-center">
               <span
                 className={cn(
                   'mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border',
                   row.state === 'done' && 'border-success/40 bg-success/10 text-success',
                   row.state === 'current' &&
-                    'border-foreground bg-surface text-foreground ring-2 ring-foreground/15',
+                    'border-accent bg-surface text-accent ring-2 ring-accent/20',
                   row.state === 'todo' && 'border-border-strong bg-surface text-muted',
                 )}
               >

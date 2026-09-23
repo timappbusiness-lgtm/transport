@@ -60,7 +60,7 @@ export interface HeaderUser {
 // `whitespace-nowrap` is load-bearing: without it a label wraps to two or
 // three lines on a phone and the pill grows taller than the bar it sits in.
 const PILL_SOLID =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-small font-medium text-foreground transition-[background-color] duration-150 hover:bg-[#eef1f2] sm:px-4';
+  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-white px-3 py-1.5 text-small font-medium text-foreground transition-[background-color] duration-150 hover:bg-ground-alt sm:px-4';
 const PILL_QUIET =
   'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-small text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
 

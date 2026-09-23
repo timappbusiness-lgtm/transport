@@ -82,7 +82,7 @@ export function Sidebar({
                         'flex items-center justify-between gap-2 rounded-input px-3 py-2 text-sm',
                         'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
                         current === item.href
-                          ? 'bg-surface font-medium text-foreground'
+                          ? 'bg-surface font-medium text-accent shadow-card'
                           : 'text-muted hover:bg-surface/60 hover:text-foreground',
                       )}
                     >

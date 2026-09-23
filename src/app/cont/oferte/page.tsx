@@ -296,7 +296,7 @@ function Tab({
         'rounded-pill border',
         small ? 'px-3 py-1 text-xs' : 'px-3.5 py-1.5 text-sm',
         active
-          ? 'border-foreground bg-foreground text-white'
+          ? 'border-accent bg-accent text-white'
           : 'border-border text-muted hover:border-border-strong',
       )}
     >

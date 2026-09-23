@@ -1,15 +1,21 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'onDark' | 'onDarkGhost';
+type Variant = 'primary' | 'ink' | 'secondary' | 'onDark' | 'onDarkGhost';
 type Size = 'sm' | 'md';
 
 const VARIANTS: Record<Variant, string> = {
-  // Ink pill on light ground: white on #1c262b is 15.42:1.
-  primary: 'bg-foreground text-white hover:bg-[#2a3740]',
+  // The second place the accent is spent. A filled petrol pill: white on
+  // the accent is 7.09:1, and on the hover shade 9.18:1.
+  // This used to be an ink pill, which meant the one action a screen
+  // wanted you to take looked like every other dark thing on it.
+  primary: 'bg-accent text-white hover:bg-accent-hover',
+  // Ink pill, kept for the rare screen where a second filled button sits
+  // beside the primary one and must not compete with it.
+  ink: 'bg-foreground text-white hover:bg-ink-hover',
   secondary: 'border border-border-strong text-foreground hover:bg-ground-alt',
   // White pill on the dark sections: ink on white is 14.37:1.
-  onDark: 'bg-white text-foreground hover:bg-[#eef1f2]',
+  onDark: 'bg-white text-foreground hover:bg-ground-alt',
   onDarkGhost: 'border border-white/45 text-white hover:bg-white/12',
 };
 

@@ -802,7 +802,7 @@ function Steps({
               className={cn(
                 'rounded-pill border px-3.5 py-1.5 text-small',
                 active
-                  ? 'border-foreground bg-foreground text-white'
+                  ? 'border-accent bg-accent text-white'
                   : done
                     ? 'border-border-strong text-foreground'
                     : 'border-border text-muted',

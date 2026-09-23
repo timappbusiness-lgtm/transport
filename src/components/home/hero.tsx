@@ -21,7 +21,11 @@ function FloatCard({
   return (
     <div
       className={cn(
-        'rounded-card border border-border bg-surface/95 p-3.5 shadow-float backdrop-blur-sm',
+        // Genuinely above the scene: the float shadow, a heavier blur,
+        // and a hairline of white on the top edge so the card catches
+        // light the way something lifted off a surface does.
+        'rounded-card border border-white/70 bg-surface/92 p-3.5 shadow-float backdrop-blur-md',
+        'ring-1 ring-inset ring-white/50',
         'motion-safe:animate-[float-in_.7s_cubic-bezier(.22,.61,.36,1)_both]',
         className,
       )}
@@ -82,10 +86,12 @@ export function Hero() {
               </span>
               <SampleTag />
             </div>
-            <SeatDeck taken={5} total={8} compact />
-            <p className="mt-2 font-mono text-label tabular-nums text-foreground">
-              3 locuri libere din 8
-            </p>
+            <SeatDeck
+              taken={5}
+              total={8}
+              compact
+              caption={{ free: 3, total: 8, suffix: 'locuri libere din 8' }}
+            />
           </FloatCard>
         </div>
       </Container>

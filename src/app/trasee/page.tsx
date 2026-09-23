@@ -77,7 +77,7 @@ export default async function Page({
               className={cn(
                 'rounded-pill border px-4 py-1.5 text-sm',
                 active
-                  ? 'border-foreground bg-foreground text-white'
+                  ? 'border-accent bg-accent text-white'
                   : 'border-border text-muted hover:border-border-strong',
               )}
             >

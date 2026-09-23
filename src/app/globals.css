@@ -63,6 +63,12 @@
      that gradient — under every floor there is. Dark sections keep white
      and white/60 for emphasis, which already work. */
   --color-accent: #15616d;
+  /* One step darker, for the pressed and hovered states of a filled
+     accent button. White on it is 9.18:1, so hovering can only improve
+     the contrast, never lose it. */
+  --color-accent-hover: #114f59;
+  /* The same idea for the ink pill. */
+  --color-ink-hover: #2a3740;
 
   /* --- type --- */
   --font-display: var(--font-inter-tight), "Inter", system-ui, sans-serif;
