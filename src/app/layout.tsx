@@ -3,6 +3,7 @@ import { THEME_COLOR } from '@/config/theme';
 import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { SessionNotice } from '@/components/continuity/session-notice';
 import { ToastProvider } from '@/components/ui/toast';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
 import { indexingMetadata } from '@/lib/seo-indexing';
@@ -128,6 +129,9 @@ export default function RootLayout({
           <SiteHeader />
           <main id="continut">{children}</main>
           <SiteFooter />
+          {/* A session that ends while a form is open: the way back,
+              without leaving the page that holds the form. */}
+          <SessionNotice />
         </ToastProvider>
       </body>
     </html>

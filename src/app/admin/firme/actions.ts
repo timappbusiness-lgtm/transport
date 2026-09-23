@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { adminDirectoryCopy } from '@/content/admin-directory';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { createClient } from '@/lib/supabase/server';
@@ -28,7 +28,8 @@ export async function hideCompanyProfileAction(
   formData: FormData,
 ): Promise<HideActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: c.noAccess };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: c.noAccess };
 
   const companyId = String(formData.get('companyId') ?? '').trim();
   const reason = String(formData.get('reason') ?? '').trim();

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { ROUTES } from '@/config/routes';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { buildExportArchive, exportStoragePath } from '@/lib/data-export';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -32,7 +32,7 @@ export interface PersonalDataState {
 
 export async function requestExportAction(): Promise<PersonalDataState> {
   const context = await getAccountContext();
-  if (context === null) return { error: 'Intră în cont ca să îți ceri datele.' };
+  if (context === null) return redirectToSignIn(ROUTES.accountPersonalData);
 
   const supabase = await createClient();
 
@@ -89,7 +89,7 @@ export async function requestDeletionAction(
   formData: FormData,
 ): Promise<PersonalDataState> {
   const context = await getAccountContext();
-  if (context === null) return { error: 'Intră în cont ca să ceri ștergerea.' };
+  if (context === null) return redirectToSignIn(ROUTES.accountPersonalData);
 
   const kind = String(formData.get('kind') ?? 'user');
   const companyId = String(formData.get('company_id') ?? '').trim();

@@ -155,3 +155,22 @@ export function newestDraft<T>(
   if (server === null) return local;
   return local.savedAt > server.savedAt ? local : server;
 }
+
+/** The same shapes the table's constraints accept, checked before asking it. */
+export function isDraftScope(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-z0-9-]{0,64}$/.test(value);
+}
+
+export function isDraftStep(value: unknown): value is string | null {
+  return value === null || (typeof value === 'string' && /^[a-z0-9-]{1,32}$/.test(value));
+}
+
+/** A server draft's payload: a plain object, small enough for the table. */
+export function isDraftPayload(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  try {
+    return JSON.stringify(value).length <= MAX_DRAFT_CHARS;
+  } catch {
+    return false;
+  }
+}

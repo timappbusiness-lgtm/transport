@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill } from '@/components/ui/primitives';
+import { continuityCopy } from '@/content/continuitate';
+import { SESSION_EXPIRED_MESSAGE, SIGN_IN_AGAIN_HREF } from '@/lib/continuity/session';
 import { cn } from '@/lib/utils';
 
 /** Centred card used by every page in the authentication flow. */
@@ -94,7 +96,13 @@ export function Field({
   );
 }
 
-/** Form-level error. Assertive: it appears after the user pressed submit. */
+/**
+ * Form-level error. Assertive: it appears after the user pressed submit.
+ *
+ * When the error is the expired session, the way back is part of it: a
+ * link that signs in again in a new tab, so this tab — with the form and
+ * everything in it — stays as it is.
+ */
 export function FormError({ children }: { children?: string | undefined }) {
   if (!children) return null;
   return (
@@ -103,6 +111,14 @@ export function FormError({ children }: { children?: string | undefined }) {
       className="rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body text-foreground"
     >
       {children}
+      {children === SESSION_EXPIRED_MESSAGE ? (
+        <>
+          {' '}
+          <a href={SIGN_IN_AGAIN_HREF} target="_blank" rel="noopener" className="link-accent font-medium">
+            {continuityCopy.session.inlineLink}
+          </a>
+        </>
+      ) : null}
     </p>
   );
 }

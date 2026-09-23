@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { signInUrlFor } from '@/lib/auth/next-path';
+import { AUTH_PAGES, returnPathAfterAuth, signInUrlFor } from '@/lib/auth/next-path';
 import { PATHNAME_HEADER } from '@/lib/auth/pathname-header';
 import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from './env';
 
@@ -8,7 +8,7 @@ import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from './env
 const PROTECTED = ['/cont', '/admin'] as const;
 
 /** Signed-in users have no business on these. */
-const AUTH_ONLY = ['/autentificare', '/inregistrare'] as const;
+const AUTH_ONLY = AUTH_PAGES;
 
 function isUnder(pathname: string, prefixes: readonly string[]): boolean {
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -62,7 +62,14 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && isUnder(pathname, PROTECTED)) {
+  // A server action is a POST to the page it was sent from. Redirecting it
+  // answers the form with a sign-in page it cannot read, and the form ends
+  // up on the error screen with everything typed into it gone. The action
+  // checks the session itself (`requireAccountContext`) and tells the form
+  // the session expired, which keeps the fields where they are.
+  const isServerAction = request.method === 'POST' && request.headers.has('next-action');
+
+  if (!user && isUnder(pathname, PROTECTED) && !isServerAction) {
     const target = signInUrlFor(pathname, search);
     const [targetPath, targetQuery] = target.split('?');
     const url = request.nextUrl.clone();
@@ -71,11 +78,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(url);
   }
 
-  if (user && isUnder(pathname, AUTH_ONLY)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/cont';
-    url.search = '';
-    return NextResponse.redirect(url);
+  if (user && isUnder(pathname, AUTH_ONLY) && !isServerAction) {
+    // Back to where they were going, not to the dashboard: a person who
+    // pressed „Intră în cont" in the middle of a form, already signed in
+    // in another tab, goes back to the form.
+    const target = returnPathAfterAuth(request.nextUrl.searchParams.get('next'));
+    return NextResponse.redirect(new URL(target, request.nextUrl.origin));
   }
 
   return response;

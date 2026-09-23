@@ -106,3 +106,25 @@ export function withNext(path: string, next: string | null | undefined): string 
   const separator = path.includes('?') ? '&' : '?';
   return `${path}${separator}next=${encodeURIComponent(safe)}`;
 }
+
+/** Pages that exist only for somebody who is not signed in yet. */
+export const AUTH_PAGES = ['/autentificare', '/inregistrare'] as const;
+
+function isAuthPage(path: string): boolean {
+  const pathname = path.split(/[?#]/)[0] ?? path;
+  return AUTH_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/**
+ * Where a person who is signed in goes from a sign-in or sign-up page.
+ *
+ * Before, always the dashboard — so somebody who pressed „Intră în cont"
+ * on step four of a form, while already signed in in another tab, was
+ * taken away from the form they were filling in. Now, the `next` they
+ * carried, when it is a safe internal path. Never back to a sign-in page,
+ * which would redirect here again, for ever.
+ */
+export function returnPathAfterAuth(raw: string | null | undefined): string {
+  const safe = safeNextPath(raw, DEFAULT_NEXT);
+  return isAuthPage(safe) ? DEFAULT_NEXT : safe;
+}

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { firmaCopy } from '@/content/firma';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
@@ -42,7 +42,8 @@ async function setOption(
   formData: FormData,
 ): Promise<OptionActionState> {
   const context = await getAccountContext();
-  if (!context?.isStaff) return { error: NO_ACCESS };
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: NO_ACCESS };
 
   const code = text(formData, 'code').trim().toLowerCase();
   const label = text(formData, 'label').trim();

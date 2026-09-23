@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
@@ -38,7 +38,7 @@ type Direction = Database['public']['Enums']['truck_direction'];
 
 async function requireCompany() {
   const context = await getAccountContext();
-  if (!context) redirect(ROUTES.signIn);
+  if (!context) return redirectToSignIn(ROUTES.accountDepartures);
   if (!context.activeCompany) redirect(ROUTES.accountCompanyCreate);
   return { context, company: context.activeCompany };
 }

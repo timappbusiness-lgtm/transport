@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { plansCopy } from '@/content/plans';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { BILLING_MONTHS } from '@/lib/plans';
 import { createClient } from '@/lib/supabase/server';
@@ -28,7 +28,7 @@ export async function requestSubscriptionAction(
   formData: FormData,
 ): Promise<RequestState> {
   const context = await getAccountContext();
-  if (!context) return { error: 'Intră în cont ca să alegi un plan.' };
+  if (!context) return redirectToSignIn(ROUTES.plans);
 
   const companyId = String(formData.get('companyId') ?? '');
   const planCode = String(formData.get('planCode') ?? '');

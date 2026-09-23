@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES, vehicleRoute } from '@/config/routes';
-import { getAccountContext } from '@/lib/auth/account';
+import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import {
   ACCEPTED_DOCUMENT_TYPES,
   MAX_DOCUMENT_BYTES,
@@ -32,7 +32,7 @@ type DocumentKind = Database['public']['Enums']['document_kind'];
 /** The signed-in user's active company, or a redirect. */
 async function requireCompany() {
   const context = await getAccountContext();
-  if (!context) redirect(ROUTES.signIn);
+  if (!context) return redirectToSignIn(ROUTES.accountFleet);
   if (!context.activeCompany) redirect(ROUTES.accountCompanyCreate);
   return { context, company: context.activeCompany };
 }
