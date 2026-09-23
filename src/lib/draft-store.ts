@@ -135,6 +135,11 @@ export function createDraftStore({
   let photos: readonly string[] = NO_PHOTOS;
   let step: string | null = null;
   let restored: DraftEnvelope<StoredRequest> | null = null;
+  // Something worth keeping: a draft found, or anything typed since. Until
+  // then there is nothing to write — moving between empty steps is not a
+  // draft, and writing one would greet the next visit with „we kept what
+  // you filled in" over an empty form.
+  let worthKeeping = false;
 
   const serverDraft = ignoreStored || server === null ? initial : server.payload.draft;
   const serverPhotos = ignoreStored || server === null ? NO_PHOTOS : server.payload.photos;
@@ -164,6 +169,7 @@ export function createDraftStore({
     );
     restored = newestDraft(fromLocal ?? fromLegacy(), server);
     if (restored === null) return;
+    worthKeeping = true;
     current = restored.payload.draft;
     photos = restored.payload.photos.length === 0 ? NO_PHOTOS : restored.payload.photos;
     step = restored.step;
@@ -183,6 +189,7 @@ export function createDraftStore({
   }
 
   function persist(notify: boolean) {
+    worthKeeping = true;
     const stored: StoredRequest = { draft: current, photos };
     writeDraft(storage, REQUEST_DRAFT_KEY, stored, step, now());
     if (notify) {
@@ -241,6 +248,7 @@ export function createDraftStore({
       load();
       if (step === next) return;
       step = next;
+      if (!worthKeeping) return;
       // Nothing on screen changes, so nobody is told; only the copies are.
       const stored: StoredRequest = { draft: current, photos };
       writeDraft(storage, REQUEST_DRAFT_KEY, stored, step, now());
@@ -252,6 +260,7 @@ export function createDraftStore({
       current = draft;
       photos = NO_PHOTOS;
       step = null;
+      worthKeeping = false;
       clearStorage();
       for (const listener of listeners) listener();
     },

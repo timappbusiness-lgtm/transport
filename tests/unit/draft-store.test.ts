@@ -173,6 +173,18 @@ describe('createDraftStore', () => {
     expect(calls).toBe(1);
   });
 
+  it('writes nothing for a step change on a form nobody has typed into', () => {
+    // Otherwise the next visit says „we kept what you filled in" over an
+    // empty form.
+    const storage = memoryStorage();
+    const s = store({ storage });
+    s.setStep('vehicul');
+    expect(storage.getItem(REQUEST_DRAFT_KEY)).toBeNull();
+    s.reset(emptyDraft());
+    s.setStep('traseu');
+    expect(storage.getItem(REQUEST_DRAFT_KEY)).toBeNull();
+  });
+
   it('keeps the uploaded photos with the draft', () => {
     const storage = memoryStorage();
     const s = store({ storage });

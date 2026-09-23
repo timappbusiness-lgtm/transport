@@ -256,7 +256,17 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const requested = parseStep(searchParams.get(STEP_PARAM), REQUEST_STEP_DEFINITION) ?? 'ruta';
-  const step: RequestStep = hydrated ? reachableRequestStep(draft, requested, today) : requested;
+  // Checked on arrival — the first render with the browser's draft, and
+  // every time the address names a different step (a link, back, forward)
+  // — and not again while the person types: emptying a field in the
+  // summary on the last step is an edit, not a reason to be thrown back
+  // to step one.
+  const [arrival, setArrival] = useState<{ requested: RequestStep; step: RequestStep } | null>(null);
+  if (hydrated && arrival?.requested !== requested) {
+    setArrival({ requested, step: reachableRequestStep(draft, requested, today) });
+  }
+  const step: RequestStep =
+    hydrated && arrival?.requested === requested ? arrival.step : requested;
   const [errors, setErrors] = useState<FieldErrors<RequestField>>({});
   /** The fields somebody has left at least once: those may say what is wrong. */
   const [touched, setTouched] = useState<Set<RequestField>>(new Set());
