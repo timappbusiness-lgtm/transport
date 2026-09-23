@@ -39,7 +39,7 @@ export function isDraftForm(value: unknown): value is DraftForm {
  * and not worth following the person to another device — but worth not
  * losing to a refresh or to a message that arrives while typing.
  */
-export const LOCAL_DRAFT_FORMS = ['mesaj', 'intrebare', 'evaluare', 'raspuns'] as const;
+export const LOCAL_DRAFT_FORMS = ['mesaj', 'intrebare', 'evaluare', 'raspuns', 'stare'] as const;
 export type LocalDraftForm = (typeof LOCAL_DRAFT_FORMS)[number];
 
 /**

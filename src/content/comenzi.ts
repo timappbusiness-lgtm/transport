@@ -130,8 +130,14 @@ export const ordersCopy = {
     retake: 'Refă fotografia',
     uploading: 'Se încarcă…',
     uploaded: 'Încărcată',
-    failed: 'Nu s-a încărcat. Încearcă din nou — fotografia nu s-a pierdut.',
-    retry: 'Încarcă din nou',
+    failed: 'Nu s-a încărcat. Fotografia a rămas pe telefon — trimite-o din nou când ai semnal.',
+    retry: 'Trimite din nou',
+    waiting: (count: number) =>
+      count === 1
+        ? 'O fotografie făcută mai devreme n-a apucat să plece. E păstrată pe telefon.'
+        : `${count} fotografii făcute mai devreme n-au apucat să plece. Sunt păstrate pe telefon.`,
+    sendWaiting: 'Trimite-le acum',
+    discardWaiting: 'Renunță la ele',
     offline: 'Pare că nu ai semnal. Fotografiile rămân aici până revine.',
     location: 'Atașează locația la aceste fotografii',
     locationHint: 'Opțional. Se cere o singură dată și se salvează doar la fotografiile astea.',

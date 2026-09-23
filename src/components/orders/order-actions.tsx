@@ -1,6 +1,9 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { DraftRestored } from '@/components/continuity/draft-status';
+import { browserStorage, clearDraft, draftKey } from '@/lib/continuity/drafts';
+import { useFormDraft } from '@/lib/continuity/use-form-draft';
 import {
   assignCrewAction,
   cancelOrderAction,
@@ -284,12 +287,45 @@ export function AssignCrew({
 /** The nine lines a driver walks round the car for. */
 export function ConditionForm({ orderId }: { orderId: string }) {
   const [state, submit, pending] = useKeptActionState(saveChecklistAction, EMPTY);
-  const id = useId();
 
-  if (state.notice !== undefined) return <FormNotice>{state.notice}</FormNotice>;
+  if (state.notice !== undefined) return <ConditionSaved orderId={orderId} notice={state.notice} />;
+  return <ConditionFields orderId={orderId} state={state} submit={submit} pending={pending} />;
+}
+
+/** Saved: the phone's copy of the checklist is no longer needed. */
+function ConditionSaved({ orderId, notice }: { orderId: string; notice: string }) {
+  useEffect(() => {
+    clearDraft(browserStorage(), draftKey('stare', orderId));
+  }, [orderId]);
+  return <FormNotice>{notice}</FormNotice>;
+}
+
+/**
+ * The checklist, kept on the phone as it is filled in: a driver who is
+ * interrupted halfway round the car — a call, a locked screen, a page
+ * that reloads when the signal comes back — finds the nine answers where
+ * they left them.
+ */
+function ConditionFields({
+  orderId,
+  state,
+  submit,
+  pending,
+}: {
+  orderId: string;
+  state: OrderState;
+  submit: (formData: FormData) => void;
+  pending: boolean;
+}) {
+  const id = useId();
+  const formRef = useRef<HTMLFormElement>(null);
+  const draft = useFormDraft(formRef, { form: 'stare', scope: orderId, signedIn: false });
 
   return (
-    <KeepingForm action={submit} className="flex flex-col gap-3">
+    <KeepingForm ref={formRef} action={submit} className="flex flex-col gap-3">
+      {draft.restored !== null ? (
+        <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
+      ) : null}
       <input type="hidden" name="order_id" value={orderId} />
       <p className="text-body text-muted">{ordersCopy.checklist.lede}</p>
 

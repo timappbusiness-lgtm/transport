@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import type { DraftForm } from './drafts';
+import type { DraftForm, LocalDraftForm } from './drafts';
 import {
   fieldsOf,
   parseFieldValues,
@@ -13,7 +13,7 @@ import {
 import { useDraft, type DraftController } from './use-draft';
 
 export interface FormDraftOptions {
-  form: DraftForm;
+  form: DraftForm | LocalDraftForm;
   scope?: string | undefined;
   signedIn: boolean;
   /** Field names never kept: anything the page sets rather than the person. */

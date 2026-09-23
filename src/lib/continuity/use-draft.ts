@@ -6,11 +6,13 @@ import {
   browserStorage,
   clearDraft,
   draftKey,
+  isDraftForm,
   newestDraft,
   readDraft,
   writeDraft,
   type DraftEnvelope,
   type DraftForm,
+  type LocalDraftForm,
 } from './drafts';
 
 /** How long typing has to pause before the account copy is written. */
@@ -19,7 +21,8 @@ const SERVER_DEBOUNCE_MS = 1500;
 export type DraftSaveStatus = 'idle' | 'saved' | 'saved-account';
 
 export interface DraftOptions<T> {
-  form: DraftForm;
+  /** A form kept on the account too, or one kept only in this browser. */
+  form: DraftForm | LocalDraftForm;
   /** Separates two drafts of one form: the request an offer is for. */
   scope?: string | undefined;
   /** Every payload goes back through this on the way in. */
@@ -57,11 +60,13 @@ export function useDraft<T>({
   form,
   scope,
   parse,
-  signedIn,
   onRestore,
   enabled = true,
+  signedIn: signedInOption,
 }: DraftOptions<T>): DraftController<T> {
   const key = draftKey(form, scope);
+  // Only the forms the table knows follow the account; the rest stay here.
+  const signedIn = signedInOption && isDraftForm(form);
   const serverScope = scope ?? '';
   const [ready, setReady] = useState(false);
   const [restored, setRestored] = useState<DraftEnvelope<T> | null>(null);
@@ -82,6 +87,7 @@ export function useDraft<T>({
     const next = pending.current;
     pending.current = null;
     if (next === null || typeof next.payload !== 'object' || next.payload === null) return;
+    if (!isDraftForm(form)) return;
     saveDraftAction(form, serverScope, next.step, next.payload)
       .then((ok) => {
         if (ok) setStatus('saved-account');
@@ -112,6 +118,12 @@ export function useDraft<T>({
       };
     }
 
+    if (!isDraftForm(form)) {
+      finish(local);
+      return () => {
+        cancelled = true;
+      };
+    }
     loadDraftAction(form, serverScope)
       .then((found) => {
         const payload = found === null ? null : parseRef.current(found.payload);
@@ -167,7 +179,7 @@ export function useDraft<T>({
     clearDraft(browserStorage(), key);
     setRestored(null);
     setStatus('idle');
-    if (signedIn) clearDraftAction(form, serverScope).catch(() => {});
+    if (signedIn && isDraftForm(form)) clearDraftAction(form, serverScope).catch(() => {});
   }, [key, signedIn, form, serverScope]);
 
   return { ready, restored, status, save, clear };
