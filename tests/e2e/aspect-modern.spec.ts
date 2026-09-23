@@ -20,6 +20,8 @@ const SWEEP = [...new Set([...NAMED_WIDTHS, ...Array.from({ length: 40 }, (_, i)
 
 interface HeaderProblems {
   overflow: number;
+  /** Pixels of the link row scrolled out of sight inside itself. */
+  hiddenInNav: number;
   escaped: string[];
   wrapped: string[];
   clipped: string[];
@@ -41,8 +43,9 @@ async function inspectHeader(page: Page): Promise<HeaderProblems> {
       if (style.display === 'none' || el.classList.contains('sr-only')) continue;
       const r = el.getBoundingClientRect();
       if (r.width === 0) continue;
-      // Inside the bar, unless it is in the nav, which may scroll.
-      if (!nav?.contains(el) && (r.left < box.left - 1 || r.right > box.right + 1)) {
+      // Inside the bar, every one of them. The link row used to be
+      // allowed to scroll, and hid three of its five links on a phone.
+      if (r.left < box.left - 1 || r.right > box.right + 1) {
         escaped.push(el.textContent?.trim() || el.getAttribute('aria-label') || el.tagName);
       }
       // One line of text: a label that wraps grows the pill past the bar.
@@ -56,6 +59,7 @@ async function inspectHeader(page: Page): Promise<HeaderProblems> {
     }
     return {
       overflow: header.scrollWidth - header.clientWidth,
+      hiddenInNav: nav ? nav.scrollWidth - nav.clientWidth : 0,
       escaped,
       wrapped,
       clipped,
@@ -66,6 +70,7 @@ async function inspectHeader(page: Page): Promise<HeaderProblems> {
 
 function expectClean(problems: HeaderProblems, where: string) {
   expect(problems.overflow, `${where}: the bar scrolls`).toBeLessThanOrEqual(1);
+  expect(problems.hiddenInNav, `${where}: links hidden inside the row`).toBeLessThanOrEqual(1);
   expect(problems.escaped, `${where}: outside the bar`).toEqual([]);
   expect(problems.wrapped, `${where}: wraps`).toEqual([]);
   expect(problems.clipped, `${where}: clipped`).toEqual([]);
@@ -148,6 +153,53 @@ test.describe('the header, signed in with a long name', () => {
       await mountSignedIn(page);
       expectClean(await inspectHeader(page), `signed in at ${width}`);
     }
+  });
+});
+
+test.describe('the public links on a phone', () => {
+  for (const width of [360, 390, 768]) {
+    test(`at ${width} they are behind „Meniu", whole, and close again`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/cereri');
+      await settled(page);
+      const toggle = page.locator('header [data-nav-toggle]');
+      const nav = page.getByRole('navigation', { name: 'Navigare' });
+      await expect(toggle).toHaveText('Meniu');
+      await expect(nav).toBeHidden();
+
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      await expect(nav).toBeVisible();
+      const links = nav.getByRole('link');
+      await expect(links).toHaveText(['Cereri', 'Trasee', 'Firme', 'Abonamente', 'Cum funcționează']);
+      for (const link of await links.all()) {
+        const box = await link.boundingBox();
+        if (!box) throw new Error('no box');
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(width);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+      await expect(nav.locator('a[aria-current="page"]')).toHaveText('Cereri');
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth),
+      ).toBeLessThanOrEqual(1);
+
+      await page.keyboard.press('Escape');
+      await expect(nav).toBeHidden();
+      await expect(toggle).toBeFocused();
+
+      await toggle.click();
+      await nav.getByRole('link', { name: 'Firme' }).click();
+      await expect(page).toHaveURL(/\/firme$/);
+      await expect(nav).toBeHidden();
+    });
+  }
+
+  test('from lg the row is in the bar and there is no „Meniu"', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/');
+    await expect(page.locator('header [data-nav-toggle]')).toBeHidden();
+    await expect(page.getByRole('navigation', { name: 'Navigare' }).getByRole('link')).toHaveCount(5);
   });
 });
 

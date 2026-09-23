@@ -208,36 +208,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
 
   return (
     <>
-      {/* The public bar: five links, built once in `PUBLIC_NAV`. Below
-          `lg` it scrolls sideways inside itself when it has to — the row
-          scrolls, the page does not — and from `lg` up there is room for
-          all five beside a long name, which a sweep from 360 to 1920 in
-          `tests/e2e/aspect-modern.spec.ts` checks. */}
-      <nav
-        aria-label="Navigare"
-        className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-none"
-      >
-        {PUBLIC_NAV.map((page) => {
-          // The page you are on, in the bright accent with a bar under
-          // it: the state is said by `aria-current` and shown by more
-          // than colour.
-          const current = page.href === currentHref;
-          return (
-            <Link
-              key={page.href}
-              href={page.href}
-              aria-current={current ? 'page' : undefined}
-              className={cn(
-                PILL_QUIET,
-                current &&
-                  'text-accent-bright underline decoration-accent-bright decoration-2 underline-offset-[6px] hover:text-accent-bright',
-              )}
-            >
-              {page.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <PublicNav currentHref={currentHref} />
 
       {user ? (
         <div className="flex min-w-0 flex-none items-center gap-1.5">
@@ -393,6 +364,97 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
           </Link>
         </div>
       )}
+    </>
+  );
+}
+
+/**
+ * The public bar: five links, built once in `PUBLIC_NAV`, drawn once.
+ *
+ * From `lg` they sit in the bar. Below it they do not fit — measured, the
+ * five links need 880px signed out beside the two actions — and the row
+ * used to scroll sideways inside itself, which on a phone showed
+ * „Cereri, Trase" and nothing to say there was more. So below `lg` the
+ * same list is a panel under the bar, opened by „Meniu": a word beside
+ * the icon, never the icon alone. It closes on a choice, on Escape and on
+ * a press outside it.
+ */
+function PublicNav({ currentHref }: { currentHref: string | null }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (navRef.current?.contains(target) || toggleRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setOpen(false);
+      toggleRef.current?.focus();
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        ref={toggleRef}
+        type="button"
+        data-nav-toggle
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30 lg:hidden')}
+      >
+        <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
+        Meniu
+      </button>
+      <nav
+        ref={navRef}
+        id={id}
+        aria-label="Navigare"
+        data-open={open ? 'true' : undefined}
+        className={cn(
+          // Below lg: a panel under the bar, shown only when open.
+          'absolute inset-x-0 top-full mt-2 hidden flex-col gap-0.5 rounded-card border border-white/15 bg-dark-from p-2 shadow-float data-[open=true]:flex',
+          // From lg: the row inside the bar.
+          'lg:static lg:mt-0 lg:flex lg:flex-none lg:flex-row lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none',
+        )}
+      >
+        {PUBLIC_NAV.map((page) => {
+          // The page you are on, in the bright accent with a bar under
+          // it: the state is said by `aria-current` and shown by more
+          // than colour.
+          const current = page.href === currentHref;
+          return (
+            <Link
+              key={page.href}
+              href={page.href}
+              onClick={() => setOpen(false)}
+              aria-current={current ? 'page' : undefined}
+              className={cn(
+                PILL_QUIET,
+                'max-lg:justify-start max-lg:rounded-input max-lg:px-3 max-lg:py-3 max-lg:text-body',
+                current &&
+                  'text-accent-bright underline decoration-accent-bright decoration-2 underline-offset-[6px] hover:text-accent-bright',
+              )}
+            >
+              {page.label}
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }

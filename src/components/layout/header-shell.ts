@@ -16,4 +16,4 @@ export const HEADER_OUTER = 'pointer-events-none sticky top-0 z-40 px-3 pt-3 sm:
  * this class and measures it.
  */
 export const HEADER_BAR =
-  'pointer-events-auto mx-auto flex h-14 w-full max-w-[72rem] items-center gap-2 rounded-pill border border-white/15 bg-dark-from/88 px-2.5 text-white shadow-float backdrop-blur-xl sm:gap-3 sm:px-4';
+  'pointer-events-auto relative mx-auto flex h-14 w-full max-w-[72rem] items-center gap-2 rounded-pill border border-white/15 bg-dark-from/88 px-2.5 text-white shadow-float backdrop-blur-xl sm:gap-3 sm:px-4';

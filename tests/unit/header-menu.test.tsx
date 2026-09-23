@@ -202,6 +202,28 @@ describe('the public bar', () => {
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-current="page"[^>]*>Cereri</);
   });
+
+  it('is one list: a row from lg, a panel behind „Meniu" below it', () => {
+    // Below lg the five links do not fit, and a row that scrolls inside
+    // itself showed „Cereri, Trase" with nothing to say there was more.
+    for (const user of [null, { name: 'Ana' }] as const) {
+      const html = render(user, '/');
+      expect(html.match(/<nav /g)).toHaveLength(1);
+      const toggle = html.match(/<button[^>]*data-nav-toggle[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+      expect(toggle).toContain('aria-expanded="false"');
+      expect(toggle).toContain('lg:hidden');
+      // A word beside the icon, never the icon alone.
+      expect(toggle).toMatch(/>Meniu<\/button>$/);
+      const controls = toggle.match(/aria-controls="([^"]+)"/)?.[1];
+      const nav = html.match(/<nav [^>]*>/)?.[0] ?? '';
+      expect(nav).toContain(`id="${controls}"`);
+      // Closed below lg, always shown from lg.
+      expect(nav).toMatch(/class="[^"]*\bhidden\b/);
+      expect(nav).toContain('lg:flex');
+      expect(nav).not.toContain('data-open');
+      expect(nav).not.toContain('overflow-x-auto');
+    }
+  });
 });
 
 describe('a long name', () => {
