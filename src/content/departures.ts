@@ -1,23 +1,38 @@
 /** Romanian copy for the departures board and the carrier's own routes. */
 export const departuresCopy = {
   board: {
-    eyebrow: 'Trasee disponibile',
-    title: 'Trasee',
-    titleSoft: 'cu locuri libere.',
-    lede: 'Platforme care circulă oricum pe ruta lor. Plătești locul, nu camionul.',
+    // What the page is, in three words.
+    title: 'Trasee cu locuri',
+    // One sentence: what is on the page, and what to do next. The pitch
+    // — „plătești locul, nu camionul" — belongs on the homepage, where
+    // somebody is being introduced to the idea, not on the board they
+    // open twice a day.
+    lede: 'Platforme cu locuri libere pe o rută. Caută ruta ta și deschide traseul.',
     tabs: {
       toate: 'Toate',
       tur: 'Pe tur',
       retur: 'Pe retur',
     },
     count: (n: number) => (n === 1 ? 'Un traseu' : `${n} trasee`),
-    sortNote: 'Ordonate după data cea mai apropiată.',
     signedOutNote:
       'Vezi traseul și locurile libere. Firma care transportă apare după autentificare.',
   },
 
   filters: {
-    title: 'Filtre',
+    title: 'Caută traseu',
+    // The three on screen. A route leaves a region, so „De unde" here is
+    // a județ — asking for a town would return almost nothing.
+    fromShort: 'De unde',
+    toShort: 'Unde',
+    vehicleShort: 'Tip vehicul',
+    countyPlaceholder: 'Orice județ',
+    more: 'Mai multe filtre',
+    moreActive: (n: number) => `${n} active`,
+    sort: 'Ordonează',
+    tab: 'Direcția',
+    tabAll: 'Oricare',
+    tabOutbound: 'Pe tur',
+    tabReturn: 'Pe retur',
     fromCountry: 'Țara de plecare',
     fromCounty: 'Județ / regiune plecare',
     toCountry: 'Țara de sosire',
@@ -50,8 +65,14 @@ export const departuresCopy = {
   },
 
   empty: {
-    title: 'Încă nu sunt trasee publicate pentru această căutare.',
-    body: 'Bursa este la început. Publică o cerere și transportatorii o văd, sau lasă-ne adresa și te anunțăm când apare un traseu potrivit.',
+    /** The board itself is empty. One sentence: what will be here. */
+    title: 'Încă nu este niciun traseu aici',
+    body: 'Aici apar platformele cu locuri libere pe o rută.',
+    /** The search found nothing. The action is the filters. */
+    filteredTitle: 'Niciun traseu pentru această căutare',
+    filteredBody: 'Șterge filtrele ca să vezi toate traseele.',
+    /** One level down: the two alerts. */
+    more: 'Altceva de făcut de aici',
     request: 'Publică o cerere',
     alert: 'Anunță-mă când apare un traseu',
     alertSignedOut: 'Intră în cont ca să primești anunțul',

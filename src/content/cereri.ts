@@ -150,23 +150,42 @@ export const requestsCopy = {
   },
 
   board: {
-    eyebrow: 'Panoul de cereri',
-    title: 'Cereri',
-    titleSoft: 'de transport.',
-    lede: 'Vehicule care așteaptă un transportator. Ruta, perioada și starea sunt publice; datele de contact se deschid din abonament.',
+    // What the page is, in three words. The eyebrow above it said
+    // „Panoul de cereri" and the heading said „Cereri de transport" —
+    // the same thing twice, before a lede that said it a third time.
+    title: 'Cereri de transport',
+    // One sentence: what is on the page, and what to do next. It names
+    // no offer on purpose — a visitor reading the board is not being sold
+    // an account, and `tests/unit/cereri-content.test.ts` holds that rule.
+    lede: 'Vehicule care așteaptă un transportator. Caută ruta ta și deschide cererea.',
     tabs: {
       toate: 'Toate',
       curse: 'De la firme',
       retur: 'De la persoane fizice',
     },
     count: (n: number) => (n === 1 ? 'O cerere' : `${n} cereri`),
-    sortNote: 'Ordonate după data cea mai apropiată de încărcare.',
-    signedOutNote: 'Vezi ruta, perioada și starea vehiculului. Contactul cere un cont de transportator.',
+    signedOutNote:
+      'Ruta și starea vehiculului sunt publice. Contactul se deschide dintr-un cont de transportator verificat.',
     publish: 'Publică o cerere',
   },
 
   filters: {
-    title: 'Filtre',
+    // „Caută" rather than „Filtre": it says what the box does, not what
+    // it is. A dispatcher looking for work from Timiș is searching.
+    title: 'Caută transport',
+    // The three on screen. Short, because they sit over the field and
+    // „Oraș de plecare" is three words for a box you type a town into.
+    fromCityShort: 'De unde',
+    toCityShort: 'Unde',
+    categoryShort: 'Tip vehicul',
+    cityPlaceholder: 'Orice localitate',
+    more: 'Mai multe filtre',
+    moreActive: (n: number) => `${n} active`,
+    sort: 'Ordonează',
+    tab: 'Cine a publicat',
+    tabAll: 'Oricine',
+    tabCompanies: 'Firme',
+    tabIndividuals: 'Persoane fizice',
     fromCountry: 'Țara de plecare',
     fromCity: 'Oraș de plecare',
     toCountry: 'Țara de destinație',
@@ -222,14 +241,20 @@ export const requestsCopy = {
   },
 
   empty: {
-    mineTitle: 'Nicio cerere potrivită cu firma ta acum.',
-    mineBody:
-      'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale. Lărgește toleranța la traseu sau scoate filtrul ca să vezi tot panoul.',
+    mineTitle: 'Nicio cerere potrivită cu firma ta',
+    mineBody: 'Filtrul cere acoperire, categorie, dotări și un ocol în toleranța traseelor tale.',
     mineClear: 'Vezi toate cererile',
-    title: 'Nicio cerere pentru această căutare.',
-    body: 'Bursa este la început. Dacă ai un vehicul de transportat, publică o cerere — este gratuit și o văd toți transportatorii verificați. Dacă ești transportator, vezi ce trasee sunt deja publicate.',
-    departures: 'Vezi traseele',
+    /** The board itself is empty. One sentence: what will be here. */
+    title: 'Încă nu este nicio cerere aici',
+    body: 'Aici apar vehiculele care așteaptă un transportator.',
+    publish: 'Publică o cerere',
+    /** The search found nothing. The action is the filters, not a form. */
+    filteredTitle: 'Nicio cerere pentru această căutare',
+    filteredBody: 'Șterge filtrele ca să vezi tot panoul.',
     clear: 'Vezi toate cererile',
+    /** One level down: the alert, and the other board. */
+    more: 'Altceva de făcut de aici',
+    departures: 'Vezi traseele',
   },
 
   detail: {

@@ -93,7 +93,16 @@ async function signUp(
   // back on the form with their draft, not on a dashboard that makes them
   // find it again. `safeNextPath` is what stops this being an open
   // redirect somebody can put in a confirmation e-mail.
-  const next = safeNextPath(text(formData, 'next'), ROUTES.account);
+  //
+  // With nothing to come back to, a carrier lands on the board rather
+  // than on their own empty dashboard. They signed up to see what is on
+  // offer; the company file is the step after that, and the board says
+  // so in a banner. A private person still lands in their account,
+  // because the board is not what they came for.
+  const next = safeNextPath(
+    text(formData, 'next'),
+    accountType === 'company' ? ROUTES.requests : ROUTES.account,
+  );
 
   const requirePhone = accountType === 'individual';
   const validation = validateIndividualSignUp(

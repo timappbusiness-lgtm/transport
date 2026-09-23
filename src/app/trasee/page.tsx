@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { CarrierBanner } from '@/components/onboarding/carrier-banner';
 import { DepartureCard } from '@/components/departures/departure-card';
 import { FiltersForm } from '@/components/departures/filters-form';
 import { SavedSearchButton } from '@/components/departures/saved-search-button';
 import { SaveSearch } from '@/components/requests/save-search';
 import { buttonClasses } from '@/components/ui/button';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { getAccountContext } from '@/lib/auth/account';
@@ -16,14 +16,15 @@ import {
   hasActiveFilters,
   parseFilters,
   tabDirection,
-  type Tab,
 } from '@/lib/departure-filters';
 import type { PublicDeparture } from '@/lib/departures';
 import { boundingBox, withinRadius } from '@/lib/radius';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { cn } from '@/lib/utils';
-import { EmptyFigure } from '@/components/ui/empty-state';
+import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
+import { DEPARTURE_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
+import { sortDepartures } from '@/lib/board-sort';
+import { carrierStage } from '@/lib/carrier-onboarding';
 
 export const metadata: Metadata = {
   title: 'Trasee disponibile',
@@ -31,7 +32,6 @@ export const metadata: Metadata = {
     'Platforme auto cu locuri libere pe rute din România și Europa. Vezi traseul, perioada și locurile rămase.',
 };
 
-const TABS: readonly Tab[] = ['toate', 'tur', 'retur'];
 const BOARD_LIMIT = 60;
 
 /**
@@ -51,58 +51,52 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const filters = parseFilters(params);
+  const sort = parseSort(typeof params[SORT_KEY] === 'string' ? (params[SORT_KEY] as string) : null, DEPARTURE_SORTS);
   const c = departuresCopy.board;
 
-  const [departures, context] = await Promise.all([loadDepartures(filters), getAccountContext()]);
+  const [loaded, context] = await Promise.all([loadDepartures(filters), getAccountContext()]);
+  const departures = sortDepartures(loaded, sort);
+  // One „now" for the whole page, so every card on it agrees.
+  const now = new Date();
+
+  // The same sentence as on /cereri, for the same reason: a carrier who
+  // has just signed up is on a board, not on a form, and this is where
+  // the remaining step has to be said.
+  const company = context?.activeCompany ?? null;
+  const stage =
+    context?.profile?.account_type === 'company'
+      ? carrierStage(
+          company === null
+            ? null
+            : {
+                verificationStatus: company.verification_status,
+                isSuspended: company.is_suspended,
+              },
+        )
+      : 'ready';
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.title} soft={c.titleSoft} className="mt-5" />
-        <Lede className="mt-4">{c.lede}</Lede>
-        {context === null ? (
-          <p className="mt-3 text-sm text-muted">{c.signedOutNote}</p>
-        ) : null}
+        <h1 className="text-h1">{c.title}</h1>
+        <p className="mt-3 text-body-lg text-muted">{c.lede}</p>
+        {context === null ? <p className="mt-2 text-small text-muted">{c.signedOutNote}</p> : null}
       </header>
 
-      <nav aria-label={departuresCopy.board.title} className="mt-8 flex flex-wrap gap-1.5">
-        {TABS.map((tab) => {
-          const href = `${ROUTES.routes}${filtersToQuery({ ...filters, tab })}`;
-          const active = filters.tab === tab;
-          return (
-            <Link
-              key={tab}
-              href={href === `${ROUTES.routes}` ? ROUTES.routes : href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'rounded-pill border px-4 py-1.5 text-sm',
-                active
-                  ? 'border-accent bg-accent text-white'
-                  : 'border-border text-muted hover:border-border-strong',
-              )}
-            >
-              {c.tabs[tab]}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="mt-8 flex flex-col gap-8">
+        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
-        <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">{departuresCopy.filters.title}</h2>
-          <FiltersForm filters={filters} />
+        <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
+          <FiltersForm filters={filters} sort={sort} />
         </aside>
 
         <section aria-label={c.title}>
           {departures.length > 0 ? (
             <>
-              <p className="mb-4 text-sm text-muted">
-                {c.count(departures.length)} · {c.sortNote}
-              </p>
+              <p className="mb-4 text-small text-muted">{c.count(departures.length)}</p>
               <ul className="flex flex-col gap-4">
                 {departures.map((departure) => (
-                  <DepartureCard key={departure.truck_listing_id} departure={departure} />
+                  <DepartureCard key={departure.truck_listing_id} departure={departure} now={now} />
                 ))}
               </ul>
             </>
@@ -128,50 +122,62 @@ function EmptyState({
   signedIn: boolean;
 }) {
   const c = departuresCopy.empty;
+  const filtered = hasActiveFilters(filters);
+
   return (
-    <div className="rounded-card border border-border bg-surface p-6 shadow-card sm:p-8">
-      <EmptyFigure kind="route" className="mb-4" />
-      <h2 className="text-lg">{c.title}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
+    <div>
+      {/* One sentence saying what will appear here, and one button. The
+          screen used to carry two buttons, two alert forms, a paragraph
+          and a link — five things to choose between, on the screen where
+          a person has the least to go on. */}
+      <EmptyCard
+        figure="route"
+        title={filtered ? c.filteredTitle : c.title}
+        body={filtered ? c.filteredBody : c.body}
+        action={
+          filtered ? (
+            <Link
+              href={`${ROUTES.routes}${filtersToQuery({ ...EMPTY_FILTERS, tab: filters.tab })}`}
+              className={buttonClasses('primary', 'md')}
+            >
+              {c.clear}
+            </Link>
+          ) : (
+            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+              {c.request}
+            </Link>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
-          {c.request}
-        </Link>
-        <SavedSearchButton filters={filters} signedIn={signedIn} />
-      </div>
-
-      {/* The other half of an empty board. Whoever is reading this is
-          either looking for a carrier — the button above — or is a
-          carrier with nothing to look at, and that person wants to be
-          told when a request appears on the corridor they just typed
-          in, not to come back and check. */}
-      <div className="mt-6 border-t border-border pt-5">
-        <p className="mb-3 max-w-[58ch] text-sm text-muted">{c.carrierAlert}</p>
-        <SaveSearch
-          filters={filtersFromBoard({
-            fromCountry: filters.fromCountry,
-            fromCounty: filters.fromCounty,
-            toCountry: filters.toCountry,
-            toCounty: filters.toCounty,
-            category: filters.vehicleType,
-            scope: filters.scope,
-          })}
-          signedIn={signedIn}
-          label={c.carrierAlertAction}
-        />
-      </div>
-
-      {hasActiveFilters(filters) ? (
-        <p className="mt-5 text-sm">
-          <Link
-            href={`${ROUTES.routes}${filtersToQuery({ ...EMPTY_FILTERS, tab: filters.tab })}`}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
-          >
-            {c.clear}
-          </Link>
-        </p>
-      ) : null}
+      {/* Nothing was removed, it moved one level down. Whoever is reading
+          an empty board is either looking for a carrier — the button
+          above — or is a carrier with nothing to look at, and that person
+          wants to be told when a request appears on the corridor they
+          just typed in rather than to come back and check. */}
+      <details className="mt-4 rounded-input border border-border bg-ground-alt/60">
+        <summary className="cursor-pointer list-none px-4 py-2.5 text-small font-medium">
+          {c.more}
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-border px-4 py-4">
+          <SavedSearchButton filters={filters} signedIn={signedIn} />
+          <div>
+            <p className="mb-3 max-w-[58ch] text-small text-muted">{c.carrierAlert}</p>
+            <SaveSearch
+              filters={filtersFromBoard({
+                fromCountry: filters.fromCountry,
+                fromCounty: filters.fromCounty,
+                toCountry: filters.toCountry,
+                toCounty: filters.toCounty,
+                category: filters.vehicleType,
+                scope: filters.scope,
+              })}
+              signedIn={signedIn}
+              label={c.carrierAlertAction}
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

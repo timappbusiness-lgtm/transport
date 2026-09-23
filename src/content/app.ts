@@ -54,8 +54,11 @@ export const appCopy = {
   home: {
     /** Takes the first name, when we know it. */
     greeting: (name: string | null) => (name ? `Bună, ${name}` : 'Bună'),
-    needsAttention: 'Necesită atenție',
-    nothingToDo: 'Nimic care să aibă nevoie de tine acum.',
+    // Literal, and phrased the way somebody would ask it: a dispatcher
+    // opening the application wants the answer to one question, and
+    // „Necesită atenție" is a heading for a report, not an answer.
+    needsAttention: 'Ce ai de făcut acum',
+    nothingToDo: 'Nimic acum. Panoul de cereri este deschis.',
     quickActions: 'Ce poți face',
     activity: 'Activitate',
   },

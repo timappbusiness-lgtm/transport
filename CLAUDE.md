@@ -226,6 +226,17 @@ pnpm check:functions   # Deno type-check for the edge functions
   error or a destructive confirmation, and never one that could read as
   an official seal. No emoji anywhere in the interface. The whole rule,
   with the reasons, is `docs/13-iconuri.md`.
+- **A new screen states its purpose in one sentence, shows at most
+  three primary controls above the fold, and keeps advanced options one
+  click away.** A transport professional told us the platform was hard
+  to connect and had to be far simpler; `/cereri` was putting thirteen
+  form fields on screen, twelve of them above the fold, under 461 words
+  of heading and lede, before a single request. Nothing is deleted to
+  meet this — the tenth filter goes behind a disclosure that opens by
+  itself when a link carries it, so a shared search still explains
+  itself. The before/after count for every journey is
+  `docs/15-simplitate.md`; the shape both boards take is
+  `src/lib/board-simplicity.ts`.
 - **The vehicle categories are one list**, `OFFERED_CATEGORIES` in
   `src/lib/vehicle-categories.ts`, with the weight hint and the price
   class on the same row as the label. The niche is what goes up on a car

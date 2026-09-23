@@ -25,8 +25,10 @@ const FORBIDDEN = [
 test.describe('with no prices to read, none are stated', () => {
   test('the page still explains what is paid for', async ({ page }) => {
     await page.goto('/abonamente');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Plătești pentru contacte');
-    await expect(page.getByText(/se consultă gratuit/)).toBeVisible();
+    // The heading says what the page is; the sentence under it says what
+    // is paid for. That used to be one clever line doing both jobs.
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Abonamente');
+    await expect(page.getByText(/Panoul se vede gratuit/)).toBeVisible();
   });
 
   test('no card invents a price', async ({ page }) => {

@@ -61,6 +61,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const full = isFull(departure);
   const departed = hasDeparted(departure);
   const c = departuresCopy.detail;
+  // One „now" for the whole page, so every card on it agrees.
+  const now = new Date();
 
   return (
     <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -243,7 +245,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           {similar.length > 0 ? (
             <ul className="mt-4 flex flex-col gap-4">
               {similar.map((other) => (
-                <DepartureCard key={other.truck_listing_id} departure={other} />
+                <DepartureCard key={other.truck_listing_id} departure={other} now={now} />
               ))}
             </ul>
           ) : (

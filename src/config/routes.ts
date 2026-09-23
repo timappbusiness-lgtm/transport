@@ -104,6 +104,17 @@ export type Route = (typeof ROUTES)[RouteKey];
  * One vehicle's page. A function rather than an entry in ROUTES, which
  * holds literal paths so `Route` stays a union of strings.
  */
+/**
+ * One document of the company file, on its own screen.
+ *
+ * The kind is the enum value, which is already URL-safe and is what the
+ * page looks the requirement up by — a slug would be a second name for
+ * the same thing and a second place to keep them in step.
+ */
+export function companyDocumentRoute(kind: string): string {
+  return `${ROUTES.accountDocuments}/${kind}`;
+}
+
 export function vehicleRoute(vehicleId: string): string {
   return `${ROUTES.accountFleet}/${vehicleId}`;
 }

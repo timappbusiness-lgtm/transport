@@ -48,9 +48,13 @@ test.describe('the boards are findable', () => {
 
 test.describe('empty states offer somewhere to go', () => {
   test('the request board offers both sides of the market', async ({ page }) => {
+    // One button on the card, and the other side of the market one
+    // click down: an empty board is the screen where a person has the
+    // least to go on, and five things to choose between is the problem.
     await page.goto('/cereri');
     const main = page.locator('main');
     await expect(main.getByRole('link', { name: /Publică/ }).first()).toBeVisible();
+    await main.getByText('Altceva de făcut de aici').click();
     await expect(main.getByRole('link', { name: /trasee/i }).first()).toBeVisible();
   });
 
@@ -86,6 +90,8 @@ test.describe('the filters cover what the board holds', () => {
   });
 
   test('express is a filter, not only a badge', async ({ page }) => {
+    // Inside „Mai multe filtre" now; `toHaveCount` reads the markup
+    // rather than the pixels, so it does not need opening.
     await page.goto('/cereri');
     await expect(page.locator('#rf-service option[value="expres"]')).toHaveCount(1);
     await expect(page.locator('#rf-service option[value="tractare"]')).toHaveCount(0);
@@ -93,6 +99,7 @@ test.describe('the filters cover what the board holds', () => {
 
   test('a chosen filter survives into the address bar', async ({ page }) => {
     await page.goto('/cereri');
+    await page.getByText('Mai multe filtre').click();
     await page.locator('#rf-service').selectOption('expres');
     await page.getByRole('button', { name: /Caută|Filtrează/ }).first().click();
     await expect(page).toHaveURL(/serviciu=expres/);

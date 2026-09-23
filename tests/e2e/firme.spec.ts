@@ -52,7 +52,7 @@ test.describe('the directory page', () => {
   test('says what it lists and what it leaves out', async ({ page }) => {
     await page.goto('/firme');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Firme de transport');
-    await expect(page.getByText(/au ales să apară în listă/)).toBeVisible();
+    await expect(page.getByText(/care au ales să apară aici/)).toBeVisible();
   });
 
   test('keeps its filters in the URL', async ({ page }) => {

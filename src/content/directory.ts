@@ -48,11 +48,9 @@ export const directoryCopy = {
   },
 
   page: {
-    eyebrow: 'Firme',
-    strong: 'Firme de transport',
-    soft: 'cu documente verificate.',
-    note:
-      'Afișăm doar firmele care au ales să apară în listă și au documentele aprobate și în termen.',
+    /** Literal: what the page is, in three words. */
+    heading: 'Firme de transport',
+    note: 'Numai firme cu documentele aprobate și în termen, care au ales să apară aici.',
     meta: {
       title: 'Firme de transport verificate',
       description:

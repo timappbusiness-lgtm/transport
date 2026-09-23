@@ -286,6 +286,8 @@ function Requests({
 }
 
 function Departures({ data }: { data: SeoPageData }) {
+  // One „now" for the whole section, so every card on it agrees.
+  const now = new Date();
   return (
     <section aria-labelledby="trasee" className="mt-12">
       <h2 id="trasee" className="text-xl">
@@ -297,7 +299,7 @@ function Departures({ data }: { data: SeoPageData }) {
         <>
           <ul className="mt-5 flex flex-col gap-3">
             {data.departures.map((departure) => (
-              <DepartureCard key={departure.truck_listing_id} departure={departure} />
+              <DepartureCard key={departure.truck_listing_id} departure={departure} now={now} />
             ))}
           </ul>
           <p className="mt-4">

@@ -148,10 +148,12 @@ test.describe('the draft survives the trip to make an account', () => {
 });
 
 test.describe('the board with nothing on it', () => {
-  test('says so, and offers the one thing that fills it', async ({ page }) => {
+  test('says what will be here, and offers the one thing that fills it', async ({ page }) => {
     await page.goto('/cereri');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await expect(page.getByText('Nicio cerere pentru această căutare.')).toBeVisible();
+    // An unfiltered empty board is not a search that found nothing: it
+    // is a board with nothing on it yet, and it says which.
+    await expect(page.getByText('Încă nu este nicio cerere aici')).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Publică o cerere' }).first(),
     ).toBeVisible();
@@ -159,11 +161,14 @@ test.describe('the board with nothing on it', () => {
 
   test('tells a visitor what a session would add', async ({ page }) => {
     await page.goto('/cereri');
-    await expect(page.getByText(/Contactul cere un cont de transportator/)).toBeVisible();
+    await expect(page.getByText(/Contactul se deschide dintr-un cont de transportator/)).toBeVisible();
   });
 
   test('keeps every filter in the URL', async ({ page }) => {
     await page.goto('/cereri');
+    // Both of these are one click down now, under „Mai multe filtre".
+    // The keys they write are the ones they always wrote.
+    await page.getByText('Mai multe filtre').click();
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByLabel('Starea vehiculului').selectOption('nu-ruleaza');
     await page.getByRole('button', { name: 'Caută' }).click();

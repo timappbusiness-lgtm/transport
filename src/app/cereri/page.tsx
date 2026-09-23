@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
-import { IconLabel } from '@/components/ui/icon';
-import { iconForAction } from '@/lib/icons';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
+import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
+import { CarrierBanner } from '@/components/onboarding/carrier-banner';
 import { buttonClasses } from '@/components/ui/button';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import { requestsCopy } from '@/content/cereri';
@@ -30,14 +29,15 @@ import {
   requestFiltersToQuery,
   tabBoard,
   type RequestFilters,
-  type Tab,
 } from '@/lib/request-filters';
 import { cityValue } from '@/lib/cities';
 import { boundingBox, withinRadius } from '@/lib/radius';
 import type { PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { cn } from '@/lib/utils';
+import { REQUEST_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
+import { sortRequests } from '@/lib/board-sort';
+import { carrierStage } from '@/lib/carrier-onboarding';
 
 export const metadata: Metadata = {
   title: 'Cereri de transport',
@@ -45,7 +45,6 @@ export const metadata: Metadata = {
     'Vehicule care așteaptă un transportator, cu ruta, perioada de încărcare și starea lor. Filtrează după traseu, dată și categorie.',
 };
 
-const TABS: readonly Tab[] = ['toate', 'curse', 'retur'];
 const BOARD_LIMIT = 60;
 
 /**
@@ -70,7 +69,9 @@ export default async function Page({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = parseRequestFilters(await searchParams);
+  const params = await searchParams;
+  const filters = parseRequestFilters(params);
+  const sort = parseSort(typeof params[SORT_KEY] === 'string' ? (params[SORT_KEY] as string) : null, REQUEST_SORTS);
   const c = requestsCopy.board;
 
   const widened = filters.mine || filters.near !== null;
@@ -88,52 +89,31 @@ export default async function Page({
   const canFilterByCompany = company !== null && company.company_type !== 'expeditie';
   const applyMine = filters.mine && canFilterByCompany;
   const mine = applyMine ? await onlyForCompany(all, company) : null;
-  const requests = (mine?.requests ?? all).slice(0, BOARD_LIMIT);
+  const requests = sortRequests(mine?.requests ?? all, sort).slice(0, BOARD_LIMIT);
+  // One „now" for the whole page, so every card on it agrees.
+  const now = new Date();
+
+  // A carrier who has just signed up lands here rather than on a form,
+  // so the board is where the remaining step has to be said.
+  const stage =
+    context?.profile?.account_type === 'company' ? carrierStage(companyState(company)) : 'ready';
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.title} soft={c.titleSoft} className="mt-5" />
-        <Lede className="mt-4">{c.lede}</Lede>
-        {context === null ? <p className="mt-3 text-sm text-muted">{c.signedOutNote}</p> : null}
+        <h1 className="text-h1">{c.title}</h1>
+        <p className="mt-3 text-body-lg text-muted">{c.lede}</p>
+        {context === null ? <p className="mt-2 text-small text-muted">{c.signedOutNote}</p> : null}
       </header>
 
-      <nav aria-label={c.eyebrow} className="mt-8 flex flex-wrap gap-1.5">
-        {TABS.map((tab) => {
-          const query = requestFiltersToQuery({ ...filters, tab });
-          const active = filters.tab === tab;
-          return (
-            <Link
-              key={tab}
-              href={`${ROUTES.requests}${query}`}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'rounded-pill border px-4 py-1.5 text-sm',
-                active
-                  ? 'border-accent bg-accent text-white'
-                  : 'border-border text-muted hover:border-border-strong',
-              )}
-            >
-              {c.tabs[tab]}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
-        <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">
-            <IconLabel as={iconForAction('filter')} size="sm">
-              {requestsCopy.filters.title}
-            </IconLabel>
-          </h2>
-          <BoardFilters filters={filters} showMine={canFilterByCompany} />
-
+      <div className="mt-8 flex flex-col gap-8">
+        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
+        <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
           {/* Whatever is filtered right now is what a saved search would
-              watch, so the button belongs here rather than at the top of
-              a page somebody has stopped reading. */}
-          <div className="mt-5 border-t border-border pt-5">
+              watch, so it sits beside „Caută" — as a text link, not a
+              second button. A bordered control on its own row under the
+              filters is a fourth thing to decide about above the list. */}
+          <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany}>
             <SaveSearch
               filters={filtersFromBoard({
                 fromCountry: filters.fromCountry,
@@ -147,8 +127,9 @@ export default async function Page({
                 maxWeightKg: filters.maxWeightKg === null ? null : String(filters.maxWeightKg),
               })}
               signedIn={context !== null}
+              variant="quiet"
             />
-          </div>
+          </BoardFilters>
         </aside>
 
         <section aria-label={c.title}>
@@ -160,16 +141,17 @@ export default async function Page({
 
           {requests.length > 0 ? (
             <>
-              <p className="mb-4 text-sm text-muted">
+              <p className="mb-4 text-small text-muted">
                 {mine === null
-                  ? `${c.count(requests.length)} · ${c.sortNote}`
-                  : `${requestsCopy.filters.mineCount(mine.requests.length, all.length)} · ${c.sortNote}`}
+                  ? c.count(requests.length)
+                  : requestsCopy.filters.mineCount(mine.requests.length, all.length)}
               </p>
               <ul className="flex flex-col gap-4">
                 {requests.map((request) => (
                   <BoardRequestCard
                     key={request.id}
                     request={request}
+                    now={now}
                     // The tolerance is what decided this card was here, so
                     // it says so rather than leaving the carrier to wonder
                     // why a Hamburg run is on their list.
@@ -189,6 +171,13 @@ export default async function Page({
   );
 }
 
+/** The two fields `carrierStage` reads, or null when there is no firm. */
+function companyState(company: Company | null) {
+  return company === null
+    ? null
+    : { verificationStatus: company.verification_status, isSuspended: company.is_suspended };
+}
+
 /**
  * The empty state is the common case at launch, so it is a real screen
  * rather than a shrug — and the one action it offers is the one that makes
@@ -196,54 +185,65 @@ export default async function Page({
  */
 function EmptyState({ filters, signedIn }: { filters: RequestFilters; signedIn: boolean }) {
   const c = requestsCopy.empty;
+  const filtered = hasActiveRequestFilters(filters);
+
   return (
-    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-lg">{c.title}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.body}</p>
+    <div>
+      {/* One sentence saying what will appear here, and one button. It
+          used to be two buttons, a three-clause paragraph, an alert form
+          and a link — five things to choose between, on the screen where
+          a person has the least to go on. */}
+      <EmptyCard
+        figure="list"
+        title={filtered ? c.filteredTitle : c.title}
+        body={filtered ? c.filteredBody : c.body}
+        action={
+          filtered ? (
+            <Link
+              href={`${ROUTES.requests}${requestFiltersToQuery({
+                ...EMPTY_REQUEST_FILTERS,
+                tab: filters.tab,
+              })}`}
+              className={buttonClasses('primary', 'md')}
+            >
+              {c.clear}
+            </Link>
+          ) : (
+            <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+              {c.publish}
+            </Link>
+          )
+        }
+      />
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
-          {requestsCopy.board.publish}
-        </Link>
-        {/* A carrier who finds the board empty is not here to publish a
-            request. The other board is what they came for, and an empty
-            state with one button aimed at the other side of the market
-            is a dead end for half the people who reach it. */}
-        <Link href={ROUTES.routes} className={buttonClasses('secondary', 'md')}>
-          {c.departures}
-        </Link>
-      </div>
-
-      {/* An empty board is the moment to ask to be told when it changes,
-          not the moment to leave. */}
-      <div className="mt-6 border-t border-border pt-5">
-        <SaveSearch
-          filters={filtersFromBoard({
-            fromCountry: filters.fromCountry,
-            toCountry: filters.toCountry,
-            category: filters.category,
-            condition: filters.condition,
-            service: filters.service,
-            scope: filters.scope,
-          })}
-          signedIn={signedIn}
-          label="Anunță-mă când apare ceva"
-        />
-      </div>
-
-      {hasActiveRequestFilters(filters) ? (
-        <p className="mt-5 text-sm">
-          <Link
-            href={`${ROUTES.requests}${requestFiltersToQuery({
-              ...EMPTY_REQUEST_FILTERS,
-              tab: filters.tab,
-            })}`}
-            className="text-foreground underline underline-offset-4 decoration-border-strong hover:decoration-foreground"
-          >
-            {c.clear}
-          </Link>
-        </p>
-      ) : null}
+      {/* Nothing was removed, it moved one level down. A carrier who
+          finds the board empty did not come here to publish a request:
+          the other board is what they came for, and being told when one
+          appears beats coming back to check. */}
+      <details className="mt-4 rounded-input border border-border bg-ground-alt/60">
+        <summary className="cursor-pointer list-none px-4 py-2.5 text-small font-medium">
+          {c.more}
+        </summary>
+        <div className="flex flex-col gap-5 border-t border-border px-4 py-4">
+          <p className="text-small">
+            <Link href={ROUTES.routes} className="text-foreground underline underline-offset-4">
+              {c.departures}
+            </Link>
+          </p>
+          <SaveSearch
+            filters={filtersFromBoard({
+              fromCountry: filters.fromCountry,
+              toCountry: filters.toCountry,
+              category: filters.category,
+              condition: filters.condition,
+              service: filters.service,
+              scope: filters.scope,
+            })}
+            signedIn={signedIn}
+            label="Anunță-mă când apare ceva"
+          />
+        </div>
+      </details>
     </div>
   );
 }
@@ -329,20 +329,28 @@ async function loadCompanyRoutes(companyId: string): Promise<CarrierRoute[]> {
 function MineEmptyState({ filters }: { filters: RequestFilters }) {
   const c = requestsCopy.empty;
   return (
-    <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
-      <h2 className="text-lg">{c.mineTitle}</h2>
-      <p className="mt-2 max-w-[54ch] text-sm text-muted">{c.mineBody}</p>
-      <div className="mt-6 flex flex-wrap gap-3">
+    <div>
+      <EmptyCard
+        figure="search"
+        title={c.mineTitle}
+        body={c.mineBody}
+        action={
+          <Link
+            href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
+            className={buttonClasses('primary', 'md')}
+          >
+            {c.mineClear}
+          </Link>
+        }
+      />
+      <p className="mt-4 text-center text-small">
         <Link
-          href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
-          className={buttonClasses('primary', 'md')}
+          href={ROUTES.accountDepartures}
+          className="text-muted underline underline-offset-4 hover:text-foreground"
         >
-          {c.mineClear}
+          Lărgește toleranța pe traseele tale
         </Link>
-        <Link href={ROUTES.accountDepartures} className={buttonClasses('secondary', 'md')}>
-          Vezi traseele mele
-        </Link>
-      </div>
+      </p>
     </div>
   );
 }

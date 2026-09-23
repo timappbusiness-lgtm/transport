@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { CompanyCard } from '@/components/directory/company-card';
 import { DirectoryFiltersForm } from '@/components/directory/filters-form';
 import { buttonClasses } from '@/components/ui/button';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
+import { Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { directoryCopy } from '@/content/directory';
 import {
@@ -46,8 +46,7 @@ export default async function Page({
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.strong} soft={c.soft} className="mt-5" />
+        <h1 className="text-h1">{c.heading}</h1>
         <Lede className="mt-4">{c.note}</Lede>
       </header>
 

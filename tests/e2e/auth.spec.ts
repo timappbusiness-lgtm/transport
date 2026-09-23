@@ -27,10 +27,14 @@ test.describe('public pages render', () => {
     });
   }
 
-  test('the carrier link redirects into company sign-up with the type preselected', async ({
+  test('the carrier link explains itself, then leads into sign-up with the type', async ({
     page,
   }) => {
+    // It used to redirect straight into a form. A dispatcher arriving
+    // from a printed leaflet met four fields and no reason for them.
     await page.goto('/transportatori/inscriere');
+    await expect(page).toHaveURL(/\/transportatori\/inscriere$/);
+    await page.getByRole('link', { name: /Fă-ți cont/ }).click();
     await expect(page).toHaveURL(/\/inregistrare\/firma\?tip=transport$/);
   });
 });

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Container } from '@/components/layout/container';
 import { FaqAccordion } from '@/components/faq/accordion';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
+import { Lede } from '@/components/ui/primitives';
 import { SUPPORT_EMAIL } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
 import { faqCopy } from '@/content/faq';
@@ -28,9 +28,12 @@ export default async function Page() {
 
   return (
     <Container className="py-12 sm:py-16">
+      {/* Literal, because this is the page somebody opens when they do
+          not yet know what the platform is. The two-tone head belongs to
+          the homepage section, where the reader is being introduced to
+          something rather than looking an answer up. */}
       <div className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.strong} soft={c.soft} className="mt-5" />
+        <h1 className="text-h1">{c.heading}</h1>
         <Lede className="mt-4">{c.page.lede}</Lede>
       </div>
 

@@ -1,4 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+/**
+ * Everything except „de unde", „unde" and „tip vehicul" lives one click
+ * down now, under „Mai multe filtre". The keys did not change, so the
+ * URL assertions below are the ones they always were.
+ */
+async function openFilters(page: Page): Promise<void> {
+  // Idempotent: the panel opens by itself when the URL carries one of
+  // the filters inside it, and clicking the summary then would shut it.
+  const panel = page.locator('main details').first();
+  if (await panel.evaluate((n: HTMLDetailsElement) => n.open)) return;
+  await page.getByText('Mai multe filtre').click();
+}
 
 /**
  * The departures board, browsed the way a visitor with a car to move
@@ -10,10 +23,15 @@ import { expect, test } from '@playwright/test';
  */
 
 test.describe('trasee, signed out', () => {
-  test('the board opens and says it is a board', async ({ page }) => {
+  test('the board opens and asks three questions', async ({ page }) => {
     await page.goto('/trasee');
     await expect(page.locator('h1')).toContainText('Trasee');
-    await expect(page.getByRole('navigation', { name: 'Trasee' })).toBeVisible();
+    // The strip of direction tabs above the board became a filter among
+    // the filters. What is on screen is the three a dispatcher answers
+    // without thinking.
+    for (const label of ['De unde', 'Unde', 'Tip vehicul']) {
+      await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+    }
   });
 
   test('the homepage sends you here', async ({ page }) => {
@@ -22,17 +40,22 @@ test.describe('trasee, signed out', () => {
     await expect(page).toHaveURL(/\/trasee$/);
   });
 
-  test('the three tabs are links that carry the direction in the URL', async ({ page }) => {
+  test('the direction is a filter, and still carries in the URL', async ({ page }) => {
     await page.goto('/trasee');
-    await page.getByRole('link', { name: 'Pe retur', exact: true }).click();
+    await openFilters(page);
+    await page.selectOption('#f-tab', 'retur');
+    await page.getByRole('button', { name: 'Caută' }).click();
     await expect(page).toHaveURL(/directie=retur/);
 
-    await page.getByRole('link', { name: 'Pe tur', exact: true }).click();
+    await openFilters(page);
+    await page.selectOption('#f-tab', 'tur');
+    await page.getByRole('button', { name: 'Caută' }).click();
     await expect(page).toHaveURL(/directie=tur/);
   });
 
   test('filters land in the URL, so a search can be shared', async ({ page }) => {
     await page.goto('/trasee');
+    await openFilters(page);
     await page.selectOption('#f-from-country', 'DE');
     await page.selectOption('#f-seats', '2');
     await page.getByRole('button', { name: 'Caută' }).click();
@@ -41,7 +64,9 @@ test.describe('trasee, signed out', () => {
     await expect(page).toHaveURL(/locuri=2/);
   });
 
-  test('a filtered tab keeps the tab when the filters change', async ({ page }) => {
+  test('a filtered direction survives the next search', async ({ page }) => {
+    // The panel is open already, because the link carries something in
+    // it — which is the whole reason it opens by itself.
     await page.goto('/trasee?directie=retur');
     await page.selectOption('#f-from-country', 'IT');
     await page.getByRole('button', { name: 'Caută' }).click();
@@ -50,12 +75,15 @@ test.describe('trasee, signed out', () => {
     await expect(page).toHaveURL(/tara-plecare=IT/);
   });
 
-  test('the empty state offers both ways forward', async ({ page }) => {
+  test('the empty state says what will be here and offers one thing', async ({ page }) => {
     await page.goto('/trasee?tara-plecare=PL&tara-sosire=SE');
-    await expect(page.getByText('Încă nu sunt trasee publicate')).toBeVisible();
-    const emptyState = page.getByText('Încă nu sunt trasee publicate').locator('..');
-    await expect(emptyState.getByRole('link', { name: 'Publică o cerere' })).toBeVisible();
-    // Signed out, the alert says it needs an account rather than pretending.
+    await expect(page.getByText('Niciun traseu pentru această căutare')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Vezi toate traseele' })).toBeVisible();
+
+    // The two alerts are still there, one click down rather than beside
+    // the button. Signed out, the alert says it needs an account rather
+    // than pretending.
+    await page.getByText('Altceva de făcut de aici').click();
     await expect(page.getByRole('button', { name: /Intră în cont ca să primești/ })).toBeVisible();
   });
 

@@ -22,7 +22,13 @@ export function HeaderBrand({ signedIn }: { signedIn: boolean }) {
       className="mr-auto flex items-center gap-2.5 font-display text-body-lg font-medium tracking-[-0.02em]"
     >
       <BrandMark className="flex-none" />
-      {BRAND_NAME}
+      {/* Below `sm` the word is read but not drawn. The bar is brand,
+          navigation and two pills inside 390px, and the word was taking
+          the room the navigation needed — with it there, the first menu
+          item rendered as „Ce". The mark still identifies the brand and
+          still links home, and `sr-only` rather than `hidden` keeps the
+          link's accessible name. */}
+      <span className="sr-only sm:not-sr-only">{BRAND_NAME}</span>
     </Link>
   );
 }

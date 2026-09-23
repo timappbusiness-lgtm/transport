@@ -23,6 +23,9 @@ export const firmaCopy = {
   saved: 'Modificările au fost salvate.',
   saving: 'Se salvează…',
 
+  /** „Pasul 2 din 4" — how much of the file is left, in words. */
+  stepOf: (current: number, total: number) => `Pasul ${current} din ${total}`,
+
   tabs: {
     identitate: 'Date firmă',
     acoperire: 'Acoperire',

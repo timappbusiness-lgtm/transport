@@ -38,7 +38,7 @@ export function SaveSearch({
   filters: SearchFilters;
   signedIn: boolean;
   label?: string;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'quiet';
 }) {
   const [state, action, pending] = useActionState(saveSearchAction, EMPTY);
   const [open, setOpen] = useState(false);
@@ -48,7 +48,14 @@ export function SaveSearch({
     return (
       <Link
         href={`${ROUTES.signIn}?next=${encodeURIComponent(ROUTES.requests)}`}
-        className={buttonClasses(variant, 'md')}
+        className={
+          // „quiet" is a text link rather than a button: beside „Caută"
+          // on the board it is a second thing to do, not a second thing
+          // to decide between.
+          variant === 'quiet'
+            ? 'text-small text-muted underline-offset-4 hover:text-foreground hover:underline'
+            : buttonClasses(variant, 'md')
+        }
       >
         {label ?? c.title}
       </Link>
@@ -68,7 +75,15 @@ export function SaveSearch({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className={buttonClasses(variant, 'md')}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={
+          variant === 'quiet'
+            ? 'text-small text-muted underline-offset-4 hover:text-foreground hover:underline'
+            : buttonClasses(variant, 'md')
+        }
+      >
         {label ?? c.title}
       </button>
     );

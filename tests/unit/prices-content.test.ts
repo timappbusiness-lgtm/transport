@@ -58,12 +58,17 @@ describe('prices copy rules', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('keeps the headlines short enough to hold two lines', () => {
-    const headlines = [
-      `${pricesCopy.hero.strong} ${pricesCopy.hero.soft}`,
-      `${pricesCopy.home.strong} ${pricesCopy.home.soft}`,
-    ];
-    for (const headline of headlines) expect(headline.length).toBeLessThanOrEqual(76);
+  it('keeps the two-tone headline short enough to hold two lines', () => {
+    // One left: the homepage section, where a reader is being introduced
+    // to something. The page's own heading is literal now — „Prețuri
+    // orientative", what it is, in two words — so there is no two-tone
+    // pair on it to measure.
+    const headline = `${pricesCopy.home.strong} ${pricesCopy.home.soft}`;
+    expect(headline.length).toBeLessThanOrEqual(76);
+  });
+
+  it('and the page says what it is, in four words or fewer', () => {
+    expect(pricesCopy.hero.heading.split(/\s+/).length).toBeLessThanOrEqual(4);
   });
 
   it('offers a way forward while the table is unpublished', () => {

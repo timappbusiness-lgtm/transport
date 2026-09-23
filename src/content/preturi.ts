@@ -16,9 +16,8 @@ export const pricesCopy = {
   },
 
   hero: {
-    eyebrow: 'Prețuri orientative',
-    strong: 'Cât costă',
-    soft: 'un transport auto.',
+    /** Literal: what the page is, in two words. */
+    heading: 'Prețuri orientative',
     lede:
       'Tarifele de mai jos sunt reperele noastre pe kilometru, pe clase de vehicule. Sunt orientative: prețul final îl stabilește transportatorul care preia cursa, în funcție de rută, perioadă și locurile libere de pe platformă.',
     // Nothing is "mai jos" while the table is unpublished.
