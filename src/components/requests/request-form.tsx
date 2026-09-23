@@ -261,18 +261,31 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
   // — and not again while the person types: emptying a field in the
   // summary on the last step is an edit, not a reason to be thrown back
   // to step one.
-  const [arrival, setArrival] = useState<{ requested: RequestStep; step: RequestStep } | null>(null);
-  if (hydrated && arrival?.requested !== requested) {
-    setArrival({ requested, step: reachableRequestStep(draft, requested, today) });
-  }
-  const step: RequestStep =
-    hydrated && arrival?.requested === requested ? arrival.step : requested;
   const [errors, setErrors] = useState<FieldErrors<RequestField>>({});
   /** The fields somebody has left at least once: those may say what is wrong. */
   const [touched, setTouched] = useState<Set<RequestField>>(new Set());
   /** A block of the summary opened for editing in place, on the last step. */
   const [editing, setEditing] = useState<RequestStep | null>(null);
   const [stuck, setStuck] = useState(0);
+  const [arrival, setArrival] = useState<{ requested: RequestStep; step: RequestStep } | null>(null);
+  if (hydrated && arrival?.requested !== requested) {
+    const reachable = reachableRequestStep(draft, requested, today);
+    setArrival({ requested, step: reachable });
+    // Sent back to a step the person had filled in: it says, at once,
+    // what is missing there. Set here, with the step, rather than in an
+    // effect afterwards — the address is corrected in that effect, the
+    // correction is a new render, and a message scheduled for later was
+    // cancelled by it before it could appear.
+    if (reachable !== requested && stepHasInput(draft, reachable)) {
+      const found = validateStep(draft, reachable, today);
+      const fields = Object.keys(found) as RequestField[];
+      setErrors(found);
+      setTouched(new Set(fields));
+      setStuck(fields.length);
+    }
+  }
+  const step: RequestStep =
+    hydrated && arrival?.requested === requested ? arrival.step : requested;
   // Which fields a listing filled, so each one can say so. Cleared per
   // field the moment somebody edits it: a chip on a value they typed
   // themselves is a lie about where it came from.
@@ -314,26 +327,13 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
   }, [state.requestId, store, accountCopy]);
 
   // The address asked for a step the draft cannot reach yet: it is
-  // corrected in place — no new history entry — to the step shown. If the
-  // person had filled that step in, it says what is missing; a step they
-  // never reached says nothing.
+  // corrected in place — no new history entry — to the step shown.
   useEffect(() => {
     if (!hydrated) return;
     store.setStep(REQUEST_STEP_DEFINITION.slugs[step]);
     if (step === requested) return;
     window.history.replaceState(null, '', `${pathname}${withStep(window.location.search, step, REQUEST_STEP_DEFINITION)}`);
-    if (!stepHasInput(draft, step)) return;
-    const found = validateStep(draft, step, today);
-    const fields = Object.keys(found) as RequestField[];
-    const frame = requestAnimationFrame(() => {
-      setErrors(found);
-      setTouched(new Set(fields));
-      setStuck(fields.length);
-    });
-    return () => cancelAnimationFrame(frame);
-    // Once per corrected step: the draft changing under it is typing.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, step, requested, pathname, store, today]);
+  }, [hydrated, step, requested, pathname, store]);
 
   // Typed on this device before signing in — or newer here than on the
   // account: from now on it follows the account to the other device.
@@ -571,10 +571,14 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
     if (next !== step) {
       window.history.pushState(null, '', `${pathname}${withStep(window.location.search, next, REQUEST_STEP_DEFINITION)}`);
     }
-    // Back to the top of the step, where its heading says what it asks.
-    // A jump, not a glide, for anybody who asked the system for less motion.
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    formRef.current?.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    // Back to the top of the step, where its heading says what it asks —
+    // a jump, not a glide. The glide moved „Continuă" under the thumb for
+    // half a second: a second tap in that time landed on the form beside
+    // it and did nothing, on the one screen where a tap that does nothing
+    // reads as „the site is broken". Only when the top is above the
+    // screen: a step change that is already in view does not move.
+    const top = formRef.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) formRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
   }
 
   /**
