@@ -17,7 +17,11 @@ import { FOOTER_NAV, NO_NAV_COUNTS, PUBLIC_NAV, headerMenu, type NavContext } fr
  * it would pull in the Supabase client.
  */
 
-vi.mock('next/navigation', () => ({ usePathname: () => mockPathname }));
+// The header reads the query too, so „Autentificare" comes back to the same place.
+vi.mock('next/navigation', () => ({
+  usePathname: () => mockPathname,
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock('@/app/auth-actions', () => ({ signOutAction: async () => {} }));
 
 let mockPathname = '/';
