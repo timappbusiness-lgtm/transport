@@ -30,6 +30,7 @@ import { formatKm, vehicleLine, type PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { IconLabel } from '@/components/ui/icon';
+import { CategoryTile } from '@/components/ui/category-art';
 import { iconForFact } from '@/lib/icons';
 
 export const metadata: Metadata = { title: 'Cerere de transport' };
@@ -107,7 +108,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </p>
 
       <header className="mt-6">
-        <EyebrowPill>{CARGO_CATEGORY_LABELS[request.category]}</EyebrowPill>
+        {/* The same drawing the card on the board carried, so the page
+            that opens is recognisably the card that was clicked. */}
+        <div className="flex items-center gap-3">
+          <CategoryTile category={request.category} size="md" />
+          <EyebrowPill>{CARGO_CATEGORY_LABELS[request.category]}</EyebrowPill>
+        </div>
         <h1 className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-h2">
           <span>{request.from_city}</span>
           <CountryTag cc={request.from_country} />
@@ -141,7 +147,12 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <Row label={c.window}>
                 {formatWindow(request.loading_from, request.loading_to)}
               </Row>
-              {km ? <Row label="Distanță estimată">{km}</Row> : null}
+              {km ? (
+                <Row label="Distanță estimată">
+                  {/* The key number on this card, as on the board. */}
+                  <span className="font-mono font-medium tabular-nums text-accent">{km}</span>
+                </Row>
+              ) : null}
               <Row label={c.service}>
                 {SERVICE_TYPE_LABELS[request.service_type]}
                 <span className="block text-xs text-muted">

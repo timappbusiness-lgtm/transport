@@ -90,4 +90,11 @@ describe('the key numbers are in the accent', () => {
     const page = readFileSync('src/app/cont/oferte/page.tsx', 'utf8');
     expect(page).toContain("isLive(offer.status) || offer.status === 'accepted' ? 'text-accent' : 'text-foreground'");
   });
+
+  it('the distance on the request page, beside the same drawing as the card', () => {
+    // The page reads Supabase, so it is checked in its source.
+    const page = readFileSync('src/app/cereri/[id]/page.tsx', 'utf8');
+    expect(page).toMatch(/<span className="font-mono font-medium tabular-nums text-accent">\{km\}<\/span>/);
+    expect(page).toContain('<CategoryTile category={request.category} size="md" />');
+  });
 });
