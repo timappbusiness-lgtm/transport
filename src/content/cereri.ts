@@ -161,7 +161,12 @@ export const requestsCopy = {
       body: 'Ca să publicăm cererea avem nevoie de un cont gratuit. Îl faci în câteva secunde, iar ce ai completat până acum te așteaptă aici.',
       signUp: 'Fă-ți cont gratuit',
       signIn: 'Am deja cont',
+      /** The step that needed the account, once it is done. */
+      done: 'Contul e gata: ești conectat, iar cererea se publică din contul tău.',
+      doneLabel: 'Cont',
     },
+    /** While the browser reads back the draft for a step past the first. */
+    restoring: 'Se încarcă ce ai completat…',
 
     saved: {
       title: 'Cererea este salvată ca ciornă',
@@ -226,6 +231,14 @@ export const requestsCopy = {
       add: 'Adaugă poze',
       fromImport: 'din anunț',
       uploading: 'Se încarcă…',
+      uploadingOf: (done: number, total: number) => `Se încarcă poza ${done} din ${total}…`,
+      failed: (count: number) =>
+        count === 1
+          ? 'O poză nu s-a încărcat. A rămas aleasă — încearcă din nou când ai semnal.'
+          : `${count} poze nu s-au încărcat. Au rămas alese — încearcă din nou când ai semnal.`,
+      retry: 'Încearcă din nou',
+      drop_failed: 'Renunță la ele',
+      savedPhoto: 'Poză încărcată',
       remaining: (left: number, max: number) =>
         left === 1 ? `Mai poți adăuga o poză (din ${max}).` : `Mai poți adăuga ${left} poze (din ${max}).`,
       full: (max: number) => `Ai adăugat toate cele ${max} poze.`,

@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { RequestForm } from '@/components/requests/request-form';
 import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { HelpLink } from '@/components/help/help-link';
-import { ROUTES } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import { getAccountContext } from '@/lib/auth/account';
-import { safeNextPath } from '@/lib/auth/next-path';
+import type { DraftEnvelope } from '@/lib/continuity/drafts';
+import { readServerDraft } from '@/lib/continuity/server-drafts';
+import { parseStoredRequest, type StoredRequest } from '@/lib/draft-store';
 import { hasPrefill, parsePrefill } from '@/lib/price-prefill';
 import { draftFromPrefill, emptyDraft, isoToday, type RequestDraft } from '@/lib/request-form';
 
@@ -30,30 +31,27 @@ async function loadForm(params: SearchParams): Promise<{
   prefilled: boolean;
   today: string;
   signedIn: boolean;
-  returnTo: string;
+  serverDraft: DraftEnvelope<StoredRequest> | null;
 }> {
   const prefill = parsePrefill(params);
   const prefilled = hasPrefill(prefill);
   const context = await getAccountContext();
 
-  // Sign-in has to come back to the same link, prefill and all, or the
-  // calculator's choices are lost exactly where they were about to be used.
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    const single = Array.isArray(value) ? value[0] : value;
-    if (typeof single === 'string' && single !== '') query.set(key, single);
+  // Signed in: the draft may have been started on the other device. Read
+  // here, it is the first thing drawn rather than something that appears.
+  let serverDraft: DraftEnvelope<StoredRequest> | null = null;
+  if (context !== null && !prefilled) {
+    const found = await readServerDraft(context.user.id, 'cerere', '');
+    const payload = found === null ? null : parseStoredRequest(found.payload);
+    if (found !== null && payload !== null) serverDraft = { ...found, payload };
   }
-  const search = query.toString();
 
   return {
     initial: prefilled ? draftFromPrefill(prefill) : emptyDraft(),
     prefilled,
     today: isoToday(new Date()),
     signedIn: context !== null,
-    returnTo: safeNextPath(
-      search === '' ? ROUTES.newRequest : `${ROUTES.newRequest}?${search}`,
-      ROUTES.newRequest,
-    ),
+    serverDraft,
   };
 }
 
@@ -62,7 +60,7 @@ export default async function Page({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { initial, prefilled, today, signedIn, returnTo } = await loadForm(await searchParams);
+  const { initial, prefilled, today, signedIn, serverDraft } = await loadForm(await searchParams);
   const c = requestsCopy.form;
 
   return (
@@ -77,12 +75,17 @@ export default async function Page({
       </header>
 
       <section className="mt-8 rounded-card border border-border bg-surface p-5 sm:p-7">
+        {/* Keyed on the account state: coming back from sign-in is the
+            same page with a session, and the form has to start again
+            from the draft — with the account copy and the account step
+            done — rather than keep the state it had without one. */}
         <RequestForm
+          key={signedIn ? 'cont' : 'vizitator'}
           initial={initial}
           hasPrefill={prefilled}
           today={today}
           signedIn={signedIn}
-          returnTo={returnTo}
+          serverDraft={serverDraft}
         />
       </section>
     </div>

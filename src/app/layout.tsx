@@ -129,10 +129,10 @@ export default function RootLayout({
           <SiteHeader />
           <main id="continut">{children}</main>
           <SiteFooter />
-          {/* A session that ends while a form is open: the way back,
-              without leaving the page that holds the form. */}
-          <SessionNotice />
         </ToastProvider>
+        {/* A session that ends while a form is open: the way back,
+            without leaving the page that holds the form. */}
+        <SessionNotice />
       </body>
     </html>
   );

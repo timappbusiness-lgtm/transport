@@ -37,7 +37,8 @@ function render(): string {
         { path: 'u/2.jpg', preview: SAMPLE },
         { path: 'u/3.jpg', preview: SAMPLE, fromImport: true },
       ]}
-      onChange={() => {}}
+      onAdd={() => {}}
+      onRemove={() => {}}
     />,
   );
 }

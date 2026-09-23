@@ -9,6 +9,7 @@ import {
   isDraftStep,
   type DraftEnvelope,
 } from '@/lib/continuity/drafts';
+import { readServerDraft } from '@/lib/continuity/server-drafts';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -29,25 +30,9 @@ export async function loadDraftAction(
   form: string,
   scope: string,
 ): Promise<DraftEnvelope<Record<string, unknown>> | null> {
-  if (!isDraftForm(form) || !isDraftScope(scope)) return null;
   const context = await getAccountContext();
   if (!context) return null;
-
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('form_drafts')
-    .select('payload, step, updated_at')
-    .eq('user_id', context.user.id)
-    .eq('form_key', form)
-    .eq('scope', scope)
-    .maybeSingle();
-  if (!data || !isDraftPayload(data.payload)) return null;
-
-  return {
-    payload: data.payload,
-    step: data.step,
-    savedAt: Date.parse(data.updated_at),
-  };
+  return readServerDraft(context.user.id, form, scope);
 }
 
 export async function saveDraftAction(
