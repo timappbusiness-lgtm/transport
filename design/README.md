@@ -46,46 +46,88 @@ Defined once in `src/app/globals.css`, under Tailwind's `@theme`.
 ```
 
 ```css
-/* accent */
---color-accent:       #15616d;  /* 6.60:1 on ground, 7.09:1 on white */
---color-accent-hover: #114f59;  /* white on it 9.18:1 */
---color-ink-hover:    #2a3740;
+/* accent — the whole scale */
+--color-accent:         #15616d;  /* text 6.60:1 on ground, 7.09:1 on white, 6.24:1 on ground-alt */
+--color-accent-hover:   #114f59;  /* on-accent text on it 9.18:1 */
+--color-accent-subtle:  #e6f1f2;  /* a tinted background; accent on it 6.15:1, ink 13.39:1 */
+--color-accent-border:  #9cc5cb;  /* the edge of a tinted chip; decorative, never the only boundary */
+--color-on-accent:      #ffffff;  /* text on a filled accent: 7.09:1 */
+--color-accent-on-dark: #a3dce3;  /* the dark header: 5.37:1 on its worst case */
+--color-ink-hover:      #2a3740;
+
+/* category grounds — one per vehicle family, all quieter than the accent */
+--color-tint-petrol: #e6f1f2;  --color-tint-sand:  #f6efe3;
+--color-tint-sage:   #e9f1ea;  --color-tint-sky:   #e7eef6;
+--color-tint-clay:   #f5e9e4;  --color-tint-stone: #eceeef;
+
+/* motion */
+--ease-soft:      cubic-bezier(0.2, 0.7, 0.2, 1);
+--duration-quick: 120ms;  /* a press, a colour */
+--duration-calm:  220ms;  /* a lift, a toast, a success moment */
 ```
 
-### The accent, and the six places it goes
+Every pair above is measured in `tests/unit/accent-scale.test.ts`, which
+reads the values out of `globals.css` rather than repeating them — change a
+token and the test measures the new one. `tests/unit/token-usage.test.ts`
+fails on any hex, `rgb()` or arbitrary colour class in a component; the one
+literal allowed is `THEME_COLOR` in `src/config/theme.ts`, for the browser
+chrome, and a test holds it equal to `--color-foreground`.
+
+### The accent: why petrol, where it goes, where it never does
 
 There was no accent colour for the first year of this system, deliberately:
-emphasis came from weight, space and the dark sections. That held up, and it
-had one consequence nobody wanted — every screen read grey, because the only
-thing separating a price from the word before it was a font weight.
+emphasis came from weight, space and the dark sections. Users said the result
+read professional and cold — the competitor they compared us with is
+readable at a glance because one strong colour marks the logo, the headings
+that matter and the numbers. So the accent was decided properly, with both
+candidates measured:
 
-The accent is a petrol blue from the same blue-leaning family as
-`--color-dark-from`. It is **spent in six places and nowhere else**:
+| | Deep teal-blue (chosen) | Warm amber |
+|---|---|---|
+| As text on ground / white | **6.60 / 7.09** | 5.52 / 5.93 (`#8a5a00`, a brown) |
+| White text on the fill | **7.09**, 9.18 on hover | **2.23** — fails; the fill needs ink text (6.92) |
+| The fill against white | 7.09 | 2.23 — under 3:1, the button has no edge |
+| On the dark header | `#a3dce3`, 5.37 | the light amber reads as a warning light |
+| Next to the status colours | hue far from warning | same hue as `--color-warning #b7791f` |
+
+Amber would have needed two different colours to work — a brown for text and
+a gold for fills with ink on it — and it sits in the hue of „expiră curând".
+On a platform where a warning must look like a warning, the brand colour
+cannot be the warning colour. Petrol is from the same blue-leaning family as
+`--color-dark-from`, so it belongs to the palette rather than sitting on it,
+and one value does text, fill and edge. A test keeps the accent's hue more
+than 90° away from the warning's.
+
+**Where it is spent** — each place has a test or a check that it is there:
 
 | Where | What carries it |
 |---|---|
-| The key figure of a card | `Figure` — a price, free seats, a distance, a rating |
-| The primary action | `buttonClasses('primary')`, filled |
-| The active tab or filter | the selected chip on both boards |
-| The active navigation item | sidebar, phone bar, header menu |
+| The wordmark | `header-brand.tsx`, `--color-accent-on-dark` on the dark header |
+| The primary action | `buttonClasses('primary')`: filled, `text-on-accent` |
+| Active navigation and tabs | header link (`aria-current`, underline), sidebar, phone bar, `TabLink` |
+| Key numbers | distance on a request, free seats and price on a route, a live offer's price, the dashboard's counts (`DataRow tone="accent"`), `Figure` |
 | The current step of an order | the timeline rail |
-| The section eyebrow | `EyebrowPill`, light surfaces only |
+| Links inside text | `link-accent` — accent, underlined, offset 4px |
+| Counts and „Nou" | the `Badge` kinds `count` and `new` |
 
-And it is **forbidden** on: legal pages, suspensions, rejections, disputes,
-deletions, incidents and error states — the same list as the icons, for the
-same reason. A colour makes a sentence somebody has to read look like a
-notification they can dismiss. `EyebrowPill tone="quiet"` exists for the
-legal pages; `tests/unit/design-tokens.test.ts` and
-`tests/e2e/aspect-vizual.spec.ts` both fail if it spreads.
+**Where it never goes:** legal pages, suspensions, rejections, disputes,
+deletions, error screens — including the 404 — and never as a mark that
+could be read as verification (no accent tick, seal or badge beside a
+company name). A link inside one of those is `link-ink`; the button is `ink`.
+The deletion panel, dispute, rejection, order cancellation, report and block
+buttons were `primary` from before the accent existed and turned petrol with
+it; they are `ink` now, and `accent-scale.test.ts` names each of them.
+`tests/e2e/ton-cald.spec.ts` reads the computed colour of everything on the
+legal pages and the 404 — with a positive control that proves the detector
+sees the accent where it is.
 
-Two further rules:
+**On the dark header** the accent is `--color-accent-on-dark`. The header
+itself went from ink at 72% to ink at 80%, so that on the palest part of any
+page behind it the wordmark still measures 5.37:1. On the gradient sections
+the pale step measures only 3.03:1 at the light end, so those keep white.
 
-- **the soft half of a two-tone headline is never the accent.** It is the
-  part somebody may skip, and the accent marks what they should not;
-- **it is a light-surface token.** A pale tint of it measures 2.9:1 against
-  the light end of the dark gradient, under every floor there is, so the dark
-  sections keep white and white/60. A primary action on dark is still a white
-  pill.
+**The soft half of a two-tone headline is never the accent.** It is the part
+somebody may skip, and the accent marks what they should not.
 
 ### Three values differ from the original brief
 
@@ -171,6 +213,15 @@ In `src/components/ui/`:
 - `EmptyState` / `EmptyFigure` — an empty list, drawn. An empty screen that
   says only „Nu ai nicio cerere publicată." is indistinguishable from one
   that failed to load.
+- `Badge` — the one small sign: `new`, `time`, `count`, `express`, `return`.
+  See [Badges](#badges).
+- `TabLink` / `tabClasses` — every tab and filter chip in the account area.
+- `CategoryTile` / `CategoryArt` — the vehicle drawing on its tinted ground.
+- `SuccessMoment` — the four moments worth marking. See [Success](#success).
+- `BoardSkeleton`, `DashboardSkeleton` — loading states, shaped like the page.
+- `ToastProvider`, `useToast`, `useActionToast` — one toast component.
+- `CARD_INTERACTIVE`, `CARD_ACTION` (`interactive.ts`) — how a clickable card
+  answers the pointer, defined once.
 
 ## Elevation
 
@@ -212,6 +263,66 @@ requirement, not decoration, and an end-to-end test counts them.
 The floating pill navigation is `src/components/layout/site-header.tsx`:
 translucent, blurred, sticky, sitting inside the page rather than spanning it.
 
+## Badges
+
+One component, `src/components/ui/badge.tsx`, and five kinds. Shape, size
+and colour come from tokens; no screen invents its own. None carries an
+icon, and none is ever the only place a meaning lives.
+
+| Kind | Shows | When — and when not |
+|---|---|---|
+| `new` | „Nou" | published less than 24 hours ago, by `isNew()` in `src/lib/badges.ts`. Not at 24 h, not for a missing or unreadable date; five minutes of clock skew allowed |
+| `time` | „acum 16 min" | beside every published item; kept current by `RelativeTime`. A route with no `published_at` shows nothing rather than „chiar acum" |
+| `count` | „3", „9+" | on a menu item with something waiting — unread messages, unanswered offers, blocking documents missing, rejected or expired. `countLabel()` returns nothing for 0, negatives or NaN, so a „0" never appears |
+| `express` | „Expres" | the service is express |
+| `return` | „Pe retur" | the route is a return leg that is not full; a full one keeps its status chip |
+
+Status chips (`StatusBadge`) are unchanged: a state is a chip, a sign is a
+badge. Every rule is in `tests/unit/badges.test.tsx`; the e2e suite checks
+that a board with no rows and a visitor's header show no badge at all.
+
+The numbers that show the place is alive — requests this week, verified
+carriers, free seats — were already at figure size and in the accent; this
+pass left them there and left every threshold that hides them until they
+mean something exactly as it was. Nothing is shown that is not counted.
+
+## Category drawings
+
+Ten line drawings, one per offered category — autoturism, autoutilitară,
+microbuz, motocicletă, ATV, rulotă, remorcă, cvadriciclu, istoric, altceva —
+in `src/components/ui/category-art.tsx`, the same family as the hero:
+
+- inline SVG on a 64×40 box, no fill, two stroke weights (2.2 for the body,
+  1.2 for the detail), a soft ground ellipse;
+- the hub of each wheel and one detail in the accent, which becomes
+  `accent-on-dark` inside `data-surface="dark"`;
+- `aria-hidden` beside the category's name, or labelled when it stands alone.
+
+`CategoryTile` puts a drawing on its family's tint: petrol for cars, sky for
+vans and minibuses, clay for motorcycles, sage for ATVs and quadricycles,
+sand for caravans and classics, stone for trailers and „altceva". It leads
+every board card, homepage card and category tile, opens the request page,
+and sits beside the category field of the publish form. A retired category
+still renders, as „altceva": a published listing is a real listing.
+`tests/unit/category-art.test.tsx` checks the map both ways — every offered
+category has a drawing and a tint, every drawing belongs to a category.
+
+## Success
+
+Four moments get a calm confirmation — a small drawing (a road and a flag,
+no tick, no seal), one sentence and the next action:
+
+| Moment | Where |
+|---|---|
+| Request published | the last step of `/cerere/noua` |
+| Company verified | the company's documents page |
+| Offer accepted | both sides: „Ai ales transportatorul." / „Clientul ți-a acceptat oferta." |
+| Order completed | the order page |
+
+The words are in `src/content/success.ts`. No exclamation marks in any of
+the interface copy in `src/content` — `tests/unit/tone.test.tsx` enforces it
+— and no promise the database does not enforce.
+
 ## Focus
 
 2px ink with a 2px offset on light ground; white on dark sections, switched by
@@ -232,6 +343,27 @@ an end-to-end test asserts the computed colour.
 2. One orchestrated moment per screen, not scattered effects.
 3. Everything has a `prefers-reduced-motion` answer, set globally in
    `globals.css`.
+4. **Transform and opacity only.** A card lifts 2px on hover and settles on
+   press; its raised shadow is a layer on `::before` that fades in, not an
+   animated `box-shadow`. A button presses in by 2%. Every movement is
+   `motion-safe:`. Colour changes — a border darkening on a hovered input,
+   a tab tint — happen at once: they are state, not motion.
+5. **The one exception to rule 1 is a toast,** which rises 8px and fades in:
+   it appears after something the person did, never on the first frame.
+
+Loading states are skeletons shaped like the page — the board's own heading
+and lede, then the filter card and card outlines; the dashboard's blocks.
+Never a spinner. The pulse is an opacity animation and is still under
+reduced motion. A skeleton covers only a list page, from inside a route
+group (`cereri/(panou)`, `trasee/(panou)`, `cont/(acasa)`): a `loading.tsx`
+makes everything under it stream, and a page that has already sent its 200
+cannot turn into a 404. `tests/unit/feedback.test.tsx` fails if a loading
+boundary ever covers a page that calls `notFound()` or `redirect()`.
+
+Saves and errors answer in one toast component. A success leaves after
+four seconds and is read politely; an error stays ten, is read at once, and
+can be closed. On a form that keeps its inline error, the error toast is
+drawn but not announced — one failure, one sentence for a screen reader.
 
 ## Copy
 
@@ -242,6 +374,11 @@ comunitară`. They are proper nouns of Romanian law.
 Rules enforced by `tests/unit/home-content.test.ts`, not by review:
 
 - No exclamation marks, no superlatives.
+- A person talking to a dispatcher: second person, short sentences, no
+  jargon — „Spui ce ai de mutat și de unde". Homepage sections, boards,
+  empty states, onboarding, dashboard widgets and success moments are
+  written that way; legal, suspension, dispute, deletion and staff screens
+  keep their formal register, and the tone test does not touch them.
 - No social proof counts. The boards hold no real data yet, so any figure of
   users or carriers would be invented.
 - Every demonstration card carries an **Exemplu** badge. Legal requirement,
@@ -284,6 +421,26 @@ run's extra 2.1 s is the model's estimate of a render delay that direct
 measurement does not show — `display: optional` on the display face and
 preloading only the face the headline uses both left it at 4.0 s, which is
 what you would expect if there were no font-blocked paint to remove.
+
+### After the warmth pass
+
+Measured the same way, a production build of `main` and of this branch side
+by side on the same machine, mobile preset, no data:
+
+| Page | `devtools` — main | `devtools` — branch | `simulate` — both |
+|---|---|---|---|
+| `/` | 91–93 (median 92) | 89–92 (median 91) | 83–87 |
+| `/cereri` | 97 | 96 | 86–89 |
+| `/trasee` | 98 | 92 | 86–87 |
+| `/cerere/noua` | 92 | 96 | 86–87 |
+| `/termeni` | 97 | 96 | 86–87 |
+
+Accessibility 100 on every page, CLS under 0.05. The simulated score was
+under 90 on `main` before this pass too; it is the model's render delay
+described above, not a regression. One regression this pass did cause and
+then removed: a board skeleton drawn as grey bars pushed the lede — the
+element a phone paints as largest — behind the rows, and cost `/cereri` six
+points. The skeleton now draws the page's real heading and lede.
 
 SEO scores 63 because `robots` is `noindex, nofollow` until launch. That is
 the one line to flip in `src/app/layout.tsx`, and there is a TODO on it.
