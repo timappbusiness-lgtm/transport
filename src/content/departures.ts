@@ -3,14 +3,17 @@ export const departuresCopy = {
   board: {
     // What the page is, in three words.
     title: 'Trasee cu locuri',
-    lede: 'Platforme care circulă oricum pe ruta lor. Plătești locul, nu camionul.',
+    // One sentence: what is on the page, and what to do next. The pitch
+    // — „plătești locul, nu camionul" — belongs on the homepage, where
+    // somebody is being introduced to the idea, not on the board they
+    // open twice a day.
+    lede: 'Platforme cu locuri libere pe o rută. Caută ruta ta și deschide traseul.',
     tabs: {
       toate: 'Toate',
       tur: 'Pe tur',
       retur: 'Pe retur',
     },
     count: (n: number) => (n === 1 ? 'Un traseu' : `${n} trasee`),
-    sortNote: 'Ordonate după data cea mai apropiată.',
     signedOutNote:
       'Vezi traseul și locurile libere. Firma care transportă apare după autentificare.',
   },

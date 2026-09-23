@@ -116,7 +116,9 @@ export function FilterPanel({
         <div className="flex flex-col gap-4 border-t border-border px-3 py-4">{advanced}</div>
       </details>
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* One row: the button, and beside it the two things that are not
+          decisions — clearing what is set, and saving what is set. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
           type="submit"
           className={cn(buttonClasses('primary', 'sm'), 'inline-flex items-center', ICON_GAP)}
@@ -129,9 +131,8 @@ export function FilterPanel({
             {labels.clear}
           </a>
         ) : null}
+        {children}
       </div>
-
-      {children}
     </form>
   );
 }

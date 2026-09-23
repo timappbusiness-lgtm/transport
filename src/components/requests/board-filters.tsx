@@ -36,11 +36,14 @@ export function BoardFilters({
   filters,
   sort,
   showMine = false,
+  children,
 }: {
   filters: RequestFilters;
   sort: BoardSort;
   /** Only a carrier with a firm has a firm to match against. */
   showMine?: boolean;
+  /** „Salvează căutarea", beside the search button rather than under it. */
+  children?: React.ReactNode;
 }) {
   const c = requestsCopy.filters;
 
@@ -289,6 +292,8 @@ export function BoardFilters({
           ) : null}
         </>
       }
-    />
+    >
+      {children}
+    </FilterPanel>
   );
 }

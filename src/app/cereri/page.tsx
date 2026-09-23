@@ -109,12 +109,11 @@ export default async function Page({
       <div className="mt-8 flex flex-col gap-8">
         {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
         <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
-          <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany} />
-
           {/* Whatever is filtered right now is what a saved search would
-              watch, so the button belongs here rather than at the top of
-              a page somebody has stopped reading. */}
-          <div className="mt-5 border-t border-border pt-5">
+              watch, so it sits beside „Caută" — as a text link, not a
+              second button. A bordered control on its own row under the
+              filters is a fourth thing to decide about above the list. */}
+          <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany}>
             <SaveSearch
               filters={filtersFromBoard({
                 fromCountry: filters.fromCountry,
@@ -128,8 +127,9 @@ export default async function Page({
                 maxWeightKg: filters.maxWeightKg === null ? null : String(filters.maxWeightKg),
               })}
               signedIn={context !== null}
+              variant="quiet"
             />
-          </div>
+          </BoardFilters>
         </aside>
 
         <section aria-label={c.title}>
