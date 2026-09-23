@@ -5,7 +5,6 @@ import { FiltersForm } from '@/components/departures/filters-form';
 import { SavedSearchButton } from '@/components/departures/saved-search-button';
 import { SaveSearch } from '@/components/requests/save-search';
 import { buttonClasses } from '@/components/ui/button';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { getAccountContext } from '@/lib/auth/account';
@@ -16,14 +15,14 @@ import {
   hasActiveFilters,
   parseFilters,
   tabDirection,
-  type Tab,
 } from '@/lib/departure-filters';
 import type { PublicDeparture } from '@/lib/departures';
 import { boundingBox, withinRadius } from '@/lib/radius';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { cn } from '@/lib/utils';
 import { EmptyFigure } from '@/components/ui/empty-state';
+import { DEPARTURE_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
+import { sortDepartures } from '@/lib/board-sort';
 
 export const metadata: Metadata = {
   title: 'Trasee disponibile',
@@ -31,7 +30,6 @@ export const metadata: Metadata = {
     'Platforme auto cu locuri libere pe rute din România și Europa. Vezi traseul, perioada și locurile rămase.',
 };
 
-const TABS: readonly Tab[] = ['toate', 'tur', 'retur'];
 const BOARD_LIMIT = 60;
 
 /**
@@ -51,55 +49,29 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const filters = parseFilters(params);
+  const sort = parseSort(typeof params[SORT_KEY] === 'string' ? (params[SORT_KEY] as string) : null, DEPARTURE_SORTS);
   const c = departuresCopy.board;
 
-  const [departures, context] = await Promise.all([loadDepartures(filters), getAccountContext()]);
+  const [loaded, context] = await Promise.all([loadDepartures(filters), getAccountContext()]);
+  const departures = sortDepartures(loaded, sort);
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.title} soft={c.titleSoft} className="mt-5" />
-        <Lede className="mt-4">{c.lede}</Lede>
-        {context === null ? (
-          <p className="mt-3 text-sm text-muted">{c.signedOutNote}</p>
-        ) : null}
+        <h1 className="text-h1">{c.title}</h1>
+        <p className="mt-3 text-body-lg text-muted">{c.lede}</p>
+        {context === null ? <p className="mt-2 text-small text-muted">{c.signedOutNote}</p> : null}
       </header>
 
-      <nav aria-label={departuresCopy.board.title} className="mt-8 flex flex-wrap gap-1.5">
-        {TABS.map((tab) => {
-          const href = `${ROUTES.routes}${filtersToQuery({ ...filters, tab })}`;
-          const active = filters.tab === tab;
-          return (
-            <Link
-              key={tab}
-              href={href === `${ROUTES.routes}` ? ROUTES.routes : href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'rounded-pill border px-4 py-1.5 text-sm',
-                active
-                  ? 'border-accent bg-accent text-white'
-                  : 'border-border text-muted hover:border-border-strong',
-              )}
-            >
-              {c.tabs[tab]}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
-        <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">{departuresCopy.filters.title}</h2>
-          <FiltersForm filters={filters} />
+      <div className="mt-8 flex flex-col gap-8">
+        <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
+          <FiltersForm filters={filters} sort={sort} />
         </aside>
 
         <section aria-label={c.title}>
           {departures.length > 0 ? (
             <>
-              <p className="mb-4 text-sm text-muted">
-                {c.count(departures.length)} · {c.sortNote}
-              </p>
+              <p className="mb-4 text-small text-muted">{c.count(departures.length)}</p>
               <ul className="flex flex-col gap-4">
                 {departures.map((departure) => (
                   <DepartureCard key={departure.truck_listing_id} departure={departure} />

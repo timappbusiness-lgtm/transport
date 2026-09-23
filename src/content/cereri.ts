@@ -150,23 +150,41 @@ export const requestsCopy = {
   },
 
   board: {
-    eyebrow: 'Panoul de cereri',
-    title: 'Cereri',
-    titleSoft: 'de transport.',
-    lede: 'Vehicule care așteaptă un transportator. Ruta, perioada și starea sunt publice; datele de contact se deschid din abonament.',
+    // What the page is, in three words. The eyebrow above it said
+    // „Panoul de cereri" and the heading said „Cereri de transport" —
+    // the same thing twice, before a lede that said it a third time.
+    title: 'Cereri de transport',
+    // One sentence: what is on the page, and what to do next. It names
+    // no offer on purpose — a visitor reading the board is not being sold
+    // an account, and `tests/unit/cereri-content.test.ts` holds that rule.
+    lede: 'Vehicule care așteaptă un transportator. Caută ruta ta și deschide cererea.',
     tabs: {
       toate: 'Toate',
       curse: 'De la firme',
       retur: 'De la persoane fizice',
     },
     count: (n: number) => (n === 1 ? 'O cerere' : `${n} cereri`),
-    sortNote: 'Ordonate după data cea mai apropiată de încărcare.',
-    signedOutNote: 'Vezi ruta, perioada și starea vehiculului. Contactul cere un cont de transportator.',
+    signedOutNote: 'Datele de contact se deschid după ce firma este verificată.',
     publish: 'Publică o cerere',
   },
 
   filters: {
-    title: 'Filtre',
+    // „Caută" rather than „Filtre": it says what the box does, not what
+    // it is. A dispatcher looking for work from Timiș is searching.
+    title: 'Caută transport',
+    // The three on screen. Short, because they sit over the field and
+    // „Oraș de plecare" is three words for a box you type a town into.
+    fromCityShort: 'De unde',
+    toCityShort: 'Unde',
+    categoryShort: 'Tip vehicul',
+    cityPlaceholder: 'Orice localitate',
+    more: 'Mai multe filtre',
+    moreActive: (n: number) => `${n} active`,
+    sort: 'Ordonează',
+    tab: 'Cine a publicat',
+    tabAll: 'Oricine',
+    tabCompanies: 'Firme',
+    tabIndividuals: 'Persoane fizice',
     fromCountry: 'Țara de plecare',
     fromCity: 'Oraș de plecare',
     toCountry: 'Țara de destinație',

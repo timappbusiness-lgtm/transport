@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
-import { IconLabel } from '@/components/ui/icon';
-import { iconForAction } from '@/lib/icons';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
 import { buttonClasses } from '@/components/ui/button';
-import { EyebrowPill, Headline, Lede } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import { requestsCopy } from '@/content/cereri';
@@ -30,14 +27,14 @@ import {
   requestFiltersToQuery,
   tabBoard,
   type RequestFilters,
-  type Tab,
 } from '@/lib/request-filters';
 import { cityValue } from '@/lib/cities';
 import { boundingBox, withinRadius } from '@/lib/radius';
 import type { PublicRequest } from '@/lib/requests';
 import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
-import { cn } from '@/lib/utils';
+import { REQUEST_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
+import { sortRequests } from '@/lib/board-sort';
 
 export const metadata: Metadata = {
   title: 'Cereri de transport',
@@ -45,7 +42,6 @@ export const metadata: Metadata = {
     'Vehicule care așteaptă un transportator, cu ruta, perioada de încărcare și starea lor. Filtrează după traseu, dată și categorie.',
 };
 
-const TABS: readonly Tab[] = ['toate', 'curse', 'retur'];
 const BOARD_LIMIT = 60;
 
 /**
@@ -70,7 +66,9 @@ export default async function Page({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = parseRequestFilters(await searchParams);
+  const params = await searchParams;
+  const filters = parseRequestFilters(params);
+  const sort = parseSort(typeof params[SORT_KEY] === 'string' ? (params[SORT_KEY] as string) : null, REQUEST_SORTS);
   const c = requestsCopy.board;
 
   const widened = filters.mine || filters.near !== null;
@@ -88,47 +86,19 @@ export default async function Page({
   const canFilterByCompany = company !== null && company.company_type !== 'expeditie';
   const applyMine = filters.mine && canFilterByCompany;
   const mine = applyMine ? await onlyForCompany(all, company) : null;
-  const requests = (mine?.requests ?? all).slice(0, BOARD_LIMIT);
+  const requests = sortRequests(mine?.requests ?? all, sort).slice(0, BOARD_LIMIT);
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
-        <EyebrowPill>{c.eyebrow}</EyebrowPill>
-        <Headline as="h1" strong={c.title} soft={c.titleSoft} className="mt-5" />
-        <Lede className="mt-4">{c.lede}</Lede>
-        {context === null ? <p className="mt-3 text-sm text-muted">{c.signedOutNote}</p> : null}
+        <h1 className="text-h1">{c.title}</h1>
+        <p className="mt-3 text-body-lg text-muted">{c.lede}</p>
+        {context === null ? <p className="mt-2 text-small text-muted">{c.signedOutNote}</p> : null}
       </header>
 
-      <nav aria-label={c.eyebrow} className="mt-8 flex flex-wrap gap-1.5">
-        {TABS.map((tab) => {
-          const query = requestFiltersToQuery({ ...filters, tab });
-          const active = filters.tab === tab;
-          return (
-            <Link
-              key={tab}
-              href={`${ROUTES.requests}${query}`}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'rounded-pill border px-4 py-1.5 text-sm',
-                active
-                  ? 'border-accent bg-accent text-white'
-                  : 'border-border text-muted hover:border-border-strong',
-              )}
-            >
-              {c.tabs[tab]}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
-        <aside className="rounded-card border border-border bg-surface p-5 lg:sticky lg:top-24 lg:self-start">
-          <h2 className="mb-4 text-sm font-medium">
-            <IconLabel as={iconForAction('filter')} size="sm">
-              {requestsCopy.filters.title}
-            </IconLabel>
-          </h2>
-          <BoardFilters filters={filters} showMine={canFilterByCompany} />
+      <div className="mt-8 flex flex-col gap-8">
+        <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
+          <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany} />
 
           {/* Whatever is filtered right now is what a saved search would
               watch, so the button belongs here rather than at the top of
@@ -160,10 +130,10 @@ export default async function Page({
 
           {requests.length > 0 ? (
             <>
-              <p className="mb-4 text-sm text-muted">
+              <p className="mb-4 text-small text-muted">
                 {mine === null
-                  ? `${c.count(requests.length)} · ${c.sortNote}`
-                  : `${requestsCopy.filters.mineCount(mine.requests.length, all.length)} · ${c.sortNote}`}
+                  ? c.count(requests.length)
+                  : requestsCopy.filters.mineCount(mine.requests.length, all.length)}
               </p>
               <ul className="flex flex-col gap-4">
                 {requests.map((request) => (

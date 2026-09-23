@@ -1,9 +1,8 @@
 /** Romanian copy for the departures board and the carrier's own routes. */
 export const departuresCopy = {
   board: {
-    eyebrow: 'Trasee disponibile',
-    title: 'Trasee',
-    titleSoft: 'cu locuri libere.',
+    // What the page is, in three words.
+    title: 'Trasee cu locuri',
     lede: 'Platforme care circulă oricum pe ruta lor. Plătești locul, nu camionul.',
     tabs: {
       toate: 'Toate',
@@ -17,7 +16,20 @@ export const departuresCopy = {
   },
 
   filters: {
-    title: 'Filtre',
+    title: 'Caută traseu',
+    // The three on screen. A route leaves a region, so „De unde" here is
+    // a județ — asking for a town would return almost nothing.
+    fromShort: 'De unde',
+    toShort: 'Unde',
+    vehicleShort: 'Tip vehicul',
+    countyPlaceholder: 'Orice județ',
+    more: 'Mai multe filtre',
+    moreActive: (n: number) => `${n} active`,
+    sort: 'Ordonează',
+    tab: 'Direcția',
+    tabAll: 'Oricare',
+    tabOutbound: 'Pe tur',
+    tabReturn: 'Pe retur',
     fromCountry: 'Țara de plecare',
     fromCounty: 'Județ / regiune plecare',
     toCountry: 'Țara de sosire',
