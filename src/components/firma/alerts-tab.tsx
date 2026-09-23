@@ -47,7 +47,7 @@ export function AlertsTab({ company }: { company: Company }) {
           type="checkbox"
           name="alertsEnabled"
           defaultChecked={company.alerts_enabled}
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.enable}

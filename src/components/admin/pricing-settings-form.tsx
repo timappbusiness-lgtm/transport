@@ -86,7 +86,7 @@ export function PricingSettingsForm({ settings }: { settings: PricingSettings })
               type="checkbox"
               name="manual_billing"
               defaultChecked={settings.manualBilling}
-              className="size-4 accent-[#1C262B]"
+              className="size-4 accent-foreground"
             />
             {c.manualBilling}
           </label>

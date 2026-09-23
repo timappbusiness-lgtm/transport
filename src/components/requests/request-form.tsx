@@ -105,7 +105,7 @@ function Check({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-4 accent-[#1C262B]"
+        className="size-4 accent-foreground"
       />
       {label}
     </label>
@@ -610,7 +610,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, returnTo }: 
                   value={value}
                   checked={draft.serviceType === value}
                   onChange={() => set('serviceType', value)}
-                  className="mt-0.5 size-4 accent-[#1C262B]"
+                  className="mt-0.5 size-4 accent-foreground"
                 />
                 <span>
                   {label}

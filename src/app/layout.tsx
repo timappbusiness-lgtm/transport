@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { THEME_COLOR } from '@/config/theme';
 import { IBM_Plex_Mono, Inter, Inter_Tight } from 'next/font/google';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
@@ -84,7 +85,7 @@ export const metadata: Metadata = {
  * not get a chrome bar in a colour that appears nowhere else on screen.
  */
 export const viewport: Viewport = {
-  themeColor: '#1c262b',
+  themeColor: THEME_COLOR,
 };
 
 /**

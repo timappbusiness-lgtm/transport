@@ -5,7 +5,7 @@ import { IconLabel } from '@/components/ui/icon';
 /**
  * Two-tone headline: the claim in ink, the qualifier in the soft tone.
  *
- * `soft` is #7b8b93, which measures 3.28:1 on the ground — enough for large
+ * `soft` is `--color-ink-soft`, 3.28:1 on the ground — enough for large
  * text and not enough for body, so this component is the only place it is
  * allowed to appear.
  */

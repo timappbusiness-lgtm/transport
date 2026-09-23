@@ -96,7 +96,7 @@ function Channel({
           type="checkbox"
           checked={checked}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
-          className="size-4 accent-[#1C262B]"
+          className="size-4 accent-foreground"
         />
         {label}
       </label>

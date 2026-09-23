@@ -78,7 +78,7 @@ export function IdentityTab({ company }: { company: Company }) {
                   name="companyType"
                   value={type}
                   defaultChecked={company.company_type === type}
-                  className="size-4 accent-[#1C262B]"
+                  className="size-4 accent-foreground"
                 />
                 {COMPANY_TYPE_LABELS[type]}
               </label>
@@ -166,7 +166,7 @@ export function IdentityTab({ company }: { company: Company }) {
           type="checkbox"
           name="baseAddressHidden"
           defaultChecked={company.base_address_hidden}
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.hideAddress}

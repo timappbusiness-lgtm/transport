@@ -123,7 +123,7 @@ export function SaveSearch({
               name="frequency"
               value={frequency}
               defaultChecked={frequency === 'immediate'}
-              className="mt-0.5 size-4 accent-[#1C262B]"
+              className="mt-0.5 size-4 accent-foreground"
             />
             <span>
               {FREQUENCY_LABELS[frequency]}
@@ -139,7 +139,7 @@ export function SaveSearch({
           name="notify_email"
           value="yes"
           defaultChecked
-          className="mt-0.5 size-4 accent-[#1C262B]"
+          className="mt-0.5 size-4 accent-foreground"
         />
         <span>
           {c.email}

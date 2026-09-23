@@ -91,7 +91,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
               name="direction"
               value={value}
               defaultChecked={value === 'retur'}
-              className="size-4 accent-[#1C262B]"
+              className="size-4 accent-foreground"
             />
             {label}
           </label>
@@ -206,7 +206,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                 name="accepted_vehicle_types"
                 value={category}
                 defaultChecked={category === 'autoturism'}
-                className="size-4 accent-[#1C262B]"
+                className="size-4 accent-foreground"
               />
               {CARGO_CATEGORY_LABELS[category]}
             </label>
@@ -226,7 +226,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
               name="service_types"
               value={service}
               defaultChecked={service === 'pe_sens'}
-              className="mt-0.5 size-4 accent-[#1C262B]"
+              className="mt-0.5 size-4 accent-foreground"
             />
             <span>
               <span className="font-medium">{SERVICE_TYPE_LABELS[service]}</span>
@@ -247,7 +247,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
             value="da"
             checked={repeats}
             onChange={(event) => setRepeats(event.target.checked)}
-            className="mt-0.5 size-4 accent-[#1C262B]"
+            className="mt-0.5 size-4 accent-foreground"
           />
           <span>
             <span className="font-medium">{r.repeat}</span>
@@ -271,7 +271,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                     value={value}
                     checked={kind === value}
                     onChange={() => setKind(value)}
-                    className="size-4 accent-[#1C262B]"
+                    className="size-4 accent-foreground"
                   />
                   {label}
                 </label>
@@ -291,7 +291,7 @@ export function DepartureForm({ vehicles }: { vehicles: EligibleVehicle[] }) {
                         type="checkbox"
                         name="weekdays"
                         value={day}
-                        className="mr-1.5 size-3.5 accent-[#1C262B]"
+                        className="mr-1.5 size-3.5 accent-foreground"
                       />
                       <span aria-hidden>{short}</span>
                       <span className="sr-only">{WEEKDAY_LABELS[day]}</span>

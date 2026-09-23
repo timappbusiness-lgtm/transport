@@ -170,7 +170,7 @@ export function ReportRow({ row }: { row: Row }) {
                 name="assign_to_me"
                 value="yes"
                 defaultChecked
-                className="size-4 accent-[#1C262B]"
+                className="size-4 accent-foreground"
               />
               {c.form.take}
             </label>

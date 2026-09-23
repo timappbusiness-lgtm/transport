@@ -10,9 +10,11 @@
    weight, space and the dark sections. That was a defensible decision
    and it had one consequence nobody wanted: every screen read grey,
    because the only thing separating a price from the word before it was
-   font weight. One accent now exists — `--color-accent`, a petrol blue
-   from the same hue family as the dark sections — and it is spent in
-   six places and nowhere else. The list is in `design/README.md` and
+   font weight. The accent is `--color-accent`, a petrol teal from the
+   same hue family as the dark sections, with a full scale below it —
+   hover, a subtle ground, a border, the text that sits on it, and one
+   pale step for the dark header. Where it may go and where it may never
+   go is a list in `design/README.md`, and
    `tests/unit/design-tokens.test.ts` keeps it honest.
 
    Every value here that carries text is measured, not chosen by eye.
@@ -43,6 +45,12 @@
      family, darkened until white is body-safe at both ends. */
   --color-dark-from: #33434b; /* white 10.27:1 */
   --color-dark-to: #69787f; /* white  4.57:1 */
+  /* The ground of the hero's photograph slot, which is a drawing until a
+     real photograph replaces it. Nothing is written on it in text — the
+     slot is `role="img"` with a label — so these are chosen to sit under
+     white/60 line-work, not to carry type. */
+  --color-photo-from: #41525a;
+  --color-photo-to: #7e8d94;
 
   /* --- status ---
      The hexes are the brief's. As text on white they measure 4.04 and 3.64,
@@ -67,8 +75,43 @@
      accent button. White on it is 9.18:1, so hovering can only improve
      the contrast, never lose it. */
   --color-accent-hover: #114f59;
+  /* The ground behind an accent chip, a selected tab, a count. The
+     accent reads 6.15:1 on it and ink 13.39:1, so text of either colour
+     is body-safe. */
+  --color-accent-subtle: #e6f1f2;
+  /* The edge of an accent chip or an outlined accent button. Decorative
+     — the label inside carries the meaning — so it is chosen to be seen
+     beside the hairline (1.86:1 on white against 1.25:1), not to 3:1. */
+  --color-accent-border: #9cc5cb;
+  /* What sits on a filled accent surface. 7.09:1 on the base. */
+  --color-on-accent: #ffffff;
+  /* The one step for a DARK surface: the floating header, which is ink
+     at 80% over whatever scrolls behind it. Worst case is white behind
+     it, #495155, and this measures 5.37:1 there — body-safe. It is NOT
+     for the dark gradient sections: against their light end, #69787f,
+     it is 3.03:1, which is large-text only, and text on a gradient
+     crosses both ends. Those sections keep white. */
+  --color-accent-on-dark: #a3dce3;
   /* The same idea for the ink pill. */
   --color-ink-hover: #2a3740;
+
+  /* --- category tints ---
+     The soft ground behind a vehicle category's illustration on a card.
+     Six families rather than ten colours: a board of ten pastel hues is
+     a board of noise, and the point is that the eye finds „the van" or
+     „the caravan" before it reads anything. Which category gets which
+     family is one table, `CATEGORY_TINT` in src/lib/category-art.ts.
+
+     Every one carries ink at 12.9:1 or better and the accent at 5.9:1
+     or better, so the drawing's two strokes read on all of them. The
+     warm three — sand, clay, sage — are where the warmth users asked
+     for comes from; the accent itself stays the cool petrol it was. */
+  --color-tint-petrol: #e6f1f2;
+  --color-tint-sand: #f6efe3;
+  --color-tint-sage: #e9f1ea;
+  --color-tint-sky: #e7eef6;
+  --color-tint-clay: #f5e9e4;
+  --color-tint-stone: #eceeef;
 
   /* --- type --- */
   --font-display: var(--font-inter-tight), "Inter", system-ui, sans-serif;
@@ -171,6 +214,14 @@
      radius. Replaces the two hand-written pixel radii that were spread
      across six components. */
   --radius-tight: 6px;
+
+  /* --- motion ---
+     Two durations and one curve. Everything that moves moves by
+     transform or opacity, and the reduced-motion block below takes it
+     all to a single frame. */
+  --ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --duration-quick: 120ms;
+  --duration-calm: 220ms;
 }
 
 @layer base {

@@ -49,7 +49,7 @@ export function CoverageTab({ company }: { company: Company }) {
               value={option}
               checked={scope === option}
               onChange={() => setScope(option)}
-              className="mt-0.5 size-4 accent-[#1C262B]"
+              className="mt-0.5 size-4 accent-foreground"
             />
             <span>
               {c.scopes[option]}

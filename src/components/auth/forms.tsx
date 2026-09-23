@@ -26,7 +26,7 @@ function TermsCheckbox({ label, error }: { label: string; error?: string | undef
           type="checkbox"
           name="terms"
           value="yes"
-          className="mt-0.5 size-4 flex-none accent-[#1C262B]"
+          className="mt-0.5 size-4 flex-none accent-foreground"
         />
         <span>
           {label} <TextLink href={ROUTES.terms}>{authCopy.individualSignUp.termsLink}</TextLink>{' '}

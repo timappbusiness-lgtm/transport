@@ -82,7 +82,7 @@ export function CompanyCreateForm({ defaultType }: { defaultType: string }) {
                   name="companyType"
                   value={type}
                   defaultChecked={(create.values?.companyType ?? defaultType) === type}
-                  className="size-4 accent-[#1C262B]"
+                  className="size-4 accent-foreground"
                 />
                 {COMPANY_TYPE_LABELS[type]}
               </label>
