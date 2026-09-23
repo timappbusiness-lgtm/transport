@@ -1,6 +1,8 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { draftKey } from '@/lib/continuity/drafts';
+import { useTextDraft } from '@/lib/continuity/use-text-draft';
 import { editRatingAction, postRatingAction, type RatingState } from '@/app/cont/evaluari/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { Stars, StarInput } from '@/components/ratings/star-input';
@@ -41,8 +43,18 @@ export function RatingForm({
     editing ? editRatingAction : postRatingAction,
     EMPTY,
   );
-  const [comment, setComment] = useState(existing?.comment ?? '');
+  // A new rating's words are kept in the browser while they are written:
+  // the link in the reminder e-mail, a refresh or a failed send brings
+  // them back. A correction starts from the published text instead.
+  const [draftComment, setDraftComment, clearDraftComment] = useTextDraft(draftKey('evaluare', orderId));
+  const [editedComment, setEditedComment] = useState(existing?.comment ?? '');
+  const comment = editing ? editedComment : draftComment;
+  const setComment = editing ? setEditedComment : setDraftComment;
   const [preview, setPreview] = useState(false);
+  const sent = state.notice !== undefined;
+  useEffect(() => {
+    if (sent && !editing) clearDraftComment();
+  }, [sent, editing, clearDraftComment]);
   const [score, setScore] = useState<number | null>(existing?.score ?? null);
   const id = useId();
 

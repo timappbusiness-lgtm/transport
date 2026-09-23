@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import {
   setPlanAction,
   setPlanPeriodAction,
@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.plans;
@@ -35,11 +36,14 @@ export interface EditablePlan extends Plan {
 
 export function PlanForm({ plan }: { plan: EditablePlan }) {
   const [state, action] = useKeptActionState(setPlanAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
     <div className="rounded-card border border-border bg-surface p-4 sm:p-5">
-      <KeepingForm action={action}>
+      <KeepingForm ref={guardRef} action={action}>
         <input type="hidden" name="code" value={plan.code} />
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -164,6 +168,9 @@ function Periods({ plan }: { plan: EditablePlan }) {
 
 function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonths }) {
   const [state, action] = useKeptActionState(setPlanPeriodAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
   const current = plan.allPeriods.find((p) => p.months === months);
 
@@ -172,7 +179,7 @@ function PeriodForm({ plan, months }: { plan: EditablePlan; months: BillingMonth
   const free = freeMonths(plan.monthlyPrice, total, months);
 
   return (
-    <KeepingForm action={action} className="rounded-input border border-border p-3">
+    <KeepingForm ref={guardRef} action={action} className="rounded-input border border-border p-3">
       <input type="hidden" name="code" value={plan.code} />
       <input type="hidden" name="months" value={months} />
 

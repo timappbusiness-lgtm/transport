@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import {
   setMatchingSettingsAction,
   type ThresholdActionState,
@@ -11,6 +11,7 @@ import { activityAdminCopy } from '@/content/activitate';
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ThresholdActionState = {};
 const c = activityAdminCopy.matching;
@@ -31,10 +32,13 @@ export function MatchingForm({
   categoryWindowDays: number;
 }) {
   const [state, action] = useKeptActionState(setMatchingSettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
       <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 

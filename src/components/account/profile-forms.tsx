@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 import {
   changeEmailAction,
   changePasswordAction,
@@ -12,6 +14,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { accountCopy } from '@/content/account';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ActionState = {};
 
@@ -26,11 +29,14 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 export function NameForm({ fullName }: { fullName: string }) {
   const [state, action] = useKeptActionState(updateProfileAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const c = accountCopy.profile;
 
   return (
     <Card title={c.title}>
-      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm ref={guardRef} action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <Field
@@ -48,11 +54,14 @@ export function NameForm({ fullName }: { fullName: string }) {
 
 export function EmailForm({ email }: { email: string }) {
   const [state, action] = useKeptActionState(changeEmailAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const c = accountCopy.profile;
 
   return (
     <Card title={c.changeEmail}>
-      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm ref={guardRef} action={action} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <p className="text-body text-muted">
@@ -80,7 +89,7 @@ export function PasswordForm() {
 
   return (
     <Card title={c.changePassword}>
-      <KeepingForm action={action} className="flex max-w-sm flex-col gap-4" noValidate>
+      <KeepingForm action={action} resetOn={state.notice !== undefined ? state : null} className="flex max-w-sm flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
         <Field

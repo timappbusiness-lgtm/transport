@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 import { useActionToast } from '@/components/ui/toast';
 import { updateCompanyIdentityAction, type ActionState } from '@/app/cont/actions';
 import { Field, FormError } from '@/components/auth/form';
@@ -10,6 +12,7 @@ import type { Company } from '@/lib/auth/account';
 import { COUNTIES } from '@/lib/counties';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ActionState = {};
 const TYPES = ['transport', 'expeditie', 'both'] as const;
@@ -48,6 +51,9 @@ function ReadOnly({
  */
 export function IdentityTab({ company }: { company: Company }) {
   const [state, action] = useKeptActionState(updateCompanyIdentityAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   // The result where the person is looking: the save button sticks to
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
@@ -55,7 +61,7 @@ export function IdentityTab({ company }: { company: Company }) {
   const isDraft = company.verification_status === 'draft';
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>

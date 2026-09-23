@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import { setThresholdsAction, type ThresholdActionState } from '@/app/admin/activitate/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import type { ActivityThresholds } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ThresholdActionState = {};
 const c = activityAdminCopy;
@@ -21,10 +22,13 @@ export function ThresholdForm({
   reviewTimeLabel: string | null;
 }) {
   const [state, action] = useKeptActionState(setThresholdsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           id={`${id}-stats`}

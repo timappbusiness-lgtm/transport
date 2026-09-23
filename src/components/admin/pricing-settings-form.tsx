@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import { setPricingSettingsAction, type PlanActionState } from '@/app/admin/planuri/actions';
 import { FormError, FormNotice } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import type { PricingSettings } from '@/lib/plans';
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: PlanActionState = {};
 const c = adminDirectoryCopy.pricing;
@@ -23,10 +24,13 @@ const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-
  */
 export function PricingSettingsForm({ settings }: { settings: PricingSettings }) {
   const [state, action] = useKeptActionState(setPricingSettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.title}</h2>
       <p className="mt-1 max-w-[62ch] text-body text-muted">{c.lede}</p>
 

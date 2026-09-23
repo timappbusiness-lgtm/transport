@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 import {
   setEquipmentOptionAction,
   setServiceOptionAction,
@@ -9,6 +11,7 @@ import { Field, FormError, FormNotice, SubmitButton } from '@/components/auth/fo
 import { firmaCopy } from '@/content/firma';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: OptionActionState = {};
 const c = firmaCopy.admin;
@@ -41,10 +44,21 @@ export function OptionForm({
     kind === 'equipment' ? setEquipmentOptionAction : setServiceOptionAction,
     EMPTY,
   );
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const existing = row !== undefined;
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3 py-4" noValidate>
+    <KeepingForm
+      ref={guardRef}
+      action={action}
+      // A new row, once saved, is a row in the list above: the empty form
+      // is ready for the next one.
+      resetOn={!existing && state.notice !== undefined ? state : null}
+      className="flex flex-col gap-3 py-4"
+      noValidate
+    >
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
 

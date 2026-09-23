@@ -32,7 +32,11 @@ function VerifyPhone() {
   const [state, action, pending] = useKeptActionState(verifyPhoneAction, EMPTY);
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+    >
       <div>
         <h3 className="text-body">Confirmă un număr de telefon</h3>
         <p className="mt-1 max-w-[58ch] text-body text-muted">
@@ -70,7 +74,11 @@ function MarkTest() {
   const [state, action, pending] = useKeptActionState(markTestAccountAction, EMPTY);
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4"
+    >
       <div>
         <h3 className="text-body">Marchează un cont ca al nostru</h3>
         <p className="mt-1 max-w-[58ch] text-body text-muted">

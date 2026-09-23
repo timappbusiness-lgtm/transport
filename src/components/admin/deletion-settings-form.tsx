@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import {
   setDeletionSettingsAction,
   type SettingsActionState,
@@ -11,6 +11,7 @@ import { personalDataCopy } from '@/content/date-personale';
 import type { DeletionSettings } from '@/lib/account-deletion-source';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: SettingsActionState = {};
 const c = personalDataCopy.admin.settings;
@@ -27,6 +28,9 @@ const CONTROL =
  */
 export function DeletionSettingsForm({ settings }: { settings: DeletionSettings }) {
   const [state, action] = useKeptActionState(setDeletionSettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const id = useId();
 
   return (
@@ -36,7 +40,7 @@ export function DeletionSettingsForm({ settings }: { settings: DeletionSettings 
       </h2>
       <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
-      <KeepingForm action={action} className="mt-4 rounded-card border border-border bg-surface p-4 sm:p-5">
+      <KeepingForm ref={guardRef} action={action} className="mt-4 rounded-card border border-border bg-surface p-4 sm:p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             id={`${id}-grace`}

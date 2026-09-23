@@ -20,7 +20,12 @@ export function InviteMemberForm() {
   const c = accountCopy.members;
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">

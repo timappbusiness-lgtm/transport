@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import {
   saveImportSettingsAction,
   type ImportSettingsState,
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import type { ImportSettings } from '@/lib/import-settings-source';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ImportSettingsState = {};
 const CONTROL =
@@ -55,10 +56,13 @@ function Field({
 
 export function ImportSettingsForm({ settings }: { settings: ImportSettings }) {
   const [state, action, pending] = useKeptActionState(saveImportSettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const enabledId = useId();
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-5">
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-5">
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
 

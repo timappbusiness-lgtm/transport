@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, useRef } from 'react';
 import {
   setPriceRateAction,
   setPriceSettingsAction,
@@ -15,6 +15,7 @@ import { VEHICLE_CLASS_LABELS, type PriceRate, type PriceSettings } from '@/lib/
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: PriceActionState = {};
 const c = pricesCopy.admin;
@@ -31,9 +32,12 @@ const c = pricesCopy.admin;
  */
 export function RateForm({ rate }: { rate: PriceRate }) {
   const [state, action] = useKeptActionState(setPriceRateAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
 
   return (
-    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <input type="hidden" name="vehicle_class" value={rate.vehicle_class} />
 
       <p className="flex items-center gap-3">
@@ -98,9 +102,12 @@ export function RateForm({ rate }: { rate: PriceRate }) {
 
 export function SettingsForm({ settings }: { settings: PriceSettings }) {
   const [state, action] = useKeptActionState(setPriceSettingsAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
 
   return (
-    <KeepingForm action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
+    <KeepingForm ref={guardRef} action={action} className="rounded-card border border-border bg-surface p-4 sm:p-5">
       <h2 className="text-h3">{c.settings.title}</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

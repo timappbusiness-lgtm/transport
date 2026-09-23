@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useTransition } from 'react';
+import { useId, useState, useTransition, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -22,6 +22,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ActionState = {};
 const c = accountCopy.publicProfile;
@@ -40,6 +41,9 @@ const c = accountCopy.publicProfile;
  */
 export function PublicProfileForm({ company, logoUrl }: { company: Company; logoUrl: string | null }) {
   const [state, action] = useKeptActionState(updatePublicProfileAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   const descriptionId = useId();
 
   const isVerified = company.verification_status === 'verified';
@@ -49,7 +53,7 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
     <div className="flex flex-col gap-5">
       <p className="max-w-[62ch] text-body text-muted">{c.lede}</p>
 
-      <KeepingForm action={action} className="flex flex-col gap-4" noValidate>
+      <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-4" noValidate>
         <FormError>{state.error}</FormError>
         <FormNotice>{state.notice}</FormNotice>
 

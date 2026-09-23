@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionToast } from '@/components/ui/toast';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { updateCoverageAction, type ActionState } from '@/app/cont/actions';
 import { FormError } from '@/components/auth/form';
 import { CheckboxGrid } from '@/components/firma/checkbox-grid';
@@ -12,6 +12,7 @@ import { COVERAGE_SCOPES, type CoverageScope } from '@/lib/company-profile';
 import { COUNTIES } from '@/lib/counties';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
+import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
 
 const EMPTY: ActionState = {};
 
@@ -28,6 +29,9 @@ const EMPTY: ActionState = {};
  */
 export function CoverageTab({ company }: { company: Company }) {
   const [state, action] = useKeptActionState(updateCoverageAction, EMPTY);
+  const guardRef = useRef<HTMLFormElement>(null);
+  // Leaving with changes nobody saved asks once; a save takes it away.
+  useUnsavedGuard(guardRef, state);
   // The result where the person is looking: the save button sticks to
   // the bottom of a phone, and the top of this form may be off screen.
   useActionToast(state);
@@ -35,7 +39,7 @@ export function CoverageTab({ company }: { company: Company }) {
   const c = firmaCopy.coverage;
 
   return (
-    <KeepingForm action={action} className="flex flex-col gap-5" noValidate>
+    <KeepingForm ref={guardRef} action={action} className="flex flex-col gap-5" noValidate>
       <div>
         <h2 className="text-h3">{c.title}</h2>
         <p className="mt-1.5 max-w-[62ch] text-body text-muted">{c.lede}</p>

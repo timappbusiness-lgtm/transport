@@ -18,7 +18,11 @@ export function GrantStaff() {
   const id = useId();
 
   return (
-    <KeepingForm action={action} className="mt-4 flex flex-col gap-3">
+    <KeepingForm
+      resetOn={state.notice !== undefined && state.error === undefined ? state : null}
+      action={action}
+      className="mt-4 flex flex-col gap-3"
+    >
       <label htmlFor={`${id}-email`} className="flex flex-col gap-1.5 text-body">
         {c.add.email}
         <input
