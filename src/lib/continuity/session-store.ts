@@ -55,6 +55,45 @@ export function subscribeSession(listener: () => void): () => void {
   };
 }
 
+/*
+ * The notice is drawn by every form that can fail this way and by the
+ * account and admin shells, so a page with four forms has four
+ * candidates. The first one mounted draws it; the rest stay empty until
+ * it unmounts. A queue rather than a flag, so the notice survives the
+ * form that happened to own it leaving the page.
+ */
+const owners: symbol[] = [];
+const ownerListeners = new Set<() => void>();
+
+function ownersChanged() {
+  for (const listener of ownerListeners) listener();
+}
+
+export function claimSessionNotice(owner: symbol): () => void {
+  owners.push(owner);
+  ownersChanged();
+  return () => {
+    const index = owners.indexOf(owner);
+    if (index !== -1) owners.splice(index, 1);
+    ownersChanged();
+  };
+}
+
+export function sessionNoticeOwner(): symbol | null {
+  return owners[0] ?? null;
+}
+
+export function serverSessionNoticeOwner(): symbol | null {
+  return null;
+}
+
+export function subscribeSessionNoticeOwner(listener: () => void): () => void {
+  ownerListeners.add(listener);
+  return () => {
+    ownerListeners.delete(listener);
+  };
+}
+
 /** Called by the page a second tab lands on after signing in again. */
 export function broadcastSessionRestored() {
   if (typeof BroadcastChannel === 'undefined') return;

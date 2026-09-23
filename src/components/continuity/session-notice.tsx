@@ -1,14 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { continuityCopy } from '@/content/continuitate';
 import { SIGN_IN_AGAIN_HREF } from '@/lib/continuity/session';
 import {
+  claimSessionNotice,
   dismissSessionNotice,
   getServerSessionState,
   getSessionState,
+  serverSessionNoticeOwner,
+  sessionNoticeOwner,
   subscribeSession,
+  subscribeSessionNoticeOwner,
 } from '@/lib/continuity/session-store';
 
 /**
@@ -21,13 +26,28 @@ import {
  *
  * `role="status"`, not `alert`: the form's own error is the alert, and one
  * failure read out twice is noise.
+ *
+ * Mounted by `KeepingForm` and by the account and admin shells, never by
+ * the root layout: one more client component there is one more chunk
+ * every page — a not-found page included — must load before it can draw.
+ * Only the first one mounted on a page draws; see `claimSessionNotice`.
+ * It draws into `document.body`, because the form that owns it may sit in
+ * a closed `<details>` or a column hidden at this width, and a fixed
+ * element inside those is not drawn at all.
  */
 export function SessionNotice() {
+  const [id] = useState(() => Symbol('session-notice'));
+  useEffect(() => claimSessionNotice(id), [id]);
+  const owner = useSyncExternalStore(
+    subscribeSessionNoticeOwner,
+    sessionNoticeOwner,
+    serverSessionNoticeOwner,
+  );
   const state = useSyncExternalStore(subscribeSession, getSessionState, getServerSessionState);
-  if (state === 'ok') return null;
+  if (state === 'ok' || owner !== id) return null;
   const c = continuityCopy.session;
 
-  return (
+  return createPortal(
     <div className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center px-4">
       <div
         role="status"
@@ -53,6 +73,7 @@ export function SessionNotice() {
           {c.close}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -3,6 +3,7 @@
 import { startTransition, useEffect, useRef, useState } from 'react';
 import type { ComponentPropsWithoutRef, Ref, SubmitEvent } from 'react';
 import { FormError } from '@/components/auth/form';
+import { SessionNotice } from '@/components/continuity/session-notice';
 import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
 import { announceSessionExpired } from '@/lib/continuity/session-store';
 
@@ -39,7 +40,9 @@ type Props = Omit<ComponentPropsWithoutRef<'form'>, 'action'> & {
  * `action` stays on the element, so the form still works the ordinary way
  * where the handler never runs. A server action passed directly — not
  * through `useKeptActionState` — has its failed requests caught here, and
- * the sentence is drawn at the end of the form.
+ * the sentence is drawn at the end of the form. So is the page-wide
+ * notice with the way to sign in again, once per page whatever the number
+ * of forms on it.
  */
 export function KeepingForm({ action, resetOn, onSubmit, children, ref, ...rest }: Props) {
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -87,6 +90,7 @@ export function KeepingForm({ action, resetOn, onSubmit, children, ref, ...rest 
     >
       {children}
       {failure ? <FormError>{failure}</FormError> : null}
+      <SessionNotice />
     </form>
   );
 }

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
+import { DraftDone } from '@/components/continuity/draft-done';
+import { SessionNotice } from '@/components/continuity/session-notice';
 import { ROUTES } from '@/config/routes';
 import { getAccountContext } from '@/lib/auth/account';
 import { Icon } from '@/components/ui/icon';
@@ -83,6 +86,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </aside>
         <div className="min-w-0 flex-1">{children}</div>
       </div>
+      <SessionNotice />
+      <Suspense fallback={null}>
+        <DraftDone />
+      </Suspense>
     </Container>
   );
 }

@@ -228,6 +228,35 @@ R **da** · Î **da** · A — · S n/a · C **da** · E **da**.
   Înapoi pierde modificarea. Linkurile și reîncărcarea întreabă.
 - **Stelele unei evaluări** nu sunt în ciornă.
 
+## Defecte prinse pe drum, în reparația însăși
+
+Fiecare are acum un test care cade dacă revine.
+
+- **Editarea rezumatului de la pasul 4 arunca la pasul 1.** Corecția
+  pasului rula la fiecare schimbare a ciornei; golirea unui câmp în rezumat
+  făcea pasul „inaccesibil". Corecția rulează acum numai la sosire (pasul
+  cerut de adresă se schimbă), nu cât omul scrie. Prins de
+  `publicare-cerere.spec.ts`.
+- **Schimbarea pasului scria o ciornă goală**, care apoi anunța „Am păstrat
+  ce completaseși" unui om care nu completase nimic. Ciorna se scrie numai
+  după ce există ceva de păstrat (`draft-store.test.ts`).
+- **Mesajul de la pasul corectat nu apărea uneori.** Era programat pentru
+  cadrul următor, iar corectarea adresei (o randare nouă) îl anula înainte
+  să apară. Erorile se pun acum odată cu pasul, în aceeași randare.
+- **„Continuă" nu răspundea uneori pe telefon.** Derularea lină spre
+  începutul pasului muta butonul de sub deget o jumătate de secundă; al
+  doilea tap cădea pe formular. Acum saltul e instantaneu și numai când
+  începutul pasului e deasupra ecranului (72 de treceri 3→4 fără ratare,
+  față de 3 ratări înainte).
+- **Pagina 404 din `/admin` ieșea uneori albă** (aprox. 1 din 130–300 de
+  încărcări, niciodată pe `main`). Cauza: notificarea de sesiune și
+  curățarea ciornei (`?gata=`) montate în layout-ul rădăcină — o bucată JS
+  în plus pe care orice pagină trebuia s-o încarce înainte să se deseneze,
+  iar pe pagina de eroare, uneori, n-o cerea. Acum stau în layout-urile
+  `/cont` și `/admin` și în `KeepingForm` (o singură notificare desenată pe
+  pagină, oricâte formulare are); layout-ul rădăcină e identic cu cel de
+  pe `main`, iar un test unitar ține asta. 720 de încărcări fără ratare.
+
 ## Teste
 
 - Unitare: `tests/unit/continuity.test.ts`, `continuity-flows.test.ts`,

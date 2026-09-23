@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { signInLinkFor } from '@/lib/auth/next-path';
@@ -106,8 +106,7 @@ function useCoarsePointer(): boolean {
 
 /** The header's right half, reading the path from the router. */
 export function HeaderNav({ user }: { user: HeaderUser | null }) {
-  const search = useSearchParams()?.toString() ?? '';
-  return <HeaderNavView user={user} pathname={usePathname() ?? ROUTES.home} search={search} />;
+  return <HeaderNavView user={user} pathname={usePathname() ?? ROUTES.home} />;
 }
 
 /**
@@ -115,16 +114,7 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
  * page and any name without a router, and measure it with the real
  * stylesheet at every width.
  */
-export function HeaderNavView({
-  user,
-  pathname,
-  search = '',
-}: {
-  user: HeaderUser | null;
-  pathname: string;
-  /** The page's query, so „Autentificare" comes back to the same place. */
-  search?: string;
-}) {
+export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pathname: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLAnchorElement>(null);
@@ -364,9 +354,19 @@ export function HeaderNavView({
         <div className="flex items-center gap-1.5">
           {/* Visible at every width: off the homepage there is no other way
               into sign-in from the header on a phone. */}
-          <Link href={signInLinkFor(pathname, search)} className={PILL_QUIET}>
-            Autentificare
-          </Link>
+          {/* The query is read in a boundary of its own: on a page drawn
+              ahead of time, `useSearchParams` leaves everything up to the
+              nearest boundary for the browser to draw, and without this
+              one that is the whole header — on every such page. */}
+          <Suspense
+            fallback={
+              <Link href={signInLinkFor(pathname, '')} className={PILL_QUIET}>
+                Autentificare
+              </Link>
+            }
+          >
+            <SignInLink pathname={pathname} />
+          </Suspense>
           <Link href={ROUTES.newRequest} className={PILL_SOLID}>
             {/* The full label and the brand and sign-in together need more
                 room than a 360px phone has. Only one of the two is in the
@@ -377,6 +377,16 @@ export function HeaderNavView({
         </div>
       )}
     </>
+  );
+}
+
+/** „Autentificare", coming back to this page with its query: the step, the filters. */
+function SignInLink({ pathname }: { pathname: string }) {
+  const search = useSearchParams()?.toString() ?? '';
+  return (
+    <Link href={signInLinkFor(pathname, search)} className={PILL_QUIET}>
+      Autentificare
+    </Link>
   );
 }
 

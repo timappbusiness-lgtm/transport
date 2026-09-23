@@ -115,3 +115,42 @@ describe('an action that finds nobody signed in', () => {
     });
   });
 });
+
+describe('the session notice on a page with several forms', () => {
+  it('is drawn by the first one mounted, and passes on when that one leaves', async () => {
+    const { claimSessionNotice, sessionNoticeOwner, subscribeSessionNoticeOwner } = await import(
+      '@/lib/continuity/session-store'
+    );
+    const changes = vi.fn();
+    const unsubscribe = subscribeSessionNoticeOwner(changes);
+    const shell = Symbol('shell');
+    const form = Symbol('form');
+
+    expect(sessionNoticeOwner()).toBeNull();
+    const releaseShell = claimSessionNotice(shell);
+    const releaseForm = claimSessionNotice(form);
+    expect(sessionNoticeOwner()).toBe(shell);
+
+    releaseShell();
+    expect(sessionNoticeOwner()).toBe(form);
+    releaseForm();
+    expect(sessionNoticeOwner()).toBeNull();
+    // Releasing twice (a strict-mode double cleanup) changes nothing.
+    releaseForm();
+    expect(sessionNoticeOwner()).toBeNull();
+    expect(changes).toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  it('is never mounted by the root layout, which every page pays for', async () => {
+    const { readFileSync } = await import('node:fs');
+    const layout = readFileSync('src/app/layout.tsx', 'utf8');
+    expect(layout).not.toMatch(/SessionNotice|DraftDone/);
+    for (const shell of ['src/app/cont/layout.tsx', 'src/app/admin/layout.tsx']) {
+      const source = readFileSync(shell, 'utf8');
+      expect(source).toMatch(/<SessionNotice \/>/);
+      expect(source).toMatch(/<DraftDone \/>/);
+    }
+    expect(readFileSync('src/components/ui/keeping-form.tsx', 'utf8')).toMatch(/<SessionNotice \/>/);
+  });
+});

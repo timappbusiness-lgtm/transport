@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Container } from '@/components/layout/container';
 import { MobileNav } from '@/components/app/mobile-nav';
@@ -6,6 +7,8 @@ import { Sidebar } from '@/components/app/sidebar';
 import { SkipLink } from '@/components/app/top-bar';
 import { StatusBanner } from '@/components/app/status-banner';
 import { AccountNotices } from '@/components/app/account-notices';
+import { DraftDone } from '@/components/continuity/draft-done';
+import { SessionNotice } from '@/components/continuity/session-notice';
 import { currentPathname, navContextOf } from '@/components/app/nav-context';
 import { ROUTES } from '@/config/routes';
 import { TermsGate } from '@/components/legal/terms-gate';
@@ -113,6 +116,14 @@ export default async function AccountLayout({ children }: { children: React.Reac
           </div>
         </div>
       </Container>
+
+      {/* Here and in the admin shell, not in the root layout: every page
+          that finishes a draft lands in one of the two, and the root
+          layout is the one every page pays for — see SessionNotice. */}
+      <SessionNotice />
+      <Suspense fallback={null}>
+        <DraftDone />
+      </Suspense>
 
       {/* The same counts the sidebar and the header show: one call, one
           number, on every surface that has a menu. */}
