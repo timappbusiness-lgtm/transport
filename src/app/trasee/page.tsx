@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { CarrierBanner } from '@/components/onboarding/carrier-banner';
 import { DepartureCard } from '@/components/departures/departure-card';
 import { FiltersForm } from '@/components/departures/filters-form';
 import { SavedSearchButton } from '@/components/departures/saved-search-button';
@@ -23,6 +24,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { EmptyFigure } from '@/components/ui/empty-state';
 import { DEPARTURE_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortDepartures } from '@/lib/board-sort';
+import { carrierStage } from '@/lib/carrier-onboarding';
 
 export const metadata: Metadata = {
   title: 'Trasee disponibile',
@@ -57,6 +59,22 @@ export default async function Page({
   // One „now" for the whole page, so every card on it agrees.
   const now = new Date();
 
+  // The same sentence as on /cereri, for the same reason: a carrier who
+  // has just signed up is on a board, not on a form, and this is where
+  // the remaining step has to be said.
+  const company = context?.activeCompany ?? null;
+  const stage =
+    context?.profile?.account_type === 'company'
+      ? carrierStage(
+          company === null
+            ? null
+            : {
+                verificationStatus: company.verification_status,
+                isSuspended: company.is_suspended,
+              },
+        )
+      : 'ready';
+
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
@@ -66,6 +84,8 @@ export default async function Page({
       </header>
 
       <div className="mt-8 flex flex-col gap-8">
+        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
+
         <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
           <FiltersForm filters={filters} sort={sort} />
         </aside>

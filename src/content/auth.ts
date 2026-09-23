@@ -53,10 +53,11 @@ export const authCopy = {
   },
   companySignUp: {
     title: 'Cont de firmă',
-    lede: 'Începem cu contul tău. Datele firmei le completezi imediat după ce confirmi e-mailul.',
+    lede: 'Doar contul tău. Datele firmei vin după, când ai timp de ele.',
     stepLabel: 'Pasul 1 din 2',
     stepTitle: 'Datele tale',
-    nextStep: 'Pasul 2, după confirmarea e-mailului: CUI-ul și datele firmei.',
+    nextStep:
+      'După ce confirmi e-mailul intri direct pe panoul de cereri. Dosarul firmei — CUI, rute, documente — îl completezi când vrei; până atunci vezi tot, dar nu poți trimite oferte.',
     verifyIntro: 'Documentele firmei sunt verificate de echipa noastră înainte de prima ofertă.',
     verifyLink: 'Cum verificăm firmele',
     fullName: 'Nume și prenume',

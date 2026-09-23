@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { BoardFilters } from '@/components/requests/board-filters';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
+import { CarrierBanner } from '@/components/onboarding/carrier-banner';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
@@ -35,6 +36,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { REQUEST_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortRequests } from '@/lib/board-sort';
+import { carrierStage } from '@/lib/carrier-onboarding';
 
 export const metadata: Metadata = {
   title: 'Cereri de transport',
@@ -90,6 +92,11 @@ export default async function Page({
   // One „now" for the whole page, so every card on it agrees.
   const now = new Date();
 
+  // A carrier who has just signed up lands here rather than on a form,
+  // so the board is where the remaining step has to be said.
+  const stage =
+    context?.profile?.account_type === 'company' ? carrierStage(companyState(company)) : 'ready';
+
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <header className="max-w-[46rem]">
@@ -99,6 +106,7 @@ export default async function Page({
       </header>
 
       <div className="mt-8 flex flex-col gap-8">
+        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
         <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
           <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany} />
 
@@ -160,6 +168,13 @@ export default async function Page({
       </div>
     </div>
   );
+}
+
+/** The two fields `carrierStage` reads, or null when there is no firm. */
+function companyState(company: Company | null) {
+  return company === null
+    ? null
+    : { verificationStatus: company.verification_status, isSuspended: company.is_suspended };
 }
 
 /**
