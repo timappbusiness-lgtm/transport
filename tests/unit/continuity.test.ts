@@ -278,8 +278,9 @@ describe('a request that did not arrive', () => {
   });
 
   it('becomes state, with everything the form already held', async () => {
-    const failing = keepOnNetworkFailure(
-      async (_prev: { error?: string; values?: Record<string, string> }, _data: FormData) => {
+    type State = { error?: string; values?: Record<string, string> };
+    const failing = keepOnNetworkFailure<State, FormData>(
+      async () => {
         throw new TypeError('Failed to fetch');
       },
       (previous, message) => ({ ...previous, error: message }),
@@ -289,8 +290,8 @@ describe('a request that did not arrive', () => {
   });
 
   it('while anything else still throws', async () => {
-    const redirecting = keepOnNetworkFailure(
-      async (_prev: object, _data: FormData): Promise<object> => {
+    const redirecting = keepOnNetworkFailure<object, FormData>(
+      async () => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;push;/cont;307;' });
       },
       (previous) => previous,
