@@ -3,11 +3,12 @@ import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { buttonClasses } from '@/components/ui/button';
-import { BoardSkeleton, DashboardSkeleton, DetailSkeleton } from '@/components/ui/skeleton';
+import { BoardSkeleton, DashboardSkeleton } from '@/components/ui/skeleton';
 import { ToastView, toastFor, type Toast } from '@/components/ui/toast';
 import { tabClasses } from '@/components/ui/tab';
 import { CARD_INTERACTIVE } from '@/components/ui/interactive';
 import { loadingCopy } from '@/content/loading';
+import { requestsCopy } from '@/content/cereri';
 
 /**
  * The feedback layer: what a screen shows while it loads, what a save
@@ -32,8 +33,7 @@ function walk(dir: string, out: string[] = []): string[] {
 
 describe('skeletons', () => {
   const screens = [
-    ['a board', <BoardSkeleton key="b" label={loadingCopy.requests} />],
-    ['a detail page', <DetailSkeleton key="d" label={loadingCopy.request} />],
+    ['a board', <BoardSkeleton key="b" label={loadingCopy.requests} title="Cereri" lede="Rânduri." />],
     ['the dashboard', <DashboardSkeleton key="a" label={loadingCopy.account} />],
   ] as const;
 
@@ -49,9 +49,37 @@ describe('skeletons', () => {
   });
 
   it('a board skeleton has the board card shape: tile, lines, action', () => {
-    const html = renderToStaticMarkup(<BoardSkeleton label={loadingCopy.requests} cards={3} />);
+    const html = renderToStaticMarkup(
+      <BoardSkeleton label={loadingCopy.requests} title="Cereri" lede="Rânduri." cards={3} />,
+    );
     // The tile is the size of the real category tile, so nothing jumps.
     expect(html.match(/h-12 w-16 flex-none rounded-input sm:h-16 sm:w-24/g)).toHaveLength(3);
+  });
+
+  it('a board skeleton carries the page’s own heading, as text and not as a second h1', () => {
+    const html = renderToStaticMarkup(
+      <BoardSkeleton label={loadingCopy.requests} title={requestsCopy.board.title} lede={requestsCopy.board.lede} />,
+    );
+    // The lede is the largest thing a phone paints on a board; drawn
+    // here, it is on screen at the first paint rather than after the rows.
+    expect(html).toContain(requestsCopy.board.lede);
+    expect(html).not.toContain('<h1');
+    // Hidden from a screen reader, which hears the status sentence once.
+    expect(html).toMatch(/<div aria-hidden="true" class="max-w-\[46rem\]"><p class="font-display text-h1/);
+  });
+
+  it('each board loading file uses the words its page uses', () => {
+    for (const [file, copy] of [
+      ['src/app/cereri/(panou)/loading.tsx', 'requestsCopy.board'],
+      ['src/app/trasee/(panou)/loading.tsx', 'departuresCopy.board'],
+    ] as const) {
+      const loader = read(file);
+      expect(loader, file).toContain(`title={${copy}.title}`);
+      expect(loader, file).toContain(`lede={${copy}.lede}`);
+      const page = read(file.replace('loading.tsx', 'page.tsx'));
+      expect(page, file).toMatch(/<h1 className="text-h1">\{c\.title\}<\/h1>/);
+      expect(page, file).toMatch(/<p className="mt-3 text-body-lg text-muted">\{c\.lede\}<\/p>/);
+    }
   });
 
   it('the tile in the skeleton is the tile on the card', () => {
@@ -68,12 +96,34 @@ describe('skeletons', () => {
     }
   });
 
+  it('no loading boundary covers a page that can 404 or redirect', () => {
+    // Under a loading.tsx the page streams, the 200 goes out with the
+    // skeleton, and a later notFound() is a 404 page with a 200 status —
+    // for a missing request, an unlisted firm, a conversation that is not
+    // yours. It happened once in this pass; the list pages now sit in
+    // route groups so their skeleton covers them and nothing else.
+    const loaders = walk(join(ROOT, 'src/app')).filter((f) => f.endsWith('/loading.tsx'));
+    const offenders: string[] = [];
+    for (const loader of loaders) {
+      const dir = loader.slice(0, -'/loading.tsx'.length);
+      const covered = walk(dir).filter(
+        (f) => /\/(page|layout)\.tsx$/.test(f) && f !== `${dir}/layout.tsx`,
+      );
+      for (const file of covered) {
+        if (/\b(notFound|redirect|permanentRedirect)\(/.test(read(file.slice(ROOT.length + 1)))) {
+          offenders.push(`${loader.slice(ROOT.length + 1)} covers ${file.slice(ROOT.length + 1)}`);
+        }
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([]);
+  });
+
   it('every loading.tsx draws a skeleton and has a label', () => {
     const loaders = walk(join(ROOT, 'src/app')).filter((f) => f.endsWith('/loading.tsx'));
-    expect(loaders.length).toBeGreaterThanOrEqual(6);
+    expect(loaders.length).toBeGreaterThanOrEqual(3);
     for (const file of loaders) {
       const source = read(file.slice(ROOT.length + 1));
-      expect(source, file).toMatch(/(Board|Detail|Dashboard)Skeleton/);
+      expect(source, file).toMatch(/(Board|Dashboard)Skeleton/);
       expect(source, file).toMatch(/label=\{loadingCopy\.\w+\}/);
     }
   });

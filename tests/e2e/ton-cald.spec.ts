@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * The warmth pass, checked in a browser: where the accent is and is not,
@@ -68,6 +69,7 @@ test.describe('the accent', () => {
   test('marks the current page in the public navigation', async ({ page, isMobile }) => {
     test.skip(isMobile, 'the public links are in the menu on a phone');
     await page.goto('/cereri');
+    await settled(page);
     const current = page.locator('header a[aria-current="page"]');
     await expect(current).toHaveCount(1);
     await expect(current).toHaveCSS('color', ACCENT_ON_DARK);
@@ -83,6 +85,7 @@ test.describe('the accent', () => {
   for (const path of ['/termeni', '/confidentialitate', '/cookies']) {
     test(`is absent from the legal page ${path}`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       expect(await accentedIn(page, 'main')).toEqual([]);
     });
   }
@@ -108,6 +111,7 @@ test.describe('badges without data', () => {
   for (const path of ['/', '/cereri', '/trasee']) {
     test(`${path} shows no badge when there are no rows`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       await expect(page.locator('main [data-badge]')).toHaveCount(0);
     });
   }
@@ -148,6 +152,7 @@ for (const [width, height] of [
     for (const path of ['/', '/cereri', '/trasee', '/cerere/noua', '/termeni', '/nu-exista']) {
       test(`${path} does not scroll sideways`, async ({ page }) => {
         await page.goto(path);
+        await settled(page);
         expect(await overflow(page), path).toBeLessThanOrEqual(1);
       });
     }

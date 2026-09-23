@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * That the icons are on the served page.
@@ -24,6 +25,7 @@ import { expect, test, type Page } from '@playwright/test';
 const IN_MAIN = 'main svg.lucide';
 
 async function iconsIn(page: Page, selector = IN_MAIN): Promise<number> {
+  await settled(page);
   return page.locator(selector).count();
 }
 
@@ -63,6 +65,7 @@ test.describe('every screen that should have icons has them', () => {
   for (const [path, least, what] of SCREENS) {
     test(`${path} draws at least ${least} (${what})`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       const found = await iconsIn(page);
       expect(found, `${path} drew ${found} icons in <main>, expected ${least}+`).toBeGreaterThanOrEqual(
         least,
@@ -97,6 +100,7 @@ test.describe('and they are large enough to see', () => {
 test.describe('the filter panel and the board card', () => {
   test('the filters carry an icon on the heading and the button', async ({ page }) => {
     await page.goto('/cereri');
+    await settled(page);
     // Named rather than counted: these two are the „filter" case the
     // brief asked to be guarded, and a count would not say which went.
     await expect(page.locator('aside svg.lucide').first()).toBeVisible();
@@ -110,6 +114,7 @@ test.describe('where an icon must never appear', () => {
   test('the legal pages have none at all', async ({ page }) => {
     for (const path of ['/termeni', '/confidentialitate', '/cookies']) {
       await page.goto(path);
+      await settled(page);
       expect(await page.locator('main svg').count(), path).toBe(0);
     }
   });
@@ -117,6 +122,7 @@ test.describe('where an icon must never appear', () => {
   test('and no emoji anywhere on a board', async ({ page }) => {
     for (const path of ['/cereri', '/trasee', '/']) {
       await page.goto(path);
+      await settled(page);
       const text = (await page.locator('main').innerText()) ?? '';
       expect(text, path).not.toMatch(
         /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u,
@@ -130,6 +136,7 @@ test.describe('where an icon must never appear', () => {
     // name. Never a third thing. Unlike the old one this can fail —
     // there are icons on the page now for it to fail on.
     await page.goto('/cereri');
+    await settled(page);
     const total = await page.locator('main svg.lucide').count();
     expect(total, 'no icons to check').toBeGreaterThan(0);
     const accounted = await page

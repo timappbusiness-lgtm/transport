@@ -130,7 +130,7 @@ export const homeCopy = {
       steps: [
         'Scrii de unde, până unde și ce mașină. Durează cam două minute.',
         'Transportatorii verificați o văd și îți pot trimite oferte.',
-        'Compari și alegi tu. Numărul tău rămâne ascuns până atunci.',
+        'Compari și alegi tu. Datele tale de contact rămân ascunse până atunci.',
       ],
       button: 'Publică o cerere gratuit',
       note: 'Nu plătești abonament. Contul îl faci la final, după ce ai completat.',

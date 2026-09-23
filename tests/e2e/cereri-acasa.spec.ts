@@ -67,7 +67,7 @@ test.describe('the free posting card', () => {
     await page.goto('/');
     const steps = page.locator('#cereri ol li');
     await expect(steps).toHaveCount(3);
-    await expect(steps.nth(0)).toContainText('Completezi traseul');
+    await expect(steps.nth(0)).toContainText('de unde, până unde');
     await expect(steps.nth(1)).toContainText('Transportatorii verificați');
     await expect(steps.nth(2)).toContainText('Datele tale de contact rămân ascunse');
   });

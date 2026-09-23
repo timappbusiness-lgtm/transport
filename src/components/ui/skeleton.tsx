@@ -12,6 +12,12 @@ import { cn } from '@/lib/utils';
  * The pulse is an opacity animation, and the reduced-motion block in
  * globals.css holds it on a single frame. A screen reader hears one
  * sentence, once, instead of a dozen grey boxes.
+ *
+ * Only on the two boards and the account home, each in its own route
+ * group. A `loading.tsx` makes everything under it stream, and a page
+ * that streams has already sent its 200 when it calls `notFound()` — so
+ * a missing request or a conversation that is not yours would answer
+ * 200. A detail page decides its 404 first, and has no skeleton.
  */
 
 export function Bone({ className }: { className?: string | undefined }) {
@@ -61,52 +67,48 @@ export function CardSkeleton() {
   );
 }
 
-/** A board: the title, the filter card with its three fields, the list. */
-export function BoardSkeleton({ label, cards = 4 }: { label: string; cards?: number }) {
+/**
+ * A board: its real heading and lede, the filter card, the list.
+ *
+ * The heading and the lede are the page's own words, not grey bars:
+ * they are static copy, the lede is what a phone paints as its largest
+ * element, and drawing it here means it is on screen at the first paint
+ * instead of after the rows. They are paragraphs rather than an `<h1>`,
+ * so the page never holds two headings while the rows stream in, and
+ * they are hidden from a screen reader, which hears the status once.
+ */
+export function BoardSkeleton({
+  label,
+  title,
+  lede,
+  cards = 4,
+}: {
+  label: string;
+  title: string;
+  lede: string;
+  cards?: number;
+}) {
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       <SkeletonRegion label={label}>
-        <Bone className="h-10 w-72 max-w-full" />
-        <Bone className="mt-4 h-4 w-96 max-w-full" />
-        <div className="mt-8 rounded-card border border-border bg-surface p-5 shadow-card">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Bone className="h-10 w-full rounded-input" />
-            <Bone className="h-10 w-full rounded-input" />
-            <Bone className="h-10 w-full rounded-input" />
-          </div>
-          <Bone className="mt-4 h-10 w-full rounded-input" />
+        <div aria-hidden="true" className="max-w-[46rem]">
+          <p className="font-display text-h1 text-balance">{title}</p>
+          <p className="mt-3 text-body-lg text-muted">{lede}</p>
         </div>
-        <ul className="mt-8 flex flex-col gap-4">
-          {Array.from({ length: cards }, (_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </ul>
-      </SkeletonRegion>
-    </div>
-  );
-}
-
-/** A detail page: the title, a block of facts, the side panel. */
-export function DetailSkeleton({ label }: { label: string }) {
-  return (
-    <div className="mx-auto w-full max-w-[64rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
-      <SkeletonRegion label={label}>
-        <Bone className="h-4 w-32" />
-        <Bone className="mt-6 h-10 w-4/5" />
-        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
-          <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
-            {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="flex justify-between gap-4">
-                <Bone className="h-4 w-28" />
-                <Bone className="h-4 w-40" />
-              </div>
+        <div className="mt-8 flex flex-col gap-8">
+          <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Bone className="h-10 w-full rounded-input" />
+              <Bone className="h-10 w-full rounded-input" />
+              <Bone className="h-10 w-full rounded-input" />
+            </div>
+            <Bone className="mt-4 h-10 w-full rounded-input" />
+          </div>
+          <ul className="flex flex-col gap-4">
+            {Array.from({ length: cards }, (_, i) => (
+              <CardSkeleton key={i} />
             ))}
-          </div>
-          <div className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
-            <Bone className="h-5 w-40" />
-            <Bone className="h-4 w-full" />
-            <Bone className="h-10 w-full rounded-pill" />
-          </div>
+          </ul>
         </div>
       </SkeletonRegion>
     </div>

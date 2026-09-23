@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { settled } from './settled';
 
 /**
  * Everything except „de unde", „unde" and „tip vehicul" lives one click
@@ -25,6 +26,7 @@ async function openFilters(page: Page): Promise<void> {
 test.describe('trasee, signed out', () => {
   test('the board opens and asks three questions', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await expect(page.locator('h1')).toContainText('Trasee');
     // The strip of direction tabs above the board became a filter among
     // the filters. What is on screen is the three a dispatcher answers
@@ -42,6 +44,7 @@ test.describe('trasee, signed out', () => {
 
   test('the direction is a filter, and still carries in the URL', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await openFilters(page);
     await page.selectOption('#f-tab', 'retur');
     await page.getByRole('button', { name: 'Caută' }).click();
@@ -55,6 +58,7 @@ test.describe('trasee, signed out', () => {
 
   test('filters land in the URL, so a search can be shared', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await openFilters(page);
     await page.selectOption('#f-from-country', 'DE');
     await page.selectOption('#f-seats', '2');
@@ -68,6 +72,7 @@ test.describe('trasee, signed out', () => {
     // The panel is open already, because the link carries something in
     // it — which is the whole reason it opens by itself.
     await page.goto('/trasee?directie=retur');
+    await settled(page);
     await page.selectOption('#f-from-country', 'IT');
     await page.getByRole('button', { name: 'Caută' }).click();
 
@@ -77,6 +82,7 @@ test.describe('trasee, signed out', () => {
 
   test('the empty state says what will be here and offers one thing', async ({ page }) => {
     await page.goto('/trasee?tara-plecare=PL&tara-sosire=SE');
+    await settled(page);
     await expect(page.getByText('Niciun traseu pentru această căutare')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Vezi toate traseele' })).toBeVisible();
 
@@ -89,17 +95,20 @@ test.describe('trasee, signed out', () => {
 
   test('an empty filtered board offers a way back to everything', async ({ page }) => {
     await page.goto('/trasee?tara-plecare=PL&tara-sosire=SE');
+    await settled(page);
     await page.getByRole('link', { name: 'Vezi toate traseele' }).click();
     await expect(page).toHaveURL(/\/trasee$/);
   });
 
   test('a signed-out visitor is told where the carrier name went', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     await expect(page.getByText('Firma care transportă apare după autentificare')).toBeVisible();
   });
 
   test('no company, plate or phone leaks onto the board', async ({ page }) => {
     await page.goto('/trasee');
+    await settled(page);
     const body = (await page.locator('body').innerText()).toLowerCase();
     // The board is built on v_departures_public, which carries none of
     // these columns; this is the belt to that braces.
@@ -119,6 +128,7 @@ test.describe('trasee, signed out', () => {
   test('the board works on a phone without sideways scrolling', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/trasee');
+    await settled(page);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
@@ -130,6 +140,7 @@ test.describe('trasee, the carrier side', () => {
   for (const path of ['/cont/trasee', '/cont/trasee/nou']) {
     test(`${path} is closed to an anonymous visitor`, async ({ page }) => {
       await page.goto(path);
+      await settled(page);
       await expect(page).toHaveURL(new RegExp('/autentificare\\?next='));
     });
   }
