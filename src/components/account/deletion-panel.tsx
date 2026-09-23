@@ -88,7 +88,7 @@ export function DeletionPanel({
           <p className="mt-1 text-sm text-muted">{c.held}</p>
           <form action={cancelAction} className="mt-3">
             <input type="hidden" name="request_id" value={request!.id} />
-            <button type="submit" disabled={cancelling} className={buttonClasses('primary', 'sm')}>
+            <button type="submit" disabled={cancelling} className={buttonClasses('ink', 'sm')}>
               {c.cancel}
             </button>
           </form>
@@ -148,7 +148,7 @@ export function DeletionPanel({
                 className={CONTROL}
               />
               <div className="mt-1 flex flex-wrap gap-3">
-                <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+                <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
                   {c.start}
                 </button>
                 <button

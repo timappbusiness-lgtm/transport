@@ -94,7 +94,7 @@ export function MessageActions({
       <FormError>{state.fieldErrors?.reason}</FormError>
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.reportSubmit}
         </button>
         <button
@@ -178,7 +178,7 @@ function Block({ userId, blockId }: { userId: string; blockId: string | null }) 
       />
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.blockSubmit}
         </button>
         <button

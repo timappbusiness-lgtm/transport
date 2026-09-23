@@ -55,7 +55,7 @@ export function DocumentReview({
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
+          <button type="submit" className={buttonClasses('ink', 'sm')}>
             {c.documents.rejectSubmit}
           </button>
           <button
@@ -143,7 +143,7 @@ export function CompanyReview({ companyId }: { companyId: string }) {
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
+          <button type="submit" className={buttonClasses('ink', 'sm')}>
             {c.companies.rejectSubmit}
           </button>
           <button

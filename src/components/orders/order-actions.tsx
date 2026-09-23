@@ -496,7 +496,7 @@ export function CancelOrder({ orderId, side }: { orderId: string; side: OrderSid
       )}
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {pending ? ordersCopy.cancel.submitting : ordersCopy.cancel.submit}
         </button>
         <button
@@ -576,7 +576,7 @@ export function OpenDispute({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {pending ? ordersCopy.dispute.submitting : ordersCopy.dispute.submit}
         </button>
         <button

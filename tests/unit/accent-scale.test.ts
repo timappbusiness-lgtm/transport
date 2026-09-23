@@ -210,12 +210,45 @@ describe('where the new accent classes may not go', () => {
       'src/app/termeni/page.tsx',
       'src/app/confidentialitate/page.tsx',
       'src/app/cookies/page.tsx',
+      // Suspension, deletion and a resolved dispute, whole files.
+      'src/components/app/status-banner.tsx',
+      'src/components/account/status-banner.tsx',
+      'src/components/account/deletion-panel.tsx',
+      'src/app/stergere/anuleaza/page.tsx',
+      'src/components/admin/resolve-dispute.tsx',
+      'src/components/admin/anonymise-account.tsx',
     ]) {
       const body = readFileSync(file, 'utf8');
       expect(body, file).not.toMatch(/-accent\b|-accent-|'primary'|variant="primary"/);
       // `<Button>` with no variant is a primary one.
       expect(body, file).not.toMatch(/<Button(?![^>]*variant=)/);
     }
+  });
+
+  it('a rejection, a dispute, a cancellation or a report is an ink button', () => {
+    // These sat in the accent until this pass, because they were written
+    // when „primary" still meant ink. The label is how each is found: the
+    // button that renders it is the one checked.
+    const serious: [string, string][] = [
+      ['src/components/admin/review-forms.tsx', 'c.documents.rejectSubmit'],
+      ['src/components/admin/review-forms.tsx', 'c.companies.rejectSubmit'],
+      ['src/components/orders/order-actions.tsx', 'ordersCopy.dispute.submitting'],
+      ['src/components/messages/message-actions.tsx', 'c.reportSubmit'],
+      ['src/components/messages/message-actions.tsx', 'c.blockSubmit'],
+      ['src/components/admin/deletion-settings-form.tsx', 'c.save'],
+    ];
+    for (const [file, label] of serious) {
+      const body = readFileSync(file, 'utf8');
+      const at = body.indexOf(label);
+      expect(at, `${label} in ${file}`).toBeGreaterThan(0);
+      const button = body.slice(body.lastIndexOf('<button', at), at);
+      expect(button, `${label} in ${file}`).toContain("buttonClasses('ink'");
+    }
+    // Cancelling an order: the submit inside CancelOrder.
+    const orders = readFileSync('src/components/orders/order-actions.tsx', 'utf8');
+    const cancel = orders.slice(orders.indexOf('export function CancelOrder'), orders.indexOf('export function OpenDispute'));
+    expect(cancel).toContain("buttonClasses('ink'");
+    expect(cancel).not.toContain("buttonClasses('primary'");
   });
 
   it('and inside an error the link is ink', () => {

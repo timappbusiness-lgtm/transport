@@ -59,7 +59,7 @@ export function ResolveDispute({ orderId }: { orderId: string }) {
       {state.fieldErrors?.note !== undefined ? <FormError>{state.fieldErrors.note}</FormError> : null}
 
       <div>
-        <button type="submit" disabled={pending} className={buttonClasses('primary', 'sm')}>
+        <button type="submit" disabled={pending} className={buttonClasses('ink', 'sm')}>
           {c.submit}
         </button>
       </div>

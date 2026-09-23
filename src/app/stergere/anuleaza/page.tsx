@@ -46,7 +46,7 @@ export default async function Page({
       <h1 className="text-h2">{c.title}</h1>
       <p className="text-body">{cancelled ? c.ok : c.gone}</p>
       <div className="mt-2 flex flex-wrap gap-3">
-        <Link href={ROUTES.signIn} className={buttonClasses('primary', 'md')}>
+        <Link href={ROUTES.signIn} className={buttonClasses('ink', 'md')}>
           {c.signIn}
         </Link>
         <Link href={ROUTES.home} className={buttonClasses('secondary', 'md')}>
