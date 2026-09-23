@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { RelativeTime } from '@/components/requests/relative-time';
+import { Badge } from '@/components/ui/badge';
+import { isNew } from '@/lib/badges';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
@@ -75,11 +77,15 @@ export function BoardRequestCard({
               </span>
             </Link>
           </h3>
-          <RelativeTime
-            publishedAt={request.published_at}
-            initial={relativeTimeRo(request.published_at, now)}
-            className="flex-none font-mono text-label text-muted"
-          />
+          <span className="flex flex-none items-center gap-1.5">
+            {isNew(request.published_at, now) ? <Badge kind="new">{c.isNew}</Badge> : null}
+            <Badge kind="time">
+              <RelativeTime
+                publishedAt={request.published_at}
+                initial={relativeTimeRo(request.published_at, now)}
+              />
+            </Badge>
+          </span>
         </div>
 
         {/* One line for the load. The icon is what a dispatcher scans a
@@ -103,7 +109,9 @@ export function BoardRequestCard({
             <StatusBadge tone={request.needs_winch ? 'warning' : 'success'}>
               {request.needs_winch ? c.winch : c.running}
             </StatusBadge>
-            {request.service_type !== 'pe_sens' ? (
+            {request.service_type === 'expres' ? (
+              <Badge kind="express">{SERVICE_TYPE_LABELS.expres}</Badge>
+            ) : request.service_type !== 'pe_sens' ? (
               <StatusBadge tone="neutral">{SERVICE_TYPE_LABELS[request.service_type]}</StatusBadge>
             ) : null}
             <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">

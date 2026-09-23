@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { appCopy } from '@/content/app';
-import type { NavItem } from '@/lib/navigation';
+import { Badge } from '@/components/ui/badge';
+import { countLabel } from '@/lib/badges';
+import type { BadgedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 const c = appCopy.shell;
@@ -26,8 +28,8 @@ export function MobileNav({
   more,
   current,
 }: {
-  bar: readonly NavItem[];
-  more: readonly NavItem[];
+  bar: readonly BadgedNavItem[];
+  more: readonly BadgedNavItem[];
   current: string | null;
 }) {
   const [open, setOpen] = useState(false);
@@ -89,9 +91,19 @@ export function MobileNav({
                   current === item.href ? 'font-medium text-accent' : 'text-muted',
                 )}
               >
-                {iconForRoute(item.href) ? (
-                  <Icon as={iconForRoute(item.href)!} size="md" />
-                ) : null}
+                <span className="relative">
+                  {iconForRoute(item.href) ? (
+                    <Icon as={iconForRoute(item.href)!} size="md" />
+                  ) : null}
+                  {/* Over the icon's corner, where a phone user looks for it. */}
+                  {countLabel(item.badge) === null ? null : (
+                    <span className="absolute -right-3 -top-1.5">
+                      <Badge kind="count" label={c.waiting}>
+                        {countLabel(item.badge)}
+                      </Badge>
+                    </span>
+                  )}
+                </span>
                 <span className="line-clamp-2">{item.label}</span>
               </Link>
             </li>
@@ -161,6 +173,13 @@ export function MobileNav({
                       <Icon as={iconForRoute(item.href)!} size="sm" />
                     ) : null}
                     <span className="truncate">{item.label}</span>
+                    {countLabel(item.badge) === null ? null : (
+                      <span className="ml-auto">
+                        <Badge kind="count" label={c.waiting}>
+                          {countLabel(item.badge)}
+                        </Badge>
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

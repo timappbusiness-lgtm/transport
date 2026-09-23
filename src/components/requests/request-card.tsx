@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { RelativeTime } from '@/components/requests/relative-time';
+import { Badge } from '@/components/ui/badge';
+import { requestsCopy } from '@/content/cereri';
+import { isNew } from '@/lib/badges';
 import { CountryTag, StatusBadge } from '@/components/ui/primitives';
 import { requestRoute } from '@/config/routes';
 import { homeCopy } from '@/content/home';
@@ -82,16 +85,19 @@ export function RequestCard({
           <StatusBadge tone={request.is_running ? 'success' : 'warning'}>
             {request.is_running ? c.running : c.notRunning}
           </StatusBadge>
-          {request.service_type === 'expres' ? (
-            <StatusBadge tone="neutral">{c.express}</StatusBadge>
-          ) : null}
+          {request.service_type === 'expres' ? <Badge kind="express">{c.express}</Badge> : null}
         </div>
 
-        <p className="mt-4 pt-1 font-mono text-label text-muted">
-          <RelativeTime
-            publishedAt={request.published_at}
-            initial={relativeTimeRo(request.published_at, now)}
-          />
+        <p className="mt-4 flex items-center gap-1.5 pt-1">
+          {isNew(request.published_at, now) ? (
+            <Badge kind="new">{requestsCopy.card.isNew}</Badge>
+          ) : null}
+          <Badge kind="time">
+            <RelativeTime
+              publishedAt={request.published_at}
+              initial={relativeTimeRo(request.published_at, now)}
+            />
+          </Badge>
         </p>
       </Link>
     </li>

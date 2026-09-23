@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { signOutAction } from '@/app/auth-actions';
@@ -90,10 +92,11 @@ export function brandHref(signedIn: boolean, pathname: string): string {
   return signedIn && insideAccount(pathname) ? ROUTES.account : ROUTES.home;
 }
 
-/** „3" up to nine, „9+" past it: a three-digit badge pushes the label
- *  out of a 240px menu. */
+/** „3" up to nine, „9+" past it — `countLabel`, kept under this name
+ *  because the header's tests speak it. Zero is the empty string: the
+ *  caller never draws a badge for it. */
 export function badgeLabel(count: number): string {
-  return count > 9 ? '9+' : String(count);
+  return countLabel(count) ?? '';
 }
 
 /**
@@ -363,12 +366,11 @@ export function HeaderNav({ user }: { user: HeaderUser | null }) {
                         {glyph ? <Icon as={glyph} size="sm" tone="muted" /> : null}
                         <span className="truncate">{item.label}</span>
                       </span>
-                      {item.badge > 0 ? (
-                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-label leading-none text-surface">
-                          {badgeLabel(item.badge)}
-                          <span className="sr-only"> {accountCopy.nav.waiting}</span>
-                        </span>
-                      ) : null}
+                      {countLabel(item.badge) === null ? null : (
+                        <Badge kind="count" label={accountCopy.nav.waiting}>
+                          {countLabel(item.badge)}
+                        </Badge>
+                      )}
                     </Link>
                   );
                 })}

@@ -61,6 +61,8 @@ export const departuresCopy = {
     seatsUnknown: 'Locuri la cerere',
     noPrice: 'Preț la cerere',
     open: 'Vezi traseul',
+    /** The badge on a route published in the last 24 hours. */
+    isNew: 'Nou',
     full: 'Platformă plină',
   },
 

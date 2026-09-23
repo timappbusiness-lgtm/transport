@@ -217,3 +217,16 @@ describe('where the new accent classes may not go', () => {
     expect(row).not.toMatch(/link-accent/);
   });
 });
+
+describe('every badge is readable on its own ground', () => {
+  // The five kinds in src/components/ui/badge.tsx, as they are drawn.
+  it.each([
+    ['„Nou": accent on the accent subtle', ACCENT, SUBTLE],
+    ['time: muted on stone', MUTED, token('tint-stone')],
+    ['count: white on the accent', ON_ACCENT, ACCENT],
+    ['„Expres": ink on sand', INK, token('tint-sand')],
+    ['„Pe retur": ink on sky', INK, token('tint-sky')],
+  ])('%s clears 4.5:1', (_label, fg, bg) => {
+    expect(contrast(fg, bg)).toBeGreaterThanOrEqual(BODY);
+  });
+});

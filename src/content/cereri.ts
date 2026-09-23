@@ -237,6 +237,8 @@ export const requestsCopy = {
     fromIndividual: 'Persoană fizică',
     photos: (n: number) => (n === 1 ? 'O fotografie' : `${n} fotografii`),
     open: 'Vezi cererea',
+    /** The badge on a request published in the last 24 hours. */
+    isNew: 'Nou',
     weight: (kg: number) => `${new Intl.NumberFormat('ro-RO').format(kg)} kg`,
   },
 

@@ -12,6 +12,8 @@ export const appCopy = {
     moreLabel: 'Mai mult',
     moreTitle: 'Restul meniului',
     close: 'Închide',
+    /** After a count on a menu item, for a screen reader: „3 care așteaptă". */
+    waiting: 'care așteaptă',
     skipToContent: 'Sari la conținut',
     help: 'Ajutor',
     publish: 'Publică',

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForAction, iconForRoute } from '@/lib/icons';
 import { CompanySwitcher } from '@/components/app/company-switcher';
@@ -98,12 +100,11 @@ export function Sidebar({
                       {/* The same number as the header's, from the same
                           call: two counts of one thing is how a badge
                           stops being believed. */}
-                      {badge > 0 ? (
-                        <span className="inline-flex min-w-5 flex-none items-center justify-center rounded-pill bg-foreground px-1.5 py-0.5 font-mono text-label leading-none text-surface">
-                          {badge > 9 ? '9+' : badge}
-                          <span className="sr-only"> {accountCopy.nav.waiting}</span>
-                        </span>
-                      ) : null}
+                      {countLabel(badge) === null ? null : (
+                        <Badge kind="count" label={accountCopy.nav.waiting}>
+                          {countLabel(badge)}
+                        </Badge>
+                      )}
                     </Link>
                   </li>
                 );

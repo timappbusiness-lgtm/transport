@@ -3,6 +3,8 @@ import { buttonClasses } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForAction } from '@/lib/icons';
 import { BOARD_SORT_LABELS, SORT_KEY, type BoardSort } from '@/lib/board-simplicity';
+import { Badge } from '@/components/ui/badge';
+import { countLabel } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 
 /**
@@ -106,12 +108,11 @@ export function FilterPanel({
             <Icon as={iconForAction('filter')} size="sm" tone="muted" />
             {labels.more}
           </span>
-          {advancedCount > 0 ? (
-            <span className="inline-flex min-w-5 items-center justify-center rounded-pill bg-accent px-2 py-0.5 font-mono text-label text-white">
-              {advancedCount}
-              <span className="sr-only"> {labels.active(advancedCount)}</span>
-            </span>
-          ) : null}
+          {countLabel(advancedCount) === null ? null : (
+            <Badge kind="count" label={labels.active(advancedCount)}>
+              {countLabel(advancedCount)}
+            </Badge>
+          )}
         </summary>
         <div className="flex flex-col gap-4 border-t border-border px-3 py-4">{advanced}</div>
       </details>

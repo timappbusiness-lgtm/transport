@@ -6,6 +6,8 @@ import { iconForCategory } from '@/lib/icons';
 import { departureRoute } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { relativeTimeRo } from '@/lib/requests';
+import { Badge } from '@/components/ui/badge';
+import { isNew } from '@/lib/badges';
 import {
   CARGO_CATEGORY_LABELS,
   DIRECTION_LABELS,
@@ -77,12 +79,16 @@ export function DepartureCard({ departure, now }: { departure: PublicDeparture; 
           {/* `published_at` is nullable on this view; a route with no
               date says nothing rather than saying „chiar acum". */}
           {departure.published_at === null ? null : (
-            <time
-              dateTime={departure.published_at}
-              className="flex-none font-mono text-label text-muted"
-            >
-              {relativeTimeRo(departure.published_at, now)}
-            </time>
+            <span className="flex flex-none items-center gap-1.5">
+              {isNew(departure.published_at, now) ? (
+                <Badge kind="new">{c.isNew}</Badge>
+              ) : null}
+              <Badge kind="time">
+                <time dateTime={departure.published_at}>
+                  {relativeTimeRo(departure.published_at, now)}
+                </time>
+              </Badge>
+            </span>
           )}
         </div>
 
@@ -108,9 +114,16 @@ export function DepartureCard({ departure, now }: { departure: PublicDeparture; 
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <StatusBadge tone={full ? 'warning' : 'neutral'}>
-              {DIRECTION_LABELS[departure.direction]}
-            </StatusBadge>
+            {/* Full is a state, and states keep their chip. Otherwise the
+                leg is a sign — „Pe retur" is the cheap one — and a sign
+                is a badge. */}
+            {full ? (
+              <StatusBadge tone="warning">{DIRECTION_LABELS[departure.direction]}</StatusBadge>
+            ) : departure.direction === 'retur' ? (
+              <Badge kind="return">{DIRECTION_LABELS.retur}</Badge>
+            ) : (
+              <StatusBadge tone="neutral">{DIRECTION_LABELS.tur}</StatusBadge>
+            )}
             {shown.map((category) => (
               <IconLabel
                 key={category}
@@ -124,9 +137,7 @@ export function DepartureCard({ departure, now }: { departure: PublicDeparture; 
             ))}
             {rest > 0 ? <span className="text-small text-muted">+{rest}</span> : null}
             {departure.service_types.includes('expres') ? (
-              <span className="font-mono text-label uppercase tracking-[0.12em] text-muted">
-                {SERVICE_TYPE_LABELS.expres}
-              </span>
+              <Badge kind="express">{SERVICE_TYPE_LABELS.expres}</Badge>
             ) : null}
           </div>
 
