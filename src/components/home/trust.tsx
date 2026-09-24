@@ -73,7 +73,10 @@ function ExampleCard() {
             key={row.label}
             className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-border py-2.5 last:border-b-0"
           >
-            <dt className="min-w-0 flex-1 text-small">{row.label}</dt>
+            {/* A base of its own, so a narrow card moves the date and the
+                chip under the name instead of squeezing the name to a
+                word a line, drawn over the date (390px, before). */}
+            <dt className="min-w-0 flex-[1_1_9rem] text-small">{row.label}</dt>
             {/* Both the date and the chip live in the `dd`: a `div` inside
                 a `dl` may hold `dt` and `dd` and nothing else, and the
                 chip used to sit beside them as a third child. axe calls

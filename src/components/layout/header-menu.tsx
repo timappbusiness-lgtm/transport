@@ -307,7 +307,7 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                 role="menu"
                 aria-label={accountCopy.nav.menu}
                 onKeyDown={onMenuKeyDown}
-                className="absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border bg-surface text-foreground shadow-float"
+                className="absolute right-0 z-50 mt-2 max-h-[calc(100dvh-5.5rem)] w-60 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-card border border-border bg-surface text-foreground shadow-float"
               >
                 {user.items.map((item) => {
                   const current = pathname === item.href;
@@ -449,7 +449,11 @@ function PublicNav({ currentHref }: { currentHref: string | null }) {
         data-open={open ? 'true' : undefined}
         className={cn(
           // Below lg: a panel under the bar, shown only when open.
-          'absolute inset-x-0 top-full mt-2 hidden flex-col gap-0.5 rounded-card border border-white/15 bg-dark-from p-2 shadow-float data-[open=true]:flex',
+          // Never taller than the screen under the bar: a phone held
+          // sideways is 390px high, and a panel cut off at the bottom
+          // hid its last links with no way to reach them.
+          'absolute inset-x-0 top-full mt-2 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-card border border-white/15 bg-dark-from p-2 shadow-float data-[open=true]:flex',
+          'lg:max-h-none lg:overflow-visible',
           // From lg: the row inside the bar.
           'lg:static lg:mt-0 lg:flex lg:flex-none lg:flex-row lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none',
         )}

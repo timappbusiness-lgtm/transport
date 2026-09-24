@@ -160,7 +160,9 @@ export function ReceivedOffers({
           <ul className="mt-3 flex flex-col gap-2">
             {settled.map((offer) => (
               <li key={offer.id} className="flex flex-wrap items-baseline justify-between gap-2 text-body">
-                <span>{offer.company_name ?? 'Transportator'}</span>
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {offer.company_name ?? 'Transportator'}
+                </span>
                 <span className="text-muted">
                   {formatMoney(offer.price_amount, offer.currency)} ·{' '}
                   {OFFER_STATUS_LABELS[offer.status]}
@@ -185,7 +187,7 @@ function AcceptedNote({ offer }: { offer: OfferForRequest }) {
     >
       <p className="flex flex-wrap items-center gap-2 text-body">
         <StatusBadge tone="success">{offersCopy.accept.done}</StatusBadge>
-        <span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">
           {offer.company_name} ·{' '}
           <span className="font-mono font-medium tabular-nums text-accent">
             {formatMoney(offer.price_amount, offer.currency)}
@@ -236,7 +238,7 @@ function OfferCard({
                 building. The verification badge below is a word, which
                 is what `docs/13-iconuri.md` requires — nothing beside a
                 company name may look like a mark it earned. */}
-            <IconLabel as={iconForContent('firma')} size="md" tone="strong">
+            <IconLabel as={iconForContent('firma')} size="md" tone="strong" wrap>
               {offer.company_name ?? 'Transportator'}
             </IconLabel>
           </h3>

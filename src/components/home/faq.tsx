@@ -33,7 +33,7 @@ export function FaqBody({ entries }: { entries: FaqEntry[] }) {
           <Lede>{c.lede}</Lede>
         </SectionHead>
 
-        <FaqAccordion entries={entries} className="mt-10 lg:grid-cols-2" />
+        <FaqAccordion entries={entries} columns={2} className="mt-10" />
 
         <p className="mt-8 text-body">
           <Link

@@ -89,7 +89,12 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <Container className="py-6 sm:py-10">
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
           <aside className="hidden lg:block lg:w-60 lg:flex-none">
-            <div className="sticky top-24">
+            {/* No taller than the screen under the header: the menu scrolls
+                inside itself. Without the ceiling a carrier's menu was
+                taller than a 900px screen, and while the page was long
+                enough to keep it stuck, its last links (Setări, Ajutor,
+                Ieșire) sat below the bottom edge with no way to reach them. */}
+            <div className="sticky top-24 flex max-h-[calc(100dvh-7.5rem)] flex-col">
               <Sidebar
                 context={context}
                 pathname={pathname}
@@ -99,8 +104,17 @@ export default async function AccountLayout({ children }: { children: React.Reac
             </div>
           </aside>
 
-          {/* The bottom bar is fixed, so the content needs room under it. */}
-          <div id="continut" className="min-w-0 flex-1 pb-20 lg:pb-0">
+          {/* The bottom bar is fixed. The room under the page is kept by
+              `body` (globals.css), so the footer clears it too; a bar that
+              sticks to the bottom of the screen (the save bar, the message
+              box) has to stop above it, not under it: `--bottom-bar` is the
+              fixed bar's height, read by those. */}
+          <div
+            // Not `continut`: that is the root layout's <main>, before this
+            // menu, and an id used twice sent the skip link to the first.
+            id="continut-cont"
+            className="min-w-0 flex-1 [--bottom-bar:calc(3.5rem+env(safe-area-inset-bottom))] lg:[--bottom-bar:0px]"
+          >
             <AccountNotices profile={context.profile} />
             {banner ? (
               <div className="mb-6">

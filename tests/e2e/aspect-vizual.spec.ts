@@ -94,10 +94,16 @@ test.describe('the accent is spent where it should be', () => {
   test('on the primary button', async ({ page }) => {
     await page.goto('/cereri');
     await settled(page);
-    const button = page.getByRole('button', { name: /caută/i }).first();
-    await expect(button).toBeVisible();
-    const bg = await button.evaluate((n) => getComputedStyle(n).backgroundColor);
-    expect(bg).toBe(ACCENT);
+    // The board's one decision: on an empty board, publishing a request.
+    const primary = page.locator('main').getByRole('link', { name: 'Publică o cerere' }).last();
+    await expect(primary).toBeVisible();
+    expect(await primary.evaluate((n) => getComputedStyle(n).backgroundColor)).toBe(ACCENT);
+
+    // The filter's button is a tool, not the decision: filled in ink. Both
+    // in the accent, 260px apart, read as two things to choose between.
+    const search = page.getByRole('button', { name: /caută/i }).first();
+    await expect(search).toBeVisible();
+    expect(await search.evaluate((n) => getComputedStyle(n).backgroundColor)).not.toBe(ACCENT);
   });
 
   test('and on the section eyebrows', async ({ page }) => {

@@ -31,10 +31,13 @@ export function PlanComparison({ plans }: { plans: readonly Plan[] }) {
       </h2>
       <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
 
-      {/* Desktop: one table, header sticky under the site header. */}
+      {/* Desktop: one table, scrolling sideways inside its card if the
+          plans ever outgrow it. Its header is not sticky: a box that
+          scrolls sideways is also the box a sticky header sticks to, so
+          `sticky top-0` here never followed the page — it only claimed to. */}
       <div className="mt-6 hidden overflow-x-auto rounded-card border border-border bg-surface md:block">
         <table className="w-full border-collapse text-body">
-          <thead className="sticky top-0 z-10 bg-surface">
+          <thead className="bg-surface">
             <tr>
               <th
                 scope="col"

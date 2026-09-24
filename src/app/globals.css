@@ -246,6 +246,45 @@
     scroll-padding-top: 5.5rem;
   }
 
+  /*
+   * The same at the bottom, on a phone: a bar stuck or fixed to the bottom
+   * of the screen covers exactly where the browser scrolls a field that
+   * takes the focus — Tab, the keyboard's „next", or the form jumping to
+   * the first error. On /cerere/noua the year and the „Mai multe" box
+   * landed under „Continuă" (390px, before). Each bar says it is there
+   * with a data attribute; the page keeps focus above it.
+   */
+  @media (width < 40rem) {
+    html:has([data-action-bar]) {
+      scroll-padding-bottom: 6rem;
+    }
+    html:has([data-save-bar]) {
+      scroll-padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
+    }
+  }
+  /* The message box grows with the images chosen for it, so it says its
+     own height (`--composer-height`, set by the composer). An attachment
+     in the thread took the focus right under the box (390px, before). */
+  html:has([data-composer]) {
+    scroll-padding-bottom: calc(var(--composer-height, 9rem) + 1rem);
+  }
+  @media (width < 64rem) {
+    html:has([data-bottom-nav]):not(:has([data-save-bar], [data-composer])) {
+      scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+    html:has([data-composer]) {
+      scroll-padding-bottom: calc(var(--composer-height, 13rem) + 4.5rem + env(safe-area-inset-bottom));
+    }
+
+    /* The phone's bottom menu is fixed, so the end of the page needs room
+       under it: the footer's last links (Termeni, Confidențialitate,
+       Cookie-uri) sat under the menu inside the account, where the room
+       was only kept in the content column above the footer. */
+    body:has([data-bottom-nav]) {
+      padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -297,13 +336,29 @@
    the controls carry `border-border-strong` as a utility, and a layered
    rule would lose to it. `:where` keeps the specificity at zero, so any
    control that sets its own hover still wins. Focus is the global ring
-   above, on every control, on the first frame. */
-:where(
-    input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range']),
-    select,
-    textarea
-  ):hover:not(:disabled, :focus) {
-  border-color: var(--color-muted);
+   above, on every control, on the first frame.
+
+   Only where there is a pointer that hovers, like every `hover:` utility:
+   a phone keeps `:hover` on the last thing tapped, and a field left
+   behind stayed darker than the ones around it until the next tap
+   somewhere else. The same goes for the two link utilities below. */
+@media (hover: hover) {
+  :where(
+      input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range']),
+      select,
+      textarea
+    ):hover:not(:disabled, :focus) {
+    border-color: var(--color-muted);
+  }
+}
+
+/* A date field is the same height as the text field beside it, and reads
+   from the left like it. iOS Safari draws the value centred and, while
+   the field is empty, collapses the value box to nothing — a date field
+   one line shorter than its row, next to a text field of full height. */
+input::-webkit-date-and-time-value {
+  min-height: 1lh;
+  text-align: start;
 }
 
 /* A link inside a sentence. The accent's third job, after the primary
@@ -322,8 +377,10 @@
   text-decoration-color: var(--color-accent-border);
   transition: text-decoration-color var(--duration-quick) var(--ease-soft);
 
-  &:hover {
-    text-decoration-color: var(--color-accent);
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-color: var(--color-accent);
+    }
   }
 
   /* The same link on a dark section takes the bright step. */
@@ -342,8 +399,10 @@
   text-underline-offset: 4px;
   text-decoration-color: var(--color-border-strong);
 
-  &:hover {
-    text-decoration-color: var(--color-foreground);
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-color: var(--color-foreground);
+    }
   }
 }
 

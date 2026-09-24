@@ -50,7 +50,7 @@ export function CompanyCard({
         <Logo company={company} logoUrl={logoUrl} />
         <div className="min-w-0 flex-1">
           {company.city ? (
-            <p className="font-mono text-label uppercase tracking-[0.12em] text-muted">
+            <p className="font-mono text-label uppercase tracking-[0.12em] text-muted [overflow-wrap:anywhere]">
               {company.county && company.county !== company.city
                 ? `${company.city} · ${company.county}`
                 : company.city}

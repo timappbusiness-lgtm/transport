@@ -34,7 +34,7 @@ export function RateTable({
 
   return (
     <>
-      <div className="hidden overflow-hidden rounded-card border border-border bg-surface sm:block">
+      <div className="hidden overflow-x-auto rounded-card border border-border bg-surface sm:block">
         <table className="w-full border-collapse text-body">
           <caption className="sr-only">{c.caption}</caption>
           <thead>

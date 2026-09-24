@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { lockScroll } from '@/lib/scroll-lock';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
@@ -41,6 +42,8 @@ export function MobileNav({
 
     const node = sheet.current;
     node?.querySelector<HTMLElement>('a, button')?.focus();
+    // The page underneath stays put while the sheet is over it.
+    const unlock = lockScroll(document.documentElement, window.innerWidth - document.documentElement.clientWidth);
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -67,12 +70,16 @@ export function MobileNav({
     }
 
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      unlock();
+    };
   }, [open]);
 
   return (
     <>
       <nav
+        data-bottom-nav
         aria-label={c.navLabel}
         className={cn(
           'fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface lg:hidden',
@@ -131,7 +138,12 @@ export function MobileNav({
           <button
             type="button"
             aria-label={c.close}
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              // Like Escape and the close button: the focus goes back to
+              // „Mai mult", not to the top of the page.
+              setOpen(false);
+              trigger.current?.focus();
+            }}
             className="absolute inset-0 bg-foreground/30"
           />
           <div
@@ -139,7 +151,7 @@ export function MobileNav({
             role="dialog"
             aria-modal="true"
             aria-label={c.moreTitle}
-            className="absolute inset-x-0 bottom-0 rounded-t-card border-t border-border bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-card border-t border-border bg-surface p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex items-center justify-between">
               <p className="font-display text-body font-medium">{c.moreTitle}</p>

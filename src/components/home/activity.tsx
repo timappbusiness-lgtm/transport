@@ -123,7 +123,11 @@ function Empty() {
     <div className="rounded-card border border-border bg-surface p-6 sm:p-8">
       <p className="max-w-[54ch] text-body-lg">{c.empty.body}</p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={ROUTES.newRequest} className={buttonClasses('primary', 'md')}>
+        {/* An outline, not the filled button: the card right under this
+            one, in the same section, is the publishing call with its three
+            steps, and two filled "Publică o cerere" 200px apart read as
+            two different things to choose between. */}
+        <Link href={ROUTES.newRequest} className={buttonClasses('secondary', 'md')}>
           {c.empty.primary}
         </Link>
         {/* The board itself, not only the form. A carrier reading this
