@@ -16,6 +16,8 @@ export const accountCopy = {
     menu: 'Meniul contului',
     /** Read after a badge: „3 care așteaptă". */
     waiting: 'care așteaptă',
+    // On the request board's entry: requests published since the last look.
+    fresh: 'noi',
   },
   banners: {
     draft: {

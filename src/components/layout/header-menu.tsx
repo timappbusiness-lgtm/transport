@@ -245,11 +245,19 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
     <>
       {/* Signed in, the bar is the work; signed out, the shop window. The
           work has longer words, so it moves into the „Meniu" panel a step
-          earlier. */}
-      <BarNav links={bar} currentHref={currentHref} inline={user ? 'xl' : 'lg'} />
+          earlier. A driver's one entry fits a phone, and a menu that opens
+          onto a single link is a tap for nothing. */}
+      <BarNav
+        links={bar}
+        currentHref={currentHref}
+        inline={user ? (bar.length <= 1 ? 'always' : 'xl') : 'lg'}
+      />
 
       {user ? (
-        <div className="flex min-w-0 flex-none items-center gap-1.5">
+        // Shrinks, so the name inside it can give way: `flex-none` here
+        // held the whole group at its full width, and with „Publică un
+        // traseu" beside the name the bar overflowed at 640px.
+        <div className="flex min-w-0 flex-initial items-center gap-1.5">
           {/* The role's one primary action, on every page — the button the
               bar used to spend on „Contul meu", which the name beside it
               already is. A driver publishes nothing and gets no button. */}
@@ -374,7 +382,10 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                         <span className="truncate">{item.label}</span>
                       </span>
                       {countLabel(item.badge) === null ? null : (
-                        <Badge kind="count" label={accountCopy.nav.waiting}>
+                        <Badge
+                          kind="count"
+                          label={item.href === ROUTES.requests ? accountCopy.nav.fresh : accountCopy.nav.waiting}
+                        >
                           {countLabel(item.badge)}
                         </Badge>
                       )}
@@ -480,7 +491,7 @@ function BarNav({
 }: {
   links: readonly BarLink[];
   currentHref: string | null;
-  inline: 'lg' | 'xl';
+  inline: 'lg' | 'xl' | 'always';
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -511,7 +522,14 @@ function BarNav({
   // Written out rather than built from `inline`: Tailwind only ships the
   // classes it can read in the source.
   const at =
-    inline === 'lg'
+    inline === 'always'
+      ? {
+          toggle: '',
+          panel:
+            'static mt-0 flex max-h-none flex-none flex-row gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none',
+          link: '',
+        }
+      : inline === 'lg'
       ? {
           toggle: 'lg:hidden',
           panel:
@@ -527,22 +545,24 @@ function BarNav({
 
   return (
     <>
-      <button
-        ref={toggleRef}
-        type="button"
-        data-nav-toggle
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((value) => !value)}
-        className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30', at.toggle)}
-      >
-        <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
-        Meniu
-        {/* Something waiting behind the closed menu is said on it. */}
-        {!open && links.some((link) => link.badge > 0) ? (
-          <span aria-hidden="true" data-nav-dot className="size-2 rounded-full bg-accent-bright" />
-        ) : null}
-      </button>
+      {inline === 'always' ? null : (
+        <button
+          ref={toggleRef}
+          type="button"
+          data-nav-toggle
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((value) => !value)}
+          className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30', at.toggle)}
+        >
+          <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
+          Meniu
+          {/* Something waiting behind the closed menu is said on it. */}
+          {!open && links.some((link) => link.badge > 0) ? (
+            <span aria-hidden="true" data-nav-dot className="size-2 rounded-full bg-accent-bright" />
+          ) : null}
+        </button>
+      )}
       <nav
         ref={navRef}
         id={id}
@@ -580,7 +600,11 @@ function BarNav({
             >
               {page.label}
               {count === null ? null : (
-                <Badge kind="count" label={accountCopy.nav.waiting}>
+                // New requests are not waiting on anybody; they are new.
+                <Badge
+                  kind="count"
+                  label={page.href === ROUTES.requests ? accountCopy.nav.fresh : accountCopy.nav.waiting}
+                >
                   {count}
                 </Badge>
               )}

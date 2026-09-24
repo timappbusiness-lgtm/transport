@@ -225,14 +225,17 @@ describe('the bar, signed in', () => {
   });
 
   it('carries the new requests on the board, and nothing at zero', () => {
-    const counts = { messages: 0, offers: 0, newRequests: 12 };
+    const counts = { messages: 3, offers: 0, newRequests: 12 };
     const html = render({ name: 'Ana', counts }, ROUTES.account);
     const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
     expect(nav).toMatch(/Cereri de transport<span[^>]*>[\s\S]*?9\+/);
+    // Heard as new, not as waiting on somebody.
+    expect(nav).toMatch(/9\+<span class="sr-only"> noi<\/span>/);
+    expect(nav).toMatch(/3<span class="sr-only"> care așteaptă<\/span>/);
     // Said on the closed „Meniu" too, where the bar folds away on a phone.
     expect(html).toContain('data-nav-dot');
 
-    const none = render({ name: 'Ana', counts: { ...counts, newRequests: 0 } }, ROUTES.account);
+    const none = render({ name: 'Ana', counts: { messages: 0, offers: 0, newRequests: 0 } }, ROUTES.account);
     expect(none).not.toContain('data-nav-dot');
     expect(none.slice(none.indexOf('<nav'), none.indexOf('</nav>'))).not.toContain('9+');
   });
@@ -241,6 +244,14 @@ describe('the bar, signed in', () => {
     const html = render({ name: 'Ana' }, '/cereri/abc');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-current="page"[^>]*>Cereri de transport/);
+  });
+
+  it('keeps a driver\'s one entry in the bar at every width, with no „Meniu" to open', () => {
+    const html = render({ name: 'Ana', ctx: context({ role: 'driver' }) }, ROUTES.account);
+    expect(html).not.toContain('data-nav-toggle');
+    const nav = html.match(/<nav [^>]*>/)?.[0] ?? '';
+    expect(nav).not.toMatch(/class="[^"]*(?<![:-])\bhidden\b/);
+    expect(nav).toContain('flex-row');
   });
 
   it('folds into „Meniu" a step earlier than the public bar, because its words are longer', () => {
