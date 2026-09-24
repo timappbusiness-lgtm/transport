@@ -9,13 +9,19 @@
 // 'pending' so a human reviews it - see docs/03-document-compliance.md
 // for why that matters legally and commercially.
 //
-// POST { "document_id": "<uuid>" }
+// POST { "document_id": "<uuid>" }                       read and write it
+// POST { "mode": "classify", "file_path": "<company>/<id>.<ext>" }
+//      say what an unregistered file is — the gallery upload; writes nothing
+// POST { "mode": "declare", "document_id": "<uuid>", "valid_until": "YYYY-MM-DD" }
+//      keep the expiry date the carrier confirmed, beside the model's
+// See modes.ts for which of these may run on which document.
 // =====================================================================
 
 import { corsFor } from "../_shared/security.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { encodeBase64 } from "jsr:@std/encoding@^1/base64";
+import { mayRead, readableMime, readRequest, withDeclaredDate } from "./modes.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -122,6 +128,82 @@ function jsonResponse(req: Request, body: unknown, status = 200): Response {
   });
 }
 
+interface Extracted {
+  detected_kind: string | null;
+  document_number: string | null;
+  issued_at: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  plate_number?: string | null;
+  confidence: number;
+  issues: string[];
+}
+
+/** The file extension's type, for a download whose own type says nothing. */
+function mimeFromPath(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase();
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "png") return "image/png";
+  if (ext === "webp") return "image/webp";
+  if (ext === "heic") return "image/heic";
+  return "image/jpeg";
+}
+
+/** One call to the model: the file, and what the uploader said it is (or nothing). */
+async function askModel(bytes: Uint8Array, mime: "application/pdf" | "image/jpeg" | "image/png" | "image/webp", declaredKind: string | null) {
+  const base64 = encodeBase64(bytes);
+  // PDFs go in as document blocks, photos as image blocks.
+  const mediaBlock = mime === "application/pdf"
+    ? {
+      type: "document" as const,
+      source: { type: "base64" as const, media_type: "application/pdf" as const, data: base64 },
+    }
+    : {
+      type: "image" as const,
+      source: { type: "base64" as const, media_type: mime, data: base64 },
+    };
+
+  const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  const response = await anthropic.messages.create({
+    model: MODEL,
+    // The answer is a small JSON object; a low cap keeps latency and
+    // cost predictable without risking truncation.
+    max_tokens: 2000,
+    system: SYSTEM_PROMPT,
+    output_config: {
+      effort: "low",
+      format: { type: "json_schema", schema: EXTRACTION_SCHEMA },
+    },
+    messages: [
+      {
+        role: "user",
+        content: [
+          mediaBlock,
+          {
+            type: "text",
+            text: declaredKind
+              ? `Utilizatorul a declarat că acesta este un document de tip "${declaredKind}". ` +
+                `Verifică dacă se potrivește și extrage câmpurile.`
+              : "Identifică tipul documentului și extrage câmpurile. Dacă nu ești sigur de tip, pune null.",
+          },
+        ],
+      },
+    ],
+  });
+
+  if (response.stop_reason === "refusal") {
+    throw new Error("Model declined to process this document");
+  }
+  const textBlock = response.content.find((b) => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("No text block in model response");
+  }
+  return {
+    extracted: JSON.parse(textBlock.text) as Extracted,
+    usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req) });
   if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
@@ -129,22 +211,59 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
+  // Every mode asks with the caller's own JWT first, so RLS decides who
+  // may see what before the service role touches anything.
+  const caller = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    auth: { persistSession: false },
+  });
 
-  let documentId: string | undefined;
+  const request = readRequest(await req.json().catch(() => ({})));
+  if ("error" in request) return jsonResponse(req, { error: request.error }, 400);
+
+  // --- classify: a file the person has not said anything about --------
+  if (request.mode === "classify") {
+    try {
+      // Storage's own policy decides: a member of the firm whose folder
+      // this is may read it, nobody else. Nothing is written.
+      const { data: file, error } = await caller.storage.from("documents").download(request.filePath);
+      if (error || !file) return jsonResponse(req, { error: "Fișierul nu este accesibil" }, 403);
+      const mime = readableMime(file.type && file.type !== "application/octet-stream" ? file.type : mimeFromPath(request.filePath));
+      if (mime === null) return jsonResponse(req, { error: "Formatul nu poate fi citit", reason: "unreadable" }, 422);
+      const { extracted, usage } = await askModel(new Uint8Array(await file.arrayBuffer()), mime, null);
+      return jsonResponse(req, { ok: true, extracted, usage });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("parse-document classify failed", { message });
+      return jsonResponse(req, { error: message }, 500);
+    }
+  }
+
+  // --- declare: the carrier's own expiry date, beside the model's ------
+  if (request.mode === "declare") {
+    const { data: userData } = await caller.auth.getUser();
+    const { data: visible } = await caller
+      .from("documents")
+      .select("id, status, extracted")
+      .eq("id", request.documentId)
+      .maybeSingle();
+    if (!visible || !userData?.user) return jsonResponse(req, { error: "Document not found or not accessible" }, 404);
+    if (!mayRead(visible.status)) return jsonResponse(req, { error: "Documentul nu mai este în verificare" }, 409);
+    const { error } = await admin
+      .from("documents")
+      .update({ extracted: withDeclaredDate(visible.extracted, request.validUntil, userData.user.id, new Date()) })
+      .eq("id", request.documentId);
+    if (error) return jsonResponse(req, { error: error.message }, 500);
+    return jsonResponse(req, { ok: true });
+  }
+
+  // --- parse: a registered document ------------------------------------
+  const documentId = request.documentId;
+  let claimed = false;
 
   try {
-    const body = await req.json().catch(() => ({}));
-    documentId = body.document_id;
-    if (!documentId) return jsonResponse(req, { error: "document_id is required" }, 400);
-
-    // --- Authorisation -------------------------------------------------
     // The caller must be a member of the company that owns the document.
     // We check with the caller's own JWT so RLS does the work for us.
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const caller = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
     const { data: visible, error: visibleError } = await caller
       .from("documents")
       .select("id")
@@ -154,19 +273,31 @@ Deno.serve(async (req: Request) => {
     if (visibleError) return jsonResponse(req, { error: visibleError.message }, 500);
     if (!visible) return jsonResponse(req, { error: "Document not found or not accessible" }, 403);
 
-    // --- Load the row and the file -------------------------------------
     const { data: doc, error: docError } = await admin
       .from("documents")
-      .select("id, company_id, kind, scope, file_path, file_mime, status")
+      .select("id, company_id, kind, scope, file_path, file_mime, status, extracted")
       .eq("id", documentId)
       .single();
 
     if (docError || !doc) return jsonResponse(req, { error: "Document not found" }, 404);
-    if (doc.status === "approved") {
-      return jsonResponse(req, { error: "Document already approved" }, 409);
+    // Only while it waits for us: reading an approved, rejected, expired
+    // or replaced document again used to put it back into the queue.
+    if (!mayRead(doc.status)) {
+      return jsonResponse(req, { error: "Document no longer awaiting review" }, 409);
     }
+    claimed = true;
 
     await admin.from("documents").update({ status: "parsing" }).eq("id", documentId);
+
+    const mime = readableMime(doc.file_mime ?? mimeFromPath(doc.file_path));
+    if (mime === null) {
+      // A HEIC the phone sent as it was: a person reads it, the model cannot.
+      await admin
+        .from("documents")
+        .update({ status: "pending", extraction_error: "Format pe care modelul nu îl poate citi (HEIC)." })
+        .eq("id", documentId);
+      return jsonResponse(req, { error: "Formatul nu poate fi citit", reason: "unreadable" }, 422);
+    }
 
     const { data: file, error: fileError } = await admin.storage
       .from("documents")
@@ -176,81 +307,17 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Storage download failed: ${fileError?.message ?? "empty file"}`);
     }
 
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const base64 = encodeBase64(bytes);
-    const mime = doc.file_mime ?? file.type ?? "application/octet-stream";
-
-    // PDFs go in as document blocks, photos as image blocks.
-    const mediaBlock = mime === "application/pdf"
-      ? {
-        type: "document" as const,
-        source: { type: "base64" as const, media_type: "application/pdf" as const, data: base64 },
-      }
-      : {
-        type: "image" as const,
-        source: {
-          type: "base64" as const,
-          media_type: mime as "image/jpeg" | "image/png" | "image/webp",
-          data: base64,
-        },
-      };
-
-    // --- Ask Claude ----------------------------------------------------
-    const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      // The answer is a small JSON object; a low cap keeps latency and
-      // cost predictable without risking truncation.
-      max_tokens: 2000,
-      system: SYSTEM_PROMPT,
-      output_config: {
-        effort: "low",
-        format: { type: "json_schema", schema: EXTRACTION_SCHEMA },
-      },
-      messages: [
-        {
-          role: "user",
-          content: [
-            mediaBlock,
-            {
-              type: "text",
-              text: doc.kind
-                ? `Utilizatorul a declarat că acesta este un document de tip "${doc.kind}". ` +
-                  `Verifică dacă se potrivește și extrage câmpurile.`
-                : "Identifică tipul documentului și extrage câmpurile.",
-            },
-          ],
-        },
-      ],
-    });
-
-    if (response.stop_reason === "refusal") {
-      throw new Error("Model declined to process this document");
-    }
-
-    const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new Error("No text block in model response");
-    }
-
-    const extracted = JSON.parse(textBlock.text) as {
-      detected_kind: string | null;
-      document_number: string | null;
-      issued_at: string | null;
-      valid_from: string | null;
-      valid_until: string | null;
-      confidence: number;
-      issues: string[];
-    };
+    const { extracted, usage } = await askModel(new Uint8Array(await file.arrayBuffer()), mime, doc.kind);
 
     // --- Persist -------------------------------------------------------
-    // Always 'pending': a human approves, never the model.
+    // Always 'pending': a human approves, never the model. A date the
+    // carrier already confirmed stays beside what the model read.
+    const previous = (doc.extracted ?? {}) as Record<string, unknown>;
     const { error: updateError } = await admin
       .from("documents")
       .update({
         status: "pending",
-        extracted,
+        extracted: previous.declared ? { ...extracted, declared: previous.declared } : extracted,
         extraction_confidence: extracted.confidence,
         extraction_error: null,
         document_number: extracted.document_number,
@@ -267,17 +334,15 @@ Deno.serve(async (req: Request) => {
       document_id: documentId,
       extracted,
       kind_mismatch: extracted.detected_kind !== null && extracted.detected_kind !== doc.kind,
-      usage: {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-      },
+      usage,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("parse-document failed", { documentId, message });
 
     // Never leave a row stuck in 'parsing'; a human can still review it.
-    if (documentId) {
+    // Only a row this call took: history is not touched.
+    if (claimed) {
       await admin
         .from("documents")
         .update({ status: "pending", extraction_error: message })
