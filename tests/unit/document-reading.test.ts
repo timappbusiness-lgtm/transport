@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { requirementAnchor } from '@/lib/document-checklist';
+import { MAX_DOCUMENT_BYTES, documentFileProblem } from '@/lib/documents';
 import {
   formatDateRo,
   isIsoDate,
@@ -136,5 +137,24 @@ describe('a link lands on the row', () => {
     expect(requirementAnchor('asigurare_cmr', null)).toBe('act-firma-asigurare_cmr');
     expect(requirementAnchor('rca', 'v1')).toBe('act-v1-rca');
     expect(requirementAnchor('rca', undefined)).toBe('act-firma-rca');
+  });
+});
+
+describe('a file is refused before the upload, never after', () => {
+  it('only the types the registration accepts', () => {
+    expect(documentFileProblem({ type: 'image/jpeg', size: 100 })).toBeNull();
+    expect(documentFileProblem({ type: 'application/pdf', size: 100 })).toBeNull();
+    expect(documentFileProblem({ type: 'image/heic', size: 100 })).toBeNull();
+    // Was let through as „any image" and refused by the registration after
+    // the file had already gone up.
+    expect(documentFileProblem({ type: 'image/gif', size: 100 })).toBe('wrong_type');
+    expect(documentFileProblem({ type: 'image/avif', size: 100 })).toBe('wrong_type');
+    expect(documentFileProblem({ type: '', size: 100 })).toBe('wrong_type');
+  });
+
+  it('a PDF or a HEIC over the limit is refused now; a photo is drawn down first', () => {
+    expect(documentFileProblem({ type: 'application/pdf', size: MAX_DOCUMENT_BYTES + 1 })).toBe('too_large');
+    expect(documentFileProblem({ type: 'image/heic', size: MAX_DOCUMENT_BYTES + 1 })).toBe('too_large');
+    expect(documentFileProblem({ type: 'image/jpeg', size: MAX_DOCUMENT_BYTES * 3 })).toBeNull();
   });
 });

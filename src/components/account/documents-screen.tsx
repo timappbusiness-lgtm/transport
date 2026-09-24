@@ -28,7 +28,7 @@ import {
   suggestAssignment,
   type DocumentReading,
 } from '@/lib/document-reading';
-import { ACCEPTED_DOCUMENT_TYPES, MAX_DOCUMENT_BYTES, documentStoragePath } from '@/lib/documents';
+import { MAX_DOCUMENT_BYTES, documentFileProblem, documentStoragePath } from '@/lib/documents';
 import { shrinkPhoto } from '@/lib/photo-shrink';
 import type { UploadItem } from '@/lib/uploads/queue';
 import { SendError, uploadToStorage } from '@/lib/uploads/transport';
@@ -131,14 +131,9 @@ export function DocumentsScreen({
     const chosen = Array.from(files ?? []);
     const accepted: File[] = [];
     for (const file of chosen) {
-      const okType = (ACCEPTED_DOCUMENT_TYPES as readonly string[]).includes(file.type) || file.type.startsWith('image/');
-      if (!okType) {
-        setRefused(c.wrongType);
-        continue;
-      }
-      // A photograph is drawn down before it goes; a PDF is sent as it is.
-      if (file.type === 'application/pdf' && file.size > MAX_DOCUMENT_BYTES) {
-        setRefused(c.tooLarge);
+      const problem = documentFileProblem(file);
+      if (problem !== null) {
+        setRefused(problem === 'wrong_type' ? c.wrongType : c.tooLarge);
         continue;
       }
       accepted.push(file);

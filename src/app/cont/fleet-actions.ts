@@ -319,9 +319,15 @@ export async function registerDocumentAction(
     uploaded_by: context.user.id,
   });
 
-  // The same id twice is the same document: the first attempt got through.
-  if (error && !(error.code === '23505' && /documents_pkey/.test(error.message))) {
-    return { error: toAppError(error, 'documents.register').message };
+  // The same id twice is the same document: the first attempt got through
+  // and only its answer was lost — when the row is this firm's own. An id
+  // that collides with anything else is refused, not reported as saved.
+  if (error) {
+    const again =
+      error.code === '23505' && /documents_pkey/.test(error.message)
+        ? await supabase.from('documents').select('id').eq('id', input.documentId).eq('company_id', company.id).maybeSingle()
+        : { data: null };
+    if (!again.data) return { error: toAppError(error, 'documents.register').message };
   }
 
   revalidatePath(ROUTES.accountDocuments);

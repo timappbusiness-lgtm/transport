@@ -87,3 +87,16 @@ export const ACCEPTED_DOCUMENT_TYPES = [
 ] as const;
 
 export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Why a chosen file cannot be a document, before it is uploaded — by the
+ * same list `registerDocumentAction` accepts, so nothing passes here to
+ * be refused after the upload. A JPG, PNG or WebP is drawn down in the
+ * browser first, so only a PDF or a HEIC is refused for its size now.
+ */
+export function documentFileProblem(file: { type: string; size: number }): 'wrong_type' | 'too_large' | null {
+  if (!(ACCEPTED_DOCUMENT_TYPES as readonly string[]).includes(file.type)) return 'wrong_type';
+  const redrawn = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp';
+  if (!redrawn && file.size > MAX_DOCUMENT_BYTES) return 'too_large';
+  return null;
+}
