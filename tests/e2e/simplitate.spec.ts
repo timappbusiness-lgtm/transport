@@ -81,8 +81,10 @@ test.describe('a link somebody saved last month still works', () => {
     await expect(page.locator('[data-filter-chips] [data-chip]')).toHaveCount(4);
 
     // And the values survived the round trip.
-    await expect(page.getByLabel('Tip de serviciu')).toHaveValue('expres');
-    await expect(page.getByLabel('Starea vehiculului')).toHaveValue('nu-ruleaza');
+    // `exact`, because each chip is named after its field: „Scoate
+    // filtrul: Tip de serviciu: Expres".
+    await expect(page.getByLabel('Tip de serviciu', { exact: true })).toHaveValue('expres');
+    await expect(page.getByLabel('Starea vehiculului', { exact: true })).toHaveValue('nu-ruleaza');
     await expect(page.getByLabel(/Greutate maximă/)).toHaveValue('2500');
   });
 
@@ -92,8 +94,8 @@ test.describe('a link somebody saved last month still works', () => {
     await expect(moreFilters(page).panel).toBeHidden();
     await expect(moreFilters(page).button).toContainText('3');
     await expect(page.locator('[data-filter-chips] [data-chip]')).toHaveCount(3);
-    await expect(page.getByLabel('Direcția')).toHaveValue('retur');
-    await expect(page.getByLabel(/Locuri libere/)).toHaveValue('3');
+    await expect(page.getByLabel('Direcția', { exact: true })).toHaveValue('retur');
+    await expect(page.getByLabel('Locuri libere, minimum', { exact: true })).toHaveValue('3');
   });
 
   test('and a sort nobody offered falls back rather than breaking', async ({ page }) => {

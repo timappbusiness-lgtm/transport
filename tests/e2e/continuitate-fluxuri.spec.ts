@@ -129,7 +129,7 @@ test.describe('a board keeps its filters', () => {
     await settled(page);
     await page.goBack();
     await expect(page).toHaveURL(/tara-plecare=DE/);
-    await expect(page.getByLabel('Țara de plecare')).toHaveValue('DE');
+    await expect(page.getByLabel('Țara de plecare', { exact: true })).toHaveValue('DE');
   });
 
   test('the board remembers them for the detail pages’ way back', async ({ page }) => {
