@@ -865,6 +865,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
@@ -929,6 +930,7 @@ export type Database = {
           is_suspended?: boolean
           is_test?: boolean
           legal_name: string
+          legal_representative?: string | null
           logo_path?: string | null
           profile_updated_at?: string | null
           public_description?: string | null
@@ -993,6 +995,7 @@ export type Database = {
           is_suspended?: boolean
           is_test?: boolean
           legal_name?: string
+          legal_representative?: string | null
           logo_path?: string | null
           profile_updated_at?: string | null
           public_description?: string | null
@@ -3157,6 +3160,116 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_contract_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by_name: string | null
+          company_id: string | null
+          company_name: string | null
+          contract_id: string
+          id: string
+          ip: unknown | null
+          order_id: string
+          side: string
+          snapshot_hash: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by_name?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          contract_id: string
+          id?: string
+          ip?: unknown | null
+          order_id: string
+          side: string
+          snapshot_hash: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by_name?: string | null
+          company_id?: string | null
+          company_name?: string | null
+          contract_id?: string
+          id?: string
+          ip?: unknown | null
+          order_id?: string
+          side?: string
+          snapshot_hash?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_contract_acceptances_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "order_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_contract_acceptances_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "transports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_contracts: {
+        Row: {
+          contract_number: string
+          generated_at: string
+          generated_by: string | null
+          generated_by_side: string
+          id: string
+          order_id: string
+          redacted_at: string | null
+          snapshot: Json
+          snapshot_hash: string
+          template_version: string
+          version: number
+        }
+        Insert: {
+          contract_number: string
+          generated_at?: string
+          generated_by?: string | null
+          generated_by_side: string
+          id?: string
+          order_id: string
+          redacted_at?: string | null
+          snapshot: Json
+          snapshot_hash: string
+          template_version: string
+          version: number
+        }
+        Update: {
+          contract_number?: string
+          generated_at?: string
+          generated_by?: string | null
+          generated_by_side?: string
+          id?: string
+          order_id?: string
+          redacted_at?: string | null
+          snapshot?: Json
+          snapshot_hash?: string
+          template_version?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_contracts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "transports"
             referencedColumns: ["id"]
           },
         ]
@@ -6163,6 +6276,14 @@ export type Database = {
           vehicle_id: string | null
         }
       }
+      accept_order_contract: {
+        Args: { p_contract_id: string; p_ip?: string; p_user_agent?: string }
+        Returns: {
+          acceptance_id: string
+          accepted_at: string
+          side: string
+        }[]
+      }
       accept_terms: {
         Args: { p_document?: string; p_version: string }
         Returns: {
@@ -6371,6 +6492,22 @@ export type Database = {
           orders_count: number
         }[]
       }
+      admin_order_contracts: {
+        Args: { p_order_id: string }
+        Returns: {
+          acceptances: Json
+          contract_id: string
+          contract_number: string
+          generated_at: string
+          generated_by: string
+          generated_by_name: string
+          generated_by_side: string
+          redacted_at: string
+          snapshot_hash: string
+          template_version: string
+          version: number
+        }[]
+      }
       admin_orders: {
         Args: {
           p_company_id?: string
@@ -6519,6 +6656,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
@@ -6649,6 +6787,10 @@ export type Database = {
         Returns: boolean
       }
       can_see_order: {
+        Args: { p_order_id: string }
+        Returns: boolean
+      }
+      can_see_order_contract: {
         Args: { p_order_id: string }
         Returns: boolean
       }
@@ -6975,6 +7117,30 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      contract_document: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["document_kind"]
+          p_owner: string
+          p_scope: Database["public"]["Enums"]["document_scope"]
+        }
+        Returns: Json
+      }
+      contract_number_for: {
+        Args: { p_order: Database["public"]["Tables"]["transports"]["Row"] }
+        Returns: string
+      }
+      contract_operator_block: {
+        Args: { p_operator: Json }
+        Returns: Json
+      }
+      contract_party_company: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
+      contract_template_version: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       conversation_kind: {
         Args: { c: Database["public"]["Tables"]["conversations"]["Row"] }
         Returns: string
@@ -7100,6 +7266,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
@@ -7476,6 +7643,15 @@ export type Database = {
       forget_data_export: {
         Args: { p_id: string }
         Returns: undefined
+      }
+      generate_order_contract: {
+        Args: { p_operator?: Json; p_order_id: string }
+        Returns: {
+          contract_id: string
+          contract_number: string
+          snapshot_hash: string
+          version: number
+        }[]
       }
       generate_route_departures: {
         Args: { p_now?: string }
@@ -8097,6 +8273,42 @@ export type Database = {
           transport_id: string
         }[]
       }
+      order_contract_render_data: {
+        Args: { p_contract_id: string }
+        Returns: Json
+      }
+      order_contract_side: {
+        Args: { p_order: Database["public"]["Tables"]["transports"]["Row"] }
+        Returns: string
+      }
+      order_contract_snapshot: {
+        Args: {
+          p_operator: Json
+          p_order: Database["public"]["Tables"]["transports"]["Row"]
+          p_side: string
+          p_version: number
+        }
+        Returns: Json
+      }
+      order_contract_versions: {
+        Args: { p_order_id: string }
+        Returns: {
+          carrier_accepted_at: string
+          carrier_accepted_by: string
+          client_accepted_at: string
+          client_accepted_by: string
+          contract_id: string
+          contract_number: string
+          generated_at: string
+          generated_by_name: string
+          generated_by_side: string
+          is_latest: boolean
+          my_side: string
+          snapshot_hash: string
+          template_version: string
+          version: number
+        }[]
+      }
       order_crew_options: {
         Args: { p_order_id: string }
         Returns: {
@@ -8422,6 +8634,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      queue_contract_notification: {
+        Args: {
+          p_actor_side: string
+          p_contract: Database["public"]["Tables"]["order_contracts"]["Row"]
+          p_kind: string
+          p_order: Database["public"]["Tables"]["transports"]["Row"]
+        }
+        Returns: undefined
+      }
       queue_expiry_reminders: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -8518,6 +8739,10 @@ export type Database = {
           p_weekdays: number[]
         }
         Returns: string[]
+      }
+      redact_order_contracts: {
+        Args: { p_order_id: string; p_side: string; p_user_id?: string }
+        Returns: number
       }
       reject_offer: {
         Args: { p_offer_id: string }
@@ -8837,6 +9062,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
@@ -9099,6 +9325,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
@@ -9916,6 +10143,7 @@ export type Database = {
           is_suspended: boolean
           is_test: boolean
           legal_name: string
+          legal_representative: string | null
           logo_path: string | null
           profile_updated_at: string | null
           public_description: string | null
