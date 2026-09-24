@@ -49,7 +49,9 @@ Cele patru câmpuri sunt *De unde*, *Unde*, *Tip vehicul* și ordonarea.
 Celelalte zece filtre sunt sub „Mai multe filtre", închis, cu o insignă
 care numără câte dintre ele îngustează panoul. Un link salvat luna
 trecută funcționează neschimbat — cheile din URL sunt aceleași — și
-**deschide panoul singur**, ca omul să vadă după ce a fost îngustat.
+**lasă panoul închis**: numărul de pe buton și câte o etichetă
+detașabilă pentru fiecare filtru, sub cele trei câmpuri, spun după ce a
+fost îngustat. Vezi „Panoul închis, mereu" mai jos.
 
 ## Panoul de trasee — `/trasee`
 
@@ -141,7 +143,7 @@ Nimic din ce se putea face înainte nu s-a pierdut. S-a mutat:
 | rază + localitate | pe ecran | „Mai multe filtre" |
 | greutate maximă / capacitate liberă | pe ecran | „Mai multe filtre" |
 | locuri libere minime | pe ecran | „Mai multe filtre" |
-| „doar potrivite cu firma mea" | pe ecran | „Mai multe filtre" |
+| „doar potrivite cu firma mea" | pe ecran | comutatorul de deasupra listei — o vedere, nu un filtru, și nu se numără |
 | banda de taburi (cine a publicat / direcția) | deasupra panoului | „Mai multe filtre" |
 | alertele din starea goală | lângă buton | „Altceva de făcut de aici" |
 | linkul către celălalt panou | lângă buton | „Altceva de făcut de aici" |
@@ -207,5 +209,56 @@ Adăugată în `CLAUDE.md`, ca să nu se strecoare înapoi:
   pașilor pentru transportator și pentru casă de expediții, și faptul că
   o suspendare nu primește icon.
 - `tests/e2e/simplitate.spec.ts` — trei filtre pe ecran și panoul închis,
-  un link moștenit care îl deschide, o stare goală cu un singur buton
-  plin, 390px fără derulare laterală.
+  un link moștenit care îl lasă închis și își spune filtrele pe buton și
+  în etichete, o stare goală cu un singur buton plin, 390px fără
+  derulare laterală.
+- `tests/unit/filter-disclosure.test.ts`, `tests/unit/filter-chips.test.ts`
+  și `tests/e2e/filtre-inchise.spec.ts` — regula de mai jos, pe fiecare
+  ecran cu panou.
+
+## Panoul închis, mereu
+
+Pe `/cereri`, panoul „Mai multe filtre" era deschis la fiecare vizită a
+unui transportator, cu insigna „1". Cauza: panoul se deschidea singur
+când adresa purta un filtru din el, iar vederea implicită a
+transportatorului, „Potrivite cu firma mea", era numărată ca filtru —
+deși comutatorul ei stă deasupra listei, nu în panou. Același
+comportament era pe fiecare ecran cu panou.
+
+Regula acum (`src/lib/filter-disclosure.ts`, `src/components/ui/advanced-filters.tsx`):
+
+- **Închis la prima încărcare, pe orice ecran, orice ar purta adresa.**
+- Ce filtrează se spune în afara lui: numărul pe buton („Mai multe
+  filtre 2") și câte o etichetă detașabilă pentru fiecare filtru activ,
+  sub cele trei câmpuri, cu „Șterge filtrele" la capăt. Eticheta este un
+  link către aceeași adresă fără filtrul ei — ordonarea rămâne.
+- Deschiderea și închiderea se țin minte **doar în fila curentă**
+  (`sessionStorage`, o cheie pe ecran). O filă nouă sau o vizită nouă
+  pornește închis.
+- Butonul este un `<button>` cu `aria-expanded` și `aria-controls`;
+  Enter și Space îl comută, iar la deschidere focusul intră în panou.
+  Săgeata arată în jos când e închis și în sus când e deschis.
+- Câmpurile din panoul închis rămân în formular (`hidden` ascunde, nu
+  dezactivează), deci o căutare din cele trei câmpuri păstrează filtrele
+  avansate.
+- Fără JavaScript, panoul se arată deschis.
+
+Ecranele cu panou și cele trei câmpuri rămase pe ecran:
+
+| ecran | pe ecran | sub „Mai multe filtre" |
+|---|---|---|
+| `/cereri` | De unde, Unde, Tip vehicul (+ ordonarea, separat) | cine a publicat, serviciul, țările, perioada, starea, acoperirea, rază, greutate |
+| `/trasee` | De unde, Unde, Tip vehicul (+ ordonarea, separat) | direcția, locuri, țările, perioada, acoperirea, rază, capacitate |
+| `/firme` | Caută (nume sau CUI), Județ, Tip | acoperirea |
+| `/admin/oferte` | Stare, Firmă | perioada |
+| `/admin/transporturi` | Stare, Transportator, Doar disputele | perioada |
+| `/admin/anunturi` | Stare, Firmă, Doar sesizate | perioada, Doar ascunse |
+| `/admin/evaluari` | Nota, Firma evaluată, Doar după dispute | Doar ascunse |
+| `/admin/jurnal` | Ce acțiune, Pe ce, Cine a făcut | perioada |
+
+Listele din cont (cereri, trasee, oferte, transporturi, alerte, flotă,
+documente) nu au panou de filtre: au taburi sau nimic, deci nu au ce
+deschide. `/cont/mesaje` și `/cont/ajutor` au un singur câmp de
+căutare. `/admin/pilot` și `/admin/notificari` au două–trei câmpuri,
+toate pe ecran.
+
