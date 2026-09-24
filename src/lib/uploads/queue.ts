@@ -35,7 +35,16 @@ export interface UploadItem {
 }
 
 export type UploadEvent =
-  | { type: 'added'; items: Array<Pick<UploadItem, 'id' | 'name' | 'size' | 'type' | 'meta'> & { restored?: boolean }> }
+  | {
+      type: 'added';
+      items: Array<
+        Pick<UploadItem, 'id' | 'name' | 'size' | 'type' | 'meta'> & {
+          restored?: boolean;
+          /** Found on the device already sent, waiting for the person to confirm it. */
+          uploaded?: Record<string, string> | null;
+        }
+      >;
+    }
   | { type: 'kept'; id: string; kept: UploadItem['kept'] }
   | { type: 'started'; id: string }
   | { type: 'progress'; id: string; fraction: number }
@@ -52,14 +61,14 @@ export function uploadReducer(items: readonly UploadItem[], event: UploadEvent):
       const known = new Set(items.map((item) => item.id));
       const fresh = event.items
         .filter((item) => !known.has(item.id))
-        .map<UploadItem>((item) => ({
+        .map<UploadItem>(({ uploaded, ...item }) => ({
           ...item,
-          status: 'waiting',
-          progress: 0,
+          status: uploaded ? 'uploaded' : 'waiting',
+          progress: uploaded ? 1 : 0,
           error: null,
           kept: null,
           restored: item.restored === true,
-          result: null,
+          result: uploaded ?? null,
         }));
       return [...items, ...fresh];
     }

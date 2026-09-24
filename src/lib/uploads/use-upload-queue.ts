@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
 import { announceSessionExpired } from '@/lib/continuity/session-store';
-import { browserFileStore, type FileStore } from './file-store';
+import { browserFileStore, type FileStore, type StoredFile } from './file-store';
 import { nextToSend, summarise, uploadReducer, type UploadItem, type UploadSummary } from './queue';
 import { SEND_ERROR_MESSAGES, SendError } from './transport';
 
@@ -41,6 +41,16 @@ export interface UploadQueue {
   previewOf: (id: string) => string | null;
 }
 
+/** A file kept after it was sent: what the server said then, read back from its meta. */
+function uploadedResult(meta: StoredFile['meta']): Record<string, string> | null {
+  if (!meta || meta.sent !== true) return null;
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(meta)) {
+    if (key.startsWith('sent_') && typeof value === 'string') result[key.slice(5)] = value;
+  }
+  return result;
+}
+
 function newId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -72,6 +82,7 @@ export function useUploadQueue({
   send,
   store = browserFileStore,
   onUploaded,
+  keepAfterUpload,
   autoResume = true,
   enabled = true,
 }: {
@@ -79,6 +90,13 @@ export function useUploadQueue({
   send: Sender;
   store?: FileStore;
   onUploaded?: ((item: UploadItem, result: Record<string, string> | null) => void) | undefined;
+  /**
+   * For a file that reaches the server before it is finished with — a
+   * gallery photo still waiting for the person to say what it is: kept on
+   * the device, marked sent, and found again as „încărcat" after a
+   * reload. The screen lets it go with `discard` once it is registered.
+   */
+  keepAfterUpload?: ((item: UploadItem) => boolean) | undefined;
   autoResume?: boolean;
   enabled?: boolean;
 }): UploadQueue {
@@ -89,9 +107,9 @@ export function useUploadQueue({
   // first render's state.
   const previewUrls = useRef(new Map<string, string>());
   const busy = useRef<string | null>(null);
-  const latest = useRef({ send, onUploaded, items });
+  const latest = useRef({ send, onUploaded, keepAfterUpload, items });
   useEffect(() => {
-    latest.current = { send, onUploaded, items };
+    latest.current = { send, onUploaded, keepAfterUpload, items };
   });
 
   const preview = useCallback((id: string, blob: Blob) => {
@@ -120,6 +138,7 @@ export function useUploadQueue({
           type: file.type,
           meta: file.meta ?? {},
           restored: true,
+          uploaded: uploadedResult(file.meta),
         })),
       });
       for (const file of found) dispatch({ type: 'kept', id: file.id, kept: true });
@@ -157,8 +176,23 @@ export function useUploadQueue({
           (fraction) => dispatch({ type: 'progress', id: next.id, fraction }),
         );
         dispatch({ type: 'succeeded', id: next.id, result: result ?? null });
-        await store.drop(next.id);
-        latest.current.onUploaded?.({ ...next, status: 'uploaded', progress: 1 }, result ?? null);
+        const done: UploadItem = { ...next, status: 'uploaded', progress: 1, result: result ?? null };
+        if (latest.current.keepAfterUpload?.(done)) {
+          // Still needed on the device: marked sent, with what the server said.
+          const sent = Object.fromEntries(Object.entries(result ?? {}).map(([key, value]) => [`sent_${key}`, value]));
+          await store.keep({
+            id: next.id,
+            scope,
+            blob,
+            name: next.name,
+            type: next.type,
+            createdAt: Date.now(),
+            meta: { ...next.meta, ...sent, sent: true },
+          });
+        } else {
+          await store.drop(next.id);
+        }
+        latest.current.onUploaded?.(done, result ?? null);
       } catch (error) {
         const { message, session } = failureMessage(error);
         if (session) announceSessionExpired();
@@ -169,7 +203,7 @@ export function useUploadQueue({
         dispatch({ type: 'meta', id: next.id, meta: {} });
       }
     })();
-  }, [items, enabled, autoResume, store]);
+  }, [items, enabled, autoResume, store, scope]);
 
   const add = useCallback<UploadQueue['add']>(
     (files, meta = {}) => {

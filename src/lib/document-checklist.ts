@@ -50,7 +50,7 @@ export interface ChecklistCounts {
   blockingMissing: number;
 }
 
-export function countChecklist(rows: readonly RequirementRow[]): ChecklistCounts {
+export function countChecklist(rows: readonly Pick<RequirementRow, 'isBlocking' | 'state'>[]): ChecklistCounts {
   let blockingTotal = 0;
   let blockingDone = 0;
   let optionalTotal = 0;
@@ -92,8 +92,8 @@ export function canSubmitForReview(input: {
  * The rows in the order a person works through them: what still needs a
  * file first — blocking before optional — then what is done.
  */
-export function orderForWork(rows: readonly RequirementRow[]): RequirementRow[] {
-  const rank = (row: RequirementRow) => (isUploaded(row.state) ? 2 : 0) + (row.isBlocking ? 0 : 1);
+export function orderForWork<T extends Pick<RequirementRow, 'isBlocking' | 'state'>>(rows: readonly T[]): T[] {
+  const rank = (row: T) => (isUploaded(row.state) ? 2 : 0) + (row.isBlocking ? 0 : 1);
   return rows
     .map((row, index) => ({ row, index }))
     .sort((a, b) => rank(a.row) - rank(b.row) || a.index - b.index)
@@ -101,6 +101,14 @@ export function orderForWork(rows: readonly RequirementRow[]): RequirementRow[] 
 }
 
 /** The rows of one vehicle, or of the firm itself when `vehicleId` is null. */
-export function rowsFor(rows: readonly RequirementRow[], vehicleId: string | null): RequirementRow[] {
+export function rowsFor<T extends Pick<RequirementRow, 'scope' | 'vehicleId'>>(rows: readonly T[], vehicleId: string | null): T[] {
   return rows.filter((row) => (vehicleId === null ? row.scope === 'company' : row.vehicleId === vehicleId));
+}
+
+/**
+ * The anchor of one row on the documents screen, so a link — an e-mail
+ * about an expiring document, an old bookmark — lands on the row itself.
+ */
+export function requirementAnchor(kind: string, vehicleId: string | null | undefined): string {
+  return `act-${vehicleId ?? 'firma'}-${kind}`;
 }

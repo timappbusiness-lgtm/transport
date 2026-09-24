@@ -282,12 +282,17 @@ export interface RegisterDocumentInput {
 }
 
 /**
- * Called after the browser has uploaded the file into the company's folder.
+ * Registers a document whose file is already in the bucket.
  *
- * The row lands as 'uploaded' whatever this sends — a database trigger sees
- * to that — and only `review_document()` can approve it. The size and type
- * check here is a courtesy that produces a readable message; the storage
- * policies enforce the real limits.
+ * Idempotent on the document id, which the device chose once and sends on
+ * every attempt: a retry after a lost answer finds the row the first
+ * attempt made (`documents_pkey`) and reports success instead of a
+ * duplicate. The bucket's and the table's own policies enforce the real
+ * limits; this is the readable sentence before them.
+ *
+ * Reading the document with AI is a separate call (`readDocumentAction`),
+ * made by the screen once this answers: the file is safe and counted the
+ * moment it is registered, whatever the model then does.
  */
 export async function registerDocumentAction(
   input: RegisterDocumentInput,
@@ -314,22 +319,14 @@ export async function registerDocumentAction(
     uploaded_by: context.user.id,
   });
 
-  if (error) return { error: toAppError(error, 'documents.register').message };
-
-  // Reading the document with AI only pre-fills the reviewer's form. If it
-  // is unavailable the document still goes to review and the reviewer types
-  // the dates, so this failure is reported but never blocks the upload.
-  const { error: parseError } = await supabase.functions.invoke('parse-document', {
-    body: { document_id: input.documentId },
-  });
+  // The same id twice is the same document: the first attempt got through.
+  if (error && !(error.code === '23505' && /documents_pkey/.test(error.message))) {
+    return { error: toAppError(error, 'documents.register').message };
+  }
 
   revalidatePath(ROUTES.accountDocuments);
   revalidatePath(ROUTES.account);
   if (input.vehicleId) revalidatePath(vehicleRoute(input.vehicleId));
 
-  return {
-    notice: parseError
-      ? 'Document încărcat. Îl verificăm și îți confirmăm data de expirare.'
-      : 'Document încărcat și citit automat. Urmează verificarea de către echipa platformei.',
-  };
+  return { notice: 'Document încărcat. Urmează verificarea de către echipa platformei.' };
 }
