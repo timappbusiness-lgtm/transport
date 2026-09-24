@@ -264,7 +264,13 @@ save bar and a message box hidden under the phone menu, a sheet whose
 page scrolled behind it, fields that ended up under „Continuă", tables
 clipped at tablet width and labels drawn over their values.
 `tests/e2e/aspect-asezare.spec.ts` sweeps every screen for it at 1440
-and 390; `tests/e2e/acordeon.spec.ts` holds the accordion.
+and 390 — the account and admin screens through `/proba/ecrane`, the real
+components with sample data pushed to the limit — and
+`tests/e2e/acordeon.spec.ts` holds the accordion. Every finding, with its
+cause and its test, is `docs/18-asezare.md`. A screen the harness copies
+shares its layout pieces with it (`ORDER_GRID`, `ConversationTitle`)
+rather than repeating their classes: a copy kept the bug after the page
+was fixed.
 
 1. **Accordions and expandable cards never affect their neighbours.**
    Opening one changes the height of that one; what is beside it keeps
