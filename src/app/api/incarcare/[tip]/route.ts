@@ -47,7 +47,7 @@ export async function POST(
   // A server action checks the origin by itself; a route does not. The
   // session cookie is SameSite=Lax already — this is the second net, so a
   // page elsewhere cannot post delivery evidence as a signed-in driver.
-  if (!sameOrigin(request)) return answer(403, { error: 'Cererea nu vine de pe site.' });
+  if (!sameOrigin(request)) return answer(403, { error: 'Cererea nu vine de pe site-ul nostru. Reîncarcă pagina și încearcă din nou.' });
   if (!isSupabaseConfigured()) return answer(503, { error: 'Încărcarea nu este disponibilă acum.' });
 
   const context = await getAccountContext();
@@ -65,7 +65,7 @@ export async function POST(
 
   const file = form.get('photo');
   if (!(file instanceof File) || file.size === 0) return answer(400, { error: 'Nu am primit nicio poză.' });
-  if (file.size > MAX_FILE_BYTES) return answer(413, { error: 'Poza este prea mare. Maximum 10 MB.' });
+  if (file.size > MAX_FILE_BYTES) return answer(413, { error: 'Poza depășește 10 MB.' });
 
   let bytes: Buffer;
   try {

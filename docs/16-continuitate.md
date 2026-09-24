@@ -80,7 +80,7 @@ din CLAUDE.md le cere pentru orice ecran nou.
 | Redirecționarea după autentificare duce înapoi | `next` validat de `safeNextPath` (numai căi interne), `returnPathAfterAuth` (niciodată înapoi pe o pagină de autentificare), `withNext` pe fiecare link, butonul „Autentificare" din antet poartă pagina curentă. |
 | Formularele lungi își salvează ciorna | `useDraft` / `useFormDraft` / `useTextDraft`: în browser mereu, în cont (`form_drafts`) după autentificare; „Salvat", anunțul de reluare, „Începe din nou"; acțiunea care termină formularul șterge ambele copii (`?gata=<formular>`). |
 | Plecarea cu modificări nesalvate întreabă o dată | `useLeaveGuard` / `useUnsavedGuard`: `beforeunload` plus clicurile pe linkuri interne (inclusiv tab-urile profilului), o singură dată, niciodată după o salvare reușită. |
-| Încărcările eșuate păstrează fișierul | fișierul rămâne ales și primește „Încearcă din nou"; pozele șoferului stau în IndexedDB până ajung pe server; pozele sunt micșorate înainte de trimitere; limita acțiunilor e 4 MB. |
+| Încărcările eșuate păstrează fișierul | orice fișier ales stă în IndexedDB până îl confirmă serverul (`useUploadQueue`), cu starea lui pe rând — în așteptare, se încarcă cu progres, încărcat, eșuat cu „Încearcă din nou" — și pleacă sub un id ales o dată pe dispozitiv, deci o reîncercare nu face a doua copie. Vezi „Fișierele" mai jos. |
 | Sesiunea expirată nu golește formularul | acțiunea aruncă o eroare recunoscută (digest `CORIDOR_SESSION_EXPIRED`) în loc să redirecționeze; middleware-ul nu mai redirecționează POST-urile acțiunilor; formularul arată mesajul cu „Intră din nou în cont (se deschide o filă nouă)"; fila nouă ajunge pe `/reconectat`, care anunță prima filă pe un `BroadcastChannel` („Ești din nou în cont — apasă din nou pe buton"). |
 
 ## Fiecare flux
@@ -93,7 +93,7 @@ din CLAUDE.md le cere pentru orice ecran nou.
 | Ciorna | `sessionStorage`, pierdută cu fila | `localStorage` 3 zile + contul, cea mai nouă câștigă |
 | Autentificarea la pasul 4 | înapoi la pasul 1 | înapoi la pasul 4, „Cont — gata" |
 | Pozele încărcate | pierdute la reîncărcare | în ciornă, cu previzualizare semnată |
-| Panoul de poze | o poză respinsă oprea tot lotul, un eșec de rețea arunca pagina de eroare, „Se încarcă" nu apărea niciodată | continuă după o poză respinsă, păstrează fișierele eșuate cu „Încearcă din nou", progres „poza 2 din 4" |
+| Panoul de poze | o poză respinsă oprea tot lotul, un eșec de rețea arunca pagina de eroare, „Se încarcă" nu apărea niciodată | continuă după o poză respinsă; fiecare poză are rândul ei cu progres și „Încearcă din nou"; o poză încă neurcată supraviețuiește reîncărcării și filei închise |
 | Publicarea eșuată | pagina de eroare | mesaj lângă buton, totul rămâne |
 
 R **da** · Î **da** · A **da** · S **da** · C **da** · E **parțial** — linkul de
@@ -150,7 +150,7 @@ R **da** · Î **da** · A **da** · S **da** · C **da** · E **da**.
 
 | | Înainte | Acum |
 | --- | --- | --- |
-| Pozele | trimise la mărime întreagă — peste 1 MB, limita acțiunilor, deci o poză de telefon eșua; „Încarcă din nou" redeschidea camera; progresul număra o poză de două ori; o reîncărcare pierdea poza neîncărcată | micșorate la 2000 px, păstrate în IndexedDB din clipa în care sunt făcute până le confirmă serverul, „Trimite din nou" trimite aceeași poză, „N fotografii n-au apucat să plece — Trimite-le acum" la redeschidere, progresul numără doar ce e pe server |
+| Pozele | trimise la mărime întreagă — peste 1 MB, limita acțiunilor, deci o poză de telefon eșua; „Încarcă din nou" redeschidea camera; progresul număra o poză de două ori; o reîncărcare pierdea poza neîncărcată | micșorate la 2000 px, păstrate în IndexedDB din clipa în care sunt făcute până le confirmă serverul, fiecare cu progresul ei, „Încearcă din nou" trimite aceeași poză sub același id (un răspuns pierdut nu mai adaugă o a cincea poză), „N fotografii n-au apucat să plece — Trimite-le acum" la redeschidere, progresul numără doar ce e pe server |
 | Lista de verificare | golită la eroare | păstrată pe telefon cât e completată, ștearsă după salvare |
 | Anulare / dispută | motivul golit la eroare | păstrat |
 
@@ -220,13 +220,38 @@ R **da** · Î **da** · A — · S n/a · C **da** · E **da**.
   încă când e scrisă, deci nu are unde să fie ținută pe server fără să
   păstrăm date personale fără cont. Pagina de confirmare spune să fie
   deschis linkul pe același dispozitiv.
-- **Fișierele eșuate în afara pozelor șoferului** (documente, logo, pozele
-  cererii) rămân alese cât pagina e deschisă; o reîncărcare le pierde. Pozele
-  cererii deja **urcate** sunt în ciornă.
+- ~~**Fișierele eșuate în afara pozelor șoferului** (documente, logo, pozele
+  cererii) rămân alese cât pagina e deschisă; o reîncărcare le pierde.~~
+  **Închis** în „Înscriere rapidă" (PR #61): vezi „Fișierele" mai jos.
+- **Un fișier peste 15 MB** nu se păstrează pe dispozitiv (nici peste 80 MB
+  în total): se trimite cât pagina rămâne deschisă, iar rândul lui spune
+  asta. Un PDF de acte trece rar de 10 MB, limita serverului; pozele sunt
+  micșorate înainte să fie păstrate.
+- **Captura din panoul de import AI** nu se păstrează peste o reîncărcare:
+  nu e un fișier pe care îl stocăm, ci unul pe care îl citim o dată. La un
+  eșec rămâne în câmp și se apasă din nou.
 - **Butonul Înapoi al browserului pe o pagină cu modificări nesalvate** nu
   poate fi oprit fără trucuri pe istoric; setările nu au ciornă, deci acolo
   Înapoi pierde modificarea. Linkurile și reîncărcarea întreabă.
 - **Stelele unei evaluări** nu sunt în ciornă.
+
+## Fișierele
+
+Limitarea de mai sus s-a închis pentru fiecare încărcare din produs:
+actele firmei și ale vehiculelor, logoul, pozele cererii, pozele
+șoferului la ridicare și la predare, imaginile din mesaje.
+
+| Ce | Cum |
+| --- | --- |
+| Rămâne ales după un eșec | `useUploadQueue` (`src/lib/uploads/`): un eșec lasă fișierul pe rând, cu motivul într-o frază și „Încearcă din nou", care trimite aceleași octeți. Nimic nu dispare decât la „Renunță". |
+| Supraviețuiește reîncărcării și filei închise | fișierul e scris în IndexedDB (`file-store.ts`, baza `coridor-trimiteri` — aceeași în care își țineau pozele șoferii, deci pozele rămase de dinainte sunt găsite) din clipa în care e ales, și șters numai când serverul l-a confirmat. La redeschidere, ce a rămas e trimis (actele, pozele cererii, imaginile unui mesaj deja trimis) sau oferit cu „Trimite-le acum" (pozele șoferului, care poate fi deja la altă mașină). Limite: 15 MB pe fișier, 80 MB în total, 7 zile; peste ele rândul spune că fișierul pleacă doar cât pagina e deschisă. |
+| Fără dubluri | fiecare fișier primește un id pe dispozitiv, o dată. Calea obiectului și id-ul rândului vin din el: actele (`documents.id`), pozele șoferului (`order_evidence.id`), imaginile (`message_attachments.id`), pozele cererii (calea). Un obiect sau un rând deja acolo e citit ca „a ajuns prima dată, doar răspunsul s-a pierdut" — și numai dacă rândul e chiar al celui care trimite, pentru același fișier. Mesajul însuși pleacă sub un id ales o dată, așa că a doua apăsare nu mai face un al doilea mesaj. |
+| Starea pe fiecare fișier | `UploadLine`: miniatură, „în așteptare", „se încarcă — 42%" cu bară, „încărcat", „eșuat" cu „Încearcă din nou". Progresul vine din `XMLHttpRequest` — o acțiune de server nu îl poate raporta, așa că pozele pe care serverul le re-codează (EXIF șters) merg prin `/api/incarcare/[tip]`, iar actele și logoul direct în Storage. |
+| Imaginile din mesaje | alese, stau „în așteptare" până pleacă textul; apoi urcă una câte una, legate de mesajul lor. Una căzută ajunge, la reîncercare sau după o reîncărcare, la același mesaj. |
+
+Teste: `tests/unit/uploads.test.ts` (stările, reîncercarea sub același
+id, ordinea, fișierele reținute, limitele, pozele vechi ale șoferului,
+răspunsurile serverului, căile) și `tests/e2e/inscriere-rapida.spec.ts`.
 
 ## Defecte prinse pe drum, în reparația însăși
 
