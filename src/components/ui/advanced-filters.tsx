@@ -1,0 +1,128 @@
+'use client';
+
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Icon } from '@/components/ui/icon';
+import { countLabel } from '@/lib/badges';
+import {
+  ADVANCED_OPEN_ON_LOAD,
+  rememberChoice,
+  sessionStore,
+  wasLeftOpen,
+} from '@/lib/filter-disclosure';
+import { ICON_GAP, UI_ICONS, iconForAction } from '@/lib/icons';
+import { cn } from '@/lib/utils';
+
+const FOCUSABLE =
+  'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href]';
+
+/**
+ * „Mai multe filtre": a button and the panel it opens.
+ *
+ * Closed on first paint, always — the address may carry advanced
+ * filters, and the count on the button and the chips above say so; the
+ * panel does not open to explain itself. The person's own choice is
+ * remembered for this screen until the tab closes (`filter-disclosure`),
+ * so opening it, changing a date and pressing „Caută" does not snap it
+ * shut on the next page.
+ *
+ * A real `<button>` with `aria-expanded` and `aria-controls`: Enter and
+ * Space toggle it, and opening it moves focus to the first control
+ * inside, where the keyboard was going anyway. The fields stay in the
+ * form while the panel is closed — `hidden` hides, it does not disable —
+ * so an active advanced filter survives a search made from the three
+ * main fields.
+ *
+ * Without JavaScript the button does nothing and the `<noscript>` rule
+ * shows the panel instead: every filter is still reachable.
+ */
+export function AdvancedFilters({
+  screen,
+  label,
+  count,
+  countLabelText,
+  children,
+}: {
+  /** The screen this panel belongs to, for its session memory: „cereri", „admin-oferte". */
+  screen: string;
+  /** „Mai multe filtre". */
+  label: string;
+  /** How many advanced filters are doing something; shown on the button. */
+  count: number;
+  /** What a screen reader hears after the number: „2 active". */
+  countLabelText: (n: number) => string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(ADVANCED_OPEN_ON_LOAD);
+  const focusOnOpen = useRef(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelId = `${useId()}-mai-multe-filtre`;
+
+  // Only ever opens it, and only when the person opened it earlier in
+  // this session: nothing in the address can.
+  useEffect(() => {
+    if (wasLeftOpen(sessionStore(), screen)) setOpen(true);
+  }, [screen]);
+
+  useEffect(() => {
+    if (!open || !focusOnOpen.current) return;
+    focusOnOpen.current = false;
+    panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+  }, [open]);
+
+  function toggle() {
+    const next = !open;
+    focusOnOpen.current = next;
+    setOpen(next);
+    rememberChoice(sessionStore(), screen, next);
+  }
+
+  const shown = countLabel(count);
+
+  return (
+    <div
+      className="rounded-input border border-border bg-ground-alt/60"
+      data-advanced-filters={screen}
+      data-open={open ? 'da' : 'nu'}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={toggle}
+        className={cn(
+          'flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-input px-3 py-2.5 text-left text-small font-medium',
+          'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
+        )}
+      >
+        <span className={cn('inline-flex items-center', ICON_GAP)}>
+          <Icon as={iconForAction('filter')} size="sm" tone="muted" />
+          {label}
+          {shown === null ? null : (
+            <Badge kind="count" label={countLabelText(count)}>
+              {shown}
+            </Badge>
+          )}
+        </span>
+        <Icon
+          as={UI_ICONS.expand}
+          size="sm"
+          tone="strong"
+          className={cn('transition-transform motion-reduce:transition-none', open && 'rotate-180')}
+        />
+      </button>
+      <div
+        id={panelId}
+        ref={panelRef}
+        hidden={!open}
+        data-advanced-panel=""
+        className="flex flex-col gap-4 border-t border-border px-3 py-4"
+      >
+        {children}
+      </div>
+      <noscript>
+        <style>{'[data-advanced-panel][hidden]{display:flex!important}'}</style>
+      </noscript>
+    </div>
+  );
+}
