@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   ADVANCED_OPEN_ON_LOAD,
@@ -158,5 +159,18 @@ describe('chips from plain params', () => {
   it('dates read the Romanian way', () => {
     expect(chipDate('2026-09-24')).toBe('24.09.2026');
     expect(chipDate('ieri')).toBe('ieri');
+  });
+});
+
+describe('the client panel', () => {
+  it('takes no function props: every screen renders it from the server', () => {
+    // A function prop cannot cross into a client component. The first
+    // version passed the count's wording as one, and every search screen
+    // answered 500.
+    const source = readFileSync('src/components/ui/advanced-filters.tsx', 'utf8');
+    const start = source.indexOf('export function AdvancedFilters(');
+    const props = source.slice(source.indexOf('}: {', start), source.indexOf('}) {', start));
+    expect(props.length).toBeGreaterThan(0);
+    expect(props).not.toMatch(/=>|\bFunction\b/);
   });
 });

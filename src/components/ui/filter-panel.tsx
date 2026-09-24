@@ -117,7 +117,7 @@ export function FilterPanel({
         screen={screen}
         label={labels.more}
         count={chips.length}
-        countLabelText={labels.active}
+        countText={labels.active(chips.length)}
       >
         {advanced}
       </AdvancedFilters>

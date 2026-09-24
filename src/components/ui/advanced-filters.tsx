@@ -40,7 +40,7 @@ export function AdvancedFilters({
   screen,
   label,
   count,
-  countLabelText,
+  countText,
   children,
 }: {
   /** The screen this panel belongs to, for its session memory: „cereri", „admin-oferte". */
@@ -49,8 +49,12 @@ export function AdvancedFilters({
   label: string;
   /** How many advanced filters are doing something; shown on the button. */
   count: number;
-  /** What a screen reader hears after the number: „2 active". */
-  countLabelText: (n: number) => string;
+  /**
+   * What a screen reader hears for the number: „2 filtre active". A
+   * string, formatted by the server: a function cannot cross into a
+   * client component, and trying took every search screen down.
+   */
+  countText: string;
   children: ReactNode;
 }) {
   // Closed on the server and on the first paint. After hydration it
@@ -103,7 +107,7 @@ export function AdvancedFilters({
           <Icon as={iconForAction('filter')} size="sm" tone="muted" />
           {label}
           {shown === null ? null : (
-            <Badge kind="count" label={countLabelText(count)}>
+            <Badge kind="count" label={countText}>
               {shown}
             </Badge>
           )}
@@ -124,8 +128,12 @@ export function AdvancedFilters({
       >
         {children}
       </div>
+      {/* In Tailwind's base layer on purpose: its preflight hides
+          `[hidden]` with !important there, and an !important rule in an
+          earlier layer beats any unlayered one — the fallback lost to it
+          until it joined the same layer, where specificity decides. */}
       <noscript>
-        <style>{'[data-advanced-panel][hidden]{display:flex!important}'}</style>
+        <style>{'@layer base{[data-advanced-panel][hidden]{display:flex!important}}'}</style>
       </noscript>
     </div>
   );

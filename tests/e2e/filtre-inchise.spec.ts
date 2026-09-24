@@ -309,10 +309,16 @@ test.describe('on a phone', () => {
   }
 });
 
-test('without JavaScript the panel is simply shown', async ({ browser }) => {
-  const context = await browser.newContext({ javaScriptEnabled: false });
-  const page = await context.newPage();
-  await page.goto('/cereri?tara-plecare=DE');
-  await expect(page.locator('[data-advanced-panel] select').first()).toBeVisible();
-  await context.close();
+test.describe('without JavaScript', () => {
+  // The boards stream, and a streamed page needs JavaScript to show
+  // anything past its skeleton; the directory and the staff lists do not.
+  for (const path of ['/firme?acoperire=international', `${H}admin-oferte&de-la=2026-09-01`]) {
+    test(`${path}: the panel is simply shown`, async ({ browser }) => {
+      const context = await browser.newContext({ javaScriptEnabled: false });
+      const page = await context.newPage();
+      await page.goto(path);
+      await expect(page.locator('[data-advanced-panel] :is(select, input)').first()).toBeVisible();
+      await context.close();
+    });
+  }
 });
