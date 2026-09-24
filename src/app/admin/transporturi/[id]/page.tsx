@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { HideEvidence } from '@/components/admin/hide-evidence';
+import { OrderContracts } from '@/components/admin/order-contracts';
 import { ResolveDispute } from '@/components/admin/resolve-dispute';
 import { ComparisonView, EvidenceGallery } from '@/components/orders/evidence-gallery';
 import { OrderTimeline } from '@/components/orders/order-timeline';
@@ -9,6 +10,7 @@ import { ROUTES, requestRoute, transportRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
 import { formatMoney } from '@/lib/offers';
 import { formatMoment, formatWindow, orderStatusLabel } from '@/lib/orders';
+import { loadAdminContracts } from '@/lib/contracts-source';
 import {
   loadEvidence,
   loadOrder,
@@ -48,7 +50,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const order = await loadOrder(id);
   if (order === null) notFound();
 
-  const [events, evidence] = await Promise.all([loadTimeline(id), loadEvidence(id)]);
+  const [events, evidence, contracts] = await Promise.all([
+    loadTimeline(id),
+    loadEvidence(id),
+    loadAdminContracts(id),
+  ]);
   const paths = evidence.map((row) => row.file_path).filter((p): p is string => p !== null);
   const [urls, publicUrls] = await Promise.all([
     signEvidence(paths),
@@ -112,6 +118,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             events={events}
             autoCompleted={order.auto_completed}
           />
+
+          <OrderContracts orderId={order.id} versions={contracts} />
 
           <ComparisonView
             title={ordersCopy.evidence.comparePickup}

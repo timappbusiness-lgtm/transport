@@ -415,6 +415,35 @@ export const TEMPLATES: Record<string, Template> = {
 
   // --- Mesaje și moderare ------------------------------------------------
 
+  // --- Contractul de transport ------------------------------------------
+  // Both go to the other party only: who generated or accepted already
+  // knows. The link is to the contract on the order page, not to a list.
+  contract_generated: {
+    subject: "Contract de transport pentru {{ from_city }} — {{ to_city }}",
+    lines: [
+      "Bună ziua,",
+      "{{ party_name }} a generat contractul de transport {{ contract_number }}, versiunea {{ contract_version }}, pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Contractul este completat cu datele comenzii și cu documentele verificate ale transportatorului. Îl găsiți în pagina comenzii, la „Contract de transport”, unde îl puteți citi, descărca și accepta din contul dumneavoastră.",
+      "Acceptarea electronică în platformă înregistrează contul, data și ora, adresa IP și browserul. Nu este o semnătură electronică calificată.",
+    ],
+    action: { label: "Deschide contractul", href: "{{ site_url }}/cont/transporturi/{{ order_id }}#contract" },
+    unsubscribable: true,
+  },
+
+  contract_accepted: {
+    subject: "{{ party_name }} a acceptat contractul {{ contract_number }}",
+    lines: [
+      "Bună ziua,",
+      "{{ party_name }} a acceptat versiunea {{ contract_version }} a contractului de transport {{ contract_number }}, pentru transportul {{ from_city }} — {{ to_city }}.",
+      "Documentul: Contract de transport {{ contract_number }}, versiunea {{ contract_version }}. Este în pagina comenzii, la „Contract de transport”, unde îl puteți citi și descărca în PDF, cu acceptările înregistrate în subsol.",
+      "Dacă nu l-ați acceptat încă, o puteți face de pe aceeași pagină.",
+    ],
+    action: { label: "Deschide contractul", href: "{{ site_url }}/cont/transporturi/{{ order_id }}#contract" },
+    // The other side's acceptance is what concludes the contract: not a
+    // message anybody should be able to switch off by one click.
+    unsubscribable: false,
+  },
+
   message_received: {
     subject: "Aveți un mesaj nou pe Coridor",
     lines: [

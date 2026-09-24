@@ -62,6 +62,9 @@ const SAMPLE: Record<string, string> = {
   carrier_name: "Transport Ardeal SRL",
   offer_id: "7b4a2c88-0000-4000-8000-000000000004",
   order_id: "c1d9e4a5-0000-4000-8000-000000000005",
+  contract_number: "CT-2026-C1D9E4A5",
+  contract_version: "2",
+  party_name: "Transport Exemplu SRL",
   // The e-mails that link to one conversation or one rating carry its id,
   // as the queueing functions write it into the payload.
   conversation_id: "e8b1f2c3-0000-4000-8000-000000000006",
@@ -351,6 +354,8 @@ Deno.test("every template a queueing function names exists", () => {
     "order_dispute_resolved",
     "order_driver_assigned",
     "order_vehicle_noncompliant",
+    "contract_generated",
+    "contract_accepted",
     "rating_received",
     "rating_reply",
     "rating_reminder",

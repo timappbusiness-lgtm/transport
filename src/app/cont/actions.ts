@@ -714,8 +714,12 @@ export async function updateCompanyIdentityAction(
   const phone = text(formData, 'contactPhone').trim();
   const email = text(formData, 'contactEmail').trim();
   const website = text(formData, 'website').trim();
+  const representative = text(formData, 'legalRepresentative').trim().replace(/\s+/g, ' ');
 
   const fieldErrors: Record<string, string> = {};
+  if (representative !== '' && (representative.length < 3 || representative.length > 120)) {
+    fieldErrors.legalRepresentative = firmaCopy.identity.legalRepresentativeInvalid;
+  }
   if (phone !== '' && normaliseContactPhone(phone) === null) {
     fieldErrors.contactPhone = 'Scrie numărul în forma +40722000111.';
   }
@@ -732,6 +736,9 @@ export async function updateCompanyIdentityAction(
     city: text(formData, 'city').trim() || null,
     address: text(formData, 'address').trim() || null,
     base_address_hidden: checked(formData, 'baseAddressHidden'),
+    // Printed on every transport contract generated after this; editable
+    // after verification too, because a firm changes administrators.
+    legal_representative: representative === '' ? null : representative,
   };
 
   // Identity is editable only while the company is a draft — the same rule

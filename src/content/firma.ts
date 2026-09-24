@@ -46,6 +46,10 @@ export const firmaCopy = {
       'Apare pe profilul public. Salvăm adresa curată, fără parametrii de campanie din link.',
     address: 'Adresă',
     addressHint: 'Nu apare niciodată public. O folosim doar pentru documente și facturare.',
+    legalRepresentative: 'Reprezentant legal',
+    legalRepresentativeHint:
+      'Numele și funcția, cum apar pe contractele de transport: „Ion Popescu, administrator". Nu apare public.',
+    legalRepresentativeInvalid: 'Scrie între 3 și 120 de caractere.',
     county: 'Județ',
     city: 'Localitate',
     hideAddress: 'Nu afișa localitatea pe profilul public',

@@ -93,6 +93,9 @@ export const ordersCopy = {
     title: 'Dovezi',
     lede: 'Fotografiile și fișele rămân neschimbate. Nimeni nu le poate modifica sau șterge, nici noi.',
     empty: 'Nicio dovadă încă.',
+    documents: 'Contractul de transport',
+    openDocument: 'Deschide',
+    downloadDocument: 'Descarcă PDF',
     kinds: {
       pickup_photo: 'Fotografii la ridicare',
       condition_report: 'Fișa de stare',

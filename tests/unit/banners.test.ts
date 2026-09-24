@@ -39,6 +39,7 @@ function company(over: Partial<Company> = {}): Company {
     indicative_rate_ron_per_km: null,
     indicative_rate_note: null,
     base_address_hidden: false,
+    legal_representative: null,
     alerts_enabled: false,
     alerts_email: null,
     profile_updated_at: null,

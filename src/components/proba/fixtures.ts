@@ -181,6 +181,7 @@ const baseCompany: Company = {
   indicative_rate_ron_per_km: 4.8,
   indicative_rate_note: 'La peste 500 km prețul pe kilometru scade.',
   base_address_hidden: true,
+  legal_representative: null,
   alerts_enabled: true,
   alerts_email: null,
   profile_updated_at: hoursAgo(72),
