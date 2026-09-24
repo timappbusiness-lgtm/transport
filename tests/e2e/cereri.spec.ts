@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { settled } from './settled';
+import { openMoreFilters, settled } from './settled';
 
 /**
  * Publishing a request and the board, without a database.
@@ -176,21 +176,24 @@ test.describe('the board with nothing on it', () => {
     await settled(page);
     // Both of these are one click down now, under „Mai multe filtre".
     // The keys they write are the ones they always wrote.
-    await page.getByText('Mai multe filtre').click();
+    await openMoreFilters(page);
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByLabel('Starea vehiculului').selectOption('nu-ruleaza');
     await page.getByRole('button', { name: 'Caută' }).click();
 
     await expect(page).toHaveURL(/tara-plecare=DE/);
     await expect(page).toHaveURL(/stare=nu-ruleaza/);
-    // And the form comes back showing what was asked for.
-    await expect(page.getByLabel('Țara de plecare')).toHaveValue('DE');
+    // And the form comes back showing what was asked for. `exact`: the
+    // chip that removes it is labelled „Scoate filtrul: Țara de plecare: …".
+    await expect(page.getByLabel('Țara de plecare', { exact: true })).toHaveValue('DE');
   });
 
   test('carries the tab through a filter', async ({ page }) => {
     await page.goto('/cereri?cine=retur');
     await settled(page);
-    await page.getByLabel('Țara de destinație').selectOption('RO');
+    // The link carries a filter from inside the panel; the panel stays shut.
+    await openMoreFilters(page);
+    await page.getByLabel('Țara de destinație', { exact: true }).selectOption('RO');
     await page.getByRole('button', { name: 'Caută' }).click();
     await expect(page).toHaveURL(/cine=retur/);
   });

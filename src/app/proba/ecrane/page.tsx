@@ -22,6 +22,7 @@ import {
   FirmeSection,
   TraseeSection,
 } from '@/components/proba/public-sections';
+import { AdminFiltersSection } from '@/components/proba/admin-filter-sections';
 import {
   AntetSection,
   CereriTransportatorSection,
@@ -95,6 +96,31 @@ const SECTIONS: readonly ProbaSection[] = [
   },
   { slug: 'admin-contract', title: 'Contractul, pentru echipă', render: () => <AdminContractSection /> },
   { slug: 'admin-acte', title: 'Documente de verificat', render: () => <AdminActeSection /> },
+  {
+    slug: 'admin-oferte',
+    title: 'Oferte, pentru echipă: filtrele',
+    render: (params) => <AdminFiltersSection list="admin-oferte" params={params} />,
+  },
+  {
+    slug: 'admin-transporturi',
+    title: 'Transporturi, pentru echipă: filtrele',
+    render: (params) => <AdminFiltersSection list="admin-transporturi" params={params} />,
+  },
+  {
+    slug: 'admin-anunturi',
+    title: 'Cereri și trasee, pentru echipă: filtrele',
+    render: (params) => <AdminFiltersSection list="admin-anunturi" params={params} />,
+  },
+  {
+    slug: 'admin-evaluari',
+    title: 'Evaluări, pentru echipă: filtrele',
+    render: (params) => <AdminFiltersSection list="admin-evaluari" params={params} />,
+  },
+  {
+    slug: 'admin-jurnal',
+    title: 'Jurnalul de acțiuni: filtrele',
+    render: (params) => <AdminFiltersSection list="admin-jurnal" params={params} />,
+  },
   { slug: 'abonamente', title: 'Abonamente', render: () => <AbonamenteSection /> },
   { slug: 'evaluari', title: 'Evaluări', render: () => <EvaluariSection /> },
   { slug: 'cont-mobil', title: 'Contul pe telefon: bara de jos', render: () => <ContMobilSection /> },

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AdminOfferFilters } from '@/components/admin/list-filters';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOfferRoute } from '@/config/routes';
@@ -15,13 +16,13 @@ import {
   loadAdminOffers,
   type AdminOfferQuery,
 } from '@/lib/offers-admin-source';
+import { paramsFromSearch } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = offersCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -105,85 +106,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <form
-        method="get"
+      <AdminOfferFilters
         action={ROUTES.adminOffers}
-        className="rounded-card border border-border bg-surface p-5"
-      >
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ao-status" className="text-small font-medium">
-              {c.filters.status}
-            </label>
-            <select id="ao-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
-              <option value="">{c.filters.any}</option>
-              {OFFER_STATUS_ORDER.map((value) => (
-                <option key={value} value={value}>
-                  {OFFER_STATUS_LABELS[value]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ao-company" className="text-small font-medium">
-              {c.filters.company}
-            </label>
-            <select
-              id="ao-company"
-              name="firma"
-              defaultValue={query.companyId ?? ''}
-              className={CONTROL}
-            >
-              <option value="">{c.filters.any}</option>
-              {companies.map((company) => (
-                <option key={company.company_id} value={company.company_id}>
-                  {company.company_name} ({company.offers_count})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ao-from" className="text-small font-medium">
-              {c.filters.from}
-            </label>
-            <input
-              id="ao-from"
-              name="de-la"
-              type="date"
-              defaultValue={query.from ?? ''}
-              className={CONTROL}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ao-to" className="text-small font-medium">
-              {c.filters.to}
-            </label>
-            <input
-              id="ao-to"
-              name="pana-la"
-              type="date"
-              defaultValue={query.to ?? ''}
-              className={CONTROL}
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
-            {c.filters.apply}
-          </button>
-          {filtered ? (
-            <a href={ROUTES.adminOffers} className="text-body text-muted underline-offset-4 hover:underline">
-              {c.filters.clear}
-            </a>
-          ) : null}
-        </div>
-      </form>
+        resetHref={ROUTES.adminOffers}
+        params={paramsFromSearch(toSearch(query, 1))}
+        canReset={filtered}
+        statuses={OFFER_STATUS_ORDER.map((value) => ({ value, label: OFFER_STATUS_LABELS[value] }))}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: `${company.company_name} (${company.offers_count})`,
+        }))}
+      />
 
       {page.error !== null ? (
         <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">

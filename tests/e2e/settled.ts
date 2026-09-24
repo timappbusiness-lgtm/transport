@@ -36,3 +36,33 @@ export async function openMenu(page: Page): Promise<boolean> {
   }).toPass();
   return true;
 }
+
+/**
+ * „Mai multe filtre" on a search screen: the button, and the panel it opens.
+ *
+ * Every screen has one; the first on the page is the one meant.
+ */
+export function moreFilters(page: Page) {
+  const root = page.locator('[data-advanced-filters]').first();
+  return {
+    root,
+    button: root.getByRole('button', { name: /Mai multe filtre/ }),
+    panel: root.locator('[data-advanced-panel]'),
+  };
+}
+
+/**
+ * Opens „Mai multe filtre", when it is not already open.
+ *
+ * The panel is closed on every first load, but a person who opened it
+ * earlier in the tab finds it open after hydration. And a press that
+ * lands before React has attached to the button does nothing, so — as
+ * with the phone menu — the press is repeated until the panel is there.
+ */
+export async function openMoreFilters(page: Page): Promise<void> {
+  const { button, panel } = moreFilters(page);
+  await expect(async () => {
+    if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+    await expect(panel).toBeVisible({ timeout: 500 });
+  }).toPass();
+}

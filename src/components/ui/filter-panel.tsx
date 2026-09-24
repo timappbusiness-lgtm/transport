@@ -1,37 +1,39 @@
 import type { ReactNode } from 'react';
+import { AdvancedFilters } from '@/components/ui/advanced-filters';
 import { buttonClasses } from '@/components/ui/button';
+import { FilterChips } from '@/components/ui/filter-chips';
+import { filtersCopy } from '@/content/filtre';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForAction } from '@/lib/icons';
 import { BOARD_SORT_LABELS, SORT_KEY, type BoardSort } from '@/lib/board-simplicity';
-import { Badge } from '@/components/ui/badge';
-import { countLabel } from '@/lib/badges';
+import type { FilterChip } from '@/lib/filter-disclosure';
 import { cn } from '@/lib/utils';
 
 /**
- * The shape both boards' filters take.
+ * The shape every search panel takes: the boards, the directory and the
+ * staff lists.
  *
- * Three questions on screen — where from, where to, what kind of vehicle
- * — and one link to everything else. A transport professional told us
- * the boards were hard to connect; the measurement said `/cereri` put
- * thirteen fields on screen, twelve above the fold, under 461 words.
- * Nothing was removed to fix that. The other ten filters are one click
- * away and still in the URL under the same keys.
+ * At most three questions on screen, and one button to everything else.
+ * A transport professional told us the boards were hard to connect; the
+ * measurement said `/cereri` put thirteen fields on screen, twelve above
+ * the fold. Nothing was removed to fix that: the other filters are one
+ * click away and still in the URL under the same keys.
  *
- * Two details that decide whether this helps or annoys:
- *
- *   - the panel is a real `<details>`, so it works with JavaScript off,
- *     the browser handles the disclosure, and a keyboard reaches it the
- *     way a keyboard reaches any disclosure;
- *   - it opens by itself when a link carries advanced filters. Somebody
- *     opening a colleague's link sees a board narrowed by four things
- *     and, without that, no way to tell which four.
+ * The panel is closed on first paint, always (`filter-disclosure.ts`).
+ * It used to open itself when a link carried advanced filters, which on
+ * /cereri meant every carrier's every visit. What it filters is now said
+ * outside it: the count on the button, and a removable chip for each
+ * active advanced filter under the main fields, with „Șterge filtrele"
+ * at the end of them. The sort stays in the header, apart from both.
  */
 export function FilterPanel({
   action,
+  screen,
   title,
   simple,
+  simpleClassName = 'grid gap-3 sm:grid-cols-3',
   advanced,
-  advancedCount,
+  chips,
   hidden,
   sort,
   sorts,
@@ -42,83 +44,88 @@ export function FilterPanel({
 }: {
   /** Where the GET form submits. Filters stay in the URL, as before. */
   action: string;
-  title: string;
-  /** The three that stay on screen. */
+  /** Names the panel's session memory: „cereri", „admin-oferte". */
+  screen: string;
+  title?: string | undefined;
+  /** The (at most) three that stay on screen. */
   simple: ReactNode;
+  /** The layout of those three; a narrow sidebar stacks them. */
+  simpleClassName?: string | undefined;
   /** Everything else, inside the disclosure. */
   advanced: ReactNode;
-  /** Drives the badge, and whether the panel starts open. */
-  advancedCount: number;
+  /** One per active advanced filter; their number is the button's count. */
+  chips: readonly FilterChip[];
   /** Values the form must carry through without showing them. */
   hidden?: ReactNode;
-  sort: BoardSort;
+  sort?: BoardSort | undefined;
   /** The three this board offers. They differ: a route has no distance. */
-  sorts: readonly BoardSort[];
+  sorts?: readonly BoardSort[] | undefined;
   canReset: boolean;
   resetHref: string;
   labels: {
     more: string;
     /** „3 active" */
     active: (n: number) => string;
-    sort: string;
+    sort?: string | undefined;
     apply: string;
     clear: string;
   };
   /** Anything after the buttons — the saved-search entry point. */
   children?: ReactNode;
 }) {
+  const showSort = sort !== undefined && sorts !== undefined && sorts.length > 0;
   return (
-    <form method="get" action={action} className="flex flex-col gap-4">
+    <form method="get" action={action} className="flex flex-col gap-4" data-search-panel={screen}>
       {hidden}
 
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-h3">{title}</h2>
-        <label className="flex items-center gap-2 text-small text-muted">
-          {labels.sort}
-          <select
-            name={SORT_KEY}
-            defaultValue={sort}
-            className="rounded-input border border-border-strong bg-surface px-2 py-1 text-small"
-          >
-            {sorts.map((option) => (
-              <option key={option} value={option}>
-                {BOARD_SORT_LABELS[option]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      {title !== undefined || showSort ? (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          {title !== undefined ? <h2 className="text-h3">{title}</h2> : <span />}
+          {showSort ? (
+            <label className="flex items-center gap-2 text-small text-muted">
+              {labels.sort}
+              <select
+                name={SORT_KEY}
+                defaultValue={sort}
+                data-sort=""
+                className="rounded-input border border-border-strong bg-surface px-2 py-1 text-small"
+              >
+                {sorts.map((option) => (
+                  <option key={option} value={option}>
+                    {BOARD_SORT_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* The three. */}
-      <div className="grid gap-3 sm:grid-cols-3">{simple}</div>
+      <div className={simpleClassName}>{simple}</div>
 
-      <details
-        // Open when something inside it is narrowing the board, so an
-        // inherited link explains itself.
-        open={advancedCount > 0}
-        className="rounded-input border border-border bg-ground-alt/60"
+      {/* What the closed panel is filtering, where it can be seen and undone. */}
+      <FilterChips
+        chips={chips}
+        clearHref={resetHref}
+        clearLabel={labels.clear}
+        heading={filtersCopy.chipsHeading}
+        removeLabel={filtersCopy.removeChip}
+      />
+
+      <AdvancedFilters
+        screen={screen}
+        label={labels.more}
+        count={chips.length}
+        countText={labels.active(chips.length)}
       >
-        <summary
-          className={cn(
-            'flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-small font-medium',
-            'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
-          )}
-        >
-          <span className={cn('inline-flex items-center', ICON_GAP)}>
-            <Icon as={iconForAction('filter')} size="sm" tone="muted" />
-            {labels.more}
-          </span>
-          {countLabel(advancedCount) === null ? null : (
-            <Badge kind="count" label={labels.active(advancedCount)}>
-              {countLabel(advancedCount)}
-            </Badge>
-          )}
-        </summary>
-        <div className="flex flex-col gap-4 border-t border-border px-3 py-4">{advanced}</div>
-      </details>
+        {advanced}
+      </AdvancedFilters>
 
       {/* One row: the button, and beside it the two things that are not
-          decisions — clearing what is set, and saving what is set. */}
+          decisions — clearing what is set, and saving what is set. The
+          clearing link is here only when the chips are not: one way to
+          clear, not two. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
           type="submit"
@@ -127,8 +134,12 @@ export function FilterPanel({
           <Icon as={iconForAction('search')} size="sm" />
           {labels.apply}
         </button>
-        {canReset ? (
-          <a href={resetHref} className="text-small text-muted underline-offset-4 hover:underline">
+        {canReset && chips.length === 0 ? (
+          <a
+            href={resetHref}
+            data-filter-reset=""
+            className="text-small text-muted underline-offset-4 hover:underline"
+          >
             {labels.clear}
           </a>
         ) : null}
@@ -160,6 +171,26 @@ export function FilterField({
       {children}
       {hint ? <p className="text-small text-muted">{hint}</p> : null}
     </div>
+  );
+}
+
+/** One checkbox filter, the staff lists' „doar sesizate" and the like. */
+export function FilterCheck({
+  id,
+  name,
+  label,
+  defaultChecked,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  defaultChecked: boolean;
+}) {
+  return (
+    <label htmlFor={id} className="flex min-h-10 items-center gap-2 self-end text-small">
+      <input id={id} type="checkbox" name={name} value="da" defaultChecked={defaultChecked} className="size-4" />
+      {label}
+    </label>
   );
 }
 

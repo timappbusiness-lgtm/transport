@@ -7,6 +7,7 @@ import {
   DEFAULT_BOARD_SORT,
   DEPARTURE_SORTS,
   REQUEST_SORTS,
+  REQUEST_VIEW_KEYS,
   SIMPLE_DEPARTURE_KEYS,
   SIMPLE_REQUEST_KEYS,
   SORT_KEY,
@@ -38,7 +39,8 @@ describe('every filter is on exactly one side of the split', () => {
   // would be invisible on screen, uncounted by the badge, and would not
   // open the panel — narrowing the board with nothing to say it does.
   it('on the requests board', () => {
-    const declared = [...SIMPLE_REQUEST_KEYS, ...ADVANCED_REQUEST_KEYS];
+    // `mine` is the view switch above a carrier's list: on neither side.
+    const declared = [...SIMPLE_REQUEST_KEYS, ...ADVANCED_REQUEST_KEYS, ...REQUEST_VIEW_KEYS];
     expect([...declared].sort()).toEqual(Object.keys(EMPTY_REQUEST_FILTERS).sort());
     expect(new Set(declared).size).toBe(declared.length);
   });
@@ -50,7 +52,7 @@ describe('every filter is on exactly one side of the split', () => {
   });
 });
 
-describe('the panel stays shut until something is in it', () => {
+describe('the count on „Mai multe filtre"', () => {
   it('counts nothing on an empty board', () => {
     expect(countAdvancedRequestFilters(EMPTY_REQUEST_FILTERS)).toBe(0);
     expect(countAdvancedDepartureFilters(EMPTY_FILTERS)).toBe(0);
@@ -72,9 +74,22 @@ describe('the panel stays shut until something is in it', () => {
     expect(countAdvancedDepartureFilters({ ...EMPTY_FILTERS, tab: 'retur' })).toBe(1);
   });
 
-  it('does not count „doar cele potrivite" while it is off', () => {
+  it('never counts „Potrivite cu firma mea", the view a carrier\'s board opens on', () => {
+    // Regression: counted, it showed „Mai multe filtre 1" and opened the
+    // panel on every carrier's every visit — over a panel with no control
+    // for it. It is the switch above the list, not an advanced filter.
     expect(countAdvancedRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: false })).toBe(0);
-    expect(countAdvancedRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: true })).toBe(1);
+    expect(countAdvancedRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: true })).toBe(0);
+    const carrier = parseRequestFilters({}, { mineByDefault: true });
+    expect(carrier.mine).toBe(true);
+    expect(countAdvancedRequestFilters(carrier)).toBe(0);
+  });
+
+  it('counts the country pair, which lives inside the panel', () => {
+    // Regression: the countries were declared „simple" but drawn inside
+    // the panel, so a country set there was neither counted nor visible.
+    expect(countAdvancedRequestFilters({ ...EMPTY_REQUEST_FILTERS, fromCountry: 'DE' })).toBe(1);
+    expect(countAdvancedDepartureFilters({ ...EMPTY_FILTERS, toCountry: 'IT' })).toBe(1);
   });
 
   it('counts a locality and its radius as one thing, because they are', () => {
@@ -87,9 +102,8 @@ describe('the panel stays shut until something is in it', () => {
 
 describe('a link saved before the panel existed still works', () => {
   // The compatibility rule: the keys did not change, so an old URL parses
-  // into the same filters. What is new is that the panel opens, because
-  // the count is above zero — otherwise the board looks arbitrarily empty
-  // and nothing on screen says why.
+  // into the same filters. The panel stays closed; the count on its
+  // button and a chip for each say what is narrowing the board.
   it('on the requests board', () => {
     const filters = parseRequestFilters({
       [REQUEST_FILTER_KEYS.tab]: 'curse',

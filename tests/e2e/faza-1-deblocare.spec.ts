@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openMenu, settled } from './settled';
+import { openMenu, openMoreFilters, settled } from './settled';
 
 /**
  * What the Faza 1 unblocking changed, from a browser and with no database.
@@ -109,7 +109,7 @@ test.describe('the filters cover what the board holds', () => {
   test('a chosen filter survives into the address bar', async ({ page }) => {
     await page.goto('/cereri');
     await settled(page);
-    await page.getByText('Mai multe filtre').click();
+    await openMoreFilters(page);
     await page.locator('#rf-service').selectOption('expres');
     await page.getByRole('button', { name: /Caută|Filtrează/ }).first().click();
     await expect(page).toHaveURL(/serviciu=expres/);

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ModerateRating } from '@/components/admin/moderate-rating';
+import { AdminRatingFilters } from '@/components/admin/list-filters';
 import { Stars } from '@/components/ratings/star-input';
-import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOrderRoute, companyRoute } from '@/config/routes';
 import { ratingsCopy } from '@/content/evaluari';
@@ -19,7 +19,6 @@ import { withParam } from '@/lib/continuity/query';
 export const dynamic = 'force-dynamic';
 
 const c = ratingsCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -71,6 +70,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
 
   const lastPage = Math.max(1, Math.ceil(total / ADMIN_RATINGS_PAGE_SIZE));
 
+  // What the page applied, for the chips and „Șterge filtrele".
+  const filterParams: Record<string, string> = {};
+  if (query.score !== null) filterParams.nota = String(query.score);
+  if (query.companyId) filterParams.firma = query.companyId;
+  if (query.afterDispute) filterParams.dispute = 'da';
+  if (query.hidden) filterParams.ascunse = 'da';
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -79,67 +85,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[64ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <form
-        method="get"
-        className="grid gap-3 rounded-card border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4"
+      <AdminRatingFilters
+        action={ROUTES.adminRatings}
+        resetHref={ROUTES.adminRatings}
+        params={filterParams}
+        canReset={Object.keys(filterParams).length > 0 || page > 1}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: company.company_name,
+        }))}
       >
-        <label className="flex flex-col gap-1 text-small text-muted">
-          {c.filters.score}
-          <select name="nota" defaultValue={one(params, 'nota') ?? ''} className={CONTROL}>
-            <option value="">{c.filters.any}</option>
-            {[5, 4, 3, 2, 1].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1 text-small text-muted">
-          {c.filters.company}
-          <select name="firma" defaultValue={one(params, 'firma') ?? ''} className={CONTROL}>
-            <option value="">{c.filters.any}</option>
-            {/* The same list the orders screen filters by: a firm with
-                orders is a firm that can have ratings, and a second
-                query would be a second answer to the same question. */}
-            {companies.map((company) => (
-              <option key={company.company_id} value={company.company_id}>
-                {company.company_name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex items-center gap-2 text-body sm:mt-5">
-          <input
-            type="checkbox"
-            name="ascunse"
-            value="da"
-            defaultChecked={one(params, 'ascunse') === 'da'}
-          />
-          {c.filters.hidden}
-        </label>
-
-        <label className="flex items-center gap-2 text-body sm:mt-5">
-          <input
-            type="checkbox"
-            name="dispute"
-            value="da"
-            defaultChecked={one(params, 'dispute') === 'da'}
-          />
-          {c.filters.afterDispute}
-        </label>
-
-        <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
-            {c.filters.apply}
-          </button>
-          <Link href={ROUTES.adminRatings} className={buttonClasses('secondary', 'sm')}>
-            {c.filters.clear}
-          </Link>
-          <span className="text-small text-muted">{c.list.total(formatNumber(total))}</span>
-        </div>
-      </form>
+        <span className="text-small text-muted">{c.list.total(formatNumber(total))}</span>
+      </AdminRatingFilters>
 
       {error !== null ? (
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>

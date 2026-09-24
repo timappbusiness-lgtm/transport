@@ -339,9 +339,10 @@ pnpm check:functions   # Deno type-check for the edge functions
   to connect and had to be far simpler; `/cereri` was putting thirteen
   form fields on screen, twelve of them above the fold, under 461 words
   of heading and lede, before a single request. Nothing is deleted to
-  meet this — the tenth filter goes behind a disclosure that opens by
-  itself when a link carries it, so a shared search still explains
-  itself. The before/after count for every journey is
+  meet this — the tenth filter goes behind „Mai multe filtre", which is
+  closed on every first load, whatever the address carries; a shared
+  search still explains itself through the count on the button and a
+  removable chip per active filter (`FilterPanel`, `filter-disclosure.ts`). The before/after count for every journey is
   `docs/15-simplitate.md`; the shape both boards take is
   `src/lib/board-simplicity.ts`.
 - **Two things are published, and each has one name.** A client

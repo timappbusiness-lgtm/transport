@@ -2,7 +2,8 @@ import { FILTER_CONTROL, FilterField, FilterPanel } from '@/components/ui/filter
 import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { CITY_GROUPS, cityLabel, cityValue } from '@/lib/cities';
-import { DEPARTURE_SORTS, countAdvancedDepartureFilters, type BoardSort } from '@/lib/board-simplicity';
+import { DEPARTURE_SORTS, type BoardSort } from '@/lib/board-simplicity';
+import { departureAdvancedChips } from '@/lib/filter-chips';
 import {
   EMPTY_FILTERS,
   FILTER_KEYS,
@@ -42,7 +43,8 @@ export function FiltersForm({
       title={c.title}
       sort={sort}
       sorts={DEPARTURE_SORTS}
-      advancedCount={countAdvancedDepartureFilters(filters)}
+      screen="trasee"
+      chips={departureAdvancedChips(filters, sort)}
       canReset={hasActiveFilters(filters)}
       resetHref={`${ROUTES.routes}${filtersToQuery(EMPTY_FILTERS)}`}
       labels={{

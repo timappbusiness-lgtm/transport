@@ -13,29 +13,25 @@ import type { RequestFilters } from './request-filters';
  * So: three filters stay — where from, where to, what kind of vehicle —
  * and everything else collapses behind one click. Nothing is removed.
  * The advanced panel holds exactly the filters that used to be on
- * screen, they are still in the URL under the same keys, and an old link
- * still applies them and opens the panel so a person can see why the
- * board looks the way it does.
+ * screen, and they are still in the URL under the same keys. The panel
+ * is closed on every first paint (`filter-disclosure.ts`); an old link
+ * that applies advanced filters says so with the count on the button
+ * and a chip for each, not by opening.
  *
- * The lists below are the single definition of that split. The panel's
- * count badge, the „should it start open" decision and the tests all
- * read them, so a filter added to one board cannot quietly end up
- * counted on neither side.
+ * The lists below are the single definition of that split. The count,
+ * the chips (`filter-chips.ts`) and the tests all read them, so a filter
+ * added to one board cannot quietly end up counted on neither side.
  */
 
 /** The three a dispatcher answers without thinking. */
 export const SIMPLE_REQUEST_KEYS = [
-  'fromCountry',
   'fromCity',
-  'toCountry',
   'toCity',
   'category',
 ] as const satisfies readonly (keyof RequestFilters)[];
 
 export const SIMPLE_DEPARTURE_KEYS = [
-  'fromCountry',
   'fromCounty',
-  'toCountry',
   'toCounty',
   'vehicleType',
 ] as const satisfies readonly (keyof DepartureFilters)[];
@@ -50,25 +46,37 @@ export const SIMPLE_DEPARTURE_KEYS = [
  */
 export const ADVANCED_REQUEST_KEYS = [
   'tab',
-  'near',
-  'radiusKm',
+  'service',
+  'fromCountry',
+  'toCountry',
   'dateFrom',
   'dateTo',
-  'service',
   'condition',
   'scope',
+  'near',
+  'radiusKm',
   'maxWeightKg',
-  'mine',
 ] as const satisfies readonly (keyof RequestFilters)[];
+
+/**
+ * Neither simple nor advanced: `mine`, „Potrivite cu firma mea", is the
+ * view switch above a carrier's list, not a field in the panel. It was
+ * counted as an advanced filter, so a carrier's board — which opens on
+ * that view — showed „Mai multe filtre 1" and spread the panel open on
+ * every visit, over a panel with no control for it.
+ */
+export const REQUEST_VIEW_KEYS = ['mine'] as const satisfies readonly (keyof RequestFilters)[];
 
 export const ADVANCED_DEPARTURE_KEYS = [
   'tab',
-  'near',
-  'radiusKm',
+  'minSeats',
+  'fromCountry',
+  'toCountry',
   'dateFrom',
   'dateTo',
-  'minSeats',
   'scope',
+  'near',
+  'radiusKm',
   'minCapacityKg',
 ] as const satisfies readonly (keyof DepartureFilters)[];
 
@@ -85,10 +93,10 @@ function isSet(value: unknown): boolean {
 /**
  * How many advanced filters are doing something.
  *
- * Drives the badge on „Mai multe filtre" and, when it is above zero, the
- * decision to open the panel on load. A person arriving on a link
- * somebody sent them sees which extra filters are narrowing the board
- * rather than wondering why it is nearly empty.
+ * The number on „Mai multe filtre", and the number of chips under the
+ * main fields (`filter-chips.ts`; a test holds the two equal). It never
+ * opens the panel: a person arriving on a link somebody sent them sees
+ * the count and the chips, and the panel stays closed.
  *
  * `near` and `radiusKm` count as one: a radius without a locality does
  * nothing and the pair is always set together.

@@ -5,7 +5,8 @@ import { CITY_GROUPS, cityLabel, cityValue } from '@/lib/cities';
 import { CARGO_CATEGORY_LABELS } from '@/lib/departures';
 import { OFFERED_CATEGORIES } from '@/lib/vehicle-categories';
 import { DEFAULT_RADIUS_KM, RADIUS_STEPS_KM } from '@/lib/radius';
-import { REQUEST_SORTS, countAdvancedRequestFilters, type BoardSort } from '@/lib/board-simplicity';
+import { REQUEST_SORTS, type BoardSort } from '@/lib/board-simplicity';
+import { requestAdvancedChips } from '@/lib/filter-chips';
 import {
   EMPTY_REQUEST_FILTERS,
   MINE_ALL,
@@ -23,11 +24,11 @@ import { COUNTRY_OPTIONS } from '@/lib/vehicles';
  * and makes a search shareable and bookmarkable.
  *
  * Three of them are on screen — where from, where to, what kind of
- * vehicle. The other ten are one click down, under „Mai multe filtre",
- * with a badge counting the ones doing something. Nothing was removed:
- * the keys are the ones they always were, so a link somebody saved last
- * month still applies, and it opens the panel so they can see what is
- * narrowing the board.
+ * vehicle. The others are one click down, under „Mai multe filtre",
+ * which starts closed. Nothing was removed: the keys are the ones they
+ * always were, so a link somebody saved last month still applies — and
+ * says so with the count on the button and a removable chip for each,
+ * without opening the panel.
  *
  * The country pair moved down with the rest. „De unde" for a dispatcher
  * is a town, not a country; somebody filtering a whole country is doing
@@ -55,10 +56,11 @@ export function BoardFilters({
   return (
     <FilterPanel
       action={ROUTES.requests}
+      screen="cereri"
       title={c.title}
       sort={sort}
       sorts={REQUEST_SORTS}
-      advancedCount={countAdvancedRequestFilters(filters)}
+      chips={requestAdvancedChips(filters, sort, { mineByDefault })}
       canReset={hasActiveRequestFilters(filters, { mineByDefault })}
       resetHref={`${ROUTES.requests}${requestFiltersToQuery(EMPTY_REQUEST_FILTERS)}`}
       labels={{

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AdminOrderFilters } from '@/components/admin/list-filters';
 import { buttonClasses } from '@/components/ui/button';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOrderRoute } from '@/config/routes';
@@ -11,13 +12,13 @@ import {
   loadAdminOrders,
   type AdminOrderQuery,
 } from '@/lib/orders-source';
+import { paramsFromSearch } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = ordersCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 /** Everything the filter may offer, the run plus the two side states. */
 const FILTERABLE: readonly OrderStatus[] = [...ORDER_STEPS, 'disputed', 'cancelled'];
@@ -99,90 +100,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[66ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <form
-        method="get"
+      <AdminOrderFilters
         action={ROUTES.adminOrders}
-        className="rounded-card border border-border bg-surface p-5"
-      >
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-status" className="text-small font-medium">
-              {c.filters.status}
-            </label>
-            <select id="at-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
-              <option value="">{c.filters.any}</option>
-              {FILTERABLE.map((value) => (
-                <option key={value} value={value}>
-                  {orderStatusLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-company" className="text-small font-medium">
-              {c.filters.company}
-            </label>
-            <select
-              id="at-company"
-              name="firma"
-              defaultValue={query.companyId ?? ''}
-              className={CONTROL}
-            >
-              <option value="">{c.filters.any}</option>
-              {companies.map((company) => (
-                <option key={company.company_id} value={company.company_id}>
-                  {company.company_name} ({company.orders_count})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-from" className="text-small font-medium">
-              {c.filters.from}
-            </label>
-            <input
-              id="at-from"
-              name="de-la"
-              type="date"
-              defaultValue={query.from ?? ''}
-              className={CONTROL}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-to" className="text-small font-medium">
-              {c.filters.to}
-            </label>
-            <input
-              id="at-to"
-              name="pana-la"
-              type="date"
-              defaultValue={query.to ?? ''}
-              className={CONTROL}
-            />
-          </div>
-        </div>
-
-        <label className="mt-3 flex items-center gap-2 text-body">
-          <input type="checkbox" name="dispute" value="da" defaultChecked={query.disputedOnly} />
-          {c.filters.disputed}
-        </label>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
-            {c.filters.apply}
-          </button>
-          {filtered ? (
-            <a href={ROUTES.adminOrders} className="text-body text-muted underline-offset-4 hover:underline">
-              {c.filters.clear}
-            </a>
-          ) : null}
-        </div>
-      </form>
+        resetHref={ROUTES.adminOrders}
+        params={paramsFromSearch(toSearch(query, 1))}
+        canReset={filtered}
+        statuses={FILTERABLE.map((value) => ({ value, label: orderStatusLabel(value) }))}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: `${company.company_name} (${company.orders_count})`,
+        }))}
+      />
 
       {page.error !== null ? (
         <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">

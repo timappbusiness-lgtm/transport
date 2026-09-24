@@ -1,5 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { expect, test } from '@playwright/test';
+import { openMoreFilters as openFilters, settled } from './settled';
 
 /**
  * Radius and weight, on both boards, without a database.
@@ -19,21 +19,14 @@ import { settled } from './settled';
 
 const MOBILE = { width: 390, height: 844 };
 
-/** Idempotent: an inherited link opens the panel by itself. */
-async function openFilters(page: Page): Promise<void> {
-  const panel = page.locator('main details').first();
-  if (await panel.evaluate((n: HTMLDetailsElement) => n.open)) return;
-  await page.getByText('Mai multe filtre').click();
-}
-
 test.describe('the request board', () => {
   test('offers a locality, a radius and a maximum weight', async ({ page }) => {
     await page.goto('/cereri');
     await settled(page);
     await openFilters(page);
-    await expect(page.getByLabel('Lângă localitatea')).toBeVisible();
-    await expect(page.getByLabel('Pe o rază de')).toBeVisible();
-    await expect(page.getByLabel('Greutate maximă (kg)')).toBeVisible();
+    await expect(page.getByLabel('Lângă localitatea', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Pe o rază de', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Greutate maximă (kg)', { exact: true })).toBeVisible();
   });
 
   test('says what the radius is measured between', async ({ page }) => {
@@ -54,9 +47,9 @@ test.describe('the request board', () => {
     await page.goto('/cereri');
     await settled(page);
     await openFilters(page);
-    await page.getByLabel('Lângă localitatea').selectOption('Cluj-Napoca|RO');
-    await page.getByLabel('Pe o rază de').selectOption('100');
-    await page.getByLabel('Greutate maximă (kg)').fill('2400');
+    await page.getByLabel('Lângă localitatea', { exact: true }).selectOption('Cluj-Napoca|RO');
+    await page.getByLabel('Pe o rază de', { exact: true }).selectOption('100');
+    await page.getByLabel('Greutate maximă (kg)', { exact: true }).fill('2400');
     await page.getByRole('button', { name: 'Caută' }).click();
 
     await expect(page).toHaveURL(/langa=Cluj-Napoca%7CRO/);
@@ -67,9 +60,9 @@ test.describe('the request board', () => {
   test('a shared link comes back with the form already filled in', async ({ page }) => {
     await page.goto('/cereri?langa=Cluj-Napoca%7CRO&raza=200&greutate=1800');
     await settled(page);
-    await expect(page.getByLabel('Lângă localitatea')).toHaveValue('Cluj-Napoca|RO');
-    await expect(page.getByLabel('Pe o rază de')).toHaveValue('200');
-    await expect(page.getByLabel('Greutate maximă (kg)')).toHaveValue('1800');
+    await expect(page.getByLabel('Lângă localitatea', { exact: true })).toHaveValue('Cluj-Napoca|RO');
+    await expect(page.getByLabel('Pe o rază de', { exact: true })).toHaveValue('200');
+    await expect(page.getByLabel('Greutate maximă (kg)', { exact: true })).toHaveValue('1800');
   });
 
   test('„șterge filtrele" takes the radius and the weight with it', async ({ page }) => {
@@ -86,7 +79,7 @@ test.describe('the request board', () => {
   test('a radius with no locality does not survive the round trip', async ({ page }) => {
     await page.goto('/cereri?raza=100');
     await settled(page);
-    await expect(page.getByLabel('Lângă localitatea')).toHaveValue('');
+    await expect(page.getByLabel('Lângă localitatea', { exact: true })).toHaveValue('');
   });
 });
 
@@ -95,18 +88,18 @@ test.describe('the departures board', () => {
     await page.goto('/trasee');
     await settled(page);
     await openFilters(page);
-    await expect(page.getByLabel('Pleacă de lângă')).toBeVisible();
-    await expect(page.getByLabel('Pe o rază de')).toBeVisible();
-    await expect(page.getByLabel('Capacitate liberă, minimum (kg)')).toBeVisible();
+    await expect(page.getByLabel('Pleacă de lângă', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Pe o rază de', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Capacitate liberă, minimum (kg)', { exact: true })).toBeVisible();
   });
 
   test('puts all three in the URL', async ({ page }) => {
     await page.goto('/trasee');
     await settled(page);
     await openFilters(page);
-    await page.getByLabel('Pleacă de lângă').selectOption('Timișoara|RO');
-    await page.getByLabel('Pe o rază de').selectOption('25');
-    await page.getByLabel('Capacitate liberă, minimum (kg)').fill('3500');
+    await page.getByLabel('Pleacă de lângă', { exact: true }).selectOption('Timișoara|RO');
+    await page.getByLabel('Pe o rază de', { exact: true }).selectOption('25');
+    await page.getByLabel('Capacitate liberă, minimum (kg)', { exact: true }).fill('3500');
     await page.getByRole('button', { name: 'Caută' }).click();
 
     await expect(page).toHaveURL(/langa=Timi/);
@@ -117,9 +110,9 @@ test.describe('the departures board', () => {
   test('a shared link comes back with the form already filled in', async ({ page }) => {
     await page.goto('/trasee?langa=Timi%C8%99oara%7CRO&raza=100&capacitate=7000');
     await settled(page);
-    await expect(page.getByLabel('Pleacă de lângă')).toHaveValue('Timișoara|RO');
-    await expect(page.getByLabel('Pe o rază de')).toHaveValue('100');
-    await expect(page.getByLabel('Capacitate liberă, minimum (kg)')).toHaveValue('7000');
+    await expect(page.getByLabel('Pleacă de lângă', { exact: true })).toHaveValue('Timișoara|RO');
+    await expect(page.getByLabel('Pe o rază de', { exact: true })).toHaveValue('100');
+    await expect(page.getByLabel('Capacitate liberă, minimum (kg)', { exact: true })).toHaveValue('7000');
   });
 
   /**
@@ -158,9 +151,9 @@ test.describe('on a phone', () => {
       // removed, and hidden behind something a thumb can hit.
       await page.goto(path);
       await settled(page);
-      await expect(page.getByLabel('Pe o rază de')).toBeHidden();
+      await expect(page.getByLabel('Pe o rază de', { exact: true })).toBeHidden();
       await openFilters(page);
-      await expect(page.getByLabel('Pe o rază de')).toBeVisible();
+      await expect(page.getByLabel('Pe o rază de', { exact: true })).toBeVisible();
     });
   }
 });
