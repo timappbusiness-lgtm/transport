@@ -218,6 +218,7 @@ const profile: Profile = {
   terms_version_accepted: '1.0',
   is_test: true,
   email_undeliverable_at: null,
+  last_seen_at: null,
 };
 
 /** The owner of a verified carrier with two firms, which is the fullest sidebar there is. */

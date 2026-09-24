@@ -71,14 +71,16 @@ describe('the middleware and a person already signed in', () => {
     expect(response.headers.get('location')).toBe('http://localhost:3000/cerere/noua?pas=contact');
   });
 
-  it('to the dashboard when there is nowhere else, or nowhere safe', async () => {
+  it('to the landing when there is nowhere else, or nowhere safe', async () => {
+    // The landing decides by who they are: a carrier to the board, the
+    // next onboarding step, or the account (`src/lib/landing.ts`).
     for (const path of [
       '/autentificare',
       '/inregistrare?next=https%3A%2F%2Fevil.example',
       '/inregistrare/firma?next=%2Fautentificare',
     ]) {
       const response = await updateSession(request(path));
-      expect(response.headers.get('location')).toBe('http://localhost:3000/cont');
+      expect(response.headers.get('location')).toBe('http://localhost:3000/intrare');
     }
   });
 

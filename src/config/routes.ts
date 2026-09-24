@@ -23,6 +23,12 @@ export const ROUTES = {
 
   // Authentication
   signIn: '/autentificare',
+  /**
+   * Where a sign-in with nowhere particular to go lands first: a redirect
+   * that decides by who signed in — a carrier to the board, or to the
+   * unfinished step of the firm's file; everybody else to their account.
+   */
+  signInLanding: '/intrare',
   signUp: '/inregistrare',
   signUpIndividual: '/inregistrare/persoana-fizica',
   signUpCompany: '/inregistrare/firma',

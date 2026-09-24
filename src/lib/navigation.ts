@@ -31,7 +31,7 @@ export interface NavItem {
   priority: number;
 }
 
-export type NavGroup = 'principal' | 'transport' | 'expeditii' | 'firma' | 'cont';
+export type NavGroup = 'principal' | 'transport' | 'expeditii' | 'firma' | 'cont' | 'platforma';
 
 export const GROUP_LABELS: Record<NavGroup, string> = {
   principal: 'Principal',
@@ -39,6 +39,9 @@ export const GROUP_LABELS: Record<NavGroup, string> = {
   expeditii: 'Expediții',
   firma: 'Firmă',
   cont: 'Cont',
+  // Only in the header's account menu: the public pages everybody can
+  // open, which the account sidebar has no reason to repeat.
+  platforma: 'Platformă',
 };
 
 export interface NavContext {
@@ -115,7 +118,12 @@ function individualNav(features: FeatureMap): NavItem[] {
     });
   }
   if (features.offers) {
-    items.push({ href: ROUTES.accountOffers, label: 'Oferte', group: 'principal', priority: 80 });
+    items.push({
+      href: ROUTES.accountOffers,
+      label: 'Oferte primite',
+      group: 'principal',
+      priority: 80,
+    });
   }
   // An individual who accepts an offer has an order like anybody else,
   // and until Faza 2 had no way to reach it from the menu.
@@ -290,6 +298,24 @@ export function buildNav(
   const type = context.companyType;
   if (type === 'transport' || type === 'both') items.push(...carrierItems(features, context.role));
   if (type === 'expeditie' || type === 'both') items.push(...forwarderItems(features));
+  // A firm's account before the firm is created: nothing of its own yet,
+  // and the two boards are what it signed up to look at.
+  if (type === null) {
+    if (features.requestBoard) {
+      items.push({
+        href: ROUTES.requests,
+        label: 'Cereri de transport',
+        group: 'principal',
+        priority: 90,
+      });
+    }
+    items.push({
+      href: ROUTES.routes,
+      label: 'Trasee disponibile',
+      group: 'principal',
+      priority: 60,
+    });
+  }
 
   if (features.messages) {
     items.push({ href: ROUTES.accountMessages, label: 'Mesaje', group: 'principal', priority: 75 });
@@ -378,6 +404,14 @@ export interface NavCounts {
    * person's menu has no documents item for it to sit on.
    */
   documents?: number;
+  /**
+   * Requests a carrier can take that were published since they last
+   * opened the board: matching their coverage, vehicle types, equipment
+   * and routes, by the same rule as the board's own „Potrivite cu firma
+   * mea". Opening the board brings it back to zero. Optional, because
+   * only a carrier has a board of its own work.
+   */
+  newRequests?: number;
 }
 
 export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
@@ -385,15 +419,17 @@ export const NO_NAV_COUNTS: NavCounts = { messages: 0, offers: 0 };
 /**
  * The badge for one item, or 0 when it carries none.
  *
- * Three items take one. An item that is a shortcut to a board — Cereri
- * de transport, Trasee disponibile — has nothing waiting on it: everything
- * there is somebody else's, and a number that never reaches zero is
- * furniture.
+ * Four items take one. „Trasee disponibile" never does: everything there
+ * is somebody else's and nothing on it waits for this person. „Cereri de
+ * transport" does for a carrier, and only with what is new since their
+ * last look — a count of the whole board would never reach zero, and a
+ * number that never reaches zero is furniture.
  */
 export function badgeFor(href: string, counts: NavCounts = NO_NAV_COUNTS): number {
   if (href === ROUTES.accountMessages) return Math.max(0, counts.messages);
   if (href === ROUTES.accountOffers) return Math.max(0, counts.offers);
   if (href === ROUTES.accountDocuments) return Math.max(0, counts.documents ?? 0);
+  if (href === ROUTES.requests) return Math.max(0, counts.newRequests ?? 0);
   return 0;
 }
 
@@ -410,49 +446,98 @@ export function withBadges(
 }
 
 /**
- * The shortcuts in the header menu, per kind of account, most used first.
+ * What the bar itself shows a signed-in person, in the order they read it.
  *
- * Hrefs rather than items: the label, and whether the item may exist at
- * all, stay `buildNav`'s to decide. This list only says which of the pages
- * it already built are worth a place in a menu that has room for a
- * handful. Anything named here that `buildNav` leaves out — a feature not
- * built, a role not allowed — is simply absent, which is why the header
- * cannot offer something the sidebar does not.
+ * A carrier and a client want opposite things. A carrier opens the
+ * platform to see requests they can bid on, so the board comes first and
+ * everything else is the work that follows from it. A client opens it to
+ * publish and follow their own request. Before, both saw the public menu
+ * — Cereri, Trasee, Firme, Abonamente, Cum funcționează — which is the
+ * shop window, not the work.
+ *
+ * Hrefs, not items: the label and whether the item may exist stay
+ * `buildNav`'s, so the bar, the sidebar, the phone's bottom bar and the
+ * account menu read one list and cannot drift. Anything named here that
+ * `buildNav` did not build — a feature off, a role not allowed — is simply
+ * absent. Nothing is removed by this list: whatever is not in the bar is
+ * in the account menu (`headerMenu`).
  */
-function shortcutOrder(context: NavContext): string[] {
+export function barOrder(context: NavContext): string[] {
   if (context.role === 'driver') return [ROUTES.accountTransports];
 
   if (context.accountType === 'individual' && context.companyType === null) {
-    return [ROUTES.accountRequests, ROUTES.accountOffers, ROUTES.accountMessages];
+    return [ROUTES.accountRequests, ROUTES.accountOffers, ROUTES.accountMessages, ROUTES.routes];
   }
 
   const type = context.companyType;
-  const carrier = type === 'transport' || type === 'both';
-  const forwarder = type === 'expeditie' || type === 'both';
-
-  return [
-    // A carrier's own routes come before the board: the board is everyone's,
-    // the routes are theirs.
-    ...(carrier ? [ROUTES.accountDepartures, ROUTES.requests] : []),
-    ...(forwarder ? [ROUTES.accountRequests] : []),
-    ROUTES.accountOffers,
-    ROUTES.accountMessages,
-    ROUTES.accountDocuments,
-  ];
+  // A firm that does both is a carrier first: the board of work it can
+  // take is what it opens the platform for, and its own requests are in
+  // the account menu, one click away.
+  if (type === 'transport' || type === 'both') {
+    return [
+      ROUTES.requests,
+      ROUTES.accountDepartures,
+      ROUTES.accountOffers,
+      ROUTES.accountTransports,
+      ROUTES.accountMessages,
+    ];
+  }
+  if (type === 'expeditie') {
+    return [
+      ROUTES.accountRequests,
+      ROUTES.accountOffers,
+      ROUTES.routes,
+      ROUTES.accountTransports,
+      ROUTES.accountMessages,
+    ];
+  }
+  // A firm's account before the firm exists.
+  return [ROUTES.requests, ROUTES.routes, ROUTES.accountMessages];
 }
 
-/** At most this many shortcuts, before the account section. */
-export const HEADER_SHORTCUT_MAX = 5;
+/** The bar's entries, built by `buildNav` and badged. */
+export function headerBar(
+  context: NavContext,
+  counts: NavCounts = NO_NAV_COUNTS,
+  features: FeatureMap = FEATURES,
+): BadgedNavItem[] {
+  const byHref = new Map(buildNav(context, features).map((item) => [item.href, item]));
+  const items = barOrder(context)
+    .map((href) => byHref.get(href))
+    .filter((item): item is NavItem => item !== undefined);
+  return withBadges(dedupe(items), counts);
+}
 
 /**
- * What the header's account menu offers.
+ * The public pages every signed-in person keeps in reach.
  *
- * Three sections, in this order: the dashboard, the shortcuts, and the
- * account itself. The sign-out sits below them and is not a link, so it is
- * the component's and not this function's.
+ * The signed-out bar's five, under their full names. They leave the bar
+ * for somebody signed in — a carrier has no use for the shop window
+ * between two bids — but nothing is taken away: whichever of them the
+ * bar does not already show is in the account menu, for everyone, and
+ * all of them are in the footer.
+ */
+export const PLATFORM_LINKS: readonly PublicLink[] = [
+  { href: ROUTES.requests, label: 'Cereri de transport' },
+  { href: ROUTES.routes, label: 'Trasee disponibile' },
+  { href: ROUTES.companies, label: 'Firme' },
+  { href: ROUTES.plans, label: 'Abonamente' },
+  { href: ROUTES.faq, label: 'Cum funcționează' },
+];
+
+/**
+ * What the header's account menu offers: everything the bar does not.
  *
- * `group` carries the section, reusing `NavGroup` rather than inventing a
- * second vocabulary: `principal` is the work, `cont` is the account.
+ * In this order: the dashboard, then every other page `buildNav` built for
+ * this person, in the sidebar's own groups — with a carrier's quieter
+ * publish action, „Publică o cerere", after its work; then the public
+ * pages the bar does not show; then, for staff, the way across to /admin.
+ * The sign-out sits below them and is not a link, so it is the
+ * component's and not this function's.
+ *
+ * Between the bar and this menu, every page in the sidebar and every page
+ * of the signed-out bar is reachable from the header exactly once —
+ * reordered by relevance, never removed.
  */
 export function headerMenu(
   context: NavContext,
@@ -460,29 +545,33 @@ export function headerMenu(
   features: FeatureMap = FEATURES,
 ): BadgedNavItem[] {
   const built = buildNav(context, features);
-  const byHref = new Map(built.map((item) => [item.href, item]));
+  const inBar = new Set(headerBar(context, counts, features).map((item) => item.href));
 
   // Contul meu is always first and always present: `buildNav` opens every
   // menu with it, whatever the account type, and it is the destination the
   // name in the bar is a shortcut to.
   const items: NavItem[] = [];
-  const dashboard = byHref.get(ROUTES.account);
+  const dashboard = built.find((item) => item.href === ROUTES.account);
   if (dashboard) items.push({ ...dashboard, label: accountCopy.nav.dashboard });
 
-  for (const href of shortcutOrder(context)) {
-    if (items.length > HEADER_SHORTCUT_MAX) break;
-    const item = byHref.get(href);
-    if (item && item.href !== ROUTES.account) items.push(item);
+  // A carrier's request is second on its button, so it is not first
+  // anywhere; but it is a thing the carrier does, not a page it reads, and
+  // it sits with the rest of that work rather than below the public pages.
+  const quiet: NavItem[] = publishActions(context, features)
+    .filter((action) => action.secondary === true)
+    .map((action) => ({ href: action.href, label: action.label, group: 'transport', priority: 0 }));
+
+  for (const section of groupNav([...built, ...quiet])) {
+    for (const item of section.items) {
+      if (item.href === ROUTES.account || inBar.has(item.href)) continue;
+      items.push(item);
+    }
   }
 
-  const profile = byHref.get(ROUTES.accountProfile);
-  if (profile) items.push(profile);
-  // Settings is one page, /cont/setari, and it is not built — `FEATURES`
-  // says so and there is nothing at that path. The two settings screens
-  // that do exist are in the sidebar under Cont; putting a menu item here
-  // that 404s is the exact thing `FEATURES` exists to prevent.
-  const settings = byHref.get(ROUTES.accountSettings);
-  if (settings) items.push(settings);
+  for (const link of PLATFORM_LINKS) {
+    if (inBar.has(link.href)) continue;
+    items.push({ href: link.href, label: link.label, group: 'platforma', priority: 0 });
+  }
 
   // Staff is not part of `buildNav`: /admin is a different application
   // with its own shell, and an item for it does not belong in the account
@@ -491,7 +580,7 @@ export function headerMenu(
     items.push({
       href: ROUTES.admin,
       label: accountCopy.nav.admin,
-      group: 'cont',
+      group: 'platforma',
       priority: 0,
     });
   }
@@ -520,7 +609,7 @@ export function isManagerRole(role: MemberRole | null): boolean {
 
 /** Groups in the order a sidebar reads them, empty ones dropped. */
 export function groupNav(items: readonly NavItem[]): { group: NavGroup; items: NavItem[] }[] {
-  const order: NavGroup[] = ['principal', 'transport', 'expeditii', 'firma', 'cont'];
+  const order: NavGroup[] = ['principal', 'transport', 'expeditii', 'firma', 'cont', 'platforma'];
   return order
     .map((group) => ({ group, items: items.filter((item) => item.group === group) }))
     .filter((section) => section.items.length > 0);
@@ -545,12 +634,27 @@ export function bottomNav(
   return { bar: ranked.slice(0, max - 1), more: ranked.slice(max - 1) };
 }
 
-/** What the "Publică" button offers, which is never nothing. */
+/** One thing the „Publică" button offers. */
 export interface PublishAction {
   href: string;
   label: string;
+  /**
+   * Offered, but lower and quieter: available without being the first
+   * thing somebody reaches for. A carrier publishing a request — a
+   * subcontract — is normal and stays one click away; it is just not what
+   * the carrier's button is for.
+   */
+  secondary?: boolean;
 }
 
+/**
+ * What the „Publică" button offers, in the order it is read.
+ *
+ * A carrier publishes routes: a tour and a return, then — lower, and
+ * clearly second — a request, because subcontracting is normal. A client,
+ * a forwarder included, publishes a request. A driver publishes nothing,
+ * and gets no button at all rather than one that leads nowhere.
+ */
 export function publishActions(
   context: NavContext,
   features: FeatureMap = FEATURES,
@@ -559,20 +663,65 @@ export function publishActions(
 
   const actions: PublishAction[] = [];
   const type = context.companyType;
+  const carrier = features.departures && (type === 'transport' || type === 'both');
 
-  if (features.departures && (type === 'transport' || type === 'both')) {
+  if (carrier) {
     actions.push(
       { href: `${ROUTES.accountDepartureNew}?directie=tur`, label: 'Traseu pe tur' },
       { href: `${ROUTES.accountDepartureNew}?directie=retur`, label: 'Traseu pe retur' },
     );
   }
   if (features.requests) {
+    // One word for what a client publishes, whoever the client is: a
+    // „cerere de transport". A forwarder's list is still „Cursele mele",
+    // but the button says the same thing the board calls it.
     actions.push({
       href: ROUTES.newRequest,
-      label: type === 'expeditie' || type === 'both' ? 'Publică o cursă' : 'Publică o cerere',
+      label: 'Publică o cerere',
+      ...(carrier ? { secondary: true } : {}),
     });
   }
   return actions;
+}
+
+/**
+ * The words on the button itself, or null when there is no button.
+ *
+ * A carrier's reads „Publică un traseu" and opens the menu above; with a
+ * single action the button is that action, under its own label.
+ */
+export function publishLabel(
+  context: NavContext,
+  features: FeatureMap = FEATURES,
+): string | null {
+  const actions = publishActions(context, features);
+  if (actions.length === 0) return null;
+  const type = context.companyType;
+  if (features.departures && (type === 'transport' || type === 'both')) return 'Publică un traseu';
+  return actions[0]?.label ?? null;
+}
+
+/** The button and its menu, as the header and the account's top bar draw it. */
+export interface PublishMenuSpec {
+  label: string;
+  /** Two words for a phone's bar, where the full label does not fit. */
+  compactLabel?: string;
+  actions: PublishAction[];
+}
+
+export function publishMenu(
+  context: NavContext,
+  features: FeatureMap = FEATURES,
+): PublishMenuSpec | null {
+  const label = publishLabel(context, features);
+  if (label === null) return null;
+  const type = context.companyType;
+  const carrier = features.departures && (type === 'transport' || type === 'both');
+  return {
+    label,
+    compactLabel: carrier ? 'Traseu nou' : 'Cerere nouă',
+    actions: publishActions(context, features),
+  };
 }
 
 /**
@@ -643,9 +792,13 @@ export const PUBLIC_NAV: readonly PublicLink[] = [
 export const FOOTER_NAV: readonly PublicLink[] = [
   { href: ROUTES.requests, label: 'Cereri de transport' },
   { href: ROUTES.routes, label: 'Trasee disponibile' },
+  // The three the bar gives up once somebody is signed in, kept here for
+  // everyone: a footer is where people look when the bar did not have it.
+  { href: ROUTES.companies, label: 'Firme' },
+  { href: ROUTES.plans, label: 'Abonamente' },
+  { href: ROUTES.faq, label: 'Cum funcționează' },
   { href: ROUTES.prices, label: 'Prețuri orientative' },
   { href: ROUTES.verification, label: 'Cum verificăm firmele' },
-  { href: ROUTES.plans, label: 'Abonamente' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },

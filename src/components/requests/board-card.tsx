@@ -9,6 +9,7 @@ import { requestsCopy } from '@/content/cereri';
 import { CARGO_CATEGORY_LABELS, SERVICE_TYPE_LABELS, formatWindow } from '@/lib/departures';
 import { CategoryTile } from '@/components/ui/category-art';
 import { CARD_ACTION, CARD_INTERACTIVE } from '@/components/ui/interactive';
+import { buttonClasses } from '@/components/ui/button';
 import { formatKm, relativeTimeRo, vehicleLine, type PublicRequest } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,7 @@ export function BoardRequestCard({
   request,
   now,
   note,
+  offerHref,
 }: {
   request: PublicRequest;
   /** Passed in so the server and the test agree on what „now" means. */
@@ -47,6 +49,13 @@ export function BoardRequestCard({
    * card, because it is an explanation and not a second destination.
    */
   note?: ReactNode;
+  /**
+   * For a carrier: where „Trimite ofertă" leads — the offer form on the
+   * request, or, while the firm cannot send one yet, the one step that is
+   * missing (`gateHref`), which comes back here when it is done. Without
+   * it the card offers only its way in.
+   */
+  offerHref?: string | undefined;
 }) {
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
@@ -123,10 +132,24 @@ export function BoardRequestCard({
               </span>
             </div>
 
-            {/* The same destination as the heading, drawn for the eye. */}
-            <span aria-hidden="true" className={CARD_ACTION}>
-              {c.open}
-            </span>
+            {offerHref !== undefined ? (
+              // The carrier's next step, and the card's one primary action.
+              // A real link of its own — it leads somewhere else than the
+              // card — lifted above the card's stretched link so a press on
+              // it is a press on it.
+              <Link
+                href={offerHref}
+                data-card-offer
+                className={cn(buttonClasses('primary', 'sm'), 'relative z-10')}
+              >
+                {c.offer}
+              </Link>
+            ) : (
+              /* The same destination as the heading, drawn for the eye. */
+              <span aria-hidden="true" className={CARD_ACTION}>
+                {c.open}
+              </span>
+            )}
           </div>
         </div>
       </article>

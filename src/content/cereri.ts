@@ -347,6 +347,16 @@ export const requestsCopy = {
       `${shown} din cele mai recente ${scanned} cereri se potrivesc cu firma ta.`,
   },
 
+  /**
+   * The switch above a carrier's list. Two words each: what is on the
+   * list, not how it was chosen.
+   */
+  view: {
+    label: 'Ce cereri vezi',
+    mine: 'Potrivite cu firma mea',
+    all: 'Toate cererile',
+  },
+
   card: {
     winch: 'Are nevoie de troliu',
     running: 'Pornește și se deplasează',
@@ -354,6 +364,8 @@ export const requestsCopy = {
     fromIndividual: 'Persoană fizică',
     photos: (n: number) => (n === 1 ? 'O fotografie' : `${n} fotografii`),
     open: 'Vezi cererea',
+    /** A carrier's one primary action on a card: the bid, or the step before it. */
+    offer: 'Trimite ofertă',
     /** The badge on a request published in the last 24 hours. */
     isNew: 'Nou',
     weight: (kg: number) => `${new Intl.NumberFormat('ro-RO').format(kg)} kg`,

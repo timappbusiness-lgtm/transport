@@ -46,14 +46,21 @@ describe('request copy rules', () => {
     // `visibility` is exempt for the same reason as `mine`: it is read
     // on the publish form and on the owner's own request page, both
     // behind an account. A visitor on /cereri never sees a word of it.
+    //
+    // `card.offer` — „Trimite ofertă" — is exempt too: the card draws it
+    // only for a signed-in carrier, and it opens the offer form on the
+    // request, which is built. A visitor never sees it.
+    const { offer, ...card } = requestsCopy.card;
     const board = strings({
       ...requestsCopy,
+      card,
       mine: {},
       status: {},
       statusNote: {},
       visibility: {},
     }).join(' ');
     expect(board).not.toMatch(/ofert[ăaei]/i);
+    expect(offer).toBe('Trimite ofertă');
     expect(strings(requestsCopy.mine).join(' ')).toMatch(/Oferte primite/);
   });
 

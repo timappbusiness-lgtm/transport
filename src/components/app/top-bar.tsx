@@ -49,7 +49,13 @@ export function TopBar({
       </div>
 
       <div className="flex flex-none items-center gap-2">
-        <PublishMenu actions={actions} />
+        <PublishMenu
+          spec={
+            actions.length === 0
+              ? null
+              : { label: actions.length === 1 ? (actions[0]?.label ?? c.publish) : c.publish, actions: [...actions] }
+          }
+        />
       </div>
     </div>
   );

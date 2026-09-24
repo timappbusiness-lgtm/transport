@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import { openMenu, settled } from './settled';
 
 /**
@@ -29,9 +28,9 @@ interface HeaderProblems {
 }
 
 /** Everything that can go wrong with the bar, measured in one pass. */
-async function inspectHeader(page: Page): Promise<HeaderProblems> {
-  return page.evaluate(() => {
-    const header = document.querySelector('header');
+async function inspectHeader(page: Page, selector = 'header'): Promise<HeaderProblems> {
+  return page.evaluate((selector) => {
+    const header = document.querySelector(selector);
     if (!header) throw new Error('no header');
     const box = header.getBoundingClientRect();
     const escaped: string[] = [];
@@ -63,18 +62,23 @@ async function inspectHeader(page: Page): Promise<HeaderProblems> {
       escaped,
       wrapped,
       clipped,
-      labels: Array.from(nav?.querySelectorAll('a') ?? []).map((a) => a.textContent?.trim() ?? ''),
+      // The label without its badge: the count is a child of the link.
+      labels: Array.from(nav?.querySelectorAll('a') ?? []).map(
+        (a) => a.firstChild?.textContent?.trim() ?? '',
+      ),
     };
-  });
+  }, selector);
 }
 
-function expectClean(problems: HeaderProblems, where: string) {
+const PUBLIC_LABELS = ['Cereri', 'Trasee', 'Firme', 'Abonamente', 'Cum funcționează'];
+
+function expectClean(problems: HeaderProblems, where: string, labels: string[] = PUBLIC_LABELS) {
   expect(problems.overflow, `${where}: the bar scrolls`).toBeLessThanOrEqual(1);
   expect(problems.hiddenInNav, `${where}: links hidden inside the row`).toBeLessThanOrEqual(1);
   expect(problems.escaped, `${where}: outside the bar`).toEqual([]);
   expect(problems.wrapped, `${where}: wraps`).toEqual([]);
   expect(problems.clipped, `${where}: clipped`).toEqual([]);
-  expect(problems.labels).toEqual(['Cereri', 'Trasee', 'Firme', 'Abonamente', 'Cum funcționează']);
+  expect(problems.labels, `${where}: the entries`).toEqual(labels);
 }
 
 test.describe('the header, signed out, on the real page', () => {
@@ -95,28 +99,31 @@ test.describe('the header, signed out, on the real page', () => {
 });
 
 /**
- * The same bar with a session, on a page that loads the site's own
- * stylesheet and font classes. The markup is the real components rendered
- * by `tests/unit/header-fixture.test.tsx`, which fails if it goes stale.
+ * The same bar with a session, for every kind of account: the real
+ * components, drawn by the harness from a context written out there
+ * (`src/components/proba/header-sections.tsx`), with the site's own
+ * stylesheet. A carrier's bar carries a new-requests badge, which is the
+ * widest the bar gets.
  */
-const SIGNED_IN = readFileSync('tests/e2e/fixtures/antet-nume-lung.html', 'utf8');
+const SIGNED_IN: { role: string; labels: string[] }[] = [
+  {
+    role: 'transportator',
+    labels: ['Cereri de transport', 'Traseele mele', 'Oferte trimise', 'Transporturi', 'Mesaje'],
+  },
+  {
+    role: 'expeditor',
+    labels: ['Cursele mele', 'Oferte primite', 'Trasee disponibile', 'Transporturi', 'Mesaje'],
+  },
+  { role: 'persoana', labels: ['Cererile mele', 'Oferte primite', 'Mesaje', 'Trasee disponibile'] },
+  { role: 'sofer', labels: ['Transporturile mele'] },
+  { role: 'staff', labels: ['Cererile mele', 'Oferte primite', 'Mesaje', 'Trasee disponibile'] },
+];
 
-async function mountSignedIn(page: Page) {
-  await page.goto('/');
-  const shell = await page.evaluate(() => ({
-    htmlClass: document.documentElement.className,
-    bodyClass: document.body.className,
-    styles: Array.from(document.querySelectorAll('link[rel="stylesheet"]')).map(
-      (link) => (link as HTMLLinkElement).href,
-    ),
-  }));
-  const markup = SIGNED_IN;
-  await page.setContent(
-    `<!doctype html><html lang="ro" class="${shell.htmlClass}"><head>${shell.styles
-      .map((href) => `<link rel="stylesheet" href="${href}">`)
-      .join('')}</head><body class="${shell.bodyClass}">${markup}<main style="height:2000px"></main></body></html>`,
-    { waitUntil: 'load' },
-  );
+const HARNESS_HEADER = '[data-proba-antet] header';
+
+async function mountSignedIn(page: Page, role: string) {
+  await page.goto(`/proba/ecrane?sectiune=antet&rol=${role}&noi=12`);
+  await settled(page);
   await page.evaluate(() => document.fonts.ready);
 }
 
@@ -124,36 +131,43 @@ test.describe('the header, signed in with a long name', () => {
   for (const width of NAMED_WIDTHS) {
     test(`at ${width}: the name gives, nothing else does`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
-      await mountSignedIn(page);
-      expectClean(await inspectHeader(page), `signed in at ${width}`);
+      await mountSignedIn(page, 'transportator');
+      expectClean(await inspectHeader(page, HARNESS_HEADER), `signed in at ${width}`, SIGNED_IN[0]!.labels);
 
+      const header = page.locator(HARNESS_HEADER);
       // The avatar and the chevron are always there, and whole.
       for (const part of ['[data-account-avatar]', '[data-account-chevron]']) {
-        const box = await page.locator(part).boundingBox();
+        const box = await header.locator(part).boundingBox();
         expect(box?.width ?? 0, `${part} at ${width}`).toBeGreaterThanOrEqual(24);
       }
 
-      const name = page.locator('[data-account-name]');
+      const name = header.locator('[data-account-name]');
       if (width >= 640) {
         // Drawn, cut with an ellipsis, and whole in the title.
         await expect(name).toBeVisible();
         await expect(name).toHaveCSS('text-overflow', 'ellipsis');
         expect(await name.evaluate((n) => n.scrollWidth > n.clientWidth)).toBe(true);
-        await expect(page.locator('header a[title]')).toHaveAttribute('title', LONG_NAME);
+        await expect(header.locator('a[title]')).toHaveAttribute('title', LONG_NAME);
       } else {
-        // Read, not drawn: the phone bar is the mark, five links and the pill.
+        // Read, not drawn: the phone bar is the mark, „Meniu", the button and the pill.
         await expect(name).toHaveClass(/sr-only/);
       }
     });
   }
 
-  test('from 360 to 1920 in 40px steps', async ({ page }) => {
-    for (const width of SWEEP) {
-      await page.setViewportSize({ width, height: 800 });
-      await mountSignedIn(page);
-      expectClean(await inspectHeader(page), `signed in at ${width}`);
-    }
-  });
+  for (const { role, labels } of SIGNED_IN) {
+    test(`${role}, from 360 to 1920 in 40px steps`, async ({ page }) => {
+      for (const width of SWEEP) {
+        await page.setViewportSize({ width, height: 800 });
+        await mountSignedIn(page, role);
+        expectClean(await inspectHeader(page, HARNESS_HEADER), `${role} at ${width}`, labels);
+        const pageOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(pageOverflow, `${role} at ${width} scrolls sideways`).toBeLessThanOrEqual(1);
+      }
+    });
+  }
 });
 
 test.describe('the public links on a phone', () => {

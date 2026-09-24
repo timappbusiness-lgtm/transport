@@ -243,7 +243,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <ActionGate action="oferta" stage={gated.stage} minutes={gated.minutes} next={requestRoute(request.id)} />
           ) : null}
           {offering !== null && context !== null && gated === null ? (
-            <section aria-label={offersCopy.form.title}>
+            <section id="oferta" aria-label={offersCopy.form.title} className="scroll-mt-28">
               <SendOffer
                 request={{ id: request.id, loading_from: request.loading_from }}
                 context={context}

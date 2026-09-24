@@ -2,12 +2,13 @@ import 'server-only';
 import { cache } from 'react';
 import { getAccountContext } from './auth/account';
 import { pendingDocumentCount } from './badges';
+import { loadNewRequestCount } from './board-match-source';
 import { NO_NAV_COUNTS, type NavCounts } from './navigation';
 import { isSupabaseConfigured } from './supabase/env';
 import { createClient } from './supabase/server';
 
 /**
- * The numbers on the three menu badges.
+ * The numbers on the menu badges.
  *
  * Read once per request — `cache()` — and handed to the header and the
  * sidebar from the same call, because two counts of the same thing is how
@@ -30,9 +31,10 @@ export const loadNavCounts = cache(async (): Promise<NavCounts> => {
   const supabase = await createClient();
   // The active firm, from the same cached context the page already read.
   // No firm, no documents count — and no extra round trip for it.
-  const companyId = (await getAccountContext())?.activeCompany?.id ?? null;
+  const context = await getAccountContext();
+  const companyId = context?.activeCompany?.id ?? null;
 
-  const [messages, offers, documents] = await Promise.all([
+  const [messages, offers, documents, newRequests] = await Promise.all([
     supabase.rpc('unread_message_count'),
     supabase.rpc('unanswered_offer_count'),
     companyId === null
@@ -43,6 +45,8 @@ export const loadNavCounts = cache(async (): Promise<NavCounts> => {
           .from('v_company_missing_documents')
           .select('is_blocking, state')
           .eq('company_id', companyId),
+    // A carrier's only: zero for everybody else without a query.
+    loadNewRequestCount(context),
   ]);
 
   if (messages.error) console.error('[meniu] unread_message_count', messages.error.message);
@@ -55,6 +59,7 @@ export const loadNavCounts = cache(async (): Promise<NavCounts> => {
     documents: pendingDocumentCount(
       (documents.data ?? []) as { is_blocking: boolean | null; state: string | null }[],
     ),
+    newRequests,
   };
 });
 

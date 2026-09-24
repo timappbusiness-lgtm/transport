@@ -3,7 +3,11 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { CURRENT_TERMS_VERSION } from '@/content/legal';
-import { returnPathAfterAuth, safeNextPath, withNext } from '@/lib/auth/next-path';
+import {
+  explicitNextAfterAuth,
+  safeNextPath,
+  withNext,
+} from '@/lib/auth/next-path';
 import { toAppError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -58,9 +62,11 @@ export async function signInAction(
 ): Promise<AuthActionState> {
   const email = text(formData, 'email').trim();
   const password = text(formData, 'password');
-  // Never back to a sign-in page: that would only send a signed-in person
-  // round again.
-  const next = returnPathAfterAuth(text(formData, 'next'));
+  // Back to where they were, when they were somewhere — the step of a
+  // form, a filtered board. With nowhere in particular, to the landing
+  // that decides by who signed in: a carrier to the board. Never back to
+  // a sign-in page: that would only send a signed-in person round again.
+  const next = explicitNextAfterAuth(text(formData, 'next')) ?? ROUTES.signInLanding;
 
   const validation = validateSignIn({ email, password });
   if (!validation.ok) {
@@ -267,7 +273,8 @@ export async function updatePasswordAction(
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: toAppError(error, 'updatePassword').message };
 
-  redirect(returnPathAfterAuth(text(formData, 'next')));
+  // Signed in with the new password: the same landing as a sign-in.
+  redirect(explicitNextAfterAuth(text(formData, 'next')) ?? ROUTES.signInLanding);
 }
 
 // ---------------------------------------------------------------------

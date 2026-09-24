@@ -8,6 +8,7 @@ import { DEFAULT_RADIUS_KM, RADIUS_STEPS_KM } from '@/lib/radius';
 import { REQUEST_SORTS, countAdvancedRequestFilters, type BoardSort } from '@/lib/board-simplicity';
 import {
   EMPTY_REQUEST_FILTERS,
+  MINE_ALL,
   REQUEST_FILTER_KEYS,
   hasActiveRequestFilters,
   requestFiltersToQuery,
@@ -35,13 +36,17 @@ import { COUNTRY_OPTIONS } from '@/lib/vehicles';
 export function BoardFilters({
   filters,
   sort,
-  showMine = false,
+  mineByDefault = false,
   children,
 }: {
   filters: RequestFilters;
   sort: BoardSort;
-  /** Only a carrier with a firm has a firm to match against. */
-  showMine?: boolean;
+  /**
+   * A carrier's board opens on „Potrivite cu firma mea"; the switch
+   * between that and „Toate cererile" sits above the list, one click
+   * away. The form only has to keep whichever of the two is showing.
+   */
+  mineByDefault?: boolean;
   /** „Salvează căutarea", beside the search button rather than under it. */
   children?: React.ReactNode;
 }) {
@@ -54,7 +59,7 @@ export function BoardFilters({
       sort={sort}
       sorts={REQUEST_SORTS}
       advancedCount={countAdvancedRequestFilters(filters)}
-      canReset={hasActiveRequestFilters(filters)}
+      canReset={hasActiveRequestFilters(filters, { mineByDefault })}
       resetHref={`${ROUTES.requests}${requestFiltersToQuery(EMPTY_REQUEST_FILTERS)}`}
       labels={{
         more: c.more,
@@ -275,20 +280,11 @@ export function BoardFilters({
             </FilterField>
           </div>
 
-          {showMine ? (
-            <label className="flex items-start gap-2.5 border-t border-border pt-4 text-small">
-              <input
-                type="checkbox"
-                name={REQUEST_FILTER_KEYS.mine}
-                value="firma"
-                defaultChecked={filters.mine}
-                className="mt-0.5 size-4 accent-accent"
-              />
-              <span>
-                {c.mine}
-                <span className="mt-0.5 block text-small text-muted">{c.mineHint}</span>
-              </span>
-            </label>
+          {/* „Caută" keeps the view it was pressed on. A checkbox cannot
+              do that for a carrier: unticked, it sends nothing, and nothing
+              is „Potrivite cu firma mea" again. */}
+          {mineByDefault && !filters.mine ? (
+            <input type="hidden" name={REQUEST_FILTER_KEYS.mine} value={MINE_ALL} />
           ) : null}
         </>
       }

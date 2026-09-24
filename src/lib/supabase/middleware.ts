@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { AUTH_PAGES, returnPathAfterAuth, signInUrlFor } from '@/lib/auth/next-path';
+import { AUTH_PAGES, explicitNextAfterAuth, signInUrlFor } from '@/lib/auth/next-path';
+import { ROUTES } from '@/config/routes';
 import { PATHNAME_HEADER } from '@/lib/auth/pathname-header';
 import { isSupabaseConfigured, supabasePublishableKey, supabaseUrl } from './env';
 
@@ -82,7 +83,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     // Back to where they were going, not to the dashboard: a person who
     // pressed „Intră în cont" in the middle of a form, already signed in
     // in another tab, goes back to the form.
-    const target = returnPathAfterAuth(request.nextUrl.searchParams.get('next'));
+    // With nowhere in particular to go, the same landing a fresh sign-in
+    // gets: a carrier to the board, everybody else to their account.
+    const target =
+      explicitNextAfterAuth(request.nextUrl.searchParams.get('next')) ?? ROUTES.signInLanding;
     return NextResponse.redirect(new URL(target, request.nextUrl.origin));
   }
 

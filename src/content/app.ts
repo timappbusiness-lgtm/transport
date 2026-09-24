@@ -134,9 +134,9 @@ export const appCopy = {
       seats: 'Locuri ocupate',
       contacts: 'Contacte folosite luna aceasta',
     },
+    // The two publish actions come from `publishActions`, in the header's
+    // order and under the header's words; these are the dashboard's own.
     actions: {
-      tur: 'Publică un traseu pe tur',
-      retur: 'Publică un traseu pe retur',
       vehicle: 'Adaugă un vehicul',
       document: 'Încarcă un document',
     },

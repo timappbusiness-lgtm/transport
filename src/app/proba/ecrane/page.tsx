@@ -20,6 +20,11 @@ import {
   FirmeSection,
   TraseeSection,
 } from '@/components/proba/public-sections';
+import {
+  AntetSection,
+  CereriTransportatorSection,
+  probaRole,
+} from '@/components/proba/header-sections';
 
 export const metadata: Metadata = {
   title: 'Probă: ecrane',
@@ -29,10 +34,23 @@ export const metadata: Metadata = {
 /** Read at request time: the harness exists only on a server started for the browser tests. */
 export const dynamic = 'force-dynamic';
 
+type Params = Record<string, string | string[] | undefined>;
+
 interface ProbaSection {
   slug: string;
   title: string;
-  render: () => ReactNode;
+  render: (params: Params) => ReactNode;
+}
+
+function one(params: Params, key: string): string | undefined {
+  const value = params[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** `?noi=12`: the new-requests count, a whole number, zero otherwise. */
+function fresh(params: Params): number {
+  const value = Number(one(params, 'noi') ?? 0);
+  return Number.isInteger(value) && value > 0 ? value : 0;
 }
 
 /**
@@ -42,7 +60,25 @@ interface ProbaSection {
  * the order somebody meets them in.
  */
 const SECTIONS: readonly ProbaSection[] = [
+  {
+    slug: 'antet',
+    title: 'Antetul, pentru fiecare fel de cont',
+    render: (params) => (
+      <AntetSection
+        role={probaRole(one(params, 'rol'))}
+        fresh={fresh(params)}
+        pathname={one(params, 'pagina') ?? '/cereri'}
+      />
+    ),
+  },
   { slug: 'cereri', title: 'Cereri: panoul și cardurile', render: () => <CereriSection /> },
+  {
+    slug: 'cereri-transportator',
+    title: 'Cereri de transport, pentru un transportator',
+    render: (params) => (
+      <CereriTransportatorSection fresh={fresh(params)} all={one(params, 'doar') === 'toate'} />
+    ),
+  },
   { slug: 'cereri-mele', title: 'Cererile mele', render: () => <CereriMeleSection /> },
   { slug: 'trasee', title: 'Trasee: panoul', render: () => <TraseeSection /> },
   { slug: 'firme', title: 'Firme: lista și profilul', render: () => <FirmeSection /> },
@@ -81,7 +117,8 @@ export default async function Page({
 }) {
   if (process.env.E2E_HARNESS !== '1') notFound();
 
-  const requested = (await searchParams).sectiune;
+  const params = await searchParams;
+  const requested = params.sectiune;
   if (requested === undefined) return <Index />;
 
   const section = SECTIONS.find((candidate) => candidate.slug === requested);
@@ -94,7 +131,7 @@ export default async function Page({
           Probă: {section.title}
         </h1>
       </Container>
-      {section.render()}
+      {section.render(params)}
     </section>
   );
 }

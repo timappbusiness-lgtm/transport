@@ -126,6 +126,49 @@ describe('the firm filter', () => {
   });
 });
 
+describe('a carrier\'s board opens on its own view', () => {
+  const carrier = { mineByDefault: true };
+
+  it('reads „Potrivite cu firma mea" from an address that says nothing', () => {
+    expect(parseRequestFilters({}, carrier).mine).toBe(true);
+    // An old link that said so explicitly still means the same.
+    expect(parseRequestFilters({ doar: 'firma' }, carrier).mine).toBe(true);
+  });
+
+  it('keeps „Toate cererile" in the address, so a refresh does not narrow it back', () => {
+    const all = parseRequestFilters({ doar: 'toate' }, carrier);
+    expect(all.mine).toBe(false);
+    expect(requestFiltersToQuery(all, carrier)).toBe('?doar=toate');
+    expect(parseRequestFilters({ doar: 'toate' }, carrier)).toEqual(all);
+  });
+
+  it('writes nothing for the default view, whichever it is', () => {
+    expect(requestFiltersToQuery({ ...EMPTY_REQUEST_FILTERS, mine: true }, carrier)).toBe('');
+    expect(requestFiltersToQuery(EMPTY_REQUEST_FILTERS)).toBe('');
+  });
+
+  it('round-trips every other filter unchanged', () => {
+    const filters = parseRequestFilters({ cat: 'autoturism', doar: 'toate', ordine: 'x' }, carrier);
+    const query = requestFiltersToQuery(filters, carrier);
+    const back = parseRequestFilters(
+      Object.fromEntries(new URLSearchParams(query.slice(1))),
+      carrier,
+    );
+    expect(back).toEqual(filters);
+  });
+
+  it('counts the default view as no filter, and „Toate cererile" as one', () => {
+    expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: true }, carrier)).toBe(false);
+    expect(hasActiveRequestFilters({ ...EMPTY_REQUEST_FILTERS, mine: false }, carrier)).toBe(true);
+  });
+
+  it('changes nothing for anybody else', () => {
+    expect(parseRequestFilters({}).mine).toBe(false);
+    expect(parseRequestFilters({ doar: 'toate' }).mine).toBe(false);
+    expect(requestFiltersToQuery({ ...EMPTY_REQUEST_FILTERS, mine: true })).toBe('?doar=firma');
+  });
+});
+
 describe('what the query means', () => {
   it('maps a tab onto a board', () => {
     expect(tabBoard('toate')).toBeNull();

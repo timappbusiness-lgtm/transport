@@ -195,7 +195,29 @@ function bounded(value: string | null, min: number, max: number): number | null 
   return Number.isInteger(n) && n >= min && n <= max ? n : null;
 }
 
-export function parseRequestFilters(params: SearchParams): RequestFilters {
+/**
+ * Who is looking changes one default, and only one.
+ *
+ * A carrier opens the board to see what it can take, so for a carrier
+ * „Potrivite cu firma mea" is the view with nothing in the address, and
+ * „Toate cererile" is the one that says so (`doar=toate`). For everybody
+ * else it is the other way round, as it always was (`doar=firma`). Either
+ * way the address says what is on the screen once it differs from what
+ * that person gets by default, so a link, a refresh and the way back from
+ * a request all land on the same view.
+ */
+export interface RequestFilterOptions {
+  mineByDefault?: boolean;
+}
+
+/** The value `doar` takes to ask for everything on a board whose default is narrowed. */
+export const MINE_ALL = 'toate';
+const MINE_COMPANY = 'firma';
+
+export function parseRequestFilters(
+  params: SearchParams,
+  options: RequestFilterOptions = {},
+): RequestFilters {
   const rawTab = one(params, REQUEST_FILTER_KEYS.tab);
   const rawCategory = one(params, REQUEST_FILTER_KEYS.category);
   const rawCondition = one(params, REQUEST_FILTER_KEYS.condition);
@@ -231,15 +253,24 @@ export function parseRequestFilters(params: SearchParams): RequestFilters {
     service: isService(one(params, REQUEST_FILTER_KEYS.service)) 
       ? (one(params, REQUEST_FILTER_KEYS.service) as ServiceFilter)
       : null,
-    mine: one(params, REQUEST_FILTER_KEYS.mine) === 'firma',
+    mine: parseMine(one(params, REQUEST_FILTER_KEYS.mine), options.mineByDefault === true),
     near,
     radiusKm,
     maxWeightKg: bounded(one(params, REQUEST_FILTER_KEYS.maxWeightKg), 1, MAX_FILTER_WEIGHT_KG),
   };
 }
 
+function parseMine(raw: string | null, byDefault: boolean): boolean {
+  if (raw === MINE_COMPANY) return true;
+  if (raw === MINE_ALL) return false;
+  return byDefault;
+}
+
 /** Back to a query string, dropping everything left at its default. */
-export function requestFiltersToQuery(filters: RequestFilters): string {
+export function requestFiltersToQuery(
+  filters: RequestFilters,
+  options: RequestFilterOptions = {},
+): string {
   const query = new URLSearchParams();
   if (filters.tab !== 'toate') query.set(REQUEST_FILTER_KEYS.tab, filters.tab);
   if (filters.fromCountry) query.set(REQUEST_FILTER_KEYS.fromCountry, filters.fromCountry);
@@ -252,7 +283,9 @@ export function requestFiltersToQuery(filters: RequestFilters): string {
   if (filters.condition) query.set(REQUEST_FILTER_KEYS.condition, filters.condition);
   if (filters.scope) query.set(REQUEST_FILTER_KEYS.scope, filters.scope);
   if (filters.service) query.set(REQUEST_FILTER_KEYS.service, filters.service);
-  if (filters.mine) query.set(REQUEST_FILTER_KEYS.mine, 'firma');
+  const mineByDefault = options.mineByDefault === true;
+  if (filters.mine && !mineByDefault) query.set(REQUEST_FILTER_KEYS.mine, MINE_COMPANY);
+  if (!filters.mine && mineByDefault) query.set(REQUEST_FILTER_KEYS.mine, MINE_ALL);
   if (filters.near) {
     query.set(REQUEST_FILTER_KEYS.near, cityValue(filters.near));
     query.set(REQUEST_FILTER_KEYS.radiusKm, String(filters.radiusKm ?? DEFAULT_RADIUS_KM));
@@ -265,8 +298,11 @@ export function requestFiltersToQuery(filters: RequestFilters): string {
 }
 
 /** True when the visitor has narrowed anything at all. */
-export function hasActiveRequestFilters(filters: RequestFilters): boolean {
-  return requestFiltersToQuery({ ...filters, tab: 'toate' }) !== '';
+export function hasActiveRequestFilters(
+  filters: RequestFilters,
+  options: RequestFilterOptions = {},
+): boolean {
+  return requestFiltersToQuery({ ...filters, tab: 'toate' }, options) !== '';
 }
 
 /** The board a tab selects, or null for "everything". */

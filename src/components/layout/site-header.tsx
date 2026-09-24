@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { getAccountContext } from '@/lib/auth/account';
 import { navContextOf } from '@/components/app/nav-context';
 import { loadNavCounts } from '@/lib/nav-counts';
-import { headerMenu } from '@/lib/navigation';
+import { headerBar, headerMenu, publishMenu } from '@/lib/navigation';
 import { HeaderNav, type HeaderUser } from './header-menu';
 import { HeaderBrand } from './header-brand';
 import { HEADER_BAR, HEADER_OUTER } from './header-shell';
@@ -26,13 +26,16 @@ async function HeaderAuth() {
   const context = await getAccountContext();
   if (!context) return <SignedOutHeader />;
 
-  // The menu comes from the same builder the sidebar reads, so the header
-  // can never offer a page the sidebar does not — or one that is not
-  // built, or one this role may not open.
+  // The bar, the account menu and the button come from the same builder
+  // the sidebar reads, so the header can never offer a page the sidebar
+  // does not — or one that is not built, or one this role may not open.
   const counts = await loadNavCounts();
+  const nav = navContextOf(context);
   const user: HeaderUser = {
     name: context.profile?.full_name ?? context.user.email ?? 'Cont',
-    items: headerMenu(navContextOf(context), counts),
+    bar: headerBar(nav, counts),
+    items: headerMenu(nav, counts),
+    publish: publishMenu(nav),
   };
 
   return (

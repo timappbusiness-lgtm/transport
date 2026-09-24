@@ -130,6 +130,18 @@ export function returnPathAfterAuth(raw: string | null | undefined): string {
 }
 
 /**
+ * The `next` somebody carried to a sign-in, or null when they carried
+ * none worth following: missing, not a safe internal path, or a sign-in
+ * page. Null is where `landingAfterSignIn` decides instead — a carrier to
+ * the board — rather than every sign-in ending on the dashboard.
+ */
+export function explicitNextAfterAuth(raw: string | null | undefined): string | null {
+  const safe = safeNextPath(raw, '');
+  if (safe === '' || isAuthPage(safe)) return null;
+  return safe;
+}
+
+/**
  * The header's „Autentificare", from the page it is pressed on.
  *
  * Pressed in the middle of a form, it used to open a sign-in that came
