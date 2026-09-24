@@ -57,7 +57,7 @@ export function OrderContracts({
                 <dt className="text-muted">{c.template}</dt>
                 <dd>{v.templateVersion}</dd>
                 <dt className="text-muted">{c.hash}</dt>
-                <dd className="min-w-0 font-mono [overflow-wrap:anywhere]">{v.snapshotHash}</dd>
+                <dd className="min-w-0 break-all font-mono">{v.snapshotHash}</dd>
                 {v.redactedAt !== null ? (
                   <>
                     <dt className="text-muted">{c.redacted}</dt>
@@ -83,35 +83,35 @@ export function OrderContracts({
               {v.acceptances.length === 0 ? (
                 <p className="mt-1 text-small text-muted">{c.noAcceptances}</p>
               ) : (
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full min-w-[40rem] text-left text-small">
-                    <thead className="text-muted">
-                      <tr>
-                        <th className="py-1 pr-3 font-medium">{c.side}</th>
-                        <th className="py-1 pr-3 font-medium">{c.who}</th>
-                        <th className="py-1 pr-3 font-medium">{c.when}</th>
-                        <th className="py-1 pr-3 font-medium">{c.ip}</th>
-                        <th className="py-1 pr-3 font-medium">{c.userAgent}</th>
-                        <th className="py-1 font-medium">{c.user}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {v.acceptances.map((a) => (
-                        <tr key={`${v.contractId}-${a.side}`} className="border-t border-border align-top">
-                          <td className="py-1.5 pr-3">{SIDE[a.side]}</td>
-                          <td className="py-1.5 pr-3 [overflow-wrap:anywhere]">
-                            {a.name ?? '—'}
-                            {a.companyName !== null ? <span className="block text-muted">{a.companyName}</span> : null}
-                          </td>
-                          <td className="whitespace-nowrap py-1.5 pr-3">{formatMoment(a.acceptedAt)}</td>
-                          <td className="py-1.5 pr-3 font-mono">{a.ip ?? '—'}</td>
-                          <td className="max-w-[18rem] py-1.5 pr-3 [overflow-wrap:anywhere]">{a.userAgent ?? '—'}</td>
-                          <td className="py-1.5 font-mono [overflow-wrap:anywhere]">{a.userId ?? '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                // One block per acceptance rather than a six-column table:
+                // a table squeezed to a phone broke a firm's name one
+                // letter per line.
+                <ul className="mt-2 flex flex-col gap-2">
+                  {v.acceptances.map((a) => (
+                    <li
+                      key={`${v.contractId}-${a.side}`}
+                      className="rounded-input border border-border bg-ground-alt p-3"
+                    >
+                      <dl className="grid gap-x-4 gap-y-1 text-small sm:grid-cols-[8rem_minmax(0,1fr)]">
+                        <dt className="text-muted">{c.side}</dt>
+                        <dd>{SIDE[a.side]}</dd>
+                        <dt className="text-muted">{c.who}</dt>
+                        <dd className="min-w-0 break-words">
+                          {a.name ?? '—'}
+                          {a.companyName !== null ? <span className="block text-muted">{a.companyName}</span> : null}
+                        </dd>
+                        <dt className="text-muted">{c.when}</dt>
+                        <dd>{formatMoment(a.acceptedAt)}</dd>
+                        <dt className="text-muted">{c.ip}</dt>
+                        <dd className="min-w-0 break-all font-mono">{a.ip ?? '—'}</dd>
+                        <dt className="text-muted">{c.userAgent}</dt>
+                        <dd className="min-w-0 break-words">{a.userAgent ?? '—'}</dd>
+                        <dt className="text-muted">{c.user}</dt>
+                        <dd className="min-w-0 break-all font-mono">{a.userId ?? '—'}</dd>
+                      </dl>
+                    </li>
+                  ))}
+                </ul>
               )}
             </li>
           ))}

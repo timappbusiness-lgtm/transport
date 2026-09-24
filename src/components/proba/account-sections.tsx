@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { DocumentHistory } from '@/components/account/document-history';
 import { DocumentsScreen } from '@/components/account/documents-screen';
+import { OrderContracts } from '@/components/admin/order-contracts';
 import { ReviewQueue } from '@/components/admin/review-queue';
 import { CarrierHome } from '@/components/app/dashboard/carrier';
 import { TopBar } from '@/components/app/top-bar';
@@ -12,6 +13,7 @@ import { ConversationTitle } from '@/components/messages/conversation-title';
 import { MessageActions } from '@/components/messages/message-actions';
 import { ThreadView } from '@/components/messages/thread-view';
 import { ReceivedOffers } from '@/components/offers/received-offers';
+import { ContractCard } from '@/components/orders/contract-card';
 import { ComparisonView, EvidenceGallery } from '@/components/orders/evidence-gallery';
 import { ORDER_GRID } from '@/components/orders/order-grid';
 import { OrderTimeline } from '@/components/orders/order-timeline';
@@ -30,9 +32,12 @@ import { inscriereCopy } from '@/content/inscriere';
 import { messagesCopy } from '@/content/mesaje';
 import { offersCopy } from '@/content/oferte';
 import { completeness, tabsFor } from '@/lib/company-profile';
+import { contractCardState, contractDocuments, type ContractSide } from '@/lib/contracts';
 import { orderStatusLabel } from '@/lib/orders';
 import {
   ACTIVE_ORDERS,
+  ADMIN_CONTRACTS,
+  CONTRACT_VERSIONS,
   CARRIER_DASHBOARD,
   CONVERSATION_ID,
   COUNTERPARTY_NAME,
@@ -350,6 +355,69 @@ export function AdminActeSection() {
         </div>
 
         <ReviewQueue documents={PENDING_DOCUMENTS} companies={PENDING_COMPANIES} />
+      </div>
+    </ProbaAdminShell>
+  );
+}
+
+/**
+ * The „Contract de transport" card as `src/app/cont/transporturi/[id]/page.tsx`
+ * draws it, in the order page's left column, with the documents list
+ * under it. `?stare=` picks what the reader sees:
+ *
+ *   (none)   the client, with the carrier's acceptance and theirs to give
+ *   gol      nothing generated yet
+ *   ambele   both accepted, three versions of history
+ *   echipa   staff: may generate and read, never accept
+ */
+export function ContractSection({ state }: { state: string | undefined }) {
+  const versions =
+    state === 'gol'
+      ? []
+      : state === 'ambele'
+        ? CONTRACT_VERSIONS.map((v) =>
+            v.clientAcceptedAt === null
+              ? { ...v, clientAcceptedAt: v.carrierAcceptedAt, clientAcceptedBy: 'Ioana Bălășescu-Constantinescu' }
+              : v,
+          )
+        : CONTRACT_VERSIONS;
+  const side: ContractSide = state === 'echipa' ? 'staff' : 'client';
+  const card = contractCardState(versions, side, ORDER_STATUS);
+  return (
+    <ProbaAccountShell pathname={transportRoute(ORDER_ID)}>
+      <div className="flex flex-col gap-6">
+        <TopBar
+          title={ORDER_TITLE}
+          crumbs={[{ href: ROUTES.accountTransports, label: ordersCopy.list.title }]}
+          actions={[]}
+        />
+        <div className={ORDER_GRID}>
+          <div className="contents lg:flex lg:flex-col lg:gap-6">
+            <div className="order-4 flex flex-col gap-6 lg:order-none">
+              <ContractCard orderId={ORDER_ID} state={card} unavailable={state === 'indisponibil'} />
+              <EvidenceGallery
+                rows={EVIDENCE}
+                urls={EVIDENCE_URLS}
+                documents={contractDocuments(ORDER_ID, versions)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </ProbaAccountShell>
+  );
+}
+
+/** Every version and the full acceptance record, as `/admin/transporturi/[id]` draws it. */
+export function AdminContractSection() {
+  return (
+    <ProbaAdminShell>
+      <div className="flex flex-col gap-8">
+        <div>
+          <EyebrowPill>Staff</EyebrowPill>
+          <h1 className="mt-2 text-h2">{ORDER_TITLE}</h1>
+        </div>
+        <OrderContracts orderId={ORDER_ID} versions={ADMIN_CONTRACTS} />
       </div>
     </ProbaAdminShell>
   );

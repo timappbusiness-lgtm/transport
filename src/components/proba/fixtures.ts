@@ -3,6 +3,8 @@ import type { ScreenRequirement, ScreenVehicle } from '@/components/account/docu
 import type { HistoryRow } from '@/components/account/document-history';
 import type { PendingCompany, PendingDocument } from '@/components/admin/review-queue';
 import type { AccountContext, Company, Profile } from '@/lib/auth/account';
+import type { ContractVersion } from '@/lib/contracts';
+import type { AdminContractVersion } from '@/lib/contracts-source';
 import type { CarrierDashboard } from '@/lib/dashboard-source';
 import type { PublicDeparture } from '@/lib/departures';
 import type { PublicCompany } from '@/lib/directory';
@@ -1343,3 +1345,64 @@ export const PENDING_RATINGS: PendingRating[] = [
     can_edit: true,
   },
 ];
+
+// ---------------------------------------------------------------------
+// The transport contract: three versions, the latest accepted by the
+// carrier only, with the longest names the card may have to carry.
+// ---------------------------------------------------------------------
+
+export const CONTRACT_VERSIONS: ContractVersion[] = [3, 2, 1].map((n) => ({
+  contractId: id(960 + n),
+  version: n,
+  contractNumber: 'CT-2026-0000950A',
+  templateVersion: '1.0',
+  snapshotHash: `${'3f7a9c0e5b1d2e4f'.repeat(4)}`,
+  generatedAt: hoursAgo((4 - n) * 24),
+  generatedByName: LONG_PERSON,
+  generatedBySide: n === 3 ? 'carrier' : 'client',
+  isLatest: n === 3,
+  carrierAcceptedAt: hoursAgo((3 - n) * 24 + 1),
+  carrierAcceptedBy: LONG_PERSON,
+  clientAcceptedAt: n === 3 ? null : hoursAgo((3 - n) * 24 + 1),
+  clientAcceptedBy: n === 3 ? null : 'Ioana Bălășescu-Constantinescu',
+}));
+
+export const ADMIN_CONTRACTS: AdminContractVersion[] = CONTRACT_VERSIONS.map((v) => ({
+  contractId: v.contractId,
+  version: v.version,
+  contractNumber: v.contractNumber,
+  templateVersion: v.templateVersion,
+  snapshotHash: v.snapshotHash,
+  generatedAt: v.generatedAt,
+  generatedBy: id(970),
+  generatedByName: v.generatedByName,
+  generatedBySide: v.generatedBySide,
+  redactedAt: null,
+  acceptances: [
+    {
+      side: 'carrier' as const,
+      userId: id(971),
+      name: LONG_PERSON,
+      companyName: LONG_COMPANY,
+      acceptedAt: v.carrierAcceptedAt ?? v.generatedAt,
+      ip: '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.100 Mobile Safari/537.36',
+      snapshotHash: v.snapshotHash,
+    },
+    ...(v.clientAcceptedAt === null
+      ? []
+      : [
+          {
+            side: 'client' as const,
+            userId: id(972),
+            name: v.clientAcceptedBy,
+            companyName: null,
+            acceptedAt: v.clientAcceptedAt,
+            ip: '203.0.113.7',
+            userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 Safari/605.1.15',
+            snapshotHash: v.snapshotHash,
+          },
+        ]),
+  ],
+}));

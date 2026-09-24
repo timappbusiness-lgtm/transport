@@ -59,6 +59,8 @@ export const HARNESS_SECTIONS = [
   'mesaje',
   'acte',
   'comanda',
+  'contract',
+  'admin-contract',
   'admin-acte',
   'abonamente',
   'evaluari',

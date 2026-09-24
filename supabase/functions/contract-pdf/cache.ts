@@ -23,11 +23,12 @@ export function isUuid(value: unknown): value is string {
 }
 
 /**
- * `<order>/<contract>/v2-t1.0-a3-r1.pdf`.
+ * `<order>/<contract>/v2-of3-t1.0-a3-r1.pdf`.
  *
  * The first folder is the order: the bucket's read policy asks
  * `can_see_order_contract()` about it. Everything that changes the pages
- * is in the name — the version (the snapshot), the template, how many
+ * is in the name — the version (the snapshot), the newest version there
+ * is (an older one says it was replaced), the template, how many
  * acceptances the footer shows, whether the parties were anonymised, and
  * the renderer — so a cached file is always the file this request would
  * draw. The snapshot itself never changes, which is why this is a cache
@@ -36,7 +37,7 @@ export function isUuid(value: unknown): value is string {
 export function objectPath(data: RenderData): string {
   const acceptances = data.acceptances.filter((a) => a.version <= data.version).length;
   const redacted = data.redacted ? '-x' : '';
-  return `${data.order_id}/${data.contract_id}/v${data.version}-t${data.template_version}-a${acceptances}${redacted}-${RENDERER_REVISION}.pdf`;
+  return `${data.order_id}/${data.contract_id}/v${data.version}-of${data.latest_version}-t${data.template_version}-a${acceptances}${redacted}-${RENDERER_REVISION}.pdf`;
 }
 
 /** `contract-CT-2026-A1B2C3D4-v2.pdf`. */

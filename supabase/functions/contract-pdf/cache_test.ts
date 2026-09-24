@@ -15,7 +15,7 @@ Deno.test("the object path starts with the order, which the bucket policy reads"
 
 Deno.test("everything that changes the pages is in the path", () => {
   // Version 2, template 1.0, three acceptances on versions 1 and 2.
-  assertEquals(objectPath(SAMPLE_RENDER_DATA).split("/")[2], `v2-t1.0-a3-${RENDERER_REVISION}.pdf`);
+  assertEquals(objectPath(SAMPLE_RENDER_DATA).split("/")[2], `v2-of2-t1.0-a3-${RENDERER_REVISION}.pdf`);
 
   const oneMore = {
     ...SAMPLE_RENDER_DATA,
@@ -24,15 +24,23 @@ Deno.test("everything that changes the pages is in the path", () => {
       { version: 2, side: "client" as const, name: "X", company_name: null, accepted_at: "2026-09-25T10:00:00Z" },
     ],
   };
-  assertEquals(objectPath(oneMore).split("/")[2], `v2-t1.0-a4-${RENDERER_REVISION}.pdf`);
+  assertEquals(objectPath(oneMore).split("/")[2], `v2-of2-t1.0-a4-${RENDERER_REVISION}.pdf`);
 
   const redacted = { ...SAMPLE_RENDER_DATA, redacted: true };
-  assertEquals(objectPath(redacted).split("/")[2], `v2-t1.0-a3-x-${RENDERER_REVISION}.pdf`);
+  assertEquals(objectPath(redacted).split("/")[2], `v2-of2-t1.0-a3-x-${RENDERER_REVISION}.pdf`);
 });
 
 Deno.test("acceptances on a later version do not change an earlier version's file", () => {
   const v1 = { ...SAMPLE_RENDER_DATA, version: 1 };
-  assertEquals(objectPath(v1).split("/")[2], `v1-t1.0-a2-${RENDERER_REVISION}.pdf`);
+  assertEquals(objectPath(v1).split("/")[2], `v1-of2-t1.0-a2-${RENDERER_REVISION}.pdf`);
+});
+
+Deno.test("a newer version changes an older version's file: it now says it was replaced", () => {
+  // Regression: the path once left out the newest version, so a version
+  // drawn before a regeneration kept being served without the notice.
+  const before = objectPath({ ...SAMPLE_RENDER_DATA, version: 1, latest_version: 1 });
+  const after = objectPath({ ...SAMPLE_RENDER_DATA, version: 1, latest_version: 2 });
+  if (before === after) throw new Error("same file before and after a new version");
 });
 
 Deno.test("the download is named after the contract and its version", () => {

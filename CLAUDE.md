@@ -50,6 +50,11 @@ more than the feature.
 
 ## Which phase we are in
 
+**Faza 3, the transport contract.** Started 24 September 2026. A contract
+generated from the order, versioned, accepted by each party in the
+platform — `docs/20-contract-transport.md`. Its text is a draft until the
+lawyer has read item 8 of `docs/09-verificare-juridica.md`.
+
 **Faza 2, the offer flow.** Started 21 September 2026.
 
 Faza 1 is **code-complete**: everything still open in it depends on
