@@ -14,7 +14,9 @@ export const appCopy = {
     close: 'Închide',
     /** After a count on a menu item, for a screen reader: „3 care așteaptă". */
     waiting: 'care așteaptă',
-    skipToContent: 'Sari la conținut',
+    // The site's own „Sari la conținut" comes first and lands before this
+    // menu; this one goes past it, so it says so.
+    skipToContent: 'Sari peste meniu',
     help: 'Ajutor',
     publish: 'Publică',
     publishMenu: 'Ce vrei să publici',

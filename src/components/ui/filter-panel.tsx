@@ -122,7 +122,7 @@ export function FilterPanel({
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <button
           type="submit"
-          className={cn(buttonClasses('primary', 'sm'), 'inline-flex items-center', ICON_GAP)}
+          className={cn(buttonClasses('ink', 'sm'), 'inline-flex items-center', ICON_GAP)}
         >
           <Icon as={iconForAction('search')} size="sm" />
           {labels.apply}

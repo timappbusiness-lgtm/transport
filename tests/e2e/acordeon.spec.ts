@@ -20,22 +20,31 @@ interface Item {
   column: string | null;
 }
 
+/**
+ * The FAQ's items, found by what they are rather than by a data attribute:
+ * a card whose heading is the question's button. The same selector finds
+ * them in the grid the bug lived in, which is how this check was shown to
+ * fail before the fix.
+ */
+const ITEMS = 'main h3:has(> button[aria-expanded]) ';
+
 async function measure(page: Page): Promise<Item[]> {
-  return page.locator('[data-faq-item]').evaluateAll((items) =>
-    items.map((item) => {
+  return page.locator('main h3:has(> button[aria-expanded])').evaluateAll((headings) =>
+    headings.map((heading) => {
+      const item = heading.parentElement!;
       const r = item.getBoundingClientRect();
       return {
         height: Math.round(r.height),
         y: Math.round(r.top + window.scrollY),
         x: Math.round(r.left),
-        column: item.closest('[data-faq-column]')?.getAttribute('data-faq-column') ?? null,
+        column: item.parentElement?.getAttribute('data-faq-column') ?? null,
       };
     }),
   );
 }
 
 async function toggle(page: Page, index: number) {
-  const button = page.locator('[data-faq-item]').nth(index).locator('button[aria-expanded]');
+  const button = page.locator(`${ITEMS}> button`).nth(index);
   const was = await button.getAttribute('aria-expanded');
   // The press is repeated until React has attached to the button.
   await expect(async () => {
@@ -71,13 +80,13 @@ for (const path of PAGES) {
         // A column beside it does not move either: nothing there is under
         // the opened item. (At 390 the columns are one stack, and what is
         // under it moving down is the point of opening it.)
-        const beside = await page.locator('[data-faq-item]').evaluateAll(
-          (items, opened) => {
-            const home = items[opened]!.closest('[data-faq-accordion]');
-            return items.map((item) => item.closest('[data-faq-accordion]') === home);
-          },
-          index,
-        );
+        // Items of the same FAQ block: a page with several groups has one
+        // block per group, and the next group moving down is expected.
+        const beside = await page.locator(ITEMS).evaluateAll((headings, opened) => {
+          const block = (h: Element) => h.parentElement!.closest('section, [data-faq-accordion]');
+          const home = block(headings[opened]!);
+          return headings.map((h) => block(h) === home);
+        }, index);
         open.forEach((item, other) => {
           if (!beside[other] || item.x === closed[index]!.x) return;
           expect(item.y, `item ${other} in the column beside it stays put`).toBe(closed[other]!.y);

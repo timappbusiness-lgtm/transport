@@ -94,6 +94,23 @@ export function Composer({ conversationId }: { conversationId: string }) {
   const chosen = queue.items.filter((item) => item.meta.hold === true);
   const going = queue.items.filter((item) => item.meta.hold !== true && item.status !== 'uploaded');
 
+  // The box's height, for `scroll-padding-bottom` in globals.css: an
+  // attachment or a link focused in the thread scrolls clear of the box
+  // instead of under it, however tall the chosen images have made it.
+  useEffect(() => {
+    const form = formRef.current;
+    if (form === null || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty('--composer-height', `${Math.ceil(form.getBoundingClientRect().height)}px`);
+    });
+    observer.observe(form);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--composer-height');
+    };
+  }, []);
+
   useEffect(() => {
     const kept = readMessageId(conversationId);
     const next = kept ?? newUploadId();
@@ -155,6 +172,7 @@ export function Composer({ conversationId }: { conversationId: string }) {
       ref={formRef}
       action={action}
       resetOn={state.sent === true ? state : null}
+      data-composer
       className="sticky bottom-[var(--bottom-bar,0px)] z-10 border-t border-border bg-background px-3 py-3 sm:px-0"
     >
       <input type="hidden" name="conversation_id" value={conversationId} />

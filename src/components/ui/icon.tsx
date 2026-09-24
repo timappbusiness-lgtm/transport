@@ -105,9 +105,12 @@ export function IconLabel({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex min-w-0', wrap ? 'items-start' : 'items-center', ICON_GAP, className)}>
+    // `max-w-full`: an inline-flex box is as wide as its whole label, so
+    // without a ceiling `truncate` had nothing to cut and a long company
+    // name pushed the offer card 500px past a phone's edge.
+    <span className={cn('inline-flex min-w-0 max-w-full', wrap ? 'items-start' : 'items-center', ICON_GAP, className)}>
       <Icon as={as} size={size} tone={tone} className={wrap ? 'mt-[0.2em]' : undefined} />
-      <span className={cn('min-w-0', wrap ? 'break-words' : 'truncate')}>{children}</span>
+      <span className={cn('min-w-0', wrap ? '[overflow-wrap:anywhere]' : 'truncate')}>{children}</span>
     </span>
   );
 }

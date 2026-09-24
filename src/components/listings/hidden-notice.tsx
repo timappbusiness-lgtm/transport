@@ -18,7 +18,7 @@ export function HiddenNotice({ reason }: { reason: string | null }) {
     <div className="mt-3 rounded-input border border-warning/45 bg-warning/8 p-3 text-small">
       <p className="font-medium">{c.hidden}</p>
       {reason !== null && reason !== '' ? (
-        <p className="mt-1">
+        <p className="mt-1 [overflow-wrap:anywhere]">
           <span className="text-muted">{c.hiddenReason}</span> {reason}
         </p>
       ) : null}

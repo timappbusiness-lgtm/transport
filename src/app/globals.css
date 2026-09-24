@@ -262,9 +262,26 @@
       scroll-padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
     }
   }
+  /* The message box grows with the images chosen for it, so it says its
+     own height (`--composer-height`, set by the composer). An attachment
+     in the thread took the focus right under the box (390px, before). */
+  html:has([data-composer]) {
+    scroll-padding-bottom: calc(var(--composer-height, 9rem) + 1rem);
+  }
   @media (width < 64rem) {
-    html:has([data-bottom-nav]):not(:has([data-save-bar])) {
+    html:has([data-bottom-nav]):not(:has([data-save-bar], [data-composer])) {
       scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+    html:has([data-composer]) {
+      scroll-padding-bottom: calc(var(--composer-height, 13rem) + 4.5rem + env(safe-area-inset-bottom));
+    }
+
+    /* The phone's bottom menu is fixed, so the end of the page needs room
+       under it: the footer's last links (Termeni, Confidențialitate,
+       Cookie-uri) sat under the menu inside the account, where the room
+       was only kept in the content column above the footer. */
+    body:has([data-bottom-nav]) {
+      padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
     }
   }
 

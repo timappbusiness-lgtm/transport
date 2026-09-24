@@ -120,7 +120,7 @@ export function EvidencePhoto({ row, url }: { row: EvidenceRow; url: string | un
           />
         )}
       </div>
-      <figcaption className="mt-1 text-small leading-tight text-muted">
+      <figcaption className="mt-1 text-small leading-tight text-muted [overflow-wrap:anywhere]">
         {formatMoment(row.captured_at)}
         <span className="block">{row.author_name}</span>
         {row.lat !== null ? <span className="block">{c.location}</span> : null}

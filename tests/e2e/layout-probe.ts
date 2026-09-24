@@ -99,12 +99,41 @@ export async function inspectLayout(page: Page): Promise<LayoutProblem[]> {
       });
     }
 
+    // The box a clipping ancestor lets through: the lines a `line-clamp`
+    // hides are still in the range's rects, but nobody sees them.
+    const clipOf = (el: Element) => {
+      let box = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
+      for (let node: Element | null = el; node && node !== document.body; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (scrollsOrClips(style.overflowX) || scrollsOrClips(style.overflowY)) {
+          const r = node.getBoundingClientRect();
+          box = {
+            left: Math.max(box.left, r.left),
+            top: Math.max(box.top, r.top),
+            right: Math.min(box.right, r.right),
+            bottom: Math.min(box.bottom, r.bottom),
+          };
+        }
+      }
+      return box;
+    };
+    /** The part of an element that is on screen: its rect, cut by every
+     * ancestor that scrolls or clips. A link scrolled out of sight inside
+     * the sidebar is not a target over the footer it happens to overlap. */
+    const visibleRect = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      const clip = clipOf(el.parentElement ?? el);
+      const left = Math.max(r.left, clip.left);
+      const top = Math.max(r.top, clip.top);
+      return new DOMRect(left, top, Math.min(r.right, clip.right) - left, Math.min(r.bottom, clip.bottom) - top);
+    };
+
     // Touch targets, WCAG 2.5.8 with its spacing exception.
     type Target = { el: Element; r: DOMRect };
     const targets: Target[] = [];
     const small: Target[] = [];
     for (const el of document.body.querySelectorAll(
-      'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=tab]',
+      'a[href], button, input:not([type=hidden]), select, textarea, summary, [role=button], [role=tab], label:has(input[type=checkbox], input[type=radio])',
     )) {
       if (hidden(el)) continue;
       // A box or a radio inside its label: the label is the target.
@@ -114,9 +143,13 @@ export async function inspectLayout(page: Page): Promise<LayoutProblem[]> {
         const sentence = (el.parentElement?.innerText ?? '').trim();
         if (sentence.length > ((el as HTMLElement).innerText ?? '').trim().length + 3) continue;
       }
-      const r = el.getBoundingClientRect();
+      const r = visibleRect(el);
+      if (r.width <= 0 || r.height <= 0) continue;
+      const full = el.getBoundingClientRect();
       targets.push({ el, r });
-      if (r.width < 24 || r.height < 24) small.push({ el, r });
+      // Its own size decides whether it is small, not how much of it
+      // shows: a button half scrolled out of its panel is still a button.
+      if (full.width < 24 || full.height < 24) small.push({ el, r });
     }
     for (const target of small) {
       const cx = target.r.left + target.r.width / 2;
@@ -164,9 +197,16 @@ export async function inspectLayout(page: Page): Promise<LayoutProblem[]> {
     for (const el of all) {
       if (el.children.length > 0 || hidden(el) || el.closest('svg')) continue;
       if ((el.textContent ?? '').trim() === '') continue;
+      const clip = clipOf(el);
       const range = document.createRange();
       range.selectNodeContents(el);
-      for (const r of Array.from(range.getClientRects())) {
+      for (const line of Array.from(range.getClientRects())) {
+        const r = new DOMRect(
+          Math.max(line.left, clip.left),
+          Math.max(line.top, clip.top),
+          Math.min(line.right, clip.right) - Math.max(line.left, clip.left),
+          Math.min(line.bottom, clip.bottom) - Math.max(line.top, clip.top),
+        );
         if (r.width > 1 && r.height > 1) leaves.push({ el, r });
       }
     }

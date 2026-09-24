@@ -50,7 +50,21 @@ const PUBLIC_SCREENS = [
 ];
 
 /** `/proba/ecrane?sectiune=…`: the account and admin components. */
-export const HARNESS_SECTIONS: string[] = [];
+export const HARNESS_SECTIONS = [
+  'cereri',
+  'cereri-mele',
+  'trasee',
+  'firme',
+  'oferte',
+  'mesaje',
+  'acte',
+  'comanda',
+  'admin-acte',
+  'abonamente',
+  'evaluari',
+  'cont-mobil',
+  'dashboard',
+];
 
 const SCREENS = [
   ...PUBLIC_SCREENS,

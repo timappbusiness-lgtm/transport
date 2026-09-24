@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Composer } from '@/components/messages/composer';
+import { ConversationTitle } from '@/components/messages/conversation-title';
 import { MessageActions } from '@/components/messages/message-actions';
 import { ThreadView } from '@/components/messages/thread-view';
-import { StatusBadge } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
 import { messagesCopy } from '@/content/mesaje';
 import { requireAccountContext } from '@/lib/auth/account';
-import { contextHref, kindLabel } from '@/lib/messages';
+import { contextHref } from '@/lib/messages';
 import { loadBlocks, loadConversation, loadMessages, signAttachments } from '@/lib/messages-source';
 
 export const metadata: Metadata = { title: messagesCopy.list.title };
@@ -53,10 +53,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             ← {c.back}
           </Link>
         </p>
-        <h1 className="mt-2 flex flex-wrap items-center gap-2 text-h2">
-          {conversation.counterparty_name ?? '—'}
-          <StatusBadge tone="neutral">{kindLabel(conversation.kind)}</StatusBadge>
-        </h1>
+        <ConversationTitle name={conversation.counterparty_name} kind={conversation.kind} />
         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-small">
           {conversation.from_city !== null ? (
             <span className="text-muted">

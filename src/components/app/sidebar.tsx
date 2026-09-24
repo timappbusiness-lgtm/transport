@@ -49,7 +49,7 @@ export function Sidebar({
   const groups = groupNav(items);
 
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       {/* The dashboard, not the marketing homepage. Somebody inside their
           own application who clicks the brand means „take me to the top of
           this", and being thrown out to the public site is the oldest way

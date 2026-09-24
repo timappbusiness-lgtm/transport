@@ -91,9 +91,37 @@ describe('a bottom bar never covers what it belongs to', () => {
 
   it('a page with a bottom bar keeps focused fields clear of it', () => {
     const css = readFileSync('src/app/globals.css', 'utf8');
-    for (const marker of ['data-action-bar', 'data-save-bar', 'data-bottom-nav']) {
+    for (const marker of ['data-action-bar', 'data-save-bar', 'data-bottom-nav', 'data-composer']) {
       expect(css, marker).toMatch(new RegExp(`html:has\\(\\[${marker}\\]\\)[^{]*\\{\\s*scroll-padding-bottom`));
     }
+    // The message box grows with its images and says how tall it is.
+    const composer = readFileSync('src/components/messages/composer.tsx', 'utf8');
+    expect(composer).toContain('data-composer');
+    expect(composer).toContain("setProperty('--composer-height'");
+    expect(css).toContain('var(--composer-height');
+  });
+
+  it('the end of the page, footer included, clears the phone menu', () => {
+    const css = readFileSync('src/app/globals.css', 'utf8');
+    expect(css).toMatch(/body:has\(\[data-bottom-nav\]\)\s*\{\s*padding-bottom:\s*calc\(3\.5rem \+ env\(safe-area-inset-bottom\)\)/);
+  });
+
+  it('the account sidebar is no taller than the screen and scrolls inside', () => {
+    const layout = readFileSync('src/app/cont/layout.tsx', 'utf8');
+    expect(layout).toContain('sticky top-24 flex max-h-[calc(100dvh-7.5rem)] flex-col');
+    const sidebar = readFileSync('src/components/app/sidebar.tsx', 'utf8');
+    expect(sidebar).toContain('flex h-full min-h-0 flex-col');
+    expect(sidebar).toMatch(/min-h-0 flex-1 flex-col gap-5 overflow-y-auto/);
+  });
+
+  it('one id per target: the account skip link goes past the menu', () => {
+    const root = readFileSync('src/app/layout.tsx', 'utf8');
+    const account = readFileSync('src/app/cont/layout.tsx', 'utf8');
+    const skip = readFileSync('src/components/app/top-bar.tsx', 'utf8');
+    expect(root).toContain('<main id="continut">');
+    expect(account).not.toMatch(/id="continut"/);
+    expect(account).toContain('id="continut-cont"');
+    expect(skip).toContain('href="#continut-cont"');
   });
 });
 

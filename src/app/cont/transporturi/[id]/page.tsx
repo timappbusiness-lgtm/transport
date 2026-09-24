@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { TopBar } from '@/components/app/top-bar';
 import { HelpLink } from '@/components/help/help-link';
 import { ReturnLeg } from '@/components/orders/return-leg';
+import { ORDER_GRID } from '@/components/orders/order-grid';
 import { OrderContacts } from '@/components/offers/order-contacts';
 import {
   AssignCrew,
@@ -152,7 +153,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           the details, then the photographs. The left column dissolves
           below lg (`contents`) so its pieces can sit either side of the
           action column; from lg it is a column again and nothing moves. */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+      <div className={ORDER_GRID}>
         <div className="contents lg:flex lg:flex-col lg:gap-6">
           <div className="order-1 lg:order-none">
             <OrderTimeline
