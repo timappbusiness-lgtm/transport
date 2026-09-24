@@ -49,6 +49,9 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm build && pnpm start',
+    // Turns on /proba/incarcari, the upload queue on its own, for
+    // tests/e2e/incarcari.spec.ts. Nothing else reads it.
+    env: { E2E_HARNESS: '1' },
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

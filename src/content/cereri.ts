@@ -83,6 +83,7 @@ export const requestsCopy = {
       cityHint: 'Scrie orice localitate. Cele din listă vin cu distanța calculată.',
       loadingFrom: 'Poate fi încărcat de la',
       loadingTo: 'Până la (opțional)',
+      windowToggle: 'Poate fi încărcat și în alte zile? (opțional)',
       windowHint:
         'Un interval găsește mai repede un transportator decât o singură zi: platformele își fac ruta cu o săptămână înainte.',
       places: 'Localitățile',
@@ -125,6 +126,15 @@ export const requestsCopy = {
         noNote: 'Transportatorul vine cu troliu și, de obicei, cu un om în plus.',
       },
       more: 'Mai sunt de știut',
+      /** The closed box says what it holds, so nobody opens it to check. */
+      moreSummary: (line: string) => `Mai multe despre mașină (opțional) — ${line}`,
+      /** The answers inside the box, short, for its closed line: [yes, no]. */
+      conditionShort: {
+        wheelsTurn: ['roțile se învârt', 'roțile nu se învârt'],
+        steeringWorks: ['direcția merge', 'direcția nu merge'],
+        hasKeys: ['are cheile', 'fără chei'],
+        isDamaged: ['are avarii', 'fără avarii'],
+      },
       photosTitle: 'Poze',
     },
 
@@ -150,6 +160,12 @@ export const requestsCopy = {
       name: 'Numele tău',
       phone: 'Telefon',
       phoneHint: 'Aici te sună transportatorul. Fiecare deschidere a numărului se înregistrează.',
+      phoneFromAccount: 'Din contul tău. Schimbă-l dacă pentru mașina asta te sună altcineva.',
+      more: 'Alt nume, e-mail sau alte detalii (opțional)',
+      moreSignedOut: 'Altceva de spus transportatorului? (opțional)',
+      nameHint: 'Dacă predă altcineva mașina. Altfel folosim numele din cont.',
+      fromAccount:
+        'Numele, telefonul și e-mailul le scrii o singură dată, în contul pe care îl faci mai jos. Numărul tău nu apare pe cerere: îl vede doar transportatorul verificat care o deschide.',
       email: 'E-mail (opțional)',
       description: 'Altceva de spus (opțional)',
       descriptionHint:

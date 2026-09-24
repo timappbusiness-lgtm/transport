@@ -87,13 +87,16 @@ async function failNextAction(page: Page, how: (route: Route) => Promise<void> =
 test.describe('the request form and an account', () => {
   test('signing in at step four comes back to step four, with the account step done', async ({ page }) => {
     await toContact(page);
-    await page.getByLabel('Numele tău').fill('Ana Pop');
+    await page.locator('[data-optional="contact"] > summary').click();
+    await page.getByLabel('Altceva de spus (opțional)').fill('Mașina e în curtea din spate.');
     await page.locator('[data-account-step="needed"]').getByRole('link', { name: 'Am deja cont' }).click();
     await signInHere(page, CLIENT);
 
     await expect(page).toHaveURL(/\/cerere\/noua\?pas=contact$/);
     await expect(page.locator('[data-step="contact"][data-state="current"]')).toBeVisible();
-    await expect(page.getByLabel('Numele tău')).toHaveValue('Ana Pop');
+    await expect(page.getByLabel('Altceva de spus (opțional)')).toHaveValue('Mașina e în curtea din spate.');
+    // Signed in, the number comes from the account rather than being asked again.
+    await expect(page.getByLabel('Telefon')).not.toHaveValue('');
     await expect(page.locator('[data-account-step="done"]')).toBeVisible();
     await expect(page.locator('[data-account-step="needed"]')).toHaveCount(0);
   });

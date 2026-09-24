@@ -32,7 +32,7 @@ import { SEND_ERROR_MESSAGES, SendError, errorForAnswer, isAlreadyThere } from '
 import { failureMessage } from '@/lib/uploads/use-upload-queue';
 
 const added = (id: string, extra: Partial<Pick<UploadItem, 'meta'>> & { restored?: boolean } = {}) =>
-  ({ id, name: `${id}.jpg`, size: 1000, type: 'image/jpeg', meta: extra.meta ?? {}, restored: extra.restored });
+  ({ id, name: `${id}.jpg`, size: 1000, type: 'image/jpeg', meta: extra.meta ?? {}, restored: extra.restored === true });
 
 function run(events: Parameters<typeof uploadReducer>[1][]): UploadItem[] {
   return events.reduce<UploadItem[]>((items, event) => uploadReducer(items, event), []);

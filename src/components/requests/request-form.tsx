@@ -122,6 +122,53 @@ export interface RequestFormProps {
   signedIn: boolean;
   /** The account's copy of the draft, for a signed-in person; null otherwise. */
   serverDraft: DraftEnvelope<StoredRequest> | null;
+  /**
+   * The telephone on the account, which every sign-up now asks for: the
+   * contact step starts with it rather than asking for it again.
+   */
+  accountPhone?: string | null;
+}
+
+/** „roțile se învârt, direcția merge, are cheile, fără avarii, 1.200 kg" */
+function conditionLine(draft: RequestDraft): string {
+  const words = requestsCopy.form.vehicle.conditionShort;
+  const parts: string[] = [
+    words.wheelsTurn[draft.wheelsTurn ? 0 : 1],
+    words.steeringWorks[draft.steeringWorks ? 0 : 1],
+    words.hasKeys[draft.hasKeys ? 0 : 1],
+    words.isDamaged[draft.isDamaged ? 0 : 1],
+  ];
+  if (draft.weightKg.trim() !== '') parts.push(`${draft.weightKg.trim()} kg`);
+  return parts.join(', ');
+}
+
+/**
+ * What a step does not need to publish, one click away.
+ *
+ * It opens by itself when it holds something — a value, an error, a link
+ * that carried one — and then stays open: a box that shut itself while
+ * somebody cleared the field inside it would be a box that moves under
+ * the cursor.
+ */
+function Optional({
+  name,
+  summary,
+  when,
+  children,
+}: {
+  name: string;
+  summary: string;
+  when: boolean;
+  children: React.ReactNode;
+}) {
+  const [opened, setOpened] = useState(when);
+  if (when && !opened) setOpened(true);
+  return (
+    <details open={opened} data-optional={name} className="rounded-card border border-border bg-background p-4">
+      <summary className="cursor-pointer text-body font-medium">{summary}</summary>
+      <div className="mt-4 flex flex-col gap-4">{children}</div>
+    </details>
+  );
 }
 
 /**
@@ -220,7 +267,7 @@ function Group({ title, id, children }: { title: string; id?: string; children: 
  * has a twin in `create_cargo_request`, and when the two could disagree
  * the database wins and its sentence is shown as it is.
  */
-export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft }: RequestFormProps) {
+export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft, accountPhone = null }: RequestFormProps) {
   const [state, action, pending] = useKeptActionState(publishRequestAction, EMPTY);
   const [saveStatus, setSaveStatus] = useState<DraftSaveStatus>('idle');
   // The draft lives outside React — in localStorage, and on the account
@@ -343,6 +390,16 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
     if (found === null || (serverDraft !== null && found.savedAt <= serverDraft.savedAt)) return;
     accountCopy.schedule(found.payload, found.step);
   }, [hydrated, signedIn, store, serverDraft, accountCopy]);
+
+  // The account's telephone, once, when the draft has none: everybody
+  // signing up gives one now, and asking for it twice is the one thing
+  // this form must not do.
+  useEffect(() => {
+    if (!hydrated || !signedIn || accountPhone === null || accountPhone.trim() === '') return;
+    const current = store.getSnapshot();
+    if (current.contactPhone.trim() !== '') return;
+    store.set({ ...current, contactPhone: accountPhone });
+  }, [hydrated, signedIn, accountPhone, store]);
 
   // A link from the price calculator seeds the draft once. From then on
   // the draft is the truth, so the choices come off the address: a
@@ -714,6 +771,12 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
                 {...fieldProps('loadingFrom', `${id}-from-date`)}
               />
             </Labelled>
+          </div>
+          <Optional
+            name="interval"
+            summary={c.route.windowToggle}
+            when={draft.loadingTo !== '' || fieldError('loadingTo') !== undefined}
+          >
             <Labelled
               label={c.route.loadingTo}
               htmlFor={`${id}-to-date`}
@@ -730,7 +793,7 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
                 {...fieldProps('loadingTo', `${id}-to-date`, true)}
               />
             </Labelled>
-          </div>
+          </Optional>
         </Group>
       </div>
     );
@@ -845,30 +908,6 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
                 {...fieldProps('year', `${id}-year`)}
               />
             </Labelled>
-            <Labelled
-              label={c.vehicle.weight}
-              htmlFor={`${id}-weight`}
-              /* The hint follows the category: „de obicei între 120 și
-                 350 kg" is worth more under Motocicletă than one
-                 sentence that has to be true of a motorbike and a
-                 minibus at once. */
-              hint={`${c.vehicle.weightHint} ${categoryMeta(draft.category)?.weightHint ?? ''}`.trim()}
-              error={fieldError('weightKg')}
-              auto={auto.has('weightKg')}
-            >
-              <input
-                id={`${id}-weight`}
-                inputMode="numeric"
-                value={draft.weightKg}
-                /* A placeholder, never a value: a number nobody typed is
-                   a number nobody checks, and the carrier loads the axle
-                   against it. */
-                placeholder={String(weightHintKg(draft.category) ?? '')}
-                onChange={(event) => set('weightKg', event.target.value)}
-                className={CONTROL}
-                {...fieldProps('weightKg', `${id}-weight`, true)}
-              />
-            </Labelled>
           </div>
         </Group>
 
@@ -893,41 +932,85 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
             />
           </div>
 
-          <fieldset className="flex flex-col gap-2.5 rounded-card border border-border bg-background p-4">
-            <legend className="px-1 text-body font-medium">{c.vehicle.more}</legend>
-            <Check label={c.condition.wheelsTurn} checked={draft.wheelsTurn} onChange={(value) => set('wheelsTurn', value)} />
-            <Check
-              label={c.condition.steeringWorks}
-              checked={draft.steeringWorks}
-              onChange={(value) => set('steeringWorks', value)}
-            />
-            <Check label={c.condition.hasKeys} checked={draft.hasKeys} onChange={(value) => set('hasKeys', value)} />
-            <Check label={c.condition.isDamaged} checked={draft.isDamaged} onChange={(value) => set('isDamaged', value)} />
-            {/* Derived in the database from the three above and never
-                entered, so this only reports what they already say. */}
-            {!draft.isRunning || !draft.wheelsTurn || !draft.steeringWorks ? (
-              <p className="text-small text-muted">{c.condition.winch}</p>
-            ) : null}
-          </fieldset>
+          {/* Derived in the database from the three answers and never
+              entered, so this only reports what they already say. */}
+          {!draft.isRunning || !draft.wheelsTurn || !draft.steeringWorks ? (
+            <p className="text-small text-muted">{c.condition.winch}</p>
+          ) : null}
 
-          {draft.isDamaged ? (
+          {/* What is not needed to publish, one click away: the answers
+              already given are written on the summary line, and the box
+              opens by itself when one of them is not the usual one. */}
+          <Optional
+            name="masina"
+            summary={c.vehicle.moreSummary(conditionLine(draft))}
+            when={
+              draft.weightKg !== '' ||
+              !draft.wheelsTurn ||
+              !draft.steeringWorks ||
+              !draft.hasKeys ||
+              draft.isDamaged ||
+              auto.has('weightKg') ||
+              fieldError('weightKg') !== undefined ||
+              fieldError('damageNotes') !== undefined
+            }
+          >
+            <fieldset className="flex flex-col gap-2.5">
+              <legend className="mb-1 text-body font-medium">{c.vehicle.more}</legend>
+              <Check label={c.condition.wheelsTurn} checked={draft.wheelsTurn} onChange={(value) => set('wheelsTurn', value)} />
+              <Check
+                label={c.condition.steeringWorks}
+                checked={draft.steeringWorks}
+                onChange={(value) => set('steeringWorks', value)}
+              />
+              <Check label={c.condition.hasKeys} checked={draft.hasKeys} onChange={(value) => set('hasKeys', value)} />
+              <Check label={c.condition.isDamaged} checked={draft.isDamaged} onChange={(value) => set('isDamaged', value)} />
+            </fieldset>
+
+            {draft.isDamaged ? (
+              <Labelled
+                label={c.condition.damageNotes}
+                htmlFor={`${id}-damage`}
+                hint={c.condition.damageHint}
+                error={fieldError('damageNotes')}
+              >
+                <textarea
+                  id={`${id}-damage`}
+                  rows={3}
+                  maxLength={MAX_DAMAGE_NOTES}
+                  value={draft.damageNotes}
+                  onChange={(event) => set('damageNotes', event.target.value)}
+                  className={CONTROL}
+                  {...fieldProps('damageNotes', `${id}-damage`, true)}
+                />
+              </Labelled>
+            ) : null}
+
             <Labelled
-              label={c.condition.damageNotes}
-              htmlFor={`${id}-damage`}
-              hint={c.condition.damageHint}
-              error={fieldError('damageNotes')}
+              label={c.vehicle.weight}
+              htmlFor={`${id}-weight`}
+              /* The hint follows the category: „de obicei între 120 și
+                 350 kg" is worth more under Motocicletă than one
+                 sentence that has to be true of a motorbike and a
+                 minibus at once. */
+              hint={`${c.vehicle.weightHint} ${categoryMeta(draft.category)?.weightHint ?? ''}`.trim()}
+              error={fieldError('weightKg')}
+              auto={auto.has('weightKg')}
             >
-              <textarea
-                id={`${id}-damage`}
-                rows={3}
-                maxLength={MAX_DAMAGE_NOTES}
-                value={draft.damageNotes}
-                onChange={(event) => set('damageNotes', event.target.value)}
+              <input
+                id={`${id}-weight`}
+                inputMode="numeric"
+                value={draft.weightKg}
+                /* A placeholder, never a value: a number nobody typed is
+                   a number nobody checks, and the carrier loads the axle
+                   against it. */
+                placeholder={String(weightHintKg(draft.category) ?? '')}
+                onChange={(event) => set('weightKg', event.target.value)}
                 className={CONTROL}
-                {...fieldProps('damageNotes', `${id}-damage`, true)}
+                {...fieldProps('weightKg', `${id}-weight`, true)}
               />
             </Labelled>
-          ) : null}
+          </Optional>
         </Group>
 
         <Group title={c.vehicle.photosTitle}>
@@ -1040,66 +1123,109 @@ export function RequestForm({ initial, hasPrefill, today, signedIn, serverDraft 
   }
 
   function contactFields() {
+    const descriptionField = (
+      <Labelled
+        label={c.contact.description}
+        htmlFor={`${id}-description`}
+        hint={c.contact.descriptionHint}
+        error={needsDescription(draft.category) ? undefined : fieldError('description')}
+      >
+        <textarea
+          id={`${id}-description`}
+          rows={3}
+          maxLength={MAX_DESCRIPTION}
+          value={draft.description}
+          onChange={(event) => set('description', event.target.value)}
+          className={CONTROL}
+          {...fieldProps('description', `${id}-description`, true)}
+        />
+      </Labelled>
+    );
+    const descriptionOpen =
+      (draft.description !== '' && !needsDescription(draft.category)) ||
+      (!needsDescription(draft.category) && fieldError('description') !== undefined);
+
     return (
       <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Labelled label={c.contact.name} htmlFor={`${id}-name`} error={fieldError('contactName')}>
-            <input
-              id={`${id}-name`}
-              value={draft.contactName}
-              onChange={(event) => set('contactName', event.target.value)}
-              autoComplete="name"
-              className={CONTROL}
-              {...fieldProps('contactName', `${id}-name`)}
-            />
-          </Labelled>
-          <Labelled
-            label={c.contact.phone}
-            htmlFor={`${id}-phone`}
-            hint={c.contact.phoneHint}
-            error={fieldError('contactPhone')}
-          >
-            <input
-              id={`${id}-phone`}
-              type="tel"
-              value={draft.contactPhone}
-              onChange={(event) => set('contactPhone', event.target.value)}
-              autoComplete="tel"
-              placeholder="+40722000111"
-              className={CONTROL}
-              {...fieldProps('contactPhone', `${id}-phone`, true)}
-            />
-          </Labelled>
-        </div>
+        {signedIn ? (
+          <>
+            <Labelled
+              label={c.contact.phone}
+              htmlFor={`${id}-phone`}
+              hint={
+                accountPhone !== null && draft.contactPhone === accountPhone
+                  ? c.contact.phoneFromAccount
+                  : c.contact.phoneHint
+              }
+              error={fieldError('contactPhone')}
+            >
+              <input
+                id={`${id}-phone`}
+                type="tel"
+                value={draft.contactPhone}
+                onChange={(event) => set('contactPhone', event.target.value)}
+                autoComplete="tel"
+                placeholder="+40722000111"
+                className={cn(CONTROL, 'sm:max-w-[20rem]')}
+                {...fieldProps('contactPhone', `${id}-phone`, true)}
+              />
+            </Labelled>
 
-        <Labelled label={c.contact.email} htmlFor={`${id}-email`} error={fieldError('contactEmail')}>
-          <input
-            id={`${id}-email`}
-            type="email"
-            value={draft.contactEmail}
-            onChange={(event) => set('contactEmail', event.target.value)}
-            autoComplete="email"
-            className={CONTROL}
-            {...fieldProps('contactEmail', `${id}-email`)}
-          />
-        </Labelled>
-
-        <Labelled
-          label={c.contact.description}
-          htmlFor={`${id}-description`}
-          hint={c.contact.descriptionHint}
-          error={needsDescription(draft.category) ? undefined : fieldError('description')}
-        >
-          <textarea
-            id={`${id}-description`}
-            rows={3}
-            maxLength={MAX_DESCRIPTION}
-            value={draft.description}
-            onChange={(event) => set('description', event.target.value)}
-            className={CONTROL}
-            {...fieldProps('description', `${id}-description`, true)}
-          />
-        </Labelled>
+            {/* The name and the e-mail are the account's unless somebody
+                else hands the car over: the database falls back to the
+                account's own when these are empty. */}
+            <Optional
+              name="contact"
+              summary={c.contact.more}
+              when={
+                draft.contactName !== '' ||
+                draft.contactEmail !== '' ||
+                descriptionOpen ||
+                fieldError('contactName') !== undefined ||
+                fieldError('contactEmail') !== undefined
+              }
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Labelled label={c.contact.name} htmlFor={`${id}-name`} hint={c.contact.nameHint} error={fieldError('contactName')}>
+                  <input
+                    id={`${id}-name`}
+                    value={draft.contactName}
+                    onChange={(event) => set('contactName', event.target.value)}
+                    autoComplete="name"
+                    className={CONTROL}
+                    {...fieldProps('contactName', `${id}-name`, true)}
+                  />
+                </Labelled>
+                <Labelled label={c.contact.email} htmlFor={`${id}-email`} error={fieldError('contactEmail')}>
+                  <input
+                    id={`${id}-email`}
+                    type="email"
+                    value={draft.contactEmail}
+                    onChange={(event) => set('contactEmail', event.target.value)}
+                    autoComplete="email"
+                    className={CONTROL}
+                    {...fieldProps('contactEmail', `${id}-email`)}
+                  />
+                </Labelled>
+              </div>
+              {needsDescription(draft.category) ? null : descriptionField}
+            </Optional>
+          </>
+        ) : (
+          <>
+            {/* Nobody types a name, a number and an address here and then
+                again on the account form a click later: they are asked
+                once, there, and the request takes them from the account. */}
+            <p data-contact-from-account className="max-w-[60ch] text-body text-muted">
+              {c.contact.fromAccount}
+            </p>
+            {needsDescription(draft.category) ? null : (
+              <Optional name="contact" summary={c.contact.moreSignedOut} when={descriptionOpen}>
+                {descriptionField}
+              </Optional>
+            )}
+          </>
+        )}
 
         {/* Last step, on purpose: by here the route and the dates are
             settled, so the number answers the question somebody is

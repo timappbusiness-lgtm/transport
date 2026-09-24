@@ -93,6 +93,8 @@ test.describe('the categories on the publish form', () => {
     // Every card carries its own range; the weight field's hint is the
     // chosen one's.
     await chooseCategory(page, 'motocicleta');
+    // The weight is optional, so it sits in „Mai multe despre mașină".
+    await page.locator('[data-optional="masina"] > summary').click();
     await expect(page.getByLabel(/Greutatea/)).toHaveAccessibleDescription(/între 120 și 350 kg/);
 
     await chooseCategory(page, 'microbuz');
@@ -102,6 +104,7 @@ test.describe('the categories on the publish form', () => {
   test('and so does the placeholder in the weight field', async ({ page }) => {
     await toVehicleStep(page);
     await chooseCategory(page, 'motocicleta');
+    await page.locator('[data-optional="masina"] > summary').click();
     await expect(page.getByLabel(/Greutatea/)).toHaveAttribute('placeholder', '200');
     // A placeholder, never a value: nothing is written into the field.
     await expect(page.getByLabel(/Greutatea/)).toHaveValue('');

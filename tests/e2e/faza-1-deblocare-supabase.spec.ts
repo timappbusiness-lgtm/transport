@@ -162,7 +162,10 @@ test.describe('photographs on a request', () => {
     await page.getByRole('button', { name: 'Continuă' }).click();
 
     await expect(page.locator('form input[name="photo_paths"]')).toHaveCount(1);
-    await page.getByLabel('Numele tău').fill('Test Poze');
+    // The number comes from the account; an account older than the phone
+    // rule may have none.
+    const phone = page.getByLabel('Telefon');
+    if ((await phone.inputValue()) === '') await phone.fill('0722 123 456');
     await page.getByRole('button', { name: 'Publică cererea' }).click();
     await expect(page.locator('[data-publish-result]')).toBeVisible({ timeout: 15_000 });
   });

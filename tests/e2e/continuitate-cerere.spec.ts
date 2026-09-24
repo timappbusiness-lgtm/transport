@@ -77,13 +77,16 @@ test.describe('the request form keeps its place', () => {
 
     await next(page).click();
     await expect(page).toHaveURL(/\?pas=contact$/);
-    await page.getByLabel('Numele tău').fill('Ana Pop');
-    await page.getByLabel('Telefon').fill('0722 123 456');
+    // Signed out, the contact itself comes from the account; what is left
+    // to type here is a note for the carrier.
+    await page.locator('[data-optional="contact"] > summary').click();
+    await page.getByLabel('Altceva de spus (opțional)').fill('Mașina e în curtea din spate.');
     await saved(page);
     await page.reload();
     await expect(current(page, 'contact')).toBeVisible();
-    await expect(page.getByLabel('Numele tău')).toHaveValue('Ana Pop');
-    await expect(page.getByLabel('Telefon')).toHaveValue('0722 123 456');
+    // The box opens by itself: it holds something.
+    await expect(page.getByLabel('Altceva de spus (opțional)')).toBeVisible();
+    await expect(page.getByLabel('Altceva de spus (opțional)')).toHaveValue('Mașina e în curtea din spate.');
     // Everything above is still there: the summary reads it back.
     await expect(page.locator('[data-summary-block="ruta"]')).toContainText('München');
     await expect(page.locator('[data-summary-block="vehicul"]')).toContainText('Volkswagen Golf 2018');
@@ -204,14 +207,15 @@ test.describe('the request form keeps its place', () => {
 
   test('a closed tab reopened finds the draft; „Începe din nou" empties it', async ({ page, context }) => {
     await toContact(page);
-    await page.getByLabel('Numele tău').fill('Ana Pop');
+    await page.locator('[data-optional="contact"] > summary').click();
+    await page.getByLabel('Altceva de spus (opțional)').fill('Predă mașina fratele meu.');
     await saved(page);
     await page.close();
 
     const again = await context.newPage();
     await again.goto('/cerere/noua?pas=contact');
     await expect(current(again, 'contact')).toBeVisible();
-    await expect(again.getByLabel('Numele tău')).toHaveValue('Ana Pop');
+    await expect(again.getByLabel('Altceva de spus (opțional)')).toHaveValue('Predă mașina fratele meu.');
 
     again.once('dialog', (dialog) => void dialog.accept());
     await again.locator('[data-draft-restored]').getByRole('button', { name: 'Începe din nou' }).click();
