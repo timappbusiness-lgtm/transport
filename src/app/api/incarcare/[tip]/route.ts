@@ -118,6 +118,29 @@ async function store(supabase: Supabase, bucket: string, path: string, bytes: Bu
   return null;
 }
 
+/**
+ * A unique violation on the id is the earlier attempt's row only when that
+ * row is visible to the caller and points at this file. Anything else —
+ * an id that collides with somebody else's row — is refused, not
+ * reported as saved.
+ */
+async function rowIsOurs(
+  supabase: Supabase,
+  table: 'order_evidence' | 'message_attachments',
+  id: string,
+  path: string,
+): Promise<boolean> {
+  const { data } = await supabase.from(table).select('id').eq('id', id).eq('file_path', path).maybeSingle();
+  return data !== null;
+}
+
+function refusal(error: { code?: string; message?: string }, context: string): Response {
+  if (isDuplicateRow(error)) {
+    return answer(409, { error: 'Fișierul are un identificator folosit deja. Scoate-l și alege-l din nou.' });
+  }
+  return answer(error.code === '42501' ? 403 : 400, { error: toAppError(error, context).message });
+}
+
 /** A request's photograph: an object only; the form carries its path until publishing. */
 async function requestPhoto(supabase: Supabase, context: AccountContext, id: string, bytes: Buffer) {
   const path = requestPhotoPath(context.user.id, id);
@@ -154,8 +177,8 @@ async function evidence(supabase: Supabase, context: AccountContext, id: string,
     lat: hasGeo ? lat : null,
     lng: hasGeo ? lng : null,
   });
-  if (error && !isDuplicateRow(error)) {
-    return answer(error.code === '42501' ? 403 : 400, { error: toAppError(error, 'orders.evidence').message });
+  if (error && !(isDuplicateRow(error) && (await rowIsOurs(supabase, 'order_evidence', id, path)))) {
+    return refusal(error, 'orders.evidence');
   }
 
   revalidatePath(ROUTES.accountTransports);
@@ -189,8 +212,8 @@ async function attachment(supabase: Supabase, context: AccountContext, id: strin
     uploaded_by: context.user.id,
     bytes: bytes.length,
   });
-  if (error && !isDuplicateRow(error)) {
-    return answer(error.code === '42501' ? 403 : 400, { error: toAppError(error, 'mesaje.attach').message });
+  if (error && !(isDuplicateRow(error) && (await rowIsOurs(supabase, 'message_attachments', id, path)))) {
+    return refusal(error, 'mesaje.attach');
   }
 
   revalidatePath(`${ROUTES.accountMessages}/${conversationId}`);
