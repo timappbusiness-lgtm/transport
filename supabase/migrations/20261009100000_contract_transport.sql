@@ -531,7 +531,7 @@ $fn$;
 revoke all on function public.contract_operator_block(jsonb) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- 9. Anunțurile: contract generat, contract acceptat
+-- 9. Notificările: contract generat, contract acceptat
 --
 -- Către cealaltă parte: cine generează sau acceptă știe deja. Când
 -- generează echipa, află amândouă. E-mailul are legătura spre contract
