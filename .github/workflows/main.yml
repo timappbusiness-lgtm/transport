@@ -10,7 +10,8 @@ name: Main
 #   2. migrations  supabase db push --dry-run, then the real push
 #   3. functions   deploy the edge functions whose sources changed
 #   4. production  Vercel production deploy, through a deploy hook
-#   5. advisors    security advisors, written into the run summary
+#   5. advisors    security advisors, written into the run summary, and
+#                  the CUI autofill walked end to end (report only)
 #
 # Steps 2 and 3 change a system that has no undo, so nothing is allowed to
 # cancel a run in flight: see the concurrency block below.
@@ -245,3 +246,13 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: bash scripts/ci/advisors-report.sh
+
+      # The sign-up's CUI autofill, walked against what was just deployed:
+      # ANAF, the function, its secrets (names only), a real lookup. A
+      # report, never a gate — ANAF being down is not a failed release.
+      - name: Company lookup (ANAF)
+        continue-on-error: true
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: bash scripts/ci/check-anaf.sh

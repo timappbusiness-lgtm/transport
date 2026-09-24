@@ -106,7 +106,10 @@ async function signUp(
     accountType === 'company' ? ROUTES.requests : ROUTES.account,
   );
 
-  const requirePhone = accountType === 'individual';
+  // Asked of a firm too, since the carrier journey was shortened: name,
+  // e-mail, password, telephone — the number a client rings, which the
+  // firm step then offers as the firm's contact instead of asking again.
+  const requirePhone = true;
   const validation = validateIndividualSignUp(
     { fullName, email, password, phone: rawPhone, terms },
     { requirePhone },
@@ -148,8 +151,14 @@ async function signUp(
     };
   }
 
-  // The confirmation page keeps the place too: its „resend" and its way
-  // back to sign-in both lead to the same form, the same step.
+  // A carrier lands on the board at once, readable while the e-mail is on
+  // its way; the board says what to do with the link. A private person
+  // keeps the confirmation page. Both keep the place for „resend".
+  if (accountType === 'company') {
+    redirect(
+      withNext(`${ROUTES.requests}?confirma=${encodeURIComponent(email)}`, text(formData, 'next')),
+    );
+  }
   redirect(
     withNext(`${ROUTES.confirmEmail}?email=${encodeURIComponent(email)}`, text(formData, 'next')),
   );

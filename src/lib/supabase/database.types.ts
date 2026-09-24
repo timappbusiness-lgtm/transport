@@ -5531,6 +5531,7 @@ export type Database = {
           model: string | null
           pallet_capacity: number | null
           plate_number: string
+          platform_slots: number | null
           updated_at: string
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
           vin: string | null
@@ -5557,6 +5558,7 @@ export type Database = {
           model?: string | null
           pallet_capacity?: number | null
           plate_number: string
+          platform_slots?: number | null
           updated_at?: string
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
           vin?: string | null
@@ -5583,6 +5585,7 @@ export type Database = {
           model?: string | null
           pallet_capacity?: number | null
           plate_number?: string
+          platform_slots?: number | null
           updated_at?: string
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
           vin?: string | null

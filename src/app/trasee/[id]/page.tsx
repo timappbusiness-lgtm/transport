@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DepartureCard } from '@/components/departures/departure-card';
 import { RevealContactButton } from '@/components/departures/reveal-contact-button';
+import { ActionGate } from '@/components/onboarding/action-gate';
+import { loadJourney } from '@/lib/journey-source';
 import { buttonClasses } from '@/components/ui/button';
 import { CountryTag, EyebrowPill, Figure, StatusBadge } from '@/components/ui/primitives';
 import { SeatDeck } from '@/components/ui/seat-deck';
-import { ROUTES } from '@/config/routes';
+import { ROUTES, departureRoute } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { getAccountContext } from '@/lib/auth/account';
 import {
@@ -56,6 +58,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const context = await getAccountContext();
   const carrier = context ? await loadCarrier(id) : null;
+  // A firm that cannot see contacts yet is shown the way through instead
+  // of a button the database would refuse.
+  const journey = context?.profile?.account_type === 'company' ? await loadJourney(context) : null;
   const [similar] = await Promise.all([loadSimilar(departure)]);
 
   const cities = routeCities(departure);
@@ -207,10 +212,20 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               >
                 {c.request}
               </Link>
-              <RevealContactButton
-                truckListingId={departure.truck_listing_id}
-                signedIn={context !== null}
-              />
+              {journey !== null && journey.stage !== 'verified' ? (
+                <ActionGate
+                  action="contact"
+                  stage={journey.stage}
+                  minutes={journey.minutes}
+                  next={departureRoute(departure.truck_listing_id)}
+                  compact
+                />
+              ) : (
+                <RevealContactButton
+                  truckListingId={departure.truck_listing_id}
+                  signedIn={context !== null}
+                />
+              )}
             </div>
           </section>
 

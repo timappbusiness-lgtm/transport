@@ -1,14 +1,7 @@
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CarrierBanner } from '@/components/onboarding/carrier-banner';
+import { inscriereCopy } from '@/content/inscriere';
 import { onboardingCopy } from '@/content/onboarding';
-import {
-  COMPANY_FILE_STEPS,
-  carrierStage,
-  needsOnboarding,
-  stepPosition,
-  type CarrierStage,
-} from '@/lib/carrier-onboarding';
+import { COMPANY_FILE_STEPS, stepPosition } from '@/lib/carrier-onboarding';
 import { PROFILE_TABS, tabsFor } from '@/lib/company-profile';
 
 /**
@@ -21,67 +14,9 @@ import { PROFILE_TABS, tabsFor } from '@/lib/company-profile';
  * company file has to count the steps this firm will actually see.
  */
 
-describe('where a carrier stands', () => {
-  it('no firm on the account yet', () => {
-    expect(carrierStage(null)).toBe('no_company');
-  });
-
-  it('a firm that is verified is in nobody’s way', () => {
-    expect(carrierStage({ verificationStatus: 'verified', isSuspended: false })).toBe('ready');
-    expect(needsOnboarding('ready')).toBe(false);
-  });
-
-  it('and every other status has something left to do', () => {
-    expect(carrierStage({ verificationStatus: 'draft', isSuspended: false })).toBe('draft');
-    expect(carrierStage({ verificationStatus: 'pending', isSuspended: false })).toBe('pending');
-    expect(carrierStage({ verificationStatus: 'rejected', isSuspended: false })).toBe('rejected');
-    expect(carrierStage({ verificationStatus: 'suspended', isSuspended: false })).toBe('suspended');
-  });
-
-  it('a suspension outranks the verification status, as it does everywhere else', () => {
-    // `is_suspended` and `verification_status` are two columns that can
-    // disagree. `banners.ts` reads the suspension first; so does this,
-    // or a suspended firm would be told to carry on filling in a form.
-    expect(carrierStage({ verificationStatus: 'verified', isSuspended: true })).toBe('suspended');
-    expect(carrierStage({ verificationStatus: 'draft', isSuspended: true })).toBe('suspended');
-  });
-});
-
-describe('the banner above the boards', () => {
-  const STAGES: Exclude<CarrierStage, 'ready'>[] = [
-    'no_company',
-    'draft',
-    'pending',
-    'rejected',
-    'suspended',
-  ];
-
-  it('says what can be done before what cannot, on every stage', () => {
-    for (const stage of STAGES) {
-      const html = renderToStaticMarkup(<CarrierBanner stage={stage} />);
-      const c = onboardingCopy.banner[stage];
-      expect(html, stage).toContain(c.title);
-      expect(html, stage).toContain(c.action);
-      // Exactly one way out of it. A banner with two buttons is a
-      // decision, and this is not the screen for one.
-      expect((html.match(/<a\b/g) ?? []).length, stage).toBe(1);
-    }
-  });
-
-  it('but a suspension and a rejection carry no icon', () => {
-    // `docs/13-iconuri.md`: a pictogram beside „cont suspendat" turns a
-    // sentence somebody has to read into a notification they dismiss.
-    for (const stage of ['suspended', 'rejected'] as const) {
-      expect(renderToStaticMarkup(<CarrierBanner stage={stage} />), stage).not.toContain('<svg');
-    }
-  });
-
-  it('and the calm ones do, because they are not an alarm', () => {
-    for (const stage of ['no_company', 'draft', 'pending'] as const) {
-      expect(renderToStaticMarkup(<CarrierBanner stage={stage} />), stage).toContain('<svg');
-    }
-  });
-});
+// Where a carrier stands, and the banner above the boards, are in
+// carrier-journey.test.tsx: the stage now reads the vehicles and the
+// documents as well as the firm's status.
 
 describe('the company file counts its own steps', () => {
   it('the steps are the tabs, neither more nor fewer', () => {
@@ -123,7 +58,7 @@ describe('what the onboarding copy may not say', () => {
     return out;
   }
 
-  const ALL = strings(onboardingCopy);
+  const ALL = strings([onboardingCopy, inscriereCopy]);
   const JOINED = ALL.join(' ');
 
   it('promises no verification time, because nothing measures one', () => {

@@ -120,11 +120,12 @@ export function gateHref(stage: JourneyStage, action: JourneyAction, next: strin
 
 /** `path?pentru=oferta&next=/cereri/…` — the reason and the way back travel together. */
 export function withJourney(path: string, action: JourneyAction | null, next: string | null): string {
-  const params = new URLSearchParams();
+  const [base = path, query = ''] = path.split('?');
+  const params = new URLSearchParams(query);
   if (action !== null) params.set('pentru', action);
   if (next !== null && next !== '') params.set('next', next);
-  const query = params.toString();
-  return query === '' ? path : `${path}?${query}`;
+  const text = params.toString();
+  return text === '' ? base : `${base}?${text}`;
 }
 
 /**

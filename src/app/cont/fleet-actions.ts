@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
-import { doneUrl } from '@/lib/continuity/drafts';
 import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import {
   ACCEPTED_DOCUMENT_TYPES,
@@ -102,18 +101,37 @@ function readSpecs(formData: FormData): Specs {
 // Vehicles
 // ---------------------------------------------------------------------
 
+export interface VehicleState extends ActionState {
+  /** The vehicle just added: the form stays, empty, for the next one. */
+  created?: { id: string; plate: string };
+}
+
+/**
+ * „Câte mașini încap": a whole number between 1 and 15, or nothing. The
+ * database refuses anything else (`vehicles_platform_slots_ck`); this is
+ * the sentence before the refusal.
+ */
+function slots(formData: FormData): number | null | 'invalid' {
+  const raw = text(formData, 'platform_slots');
+  if (raw === null) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1 && value <= 15 ? value : 'invalid';
+}
+
 export async function createVehicleAction(
-  _prev: ActionState,
+  _prev: VehicleState,
   formData: FormData,
-): Promise<ActionState> {
+): Promise<VehicleState> {
   const { context, company } = await requireCompany();
 
   const plate = normalizePlate(String(formData.get('plate_number') ?? ''));
   const type = String(formData.get('vehicle_type') ?? '') as VehicleType;
   const { values, fieldErrors } = readSpecs(formData);
+  const platformSlots = slots(formData);
 
   if (plate.length < 4) fieldErrors.plate_number = 'Număr de înmatriculare invalid.';
   if (!VEHICLE_TYPE_ORDER.includes(type)) fieldErrors.vehicle_type = 'Alege tipul vehiculului.';
+  if (platformSlots === 'invalid') fieldErrors.platform_slots = 'Scrie un număr între 1 și 15.';
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
   const supabase = await createClient();
@@ -124,6 +142,7 @@ export async function createVehicleAction(
       plate_number: plate,
       vehicle_type: type,
       vin: text(formData, 'vin')?.toUpperCase() ?? null,
+      platform_slots: platformSlots === 'invalid' ? null : platformSlots,
       ...values,
     })
     .select('id')
@@ -139,9 +158,13 @@ export async function createVehicleAction(
   }
 
   revalidatePath(ROUTES.accountFleet);
-  // The vehicle exists: the form's draft goes, here and in the browser.
+  revalidatePath(ROUTES.accountDocuments);
+  // The vehicle exists: the form's draft goes on the account here, and in
+  // the browser when the form reads `created`. The person stays, with an
+  // empty form, for „Adaugă încă un vehicul" — the documents are asked for
+  // later, when they want something that needs them.
   await deleteServerDraft(context.user.id, 'vehicul');
-  redirect(doneUrl(vehicleRoute(data.id), 'vehicul'));
+  return { created: { id: data.id, plate }, notice: `${plate} a fost adăugat.` };
 }
 
 export async function updateVehicleAction(

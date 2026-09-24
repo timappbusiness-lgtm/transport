@@ -5,6 +5,8 @@ import { DraftRestored, DraftStatus } from '@/components/continuity/draft-status
 import { useFormDirty, useFormDraft } from '@/lib/continuity/use-form-draft';
 import { useLeaveGuard } from '@/lib/continuity/use-leave-guard';
 import type { ActionState } from '@/app/cont/actions';
+import type { VehicleState } from '@/app/cont/fleet-actions';
+import { inscriereCopy } from '@/content/inscriere';
 import {
   addRouteAction,
   createDriverAction,
@@ -19,6 +21,7 @@ import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 
 const EMPTY: ActionState = {};
+const EMPTY_VEHICLE: VehicleState = {};
 
 const CONTROL =
   'w-full rounded-input border bg-surface px-3.5 py-2.5 text-body border-border-strong';
@@ -159,30 +162,58 @@ function SpecFields({
   );
 }
 
-export function NewVehicleForm() {
-  const [state, action] = useKeptActionState(createVehicleAction, EMPTY);
-  // Kept on every change, on the account too: a plate, a VIN and nine
-  // specifications are a lot to type twice. Cleared by the redirect to
-  // the new vehicle (`?gata=vehicul`).
+/**
+ * A vehicle in three answers: the plate, the type, how many cars fit.
+ *
+ * Everything else — VIN, make, model, year, dimensions — waits behind
+ * „Mai multe detalii", open to anybody who has the registration to hand
+ * and in nobody's way who has not. No document is asked for here: those
+ * come when the carrier wants something that needs them.
+ *
+ * After a save the form stays, empty, for the next vehicle; the list
+ * above it gains a row. `onCreated` lets a page that holds the vehicles
+ * elsewhere — the documents screen — switch to the new one.
+ */
+export function NewVehicleForm({
+  onCreated,
+}: {
+  onCreated?: ((vehicle: { id: string; plate: string }) => void) | undefined;
+} = {}) {
+  const [state, action] = useKeptActionState(createVehicleAction, EMPTY_VEHICLE);
+  // Kept on every change, on the account too: a plate and a VIN are a lot
+  // to type twice. Cleared once the vehicle exists.
   const formRef = useRef<HTMLFormElement>(null);
   const draft = useFormDraft(formRef, { form: 'vehicul', signedIn: true });
   const id = useId();
+  const v = inscriereCopy.vehicles;
+
+  const [handled, setHandled] = useState(state);
+  if (handled !== state) {
+    setHandled(state);
+    if (state.created !== undefined) {
+      draft.clear();
+      onCreated?.(state.created);
+    }
+  }
 
   return (
-    <KeepingForm ref={formRef} action={action} className="flex flex-col gap-3" noValidate>
+    <KeepingForm
+      ref={formRef}
+      action={action}
+      resetOn={state.created?.id ?? null}
+      className="flex flex-col gap-3"
+      noValidate
+    >
       {draft.restored !== null ? (
         <DraftRestored savedAt={draft.restored.savedAt} onStartOver={draft.startOver} />
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Labelled
-          label="Număr de înmatriculare"
-          htmlFor={`${id}-plate`}
-          error={state.fieldErrors?.plate_number}
-        >
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <Labelled label={v.plate} htmlFor={`${id}-plate`} error={state.fieldErrors?.plate_number}>
           <input
             id={`${id}-plate`}
             name="plate_number"
             required
+            autoCapitalize="characters"
             placeholder="TM 01 CRD"
             className={cn(
               CONTROL,
@@ -191,17 +222,8 @@ export function NewVehicleForm() {
             )}
           />
         </Labelled>
-        <Labelled
-          label="Tip"
-          htmlFor={`${id}-type`}
-          error={state.fieldErrors?.vehicle_type}
-        >
-          <select
-            id={`${id}-type`}
-            name="vehicle_type"
-            defaultValue="platforma_auto"
-            className={CONTROL}
-          >
+        <Labelled label={v.type} htmlFor={`${id}-type`} error={state.fieldErrors?.vehicle_type}>
+          <select id={`${id}-type`} name="vehicle_type" defaultValue="platforma_auto" className={CONTROL}>
             {VEHICLE_TYPE_ORDER.map((type) => (
               <option key={type} value={type}>
                 {VEHICLE_TYPE_LABELS[type]}
@@ -209,19 +231,34 @@ export function NewVehicleForm() {
             ))}
           </select>
         </Labelled>
-        <Labelled label="Serie de șasiu (VIN)" htmlFor={`${id}-vin`}>
-          <input id={`${id}-vin`} name="vin" className={cn(CONTROL, 'font-mono uppercase')} />
+        <Labelled label={v.slots} htmlFor={`${id}-slots`} error={state.fieldErrors?.platform_slots}>
+          <input
+            id={`${id}-slots`}
+            name="platform_slots"
+            inputMode="numeric"
+            placeholder="8"
+            className={cn(CONTROL, state.fieldErrors?.platform_slots && 'border-danger')}
+          />
         </Labelled>
       </div>
+      <p className="-mt-1 text-small text-muted">{v.slotsHint}</p>
 
-      <SpecFields fieldErrors={state.fieldErrors} prefix={`${id}-new`} />
+      <details className="rounded-input border border-border px-3.5 py-2.5">
+        <summary className="cursor-pointer text-body">{v.more}</summary>
+        <div className="mt-3 flex flex-col gap-3">
+          <Labelled label="Serie de șasiu (VIN)" htmlFor={`${id}-vin`}>
+            <input id={`${id}-vin`} name="vin" className={cn(CONTROL, 'font-mono uppercase')} />
+          </Labelled>
+          <SpecFields fieldErrors={state.fieldErrors} prefix={`${id}-new`} />
+        </div>
+      </details>
 
       <FormError>{state.error}</FormError>
       <FormNotice>{state.notice}</FormNotice>
       <DraftStatus status={draft.status} />
 
       <div>
-        <Submit pendingLabel="Se adaugă…">Adaugă vehiculul</Submit>
+        <Submit pendingLabel="Se adaugă…">{state.created ? v.addAnother : v.add}</Submit>
       </div>
     </KeepingForm>
   );

@@ -4,7 +4,8 @@ import { BoardFilters } from '@/components/requests/board-filters';
 import { SaveSearch } from '@/components/requests/save-search';
 import { BoardRequestCard } from '@/components/requests/board-card';
 import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
-import { CarrierBanner } from '@/components/onboarding/carrier-banner';
+import { JourneyBanner } from '@/components/onboarding/journey-banner';
+import { ConfirmEmailBanner } from '@/components/onboarding/confirm-email-banner';
 import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
@@ -37,7 +38,8 @@ import { createClient } from '@/lib/supabase/server';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { REQUEST_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortRequests } from '@/lib/board-sort';
-import { carrierStage } from '@/lib/carrier-onboarding';
+import { loadJourney } from '@/lib/journey-source';
+import { safeNextPath } from '@/lib/auth/next-path';
 import { RememberBoard } from '@/components/continuity/board-memory';
 
 export const metadata: Metadata = {
@@ -95,9 +97,13 @@ export default async function Page({
   const now = new Date();
 
   // A carrier who has just signed up lands here rather than on a form,
-  // so the board is where the remaining step has to be said.
-  const stage =
-    context?.profile?.account_type === 'company' ? carrierStage(companyState(company)) : 'ready';
+  // so the board is where the remaining step has to be said — and how
+  // long the documents take to upload.
+  const journey = context?.profile?.account_type === 'company' ? await loadJourney(context) : null;
+  const here = `${ROUTES.requests}${boardQuery(params)}`;
+  // Right after a firm's sign-up, before the e-mail link is opened: the
+  // board is readable, and says what to do with the link.
+  const confirming = context === null && typeof params.confirma === 'string' ? params.confirma : null;
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -110,7 +116,15 @@ export default async function Page({
       </header>
 
       <div className="mt-8 flex flex-col gap-8">
-        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
+        {confirming !== null ? (
+          <ConfirmEmailBanner
+            email={confirming}
+            next={safeNextPath(typeof params.next === 'string' ? params.next : null, '')}
+          />
+        ) : null}
+        {journey !== null && journey.stage !== 'verified' ? (
+          <JourneyBanner stage={journey.stage} minutes={journey.minutes} back={here} />
+        ) : null}
         <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
           {/* Whatever is filtered right now is what a saved search would
               watch, so it sits beside „Caută" — as a text link, not a
@@ -174,11 +188,15 @@ export default async function Page({
   );
 }
 
-/** The two fields `carrierStage` reads, or null when there is no firm. */
-function companyState(company: Company | null) {
-  return company === null
-    ? null
-    : { verificationStatus: company.verification_status, isSuspended: company.is_suspended };
+/** The board's own query, for the way back to it — without the sign-up's parameters. */
+function boardQuery(params: Record<string, string | string[] | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === 'confirma' || key === 'next' || key === 'gata' || typeof value !== 'string') continue;
+    query.set(key, value);
+  }
+  const text = query.toString();
+  return text === '' ? '' : `?${text}`;
 }
 
 /**

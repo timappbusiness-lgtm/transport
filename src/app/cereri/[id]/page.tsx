@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { StartConversation } from '@/components/messages/start-conversation';
 import { SendOffer } from '@/components/offers/send-offer';
+import { ActionGate } from '@/components/onboarding/action-gate';
+import { loadJourney } from '@/lib/journey-source';
 import { CarrierCount } from '@/components/requests/carrier-count';
 import { RevealRequestContact } from '@/components/requests/reveal-request-contact';
 import { buttonClasses } from '@/components/ui/button';
@@ -97,6 +99,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   // is not a rule.
   const carrierCount = context ? await countCarriers(supabase, id) : null;
   const offering = FEATURES.offers ? await loadOfferPanel(context, id, request) : null;
+  // A firm that cannot act yet sees the way through instead of the offer
+  // box and the contact button: why, the missing step, one button to it —
+  // and back here afterwards. `company_can_act()` still refuses either.
+  const journey = context?.profile?.account_type === 'company' ? await loadJourney(context) : null;
+  const gated = journey !== null && journey.stage !== 'verified' ? journey : null;
   const c = requestsCopy.detail;
   const km = formatKm(request.estimated_km);
   const vehicle = vehicleLine(request);
@@ -232,7 +239,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               </p>
             </section>
           ) : null}
-          {offering !== null && context !== null ? (
+          {gated !== null && gated.stage !== 'verified' ? (
+            <ActionGate action="oferta" stage={gated.stage} minutes={gated.minutes} next={requestRoute(request.id)} />
+          ) : null}
+          {offering !== null && context !== null && gated === null ? (
             <section aria-label={offersCopy.form.title}>
               <SendOffer
                 request={{ id: request.id, loading_from: request.loading_from }}
@@ -245,7 +255,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               />
             </section>
           ) : null}
-          {context !== null ? (
+          {context !== null && gated === null ? (
           <div className="rounded-card border border-border bg-surface p-5">
             <RevealRequestContact
               requestId={request.id}

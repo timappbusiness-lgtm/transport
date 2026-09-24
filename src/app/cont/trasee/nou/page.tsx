@@ -9,13 +9,21 @@ import { ROUTES } from '@/config/routes';
 import { departuresCopy } from '@/content/departures';
 import { requireAccountContext } from '@/lib/auth/account';
 import { createClient } from '@/lib/supabase/server';
+import { ActionGate } from '@/components/onboarding/action-gate';
+import { withJourney } from '@/lib/carrier-journey';
+import { loadJourney } from '@/lib/journey-source';
 
 export const metadata: Metadata = { title: departuresCopy.form.title };
 
 export default async function Page() {
   const context = await requireAccountContext(ROUTES.accountDepartureNew);
   const company = context.activeCompany;
-  if (!company) redirect(ROUTES.accountCompanyCreate);
+  if (!company) redirect(withJourney(ROUTES.accountCompanyCreate, 'traseu', ROUTES.accountDepartureNew));
+
+  // A firm that cannot publish yet is shown the way through here, where it
+  // wanted to publish — not a form it would fill in and be refused at the
+  // end. `guard_truck_listing_publish()` still refuses it either way.
+  const journey = await loadJourney(context);
 
   const supabase = await createClient();
   // A departure can only be published on a vehicle whose papers are in
@@ -42,7 +50,16 @@ export default async function Page() {
         </p>
       </div>
 
-      {vehicles.length === 0 ? (
+      {journey.stage !== 'verified' ? (
+        <div className="max-w-[34rem]">
+          <ActionGate
+            action="traseu"
+            stage={journey.stage}
+            minutes={journey.minutes}
+            next={ROUTES.accountDepartureNew}
+          />
+        </div>
+      ) : vehicles.length === 0 ? (
         <section className="rounded-card border border-warning/40 bg-warning/8 p-5">
           <p className="text-body">{c.noVehicle}</p>
           <div className="mt-4">

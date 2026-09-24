@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { OfferForm } from '@/components/offers/offer-form';
 import { buttonClasses } from '@/components/ui/button';
-import { ROUTES, offerRoute } from '@/config/routes';
+import { ROUTES, offerRoute, requestRoute } from '@/config/routes';
+import { withJourney } from '@/lib/carrier-journey';
 import { offersCopy } from '@/content/oferte';
 import type { AccountContext } from '@/lib/auth/account';
 import type { OfferSettings } from '@/lib/offers';
@@ -69,14 +70,32 @@ export function SendOffer({
   const company = context.activeCompany;
   if (company === null) {
     return compact ? null : (
-      <Note body={c.needsCompany} href={ROUTES.accountCompanyCreate} action={c.needsCompanyAction} />
+      <Note
+        body={c.needsCompany}
+        href={withJourney(ROUTES.accountCompanyCreate, 'oferta', requestRoute(request.id))}
+        action={c.needsCompanyAction}
+      />
     );
   }
   if (company.is_suspended) {
-    return <Note body={c.suspended} href={ROUTES.accountCompany} action={c.suspendedAction} />;
+    return (
+      <Note
+        body={c.suspended}
+        href={withJourney(ROUTES.accountDocuments, 'oferta', requestRoute(request.id))}
+        action={c.suspendedAction}
+      />
+    );
   }
   if (company.verification_status !== 'verified') {
-    return <Note body={c.unverified} href={ROUTES.accountCompany} action={c.unverifiedAction} />;
+    // The request page shows the journey's own gate before reaching here;
+    // this is the dashboard's copy of the same way through.
+    return (
+      <Note
+        body={c.unverified}
+        href={withJourney(ROUTES.accountDocuments, 'oferta', requestRoute(request.id))}
+        action={c.unverifiedAction}
+      />
+    );
   }
 
   // `allowed === null` is the ordinary case: a plan that names no ceiling
