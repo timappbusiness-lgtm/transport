@@ -49,8 +49,10 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm build && pnpm start',
-    // Turns on /proba/incarcari, the upload queue on its own, for
-    // tests/e2e/incarcari.spec.ts. Nothing else reads it.
+    // Turns on the two harness pages: /proba/incarcari, the upload queue
+    // on its own (tests/e2e/incarcari.spec.ts), and /proba/ecrane, the
+    // account and admin screens with sample data for the layout sweeps
+    // (tests/e2e/aspect-*.spec.ts). Nothing else reads it.
     env: { E2E_HARNESS: '1' },
     url: baseURL,
     reuseExistingServer: !process.env.CI,

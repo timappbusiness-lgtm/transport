@@ -138,7 +138,12 @@ export function MobileNav({
           <button
             type="button"
             aria-label={c.close}
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              // Like Escape and the close button: the focus goes back to
+              // „Mai mult", not to the top of the page.
+              setOpen(false);
+              trigger.current?.focus();
+            }}
             className="absolute inset-0 bg-foreground/30"
           />
           <div

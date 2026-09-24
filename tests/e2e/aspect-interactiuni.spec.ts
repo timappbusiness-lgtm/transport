@@ -99,3 +99,125 @@ test.describe('one filled button per decision', () => {
     expect(await filledIn(page, '#cereri')).toHaveLength(1);
   });
 });
+
+/**
+ * The account's own layers, drawn on `/proba/ecrane` with a sample
+ * session (E2E_HARNESS=1): the account needs a session CI does not have.
+ */
+const HARNESS = (section: string) => `/proba/ecrane?sectiune=${section}`;
+
+test.describe('the „Mai mult" sheet on a phone', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'The bottom menu is there below lg only.');
+    await page.goto(HARNESS('cont-mobil'));
+  });
+
+  async function openSheet(page: Page) {
+    const more = page.locator('[data-bottom-nav] button[aria-expanded]');
+    await expect(async () => {
+      if ((await more.getAttribute('aria-expanded')) !== 'true') await more.click();
+      await expect(page.getByRole('dialog')).toBeVisible({ timeout: 500 });
+    }).toPass();
+    return { more, dialog: page.getByRole('dialog') };
+  }
+
+  test('the page behind it stays put, and moves again once it closes', async ({ page }) => {
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const at = await page.evaluate(() => window.scrollY);
+    await openSheet(page);
+
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden');
+    // A drag on the dimmed page, where it used to scroll the account.
+    await page.mouse.move(195, 120);
+    await page.mouse.wheel(0, 800);
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => window.scrollY)).toBe(at);
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden');
+  });
+
+  test('the focus stays inside while it is open and goes back to „Mai mult"', async ({ page }) => {
+    const { more, dialog } = await openSheet(page);
+    await expect.poll(() => dialog.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    for (let step = 0; step < 20; step += 1) {
+      await page.keyboard.press(step % 5 === 4 ? 'Shift+Tab' : 'Tab');
+      expect(await dialog.evaluate((d) => d.contains(document.activeElement)), `Tab ${step}`).toBe(true);
+    }
+    await page.keyboard.press('Escape');
+    await expect(more).toBeFocused();
+  });
+
+  test('a tap on the dimmed page closes it and gives the focus back too', async ({ page }) => {
+    const { more } = await openSheet(page);
+    await page.mouse.click(195, 60);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(more).toBeFocused();
+  });
+
+  test('the sheet is never taller than the screen', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 });
+    const { dialog } = await openSheet(page);
+    const box = (await dialog.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    await expect(dialog.getByRole('link').last()).toBeVisible();
+  });
+});
+
+test.describe('bars at the bottom of the account', () => {
+  for (const [section, bar] of [
+    ['cont-mobil', '[data-save-bar]'],
+    ['mesaje', '[data-composer]'],
+  ] as const) {
+    test(`${section}: the bar sits above the phone menu, not under it`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== 'mobile', 'The bottom menu is there below lg only.');
+      await page.goto(HARNESS(section));
+      const pinned = (await page.locator(bar).boundingBox())!;
+      const menu = (await page.locator('[data-bottom-nav]').boundingBox())!;
+      expect(pinned.y + pinned.height).toBeLessThanOrEqual(menu.y + 1);
+    });
+  }
+
+  test('the footer comes out from under the phone menu at the end of the page', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'The bottom menu is there below lg only.');
+    await page.goto(HARNESS('cereri-mele'));
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const last = page.locator('footer a').last();
+    const link = (await last.boundingBox())!;
+    const menu = (await page.locator('[data-bottom-nav]').boundingBox())!;
+    expect(link.y + link.height).toBeLessThanOrEqual(menu.y);
+  });
+});
+
+test.describe('the account menu and the publish menu at the edges', () => {
+  test('the sidebar reaches its last link on a 900px screen', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'The sidebar is there from lg.');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(HARNESS('comanda'));
+    // Far enough down that the sidebar is stuck to the top.
+    await page.evaluate(() => window.scrollTo(0, 800));
+    const last = page.locator('aside nav a').last();
+    await last.focus();
+    await expect(last).toBeInViewport({ ratio: 1 });
+  });
+
+  test('„Publică" opens its menu on the screen, wherever the button wrapped to', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'desktop') await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(HARNESS('dashboard'));
+    const button = page.locator('button[aria-haspopup="menu"]').first();
+    const menu = page.getByRole('menu');
+    await expect(async () => {
+      if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+      await expect(menu).toBeVisible({ timeout: 500 });
+    }).toPass();
+    const box = (await menu.boundingBox())!;
+    const width = await page.evaluate(() => document.documentElement.clientWidth);
+    // At 390, before: hung from the button's right edge, 100px off screen.
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    for (const item of await menu.getByRole('menuitem').all()) {
+      await expect(item).toBeInViewport({ ratio: 1 });
+    }
+  });
+});

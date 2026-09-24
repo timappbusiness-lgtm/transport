@@ -6,10 +6,14 @@ import { Icon } from '@/components/ui/icon';
 import { iconForAction, uiIcon } from '@/lib/icons';
 import { buttonClasses } from '@/components/ui/button';
 import { appCopy } from '@/content/app';
+import { menuSide, type MenuSide } from '@/lib/menu-side';
 import type { PublishAction } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 const c = appCopy.shell;
+
+/** `w-60`, in pixels, for choosing the side it opens on. */
+const MENU_WIDTH = 240;
 
 /**
  * The one thing this account is for, always in the same place.
@@ -21,6 +25,7 @@ const c = appCopy.shell;
  */
 export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) {
   const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<MenuSide>('right');
   const menuId = useId();
   const wrapper = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -65,7 +70,13 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
-        onClick={() => setOpen((current) => !current)}
+        onClick={(event) => {
+          // Decided at the moment it opens, from where the button is now:
+          // on a phone it wraps under the title, at the left edge.
+          const rect = event.currentTarget.getBoundingClientRect();
+          setSide(menuSide(rect, document.documentElement.clientWidth, MENU_WIDTH));
+          setOpen((current) => !current);
+        }}
         className={buttonClasses('primary', 'sm')}
       >
         <Icon as={iconForAction('add')} size="sm" />
@@ -79,7 +90,8 @@ export function PublishMenu({ actions }: { actions: readonly PublishAction[] }) 
           role="menu"
           aria-label={c.publishMenu}
           className={cn(
-            'absolute right-0 z-50 mt-2 w-60 overflow-hidden rounded-card border border-border',
+            'absolute z-50 mt-2 w-60 max-w-[calc(100vw-1rem)] overflow-hidden rounded-card border border-border',
+            side === 'right' ? 'right-0' : 'left-0',
             'bg-surface shadow-float',
           )}
         >
