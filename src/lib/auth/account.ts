@@ -90,6 +90,8 @@ export interface Company {
   indicative_rate_note: string | null;
   /** When true the public profile shows the county and not the city. */
   base_address_hidden: boolean;
+  /** Name and role as the transport contract prints them: „Ion Popescu, administrator". */
+  legal_representative: string | null;
   alerts_enabled: boolean;
   alerts_email: string | null;
   /** Maintained by trigger; a company account cannot write it. */
@@ -115,7 +117,7 @@ export interface AccountContext {
 export const ACTIVE_COMPANY_COOKIE = 'coridor_company';
 
 const COMPANY_COLUMNS =
-  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, address, website, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path, coverage_scope, coverage_counties, coverage_countries, vehicle_types_accepted, equipment, services, indicative_rate_ron_per_km, indicative_rate_note, base_address_hidden, alerts_enabled, alerts_email, profile_updated_at';
+  'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, address, website, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path, coverage_scope, coverage_counties, coverage_countries, vehicle_types_accepted, equipment, services, indicative_rate_ron_per_km, indicative_rate_note, base_address_hidden, legal_representative, alerts_enabled, alerts_email, profile_updated_at';
 
 /**
  * Reads the signed-in user, their profile and their companies.

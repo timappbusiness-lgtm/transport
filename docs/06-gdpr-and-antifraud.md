@@ -13,6 +13,7 @@ are, and they are what the compliance work is about.
 | Contact-reveal log | Whoever revealed | Legitimate interest — fraud prevention, billing | 24 months |
 | Uploaded documents | Company, sometimes a named person | Legal obligation of the customer + contract | Account life + 3 years |
 | Messages between users | Both parties | Contract | Account life |
+| Transport contract versions and their acceptances: parties' names and contacts, who accepted, IP address and browser | Both parties | Contract; legitimate interest (proof of who accepted what) | As the transport. Erasure of a person or a firm anonymises their side of every version and acceptance in place, and deletes the drawn PDFs |
 
 Company documents often carry a named administrator or driver. Treat
 everything in the `documents` bucket as containing personal data.
@@ -46,6 +47,10 @@ automatically and need a written decision:
   routine that empties the company folder.
 - `transports` and invoices: commercial records with a legal retention period.
   Anonymise the personal fields, keep the transaction.
+- `order_contracts` and `order_contract_acceptances` are immutable by trigger;
+  erasure goes through `redact_order_contracts()` behind the session flag
+  `app.contract_retention`, and removes the PDFs in `order-contracts`
+  (`docs/20-contract-transport.md`).
 
 **Right of access.** A user can ask what we hold. `contact_reveals` makes the
 answer "who saw your phone number" actually answerable — build the export as a

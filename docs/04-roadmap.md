@@ -342,7 +342,9 @@ in-platform offer rather than a phone call.
   transports
 - **Temporary location** of the vehicle during an active order
 - **Listing promotions**
-- **PDF contract** with electronic acceptance
+- **PDF contract** with electronic acceptance — **Faza 3, from 24 September
+  2026**: generated from the order, versioned, accepted in the platform;
+  `docs/20-contract-transport.md`. The text waits on the legal review.
 - **Driver PWA** extras
 - WhatsApp delivery for saved-route alerts
 - Public company profiles for SEO (from the previous roadmap)

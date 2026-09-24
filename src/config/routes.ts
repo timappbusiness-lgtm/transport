@@ -144,6 +144,21 @@ export function transportRoute(id: string): string {
   return `${ROUTES.accountTransports}/${id}`;
 }
 
+/**
+ * One version of an order's transport contract, as a PDF: opens in the
+ * browser's viewer, or downloads. The route checks access and hands over
+ * a link that lives a minute; the address itself is safe to share.
+ */
+export function contractFileRoute(orderId: string, contractId: string, download = false): string {
+  const base = `${transportRoute(orderId)}/contract/${contractId}`;
+  return download ? `${base}?descarca=1` : base;
+}
+
+/** The contract card on an order page — where the e-mails and notifications point. */
+export function contractCardRoute(orderId: string): string {
+  return `${transportRoute(orderId)}#contract`;
+}
+
 /** One order on the staff screen. */
 export function adminOrderRoute(id: string): string {
   return `${ROUTES.adminOrders}/${id}`;

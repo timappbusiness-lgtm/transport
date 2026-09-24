@@ -171,6 +171,15 @@ export function IdentityTab({ company }: { company: Company }) {
         defaultValue={company.address ?? ''}
       />
 
+      <Field
+        label={c.legalRepresentative}
+        name="legalRepresentative"
+        required={false}
+        hint={c.legalRepresentativeHint}
+        defaultValue={company.legal_representative ?? ''}
+        error={state.fieldErrors?.legalRepresentative}
+      />
+
       <label className="flex items-start gap-3 text-body">
         <input
           type="checkbox"

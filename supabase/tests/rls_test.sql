@@ -12961,6 +12961,483 @@ select pg_temp.check('SLT  nor on another firm''s vehicle', 'guard',
                 values ('fc000000-0000-0000-0000-000000000001', 'B203LOC', 'platforma_auto')$s$,
   p_verify => $v$select platform_slots is null from public.vehicles where plate_number = 'B203LOC'$v$);
 
+-- =====================================================================
+-- CON - contractul de transport (20261009100000)
+--
+-- Cine generează, cine vede, cine acceptă; instantaneul care nu se mai
+-- schimbă; o versiune nouă la regenerare, cu cea veche neatinsă; o
+-- acceptare pe parte pe versiune, cu IP și browser pe care părțile nu
+-- le citesc; bucketul în care nu scrie nimeni din cont; retenția care
+-- anonimizează partea ștearsă. Toate `fix`: înainte de migrare
+-- funcțiile și tabelele nu există.
+--
+-- Comanda de probă: clientul este persoana fizică f..06, transportatorul
+-- firma A, cu dispecerul f..03, șoferul f..0e și vehiculul TM01RLS.
+-- =====================================================================
+
+create or replace function pg_temp.gen_contract(p_order uuid, p_user uuid)
+returns uuid language plpgsql as $gc$
+declare v_id uuid;
+begin
+  perform set_config('request.jwt.claim.sub', p_user::text, true);
+  select contract_id into v_id
+  from public.generate_order_contract(p_order,
+         '{"brand":"Coridor","legal_name":"Operator SRL","cui":"123"}'::jsonb);
+  perform set_config('request.jwt.claim.sub', '', true);
+  return v_id;
+end $gc$;
+
+create or replace function pg_temp.accept_contract(p_contract uuid, p_user uuid)
+returns void language plpgsql as $ac$
+begin
+  perform set_config('request.jwt.claim.sub', p_user::text, true);
+  perform public.accept_order_contract(p_contract, '203.0.113.7', 'Mozilla/5.0 (proba)');
+  perform set_config('request.jwt.claim.sub', '', true);
+end $ac$;
+
+-- --- cine generează ----------------------------------------------------
+select pg_temp.check('CON  the client generates the contract of their order', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select (select version from public.generate_order_contract('f6c00000-0000-0000-0000-000000000001')) = 1$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000001')$s$);
+
+select pg_temp.check('CON  so does the carrier''s dispatcher', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select (select version from public.generate_order_contract('f6c00000-0000-0000-0000-000000000002')) = 1$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000002')$s$);
+
+select pg_temp.check('CON  and staff', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (select version from public.generate_order_contract('f6c00000-0000-0000-0000-000000000003')) = 1$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  the driver on the order does not', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000004')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000004')$s$,
+  p_verify => $v$select count(*) = 0 from public.order_contracts
+                 where order_id = 'f6c00000-0000-0000-0000-000000000004'$v$);
+
+select pg_temp.check('CON  nor a firm that is not on the order', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000005')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000005')$s$,
+  p_verify => $v$select count(*) = 0 from public.order_contracts
+                 where order_id = 'f6c00000-0000-0000-0000-000000000005'$v$);
+
+select pg_temp.check('CON  nor a visitor', 'fix',
+  null, 'anon',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000006')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('CON  a cancelled order gets no contract', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000007')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000007', 'cancelled')$s$);
+
+-- --- ce conține ---------------------------------------------------------
+select pg_temp.check('CON  the snapshot is built from the database, not from the caller', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000008',
+       '{"legal_name":"Operator SRL","agreed_price":1,"evil":"x"}'::jsonb)$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000008')$s$,
+  p_verify => $v$select c.snapshot #>> '{carrier,cui}' = '90000001'
+                   and (c.snapshot #>> '{order,agreed_price}')::numeric = 2400
+                   and c.snapshot #>> '{client,kind}' = 'individual'
+                   and c.snapshot #>> '{client,full_name}' = 'Persoană Fizică'
+                   and c.snapshot #>> '{credentials,vehicle,plate_number}' = 'TM01RLS'
+                   and c.snapshot #>> '{credentials,vehicle,source}' = 'order'
+                   and exists (select 1 from jsonb_array_elements(c.snapshot #> '{credentials,company_documents}') d
+                               where d ->> 'kind' = 'licenta_comunitara')
+                   and c.snapshot #>> '{operator,legal_name}' = 'Operator SRL'
+                   and c.snapshot -> 'operator' ? 'evil' = false
+                   and c.snapshot -> 'operator' ? 'agreed_price' = false
+                   and c.snapshot_hash = encode(sha256(convert_to(c.snapshot::text, 'UTF8')), 'hex')
+                   and c.contract_number ~ '^CT-[0-9]{4}-F6C00000$'
+                 from public.order_contracts c
+                 where c.order_id = 'f6c00000-0000-0000-0000-000000000008'$v$);
+
+select pg_temp.check('CON  no personal identification number for an individual', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000009')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000009')$s$,
+  p_verify => $v$select (select array_agg(k order by k) from jsonb_object_keys(c.snapshot -> 'client') k)
+                        = array['email', 'full_name', 'kind', 'phone']
+                 from public.order_contracts c
+                 where c.order_id = 'f6c00000-0000-0000-0000-000000000009'$v$);
+
+-- --- versiuni și imuabilitate -------------------------------------------
+select pg_temp.check('CON  regenerating creates a new version and keeps the old one intact', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select (select version from public.generate_order_contract('f6c00000-0000-0000-0000-000000000010')) = 2$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000010');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000010', 'f0000000-0000-0000-0000-000000000006');
+     update public.companies set legal_name = 'RLS Carrier A Nou SRL' where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_after => $s$select 1$s$);
+
+select pg_temp.check('CON  a data change after generation does not touch the earlier version', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000011')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000011');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000011', 'f0000000-0000-0000-0000-000000000006');
+     update public.companies set legal_name = 'RLS Carrier A Nou SRL' where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select
+       (select snapshot #>> '{carrier,legal_name}' from public.order_contracts
+        where order_id = 'f6c00000-0000-0000-0000-000000000011' and version = 1) = 'RLS Carrier A SRL'
+   and (select snapshot #>> '{carrier,legal_name}' from public.order_contracts
+        where order_id = 'f6c00000-0000-0000-0000-000000000011' and version = 2) = 'RLS Carrier A Nou SRL'$v$);
+
+select pg_temp.check('CON  a party cannot write a contract directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.order_contracts (order_id, version, contract_number, template_version, snapshot,
+                                         snapshot_hash, generated_by_side)
+     values ('f6c00000-0000-0000-0000-000000000012', 9, 'CT-2026-F6C00000', '1.0', '{}',
+             repeat('a', 64), 'client')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000012')$s$);
+
+select pg_temp.check('CON  nor change one', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.order_contracts set snapshot = snapshot || '{"x":1}'
+     where order_id = 'f6c00000-0000-0000-0000-000000000013'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000013');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000013', 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select not snapshot ? 'x' from public.order_contracts
+                 where order_id = 'f6c00000-0000-0000-0000-000000000013'$v$);
+
+select pg_temp.check('CON  and the snapshot does not change even for the service role', 'fix',
+  null, 'service_role',
+  $a$update public.order_contracts set snapshot = snapshot || '{"x":1}'
+     where order_id = 'f6c00000-0000-0000-0000-000000000014'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000014');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000014', 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select not snapshot ? 'x' from public.order_contracts
+                 where order_id = 'f6c00000-0000-0000-0000-000000000014'$v$);
+
+select pg_temp.check('CON  nor is a version deleted', 'fix',
+  null, 'service_role',
+  $a$delete from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000015'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000015');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000015', 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select count(*) = 1 from public.order_contracts
+                 where order_id = 'f6c00000-0000-0000-0000-000000000015'$v$);
+
+-- --- cine vede ------------------------------------------------------------
+select pg_temp.check('CON  the client reads the contract', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000016'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000016');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000016', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  a firm that is not on the order reads nothing, even by id', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000017'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000017');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000017', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  and the render data says it does not exist', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.order_contract_render_data(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000018'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000018');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000018', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  the driver reads no contract either', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select count(*) = 0 from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000019'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000019');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000019', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  a visitor reads nothing', 'fix',
+  null, 'anon',
+  $a$select count(*) from public.order_contracts$a$,
+  'blocked');
+
+-- --- acceptarea -----------------------------------------------------------
+select pg_temp.check('CON  the client accepts, and the record says who, when, where from', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000020'),
+       '203.0.113.7', 'Mozilla/5.0 (proba)')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000020');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select a.side = 'client'
+                   and a.user_id = 'f0000000-0000-0000-0000-000000000006'
+                   and a.accepted_by_name = 'Persoană Fizică'
+                   and host(a.ip) = '203.0.113.7'
+                   and a.user_agent = 'Mozilla/5.0 (proba)'
+                   and a.accepted_at is not null
+                   and a.snapshot_hash = c.snapshot_hash
+                 from public.order_contract_acceptances a
+                 join public.order_contracts c on c.id = a.contract_id
+                 where a.order_id = 'f6c00000-0000-0000-0000-000000000020'$v$);
+
+select pg_temp.check('CON  once per party per version', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000021'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000021');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000021', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select count(*) = 1 from public.order_contract_acceptances
+                 where order_id = 'f6c00000-0000-0000-0000-000000000021'$v$);
+
+select pg_temp.check('CON  the carrier accepts on its side', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select (select side from public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000022'))) = 'carrier'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000022');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000022', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('CON  staff do not accept for a party', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000023'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000023');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000023', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  nor does the driver', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000024'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000024');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000024', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  nor a firm that is not on the order', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000025'))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000025');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000025', 'f0000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select count(*) = 0 from public.order_contract_acceptances
+                 where order_id = 'f6c00000-0000-0000-0000-000000000025'$v$);
+
+select pg_temp.check('CON  a superseded version is not accepted', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts
+        where order_id = 'f6c00000-0000-0000-0000-000000000026' and version = 1))$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000026');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000026', 'f0000000-0000-0000-0000-000000000003');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000026', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  an acceptance cannot be changed, even by the service role', 'fix',
+  null, 'service_role',
+  $a$update public.order_contract_acceptances set accepted_at = now() - interval '1 year'
+     where order_id = 'f6c00000-0000-0000-0000-000000000027'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000027');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000027', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select accepted_at > now() - interval '1 day' from public.order_contract_acceptances
+                 where order_id = 'f6c00000-0000-0000-0000-000000000027'$v$);
+
+select pg_temp.check('CON  a party sees who accepted, not their IP or browser', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select ip from public.order_contract_acceptances
+     where order_id = 'f6c00000-0000-0000-0000-000000000028'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000028');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000028', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('CON  staff read the whole acceptance record', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select (select acceptances -> 0 ->> 'ip' from public.admin_order_contracts('f6c00000-0000-0000-0000-000000000029')) = '203.0.113.7'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000029');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000029', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$);
+
+select pg_temp.check('CON  and a party does not', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select * from public.admin_order_contracts('f6c00000-0000-0000-0000-000000000030')$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000030');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000003')$s$);
+
+select pg_temp.check('CON  the order page reads both sides of the acceptance', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select client_accepted_by = 'Persoană Fizică' and carrier_accepted_at is null and my_side = 'carrier'
+     from public.order_contract_versions('f6c00000-0000-0000-0000-000000000031')$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000031');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000031', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006')$s$);
+
+-- --- anunțuri și jurnal -----------------------------------------------------
+select pg_temp.check('CON  generating tells the other side, and the journal', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000032')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000032')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox o
+                               where o.template = 'contract_generated' and o.channel = 'email'
+                                 and o.recipient_company_id = 'fc000000-0000-0000-0000-000000000001'
+                                 and o.payload ->> 'order_id' = 'f6c00000-0000-0000-0000-000000000032')
+                   and not exists (select 1 from public.notification_outbox o
+                               where o.template = 'contract_generated'
+                                 and o.recipient_user_id = 'f0000000-0000-0000-0000-000000000006'
+                                 and o.payload ->> 'order_id' = 'f6c00000-0000-0000-0000-000000000032')
+                   and exists (select 1 from public.audit_log l
+                               where l.action = 'contract.generated'
+                                 and l.after ->> 'order_id' = 'f6c00000-0000-0000-0000-000000000032'
+                                 and not (l.after ? 'snapshot'))$v$);
+
+select pg_temp.check('CON  accepting tells the other side', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.accept_order_contract(
+       (select id from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000033'))$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000033');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000033', 'f0000000-0000-0000-0000-000000000006')$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox o
+                               where o.template = 'contract_accepted' and o.channel = 'email'
+                                 and o.recipient_user_id = 'f0000000-0000-0000-0000-000000000006'
+                                 and o.payload ->> 'order_id' = 'f6c00000-0000-0000-0000-000000000033')
+                   and exists (select 1 from public.audit_log l
+                               where l.action = 'contract.accepted'
+                                 and l.after ->> 'order_id' = 'f6c00000-0000-0000-0000-000000000033')$v$);
+
+-- --- fișierele --------------------------------------------------------------
+select pg_temp.check('CON  a party reads the drawn file', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select count(*) = 1 from storage.objects
+     where bucket_id = 'order-contracts'
+       and name like 'f6c00000-0000-0000-0000-000000000034/%'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000034');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-contracts', 'f6c00000-0000-0000-0000-000000000034/x/v1-a0.pdf', null)$s$);
+
+select pg_temp.check('CON  a firm that is not on the order does not', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select count(*) = 0 from storage.objects
+     where bucket_id = 'order-contracts'
+       and name like 'f6c00000-0000-0000-0000-000000000035/%'$a$,
+  'true',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000035');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-contracts', 'f6c00000-0000-0000-0000-000000000035/x/v1-a0.pdf', null)$s$);
+
+select pg_temp.check('CON  nobody puts a file there from an account', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into storage.objects (bucket_id, name, owner)
+     values ('order-contracts', 'f6c00000-0000-0000-0000-000000000036/x/v1-a0.pdf', auth.uid())$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000036')$s$,
+  p_verify => $v$select count(*) = 0 from storage.objects
+                 where name like 'f6c00000-0000-0000-0000-000000000036/%'$v$);
+
+select pg_temp.check('CON  nor replaces one', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update storage.objects set name = name || '.x'
+     where bucket_id = 'order-contracts' and name like 'f6c00000-0000-0000-0000-000000000037/%'$a$,
+  'blocked',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000037');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-contracts', 'f6c00000-0000-0000-0000-000000000037/x/v1-a0.pdf', null)$s$,
+  p_verify => $v$select count(*) = 1 from storage.objects
+                 where name = 'f6c00000-0000-0000-0000-000000000037/x/v1-a0.pdf'$v$);
+
+-- --- retenția ---------------------------------------------------------------
+select pg_temp.check('CON  an individual''s deletion anonymises them in the contract', 'fix',
+  null, 'service_role',
+  $a$update public.transports set shipper_user_id = null
+     where id = 'f6c00000-0000-0000-0000-000000000038'$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000038');
+     select pg_temp.accept_contract(
+       pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000038', 'f0000000-0000-0000-0000-000000000003'),
+       'f0000000-0000-0000-0000-000000000006');
+     insert into storage.objects (bucket_id, name, owner)
+     values ('order-contracts', 'f6c00000-0000-0000-0000-000000000038/x/v1-a1.pdf', null)$s$,
+  p_verify => $v$select c.snapshot #>> '{client,full_name}' = '[șters la cerere]'
+                   and c.snapshot #>> '{client,phone}' is null
+                   and c.snapshot #>> '{carrier,cui}' = '90000001'
+                   and c.redacted_at is not null
+                   and a.ip is null and a.user_agent is null
+                   and a.accepted_by_name = '[șters la cerere]'
+                   and a.snapshot_hash = c.snapshot_hash
+                   and not exists (select 1 from storage.objects
+                                   where name like 'f6c00000-0000-0000-0000-000000000038/%')
+                 from public.order_contracts c
+                 join public.order_contract_acceptances a on a.contract_id = c.id
+                 where c.order_id = 'f6c00000-0000-0000-0000-000000000038'$v$);
+
+select pg_temp.check('CON  a firm''s erasure anonymises its block', 'fix',
+  null, 'service_role',
+  $a$select public.anonymise_company('fc000000-0000-0000-0000-000000000001')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000039');
+     select pg_temp.gen_contract('f6c00000-0000-0000-0000-000000000039', 'f0000000-0000-0000-0000-000000000003')$s$,
+  p_verify => $v$select c.snapshot #>> '{carrier,legal_name}' = 'Firmă ștearsă'
+                   and c.snapshot #>> '{carrier,cui}' is null
+                   and c.snapshot #>> '{generated_by,name}' = '[șters la cerere]'
+                   and c.snapshot #>> '{client,full_name}' = 'Persoană Fizică'
+                 from public.order_contracts c
+                 where c.order_id = 'f6c00000-0000-0000-0000-000000000039'$v$);
+
+-- --- reprezentantul legal ---------------------------------------------------
+select pg_temp.check('CON  a firm''s owner records its legal representative', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$update public.companies set legal_representative = 'Ion Popescu, administrator'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$,
+  'allowed',
+  p_verify => $v$select legal_representative = 'Ion Popescu, administrator'
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('CON  and it goes into the contract', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.generate_order_contract('f6c00000-0000-0000-0000-000000000040')$a$,
+  'allowed',
+  p_setup => $s$select pg_temp.make_order('f6c00000-0000-0000-0000-000000000040');
+     update public.companies set legal_representative = 'Ion Popescu, administrator'
+     where id = 'fc000000-0000-0000-0000-000000000001'$s$,
+  p_verify => $v$select snapshot #>> '{carrier,legal_representative}' = 'Ion Popescu, administrator'
+                 from public.order_contracts where order_id = 'f6c00000-0000-0000-0000-000000000040'$v$);
+
+select pg_temp.check('CON  a stranger does not set it', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.companies set legal_representative = 'Altcineva'
+     where id = 'fc000000-0000-0000-0000-000000000001'$a$,
+  'blocked',
+  p_verify => $v$select legal_representative is distinct from 'Altcineva'
+                 from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
               count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),

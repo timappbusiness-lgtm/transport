@@ -24,13 +24,55 @@ const ORDER: readonly string[] = [
  * sentence: a moderation decision that leaves no trace is indis-
  * tinguishable from a photograph that was never taken.
  */
+/** A document generated for the order — the transport contract — listed with the evidence. */
+export interface GalleryDocument {
+  key: string;
+  label: string;
+  detail: string;
+  href: string;
+  downloadHref: string;
+}
+
+function DocumentList({ documents }: { documents: readonly GalleryDocument[] }) {
+  return (
+    <div>
+      <h3 className="text-body font-medium">{c.documents}</h3>
+      <ul className="mt-2 flex flex-col gap-2">
+        {documents.map((doc) => (
+          <li
+            key={doc.key}
+            className="flex flex-col gap-1 rounded-input border border-border bg-ground-alt p-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+          >
+            <span className="min-w-0 text-body [overflow-wrap:anywhere]">
+              {doc.label}
+              <span className="block text-small text-muted">{doc.detail}</span>
+            </span>
+            {/* Plain anchors: a prefetch would draw the PDF for nobody. */}
+            <span className="flex flex-none gap-4 text-small">
+              <a href={doc.href} target="_blank" rel="noopener" className="link-accent">
+                {c.openDocument}
+              </a>
+              <a href={doc.downloadHref} className="link-accent">
+                {c.downloadDocument}
+              </a>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function EvidenceGallery({
   rows,
   urls,
+  documents = [],
   children,
 }: {
   rows: readonly EvidenceRow[];
   urls: ReadonlyMap<string, string>;
+  /** Documents generated for the order, listed first. */
+  documents?: readonly GalleryDocument[];
   /** The staff hide control, injected so this stays a server component. */
   children?: (row: EvidenceRow) => React.ReactNode;
 }) {
@@ -40,7 +82,12 @@ export function EvidenceGallery({
         <h2 id="dovezi" className="text-h3">
           {c.title}
         </h2>
-        <p className="mt-2 text-body text-muted">{c.empty}</p>
+        {documents.length > 0 ? (
+          <div className="mt-4">
+            <DocumentList documents={documents} />
+          </div>
+        ) : null}
+        <p className="mt-3 text-body text-muted">{c.empty}</p>
       </section>
     );
   }
@@ -59,6 +106,7 @@ export function EvidenceGallery({
       <p className="mt-1 max-w-[62ch] text-small text-muted">{c.lede}</p>
 
       <div className="mt-5 flex flex-col gap-6">
+        {documents.length > 0 ? <DocumentList documents={documents} /> : null}
         {groups.map((group) => (
           <div key={group.kind}>
             <h3 className="text-body font-medium">{group.label}</h3>

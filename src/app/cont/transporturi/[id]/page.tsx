@@ -18,6 +18,7 @@ import {
   NextStep,
   OpenDispute,
 } from '@/components/orders/order-actions';
+import { ContractCard } from '@/components/orders/contract-card';
 import { ComparisonView, EvidenceGallery } from '@/components/orders/evidence-gallery';
 import { OrderTimeline } from '@/components/orders/order-timeline';
 import { PhotoCapture } from '@/components/orders/photo-capture';
@@ -41,6 +42,8 @@ import {
   signRequestPhotos,
 } from '@/lib/orders-source';
 import { loadOrderRatingState } from '@/lib/ratings-source';
+import { contractCardState, contractDocuments } from '@/lib/contracts';
+import { loadContractVersions } from '@/lib/contracts-source';
 import { loadOrderConversationId } from '@/lib/messages-source';
 
 export const metadata: Metadata = { title: ordersCopy.detail.title };
@@ -70,14 +73,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
  * `can_see_order()`, so a page that forgot a check would get a refusal
  * rather than somebody else's transport.
  */
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
   await requireAccountContext(`${ROUTES.accountTransports}/${id}`);
 
   const order = await loadOrder(id);
   if (order === null) notFound();
 
-  const [events, evidence, crew, reasons, rating] = await Promise.all([
+  const [events, evidence, crew, reasons, rating, contracts] = await Promise.all([
     loadTimeline(id),
     loadEvidence(id),
     order.my_side === 'carrier' || order.my_side === 'staff'
@@ -88,7 +98,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     // anyway keeps this list free of a condition that would then have to
     // agree with the one inside the card.
     loadOrderRatingState(id),
+    // A driver is not a party to the contract: the database returns no
+    // side for them, and the card is not drawn.
+    loadContractVersions(id),
   ]);
+  const contract = contractCardState(contracts.versions, contracts.mySide, order.status);
 
   const conversationId = await loadOrderConversationId(id);
 
@@ -184,6 +198,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           ) : null}
 
           <div className="order-4 flex flex-col gap-6 lg:order-none">
+          {contract.mySide !== null ? (
+            <ContractCard
+              orderId={order.id}
+              state={contract}
+              unavailable={query.contract === 'indisponibil'}
+            />
+          ) : null}
+
           <ComparisonView
             title={ordersCopy.evidence.compareTitle}
             leftLabel={ordersCopy.evidence.fromClient}
@@ -203,7 +225,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             publicUrls={publicUrls}
           />
 
-          <EvidenceGallery rows={evidence} urls={urls} />
+          <EvidenceGallery
+            rows={evidence}
+            urls={urls}
+            documents={contract.mySide !== null ? contractDocuments(order.id, contracts.versions) : []}
+          />
           </div>
         </div>
 
