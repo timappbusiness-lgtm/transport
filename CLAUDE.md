@@ -255,6 +255,47 @@ A new screen follows these:
    its board with `BackToBoard`. An e-mail links to the exact place — the
    conversation, the section, the anchor — not to a list.
 
+## Layout: nothing changes because a neighbour did
+
+Opening one question in the billing FAQ on /abonamente made the card
+beside it grow to the same height, empty: a two-column grid, and a grid
+row is as tall as its tallest cell. Looking for the same class found a
+save bar and a message box hidden under the phone menu, a sheet whose
+page scrolled behind it, fields that ended up under „Continuă", tables
+clipped at tablet width and labels drawn over their values.
+`tests/e2e/aspect-asezare.spec.ts` sweeps every screen for it at 1440
+and 390; `tests/e2e/acordeon.spec.ts` holds the accordion.
+
+1. **Accordions and expandable cards never affect their neighbours.**
+   Opening one changes the height of that one; what is beside it keeps
+   its height and its place. Only what is under it, in its own column,
+   moves down.
+2. **A grid of expandable items aligns to the start and never shares
+   rows.** Two columns of them are two independent stacks
+   (`splitColumns`, `FaqAccordion columns={2}`), not `grid-cols-2`. A grid
+   of static cards may stretch to equal height; the moment a card can
+   open, it leaves the grid.
+3. **Wide content scrolls inside its own container** (`overflow-x-auto`
+   on the wrapper), never the page and never clipped with
+   `overflow-hidden`. Long names, localities, document names and numbers
+   wrap (`min-w-0`, `[overflow-wrap:anywhere]`) or truncate with an
+   ellipsis where the full text is one click away.
+4. **A sticky or fixed bar never covers what it belongs to.** Inside the
+   account a bottom bar sits at `bottom-[var(--bottom-bar,0px)]`, above
+   the phone menu; a page with a bottom bar marks it (`data-action-bar`,
+   `data-save-bar`) so a focused field scrolls clear of it
+   (`scroll-padding-bottom` in `globals.css`).
+5. **A sheet or a dialog locks the page behind it** (`lockScroll`),
+   scrolls inside itself with a height limit, traps focus while open and
+   gives it back on close. A menu or a dropdown gets a `max-h` and
+   `overflow-y-auto`, so a phone held sideways still reaches its last
+   item.
+6. **Hover is for pointers that hover.** Tailwind's `hover:` already is;
+   a hand-written `:hover` goes inside `@media (hover: hover)`, or a tap
+   on a phone leaves it stuck.
+7. **Every control is at least 24×24 CSS px**, or has room around it
+   (WCAG 2.5.8, the sweep checks it). A link inside a sentence is exempt.
+
 ## Commands
 
 ```bash

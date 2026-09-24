@@ -66,7 +66,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         // Above the phone's bottom bar, beside nothing on a wide screen.
-        className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6"
+        // The bar is 3.5rem plus the home indicator's safe area, so the
+        // toast adds the same area: a plain 5rem sat on the bar's labels
+        // on an iPhone, whose safe area is 34px.
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6"
       >
         {toasts.map((toast) => (
           <ToastView key={toast.id} toast={toast} onClose={() => dismiss(toast.id)} />
