@@ -319,13 +319,29 @@
    the controls carry `border-border-strong` as a utility, and a layered
    rule would lose to it. `:where` keeps the specificity at zero, so any
    control that sets its own hover still wins. Focus is the global ring
-   above, on every control, on the first frame. */
-:where(
-    input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range']),
-    select,
-    textarea
-  ):hover:not(:disabled, :focus) {
-  border-color: var(--color-muted);
+   above, on every control, on the first frame.
+
+   Only where there is a pointer that hovers, like every `hover:` utility:
+   a phone keeps `:hover` on the last thing tapped, and a field left
+   behind stayed darker than the ones around it until the next tap
+   somewhere else. The same goes for the two link utilities below. */
+@media (hover: hover) {
+  :where(
+      input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range']),
+      select,
+      textarea
+    ):hover:not(:disabled, :focus) {
+    border-color: var(--color-muted);
+  }
+}
+
+/* A date field is the same height as the text field beside it, and reads
+   from the left like it. iOS Safari draws the value centred and, while
+   the field is empty, collapses the value box to nothing — a date field
+   one line shorter than its row, next to a text field of full height. */
+input::-webkit-date-and-time-value {
+  min-height: 1lh;
+  text-align: start;
 }
 
 /* A link inside a sentence. The accent's third job, after the primary
@@ -344,8 +360,10 @@
   text-decoration-color: var(--color-accent-border);
   transition: text-decoration-color var(--duration-quick) var(--ease-soft);
 
-  &:hover {
-    text-decoration-color: var(--color-accent);
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-color: var(--color-accent);
+    }
   }
 
   /* The same link on a dark section takes the bright step. */
@@ -364,8 +382,10 @@
   text-underline-offset: 4px;
   text-decoration-color: var(--color-border-strong);
 
-  &:hover {
-    text-decoration-color: var(--color-foreground);
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-color: var(--color-foreground);
+    }
   }
 }
 
