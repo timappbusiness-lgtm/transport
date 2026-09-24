@@ -91,7 +91,7 @@ export const adminDirectoryCopy = {
     manualBilling: 'Facturare manuală (transfer bancar)',
     manualBillingHint: 'Debifează când plata cu cardul este disponibilă.',
     billingEmail: 'E-mail pentru cererile de abonament',
-    billingEmailHint: 'Aici primim anunțul când o firmă cere un plan.',
+    billingEmailHint: 'Aici primim notificarea când o firmă cere un plan.',
     save: 'Salvează setările',
     saved: 'Setările de facturare au fost salvate.',
     invalidTrial: 'Perioada trebuie să fie un număr întreg între 0 și 365 de zile.',

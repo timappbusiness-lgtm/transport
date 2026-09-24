@@ -30,7 +30,7 @@ import { RememberBoard } from '@/components/continuity/board-memory';
 export const metadata: Metadata = {
   title: 'Trasee disponibile',
   description:
-    'Platforme auto cu locuri libere pe rute din România și Europa. Vezi traseul, perioada și locurile rămase.',
+    'Trasee publicate de transportatori pe rute din România și Europa. Vezi traseul, perioada și locurile rămase.',
 };
 
 const BOARD_LIMIT = 60;

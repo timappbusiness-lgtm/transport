@@ -339,6 +339,15 @@ pnpm check:functions   # Deno type-check for the edge functions
   itself. The before/after count for every journey is
   `docs/15-simplitate.md`; the shape both boards take is
   `src/lib/board-simplicity.ts`.
+- **Two things are published, and each has one name.** A client
+  publishes a „cerere de transport" (board: „Cereri de transport"); a
+  carrier publishes a „traseu" (board: „Trasee disponibile", own list:
+  „Traseele mele"). Never „anunț" for either — one word for both sides is
+  what makes the competitor confusing — and never „plecare" for a route.
+  `tests/unit/cuvinte-cereri-trasee.test.ts` enforces it. The header, the
+  account menu and the publish button are built per account type in
+  `src/lib/navigation.ts`; the whole arrangement is
+  `docs/19-navigatie-pe-rol.md`.
 - **The vehicle categories are one list**, `OFFERED_CATEGORIES` in
   `src/lib/vehicle-categories.ts`, with the weight hint and the price
   class on the same row as the label. The niche is what goes up on a car

@@ -162,6 +162,13 @@ Nimic din ce se putea face înainte nu s-a pierdut. S-a mutat:
 | stare goală `/cereri` | „Nicio cerere pentru această căutare." + paragraf de trei propoziții | „Încă nu este nicio cerere aici" + „Aici apar vehiculele care așteaptă un transportator." |
 | stare goală `/trasee` | „Încă nu sunt trasee publicate pentru această căutare." + paragraf | „Încă nu este niciun traseu aici" + „Aici apar platformele cu locuri libere pe o rută." |
 
+> **Actualizare, 24 septembrie 2026** (navigarea pe tipul de cont,
+> `docs/19-navigatie-pe-rol.md`): titlul `/trasee` a devenit „Trasee
+> disponibile", la fel ca meniul, subsolul și e-mailurile, iar lede-ul și
+> starea goală spun „trasee publicate de transportatori". Două nume, câte
+> unul pentru fiecare lucru publicat, cântăresc mai mult decât un titlu mai
+> scurt cu un cuvânt.
+
 Capetele de secțiune în două tonuri au rămas unde cititorul este
 *prezentat* cu ceva — pe prima pagină. Au plecat de unde omul *caută*
 ceva.

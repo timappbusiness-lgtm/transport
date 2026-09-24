@@ -13,7 +13,7 @@ export const ordersCopy = {
   /** «Publică returul», de pe pagina comenzii. */
   returnLeg: {
     title: 'Te întorci gol?',
-    lede: 'Pregătim o plecare pe retur din localitatea de livrare, cu același vehicul și cu o dată după livrare. Verifici și publici tu.',
+    lede: 'Pregătim un traseu pe retur din localitatea de livrare, cu același vehicul și cu o dată după livrare. Verifici și publici tu.',
     action: 'Publică returul',
     /** Când comanda nu are încă un vehicul repartizat. */
     noVehicle: 'Repartizează întâi un vehicul, ca returul să plece cu el.',
@@ -216,7 +216,7 @@ export const ordersCopy = {
     title: 'Transporturile mele',
     today: 'Astăzi',
     upcoming: 'Urmează',
-    none: 'Nicio cursă alocată.',
+    none: 'Niciun transport alocat.',
     noneBody: 'Când dispecerul te alocă pe o comandă, apare aici.',
     openOrder: 'Deschide',
     step: 'Pasul următor',

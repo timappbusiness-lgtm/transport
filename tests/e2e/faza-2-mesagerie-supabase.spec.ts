@@ -90,7 +90,7 @@ test.describe('transportatorul deschide o conversație', () => {
 
     // Poarta, scrisă înainte de apăsare. Asta este tot rostul pasului.
     await expect(page.getByText(/consumă un contact din abonament/)).toBeVisible();
-    await expect(page.getByText(/o singură dată pe anunț/)).toBeVisible();
+    await expect(page.getByText(/o singură dată pe cerere sau traseu/)).toBeVisible();
 
     await page.getByRole('button', { name: 'Trimite mesaj' }).click();
     await page.waitForURL(/\/cont\/mesaje\//);
@@ -102,7 +102,7 @@ test.describe('transportatorul deschide o conversație', () => {
     await openFirstRequest(page);
 
     await page.getByRole('button', { name: 'Trimite mesaj' }).click();
-    await expect(page.getByText(/Ai deschis deja contactul pentru anunțul acesta/)).toBeVisible();
+    await expect(page.getByText(/Ai deschis deja contactul aici/)).toBeVisible();
   });
 
   test('firul apare în inbox, cu eticheta contextului', async ({ page }) => {
@@ -341,7 +341,7 @@ test.describe('moderarea anunțurilor', () => {
     await signIn(page, STAFF);
     await page.goto('/admin/anunturi');
 
-    await expect(page.getByRole('heading', { name: 'Anunțuri' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cereri și trasee' })).toBeVisible();
 
     const hide = page.getByRole('button', { name: 'Ascunde de pe panou' }).first();
     test.skip((await hide.count()) === 0, 'Niciun anunț vizibil de ascuns.');
@@ -351,7 +351,7 @@ test.describe('moderarea anunțurilor', () => {
     await expect(page.getByText(/Motivul îl vede și proprietarul/)).toBeVisible();
     await page.getByRole('textbox').last().fill('Fotografiile nu par ale vehiculului din anunț.');
     await page.getByRole('button', { name: 'Ascunde', exact: true }).click();
-    await expect(page.getByText('Anunțul a fost ascuns.')).toBeVisible();
+    await expect(page.getByText('Gata: nu mai apare pe panoul public.')).toBeVisible();
   });
 
   test('anunțul iese de pe panoul public', async ({ page }) => {
@@ -380,7 +380,7 @@ test.describe('moderarea anunțurilor', () => {
     await restore.click();
     await page.getByRole('textbox').last().fill('Fotografiile au fost înlocuite.');
     await page.getByRole('button', { name: 'Repune', exact: true }).click();
-    await expect(page.getByText('Anunțul a fost repus.')).toBeVisible();
+    await expect(page.getByText('Gata: apare din nou pe panoul public.')).toBeVisible();
   });
 
   test('exportul cere un interval și dă un CSV', async ({ page }) => {

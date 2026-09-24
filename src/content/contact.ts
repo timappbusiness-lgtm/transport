@@ -25,13 +25,13 @@ export const contactCopy = {
   },
   response: {
     title: 'Cât durează',
-    body: 'Răspundem în cel mult două zile lucrătoare. Dacă e ceva urgent — un cont suspendat, un document respins înainte de o cursă — scrie „urgent” în subiect și îl luăm primul.',
+    body: 'Răspundem în cel mult două zile lucrătoare. Dacă e ceva urgent — un cont suspendat, un document respins înainte de un transport — scrie „urgent” în subiect și îl luăm primul.',
   },
   channels: {
     title: 'Unde ne scrii',
     platform: {
       label: 'Pentru platformă',
-      hint: 'Cont, anunțuri, abonament, documente, orice nu merge.',
+      hint: 'Cont, cereri și trasee, abonament, documente, orice nu merge.',
     },
     privacy: {
       label: 'Pentru date personale',

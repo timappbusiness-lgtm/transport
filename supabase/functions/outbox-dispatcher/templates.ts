@@ -29,7 +29,7 @@ export const TEMPLATES: Record<string, Template> = {
     lines: [
       "Bună ziua,",
       "Documentul {{ document_label }} al firmei {{ company_name }} este valabil până la {{ valid_until }}, adică încă {{ days_left }} zile.",
-      "După data aceea, firma nu mai poate publica și anunțurile active ies de pe panou până când încărcați documentul nou. Reactivarea este automată: se face în câteva minute de la aprobare.",
+      "După data aceea, firma nu mai poate publica, iar cererile și traseele active ies de pe panou până când încărcați documentul nou. Reactivarea este automată: se face în câteva minute de la aprobare.",
     ],
     action: { label: "Încarcă documentul", href: "{{ site_url }}/cont/firma/documente" },
     unsubscribable: true,
@@ -51,7 +51,7 @@ export const TEMPLATES: Record<string, Template> = {
     subject: "Vehiculul {{ plate_number }} a ieșit de pe panou",
     lines: [
       "Bună ziua,",
-      "Vehiculul {{ plate_number }} nu mai apare în anunțuri, pentru că {{ document_label }} a expirat la {{ valid_until }}.",
+      "Vehiculul {{ plate_number }} nu mai apare pe traseele publicate, pentru că {{ document_label }} a expirat la {{ valid_until }}.",
       "Restul flotei nu este afectată. Vehiculul revine singur după ce încărcați documentul nou și acesta este aprobat.",
     ],
     action: { label: "Vezi vehiculul", href: "{{ site_url }}/cont/firma/flota" },
@@ -64,7 +64,7 @@ export const TEMPLATES: Record<string, Template> = {
     lines: [
       "Bună ziua,",
       "Contul firmei {{ company_name }} a fost suspendat pentru că un document obligatoriu a expirat: {{ reason }}",
-      "Anunțurile active au ieșit de pe panou și se întorc automat, în starea în care erau, după ce documentul nou este aprobat — dacă datele lor sunt încă valabile.",
+      "Cererile și traseele active au ieșit de pe panou și se întorc automat, în starea în care erau, după ce documentul nou este aprobat — dacă datele lor sunt încă valabile.",
       "Vă puteți autentifica în continuare. Nu blocăm accesul nimănui care are ceva de reparat.",
     ],
     action: { label: "Vezi ce lipsește", href: "{{ site_url }}/cont/firma/documente" },
@@ -76,7 +76,7 @@ export const TEMPLATES: Record<string, Template> = {
     lines: [
       "Bună ziua,",
       "Documentul a fost aprobat și contul firmei {{ company_name }} este activ.",
-      "Anunțurile care erau pe panou înainte de suspendare s-au întors în starea lor anterioară. Cele ale căror date trecuseră între timp au rămas expirate — le puteți republica oricând.",
+      "Cererile și traseele care erau pe panou înainte de suspendare s-au întors în starea lor anterioară. Cele ale căror date trecuseră între timp au rămas expirate — le puteți republica oricând.",
     ],
     action: { label: "Deschide contul", href: "{{ site_url }}/cont" },
     unsubscribable: false,
@@ -361,7 +361,7 @@ export const TEMPLATES: Record<string, Template> = {
       "Bună ziua,",
       "Comanda pentru transportul {{ from_city }} — {{ to_city }} a fost anulată.",
       "Motivul dat: {{ reason }}",
-      "Dacă anularea v-a lăsat cu o cursă de acoperit, cererea este din nou pe panou atât timp cât intervalul de încărcare nu a trecut.",
+      "Dacă anularea v-a lăsat cu un transport de acoperit, cererea este din nou pe panou atât timp cât intervalul de încărcare nu a trecut.",
     ],
     action: { label: "Vezi comanda", href: "{{ site_url }}/cont/transporturi/{{ order_id }}" },
     unsubscribable: false,
@@ -427,24 +427,28 @@ export const TEMPLATES: Record<string, Template> = {
   },
 
   listing_hidden: {
-    subject: "Anunțul „{{ title }}” a fost scos de pe panou",
+    // The same template serves a request and a route, and the payload
+    // does not say which: so it names neither, and never „anunț". The
+    // link is the account, where both are — /cont/cereri sent a carrier
+    // whose route was hidden to a list with nothing on it.
+    subject: "„{{ title }}” a fost scos de pe panou",
     lines: [
       "Bună ziua,",
-      "Am scos de pe panoul public anunțul „{{ title }}”. Motivul: {{ reason }}",
-      "Anunțul rămâne în contul dumneavoastră și îl puteți corecta. După ce îl modificați, scrieți-ne și îl punem la loc.",
+      "Am scos de pe panoul public „{{ title }}”. Motivul: {{ reason }}",
+      "Nu s-a șters nimic: totul este în contul dumneavoastră, cu motivul alături. După ce corectați, scrieți-ne și ne uităm din nou.",
       "Dacă credeți că am greșit, spuneți-ne — ne uităm din nou.",
     ],
-    action: { label: "Vezi anunțul", href: "{{ site_url }}/cont/cereri" },
+    action: { label: "Deschide contul", href: "{{ site_url }}/cont" },
     unsubscribable: false,
   },
 
   listing_restored: {
-    subject: "Anunțul „{{ title }}” este din nou pe panou",
+    subject: "„{{ title }}” este din nou pe panou",
     lines: [
       "Bună ziua,",
-      "Anunțul „{{ title }}” a fost repus pe panoul public. Motivul: {{ reason }}",
+      "Am pus din nou pe panoul public „{{ title }}”. Motivul: {{ reason }}",
     ],
-    action: { label: "Vezi anunțul", href: "{{ site_url }}/cont/cereri" },
+    action: { label: "Deschide contul", href: "{{ site_url }}/cont" },
     unsubscribable: true,
   },
 
@@ -567,7 +571,7 @@ export const TEMPLATES: Record<string, Template> = {
     lines: [
       "Bună ziua,",
       "Am primit cererea de ștergere a {{ what }} și am programat-o pentru {{ scheduled_for }}.",
-      "Până atunci contul este oprit: anunțurile au ieșit de pe panou și nu se poate publica nimic nou. Dacă v-ați răzgândit, butonul de mai jos oprește ștergerea și pune totul la loc.",
+      "Până atunci contul este oprit: cererile și traseele au ieșit de pe panou și nu se poate publica nimic nou. Dacă v-ați răzgândit, butonul de mai jos oprește ștergerea și pune totul la loc.",
       "După acea dată ștergem datele personale. Rămâne doar ce suntem obligați să păstrăm — transporturile încheiate, documentele contabile și jurnalul deciziilor — fără numele și datele dumneavoastră de contact.",
     ],
     action: {
@@ -597,7 +601,7 @@ export const TEMPLATES: Record<string, Template> = {
     lines: [
       "Bună ziua,",
       "Ștergerea {{ what }} a fost anulată. Contul funcționează ca înainte.",
-      "Anunțurile care erau pe panou s-au întors în starea lor anterioară. Cele ale căror date trecuseră între timp au rămas expirate — le puteți republica oricând.",
+      "Cererile și traseele care erau pe panou s-au întors în starea lor anterioară. Cele ale căror date trecuseră între timp au rămas expirate — le puteți republica oricând.",
     ],
     action: { label: "Deschide contul", href: "{{ site_url }}/cont" },
     unsubscribable: false,
@@ -647,9 +651,9 @@ export const TEMPLATES: Record<string, Template> = {
     subject: "Seria {{ route }} s-a oprit",
     lines: [
       "Bună ziua,",
-      "{{ full_name }}, seria de plecări {{ route }} nu mai poate publica, iar motivul este: {{ reason }}",
+      "{{ full_name }}, seria de trasee {{ route }} nu mai poate publica, iar motivul este: {{ reason }}",
       "Vehiculul din serie este {{ plate }}.",
-      "Plecările deja publicate rămân pe bursă și nu sunt afectate. După ce rezolvați, porniți seria la loc din aceeași listă.",
+      "Traseele deja publicate rămân pe bursă și nu sunt afectate. După ce rezolvați, porniți seria la loc din aceeași listă.",
     ],
     action: { label: "Vezi seriile", href: "{{ site_url }}/cont/trasee" },
     unsubscribable: false,

@@ -21,7 +21,7 @@ const NAV = [
   { href: ROUTES.adminOffers, label: 'Oferte' },
   { href: ROUTES.adminOrders, label: 'Transporturi' },
   { href: ROUTES.adminRatings, label: 'Evaluări' },
-  { href: ROUTES.adminListings, label: 'Anunțuri' },
+  { href: ROUTES.adminListings, label: 'Cereri și trasee' },
   { href: ROUTES.adminConversations, label: 'Conversații' },
   { href: ROUTES.adminReports, label: 'Sesizări' },
   { href: ROUTES.adminActivity, label: 'Activitate pe prima pagină' },

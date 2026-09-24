@@ -7,7 +7,7 @@ export const accountCopy = {
     members: 'Membri',
     documents: 'Documente',
     fleet: 'Flotă',
-    departures: 'Trasee',
+    departures: 'Traseele mele',
     invitations: 'Invitații',
     subscription: 'Abonament',
     admin: 'Administrare',
@@ -41,7 +41,7 @@ export const accountCopy = {
       since: 'Suspendat din',
       action: 'Încarcă documentul nou',
       stillWorks:
-        'Te poți autentifica și vedea tot. Nu poți publica anunțuri și nu poți vedea date de contact până la revalidare.',
+        'Te poți autentifica și vedea tot. Nu poți publica cereri sau trasee și nu poți vedea date de contact până la revalidare.',
     },
   },
   individual: {

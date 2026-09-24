@@ -33,7 +33,7 @@ export const personalDataCopy = {
     body: (days: number) =>
       `Îți oprim contul imediat și ștergem datele după ${days} zile. În tot acest timp poți anula, dintr-un link pe care ți-l trimitem pe e-mail.`,
     companyBody: (days: number) =>
-      `Oprim firma imediat și îi ștergem datele după ${days} zile. Anunțurile ies de pe panou acum. Poți anula oricând în acest interval.`,
+      `Oprim firma imediat și îi ștergem datele după ${days} zile. Cererile și traseele ies de pe panou acum. Poți anula oricând în acest interval.`,
     whatGoes: 'Ce ștergem',
     whatGoesList: [
       'Profilul, numele, telefonul și adresa de e-mail.',
@@ -53,7 +53,7 @@ export const personalDataCopy = {
     scheduledTitle: 'Ștergere programată',
     scheduledOn: (date: string) => `Ștergem datele pe ${date}.`,
     held:
-      'Contul este oprit până atunci: anunțurile au ieșit de pe panou și nu poți publica nimic nou.',
+      'Contul este oprit până atunci: cererile și traseele au ieșit de pe panou și nu poți publica nimic nou.',
     cancel: 'Anulează ștergerea',
     cancelled: 'Ștergerea a fost anulată. Contul funcționează ca înainte.',
 

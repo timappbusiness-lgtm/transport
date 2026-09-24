@@ -160,7 +160,7 @@ export async function startListingConversationAction(
 
   const requestId = text(formData, 'request_id');
   const routeId = text(formData, 'route_id');
-  if (requestId === '' && routeId === '') return { error: 'Lipsește anunțul.' };
+  if (requestId === '' && routeId === '') return { error: 'Lipsește cererea sau traseul.' };
 
   const supabase = await createClient();
   const { data, error } = await supabase

@@ -120,7 +120,7 @@ export const firmaCopy = {
     ],
     savedTitle: 'Alerte pe o căutare anume',
     savedLede:
-      'Alerta de mai sus urmărește tot ce acoperă firma. Dacă vrei un anunț doar pe un anumit coridor sau tip de vehicul, salvează-ți căutarea de pe panoul de cereri.',
+      'Alerta de mai sus urmărește tot ce acoperă firma. Dacă vrei o alertă doar pe un anumit coridor sau tip de vehicul, salvează-ți căutarea de pe panoul de cereri.',
     savedAction: 'Vezi alertele mele',
   },
 

@@ -6,14 +6,18 @@
 
 ## Ce construim
 
-O bursă de transport online (model `bursatractari.ro`) cu trei secțiuni,
-exact cum au fost cerute:
+O bursă de transport online (model `bursatractari.ro`) cu două panouri,
+fiecare cu numele lui, folosit la fel peste tot — în meniu, pe pagină, în
+e-mailuri:
 
-| Secțiune | Cine postează | Ce postează |
+| Panou | Cine publică | Ce publică |
 |---|---|---|
-| **Curse** | Case de expediții și firme | Marfă / curse disponibile |
-| **Mașini pe tur** | Firme de transport | Camioane cu capacitate liberă pe dus |
-| **Mașini pe retur** | Firme de transport + **persoane fizice** | Camioane care se întorc goale, plus cereri de transport de la persoane fizice cu cont rapid |
+| **Cereri de transport** | Persoane fizice, firme și case de expediții | O *cerere de transport*: vehiculul care trebuie dus, de unde, unde și când |
+| **Trasee disponibile** | Firme de transport | Un *traseu*: o platformă cu locuri libere, pe tur sau pe retur |
+
+Turul și returul, care la început erau secțiuni separate, sunt acum un filtru
+pe panoul de trasee. Nu folosim cuvântul „anunț” pentru niciuna dintre ele:
+un singur cuvânt pentru ambele părți face greu de înțeles ce ai în față.
 
 ## Diferențiatorul: contul se suspendă singur
 
@@ -61,7 +65,7 @@ care are deja acces prin contract. E o discuție de business, nu una tehnică,
 |---|---|---|
 | **1 — MVP** | Conturi, documente + suspendare automată, cele trei secțiuni, căutare, contact deblocat pe abonament | 4–6 săptămâni |
 | **2 — Tranzacțional** | Oferte de preț, mesagerie în platformă, rating între firme, panou de administrare complet | 3–4 săptămâni |
-| **3 — Creștere** | Alerte WhatsApp, anunțuri promovate, plăți automate, aplicație mobilă | 4+ săptămâni |
+| **3 — Creștere** | Alerte WhatsApp, cereri și trasee promovate, plăți automate, aplicație mobilă | 4+ săptămâni |
 
 Estimările sunt pentru echipa noastră pe stack-ul Lovable + Supabase și pot
 varia după ce se fixează designul.
@@ -73,13 +77,13 @@ toate bursele care merg.
 
 | Plan | Preț / lună | Pentru cine |
 |---|---|---|
-| Gratuit | 0 lei | Oricine — 3 anunțuri, 3 contacte pe lună |
+| Gratuit | 0 lei | Oricine — 3 cereri sau trasee, 3 contacte pe lună |
 | Transportator | 149 lei | Firme de transport |
 | Casă de expediții | 249 lei | Case de expediții |
 | Business | 449 lei | Flote mari, grupuri de firme |
 | Persoană fizică | 0 lei | Cont rapid pentru cereri pe retur |
 
-Sursă suplimentară de venit: anunțuri promovate (afișate primele).
+Sursă suplimentară de venit: cereri și trasee promovate (afișate primele).
 
 ## De confirmat cu clientul
 

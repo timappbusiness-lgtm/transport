@@ -1,13 +1,15 @@
 /** Romanian copy for the departures board and the carrier's own routes. */
 export const departuresCopy = {
   board: {
-    // What the page is, in three words.
-    title: 'Trasee cu locuri',
+    // What the page is, in two words — the same two as the menu, the
+    // footer and every e-mail: what a carrier publishes is a „traseu",
+    // and the board of them is „Trasee disponibile".
+    title: 'Trasee disponibile',
     // One sentence: what is on the page, and what to do next. The pitch
     // — „plătești locul, nu camionul" — belongs on the homepage, where
     // somebody is being introduced to the idea, not on the board they
     // open twice a day.
-    lede: 'Platforme cu locuri libere pe o rută. Caută ruta ta și deschide traseul.',
+    lede: 'Trasee publicate de transportatori, cu locurile libere de pe platformă. Caută ruta ta și deschide traseul.',
     tabs: {
       toate: 'Toate',
       tur: 'Pe tur',
@@ -48,7 +50,7 @@ export const departuresCopy = {
     radius: 'Pe o rază de',
     radiusOption: (km: number) => `${km} km`,
     radiusHint:
-      'Distanța în linie dreaptă între localități. Plecările dintr-o localitate pe care nu o știm nu apar în rază.',
+      'Distanța în linie dreaptă între localități. Traseele care pleacă dintr-o localitate pe care nu o știm nu apar în rază.',
     minCapacity: 'Capacitate liberă, minimum (kg)',
     minCapacityHint:
       'Traseele care nu și-au trecut capacitatea rămân în listă. Întreabă transportatorul înainte să rezervi.',
@@ -69,7 +71,7 @@ export const departuresCopy = {
   empty: {
     /** The board itself is empty. One sentence: what will be here. */
     title: 'Încă nu este niciun traseu aici',
-    body: 'Aici apar platformele cu locuri libere pe o rută.',
+    body: 'Aici apar traseele publicate de transportatori.',
     /** The search found nothing. The action is the filters. */
     filteredTitle: 'Niciun traseu pentru această căutare',
     filteredBody: 'Șterge filtrele ca să vezi toate traseele.',
@@ -77,7 +79,7 @@ export const departuresCopy = {
     more: 'Altceva de făcut de aici',
     request: 'Publică o cerere',
     alert: 'Anunță-mă când apare un traseu',
-    alertSignedOut: 'Intră în cont ca să primești anunțul',
+    alertSignedOut: 'Intră în cont ca să primești alerta',
     alertSaved: 'Gata. Te anunțăm pe e-mail când apare un traseu care se potrivește.',
     alertExists: 'Ai deja o alertă salvată pentru această căutare.',
     carrierAlert:
@@ -108,23 +110,23 @@ export const departuresCopy = {
   },
 
   series: {
-    title: 'Plecări care se repetă',
-    lede: 'O serie publică singură plecările, cu două săptămâni înainte. Fiecare este o plecare obișnuită și se poate retrage separat.',
+    title: 'Trasee care se repetă',
+    lede: 'O serie publică singură traseele, cu două săptămâni înainte. Fiecare este un traseu obișnuit și se poate retrage separat.',
     empty: 'Nicio serie.',
-    emptyBody: 'Bifează „Se repetă" când adaugi o plecare, și se publică singură de acolo încolo.',
+    emptyBody: 'Bifează „Se repetă" când publici un traseu, și seria se publică singură de acolo încolo.',
     live: 'Activă',
     paused: 'Pe pauză',
     ended: 'Oprită',
     pause: 'Pune pe pauză',
     resume: 'Repornește',
     end: 'Oprește seria',
-    next: 'Următoarele plecări',
+    next: 'Următoarele trasee',
     until: (date: string) => `până la ${date}`,
     published: (n: number) =>
-      n === 0 ? 'Nicio plecare publicată încă' : n === 1 ? 'O plecare publicată' : `${n} plecări publicate`,
-    /** În formularul de plecare. */
+      n === 0 ? 'Niciun traseu publicat încă' : n === 1 ? 'Un traseu publicat' : `${n} trasee publicate`,
+    /** In the route form. */
     repeat: 'Se repetă',
-    repeatHint: 'Publică singură plecarea, în zilele alese, până la data pe care o pui.',
+    repeatHint: 'Publică singur traseul, în zilele alese, până la data pe care o pui.',
     submit: 'Publică seria',
     kindWeekly: 'În zilele săptămânii',
     kindEveryN: 'La fiecare N zile',
@@ -134,9 +136,10 @@ export const departuresCopy = {
   },
 
   mine: {
-    eyebrow: 'Traseele mele',
-    title: 'Traseele firmei',
-    lede: 'Traseele publicate, locurile ocupate și rezervările care așteptă un răspuns.',
+    eyebrow: 'Firma ta',
+    // The menu's word for this page, so the heading confirms the click.
+    title: 'Traseele mele',
+    lede: 'Traseele publicate, locurile ocupate și rezervările care așteaptă un răspuns.',
     empty: 'Niciun traseu publicat încă.',
     add: 'Publică un traseu',
     edit: 'Modifică',

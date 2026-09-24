@@ -69,8 +69,8 @@ clientului în antet și eticheta **„Cerere"** lângă el.
 1. Înapoi pe aceeași cerere, `/cereri/…`.
 2. Apasă **„Trimite mesaj"**.
 
-**Trebuie să vezi:** **„Ai deschis deja contactul pentru anunțul acesta. Nu se
-mai numără."** — alt text decât la pasul 1.
+**Trebuie să vezi:** **„Ai deschis deja contactul aici. Nu se mai
+numără."** — alt text decât la pasul 1.
 
 3. Confirmă, apoi verifică `/cont/abonament`.
 
@@ -268,7 +268,7 @@ platformei."** Părțile văd **că** a fost ascuns, nu **de ce** — motivul r�
 1. **Client** → firul cu transportatorul → **„Blochează expeditorul"**.
 
 **Trebuie să vezi**, înainte de confirmare: **„Nu mai poate deschide
-conversații noi cu tine de pe anunțuri. Firele comenzilor în curs rămân
+conversații noi cu tine de pe cererile sau traseele tale. Firele comenzilor în curs rămân
 deschise — transportul tot trebuie făcut."**
 
 Propoziția a doua contează la fel de mult ca prima. Cine blochează crede de
@@ -295,14 +295,14 @@ deschide din nou.
 
 **Trebuie să vezi:** și blocarea, și deblocarea, fiecare cu cine și când.
 
-### 15. Moderarea anunțurilor — 3 min *(cont de staff)*
+### 15. Moderarea cererilor și a traseelor — 3 min *(cont de staff)*
 
 1. **Staff** → `/admin/anunturi`.
 
 **Trebuie să vezi:** două file — **Cereri** și **Trasee** — și filtre pe stare,
 firmă, „doar ascunse", „doar sesizate" și interval de date.
 
-2. Deschide un anunț din listă.
+2. Deschide o cerere din listă.
 
 **Trebuie să vezi:** fotografiile, istoricul și numărul de sesizări, dacă are.
 
@@ -313,28 +313,29 @@ contul lui. Scrie-l ca pentru el, nu ca pentru noi."**
 
 Este cea mai utilă propoziție de pe ecranul ăsta. Schimbă complet cum se scrie
 motivul, de la „poze proaste" la „fotografiile nu par ale vehiculului din
-anunț".
+cerere".
 
 4. Încearcă să confirmi **fără motiv**.
 
 **Trebuie să vezi:** un refuz. Nu se ascunde nimic fără motiv.
 
-5. Scrie motivul și confirmă. **Trebuie să vezi:** **„Anunțul a fost ascuns."**
+5. Scrie motivul și confirmă. **Trebuie să vezi:** **„Gata: nu mai apare pe
+panoul public."**
 
 ### 16. Ce vede proprietarul — 2 min *(client)*
 
 1. **Deconectat** sau cu alt cont → `/cereri`.
 
-**Trebuie să vezi:** anunțul **nu mai este** pe panou.
+**Trebuie să vezi:** cererea **nu mai este** pe panou.
 
 2. **Client** (proprietarul) → `/cont/cereri`.
 
-**Trebuie să vezi:** anunțul **este acolo**, cu o casetă galbenă: **„Scos de
+**Trebuie să vezi:** cererea **este acolo**, cu o casetă galbenă: **„Scos de
 panou de echipa platformei"**, **„Motivul: …"** exact cum l-a scris echipa, și
-**„Anunțul nu mai apare pe panoul public. Corectează ce este de corectat și
-scrie-ne — îl punem la loc."**
+**„Nu mai apare pe panoul public până nu corectezi ce este de corectat.
+Scrie-ne după aceea și ne uităm din nou."**
 
-Dacă anunțul ar dispărea din contul lui, omul ar crede că a greșit la
+Dacă cererea ar dispărea din contul lui, omul ar crede că a greșit la
 publicare și l-ar publica din nou, identic. De asta rămâne.
 
 3. **[e-mail]** **Staff** → `/admin/notificari` → coada.
@@ -344,8 +345,8 @@ publicare și l-ar publica din nou, identic. De asta rămâne.
 4. **Staff** → `/admin/anunturi`, bifează **„Doar ascunse"**, apasă **„Repune
    pe panou"** cu motiv.
 
-**Trebuie să vezi:** **„Anunțul a fost repus."**, caseta galbenă dispărută din
-contul clientului, anunțul înapoi pe panou, și un rând `listing_restored` în
+**Trebuie să vezi:** **„Gata: apare din nou pe panoul public."**, caseta
+galbenă dispărută din contul clientului, cererea înapoi pe panou, și un rând `listing_restored` în
 coadă.
 
 ### 17. Exportul — 1 min *(cont de staff)*

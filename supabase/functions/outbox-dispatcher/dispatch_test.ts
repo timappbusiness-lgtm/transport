@@ -57,7 +57,7 @@ const SAMPLE: Record<string, string> = {
   count: "3",
   listings: "· Volkswagen Golf 2015 (München — Cluj-Napoca)",
   outcome: "rezolvată",
-  resolution: "Am sunat firma, au confirmat, iar anunțul a fost corectat.",
+  resolution: "Am sunat firma, au confirmat, iar cererea a fost corectată.",
   listing_id: "5d2e9f31-0000-4000-8000-000000000003",
   carrier_name: "Transport Ardeal SRL",
   offer_id: "7b4a2c88-0000-4000-8000-000000000004",

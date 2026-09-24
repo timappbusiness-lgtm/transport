@@ -421,7 +421,7 @@ export const requestsCopy = {
     reopenFrom: 'Poate fi încărcat de la',
     reopenTo: 'Până la (opțional)',
     reopenSubmit: 'Republică cererea',
-    view: 'Vezi anunțul',
+    view: 'Vezi cererea',
     /**
      * The way in to the offers a request has received. The count is in
      * the label because „Oferte primite" on a request with none is a
