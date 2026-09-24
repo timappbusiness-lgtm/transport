@@ -34,6 +34,9 @@ import { failureMessage } from '@/lib/uploads/use-upload-queue';
 const added = (id: string, extra: Partial<Pick<UploadItem, 'meta'>> & { restored?: boolean } = {}) =>
   ({ id, name: `${id}.jpg`, size: 1000, type: 'image/jpeg', meta: extra.meta ?? {}, restored: extra.restored === true });
 
+/** The device answered: kept. */
+const kept = (id: string) => ({ type: 'kept' as const, id, kept: true as const });
+
 function run(events: Parameters<typeof uploadReducer>[1][]): UploadItem[] {
   return events.reduce<UploadItem[]>((items, event) => uploadReducer(items, event), []);
 }
@@ -67,6 +70,7 @@ describe('a file on its way: the four states a person reads', () => {
   it('„Încearcă din nou" puts the same file, under the same id, back in line', () => {
     let items = run([
       { type: 'added', items: [added('a')] },
+      kept('a'),
       { type: 'started', id: 'a' },
       { type: 'failed', id: 'a', error: 'x' },
     ]);
@@ -116,9 +120,21 @@ describe('a file on its way: the four states a person reads', () => {
 });
 
 describe('which file goes next', () => {
+  it('nothing goes before the device has kept it, so a tab closed mid-upload loses nothing', () => {
+    // The upload used to start before the write to IndexedDB had finished;
+    // a tab closed in those milliseconds lost the file (incarcari.spec.ts).
+    const chosen = run([{ type: 'added', items: [added('a')] }]);
+    expect(nextToSend(chosen)).toBeNull();
+    expect(nextToSend(uploadReducer(chosen, kept('a')))?.id).toBe('a');
+    // A device that could not keep it still sends it, while the page is open.
+    expect(nextToSend(uploadReducer(chosen, { type: 'kept', id: 'a', kept: 'unavailable' }))?.id).toBe('a');
+  });
+
   it('one at a time, oldest first', () => {
     const items = run([
       { type: 'added', items: [added('a'), added('b')] },
+      kept('a'),
+      kept('b'),
       { type: 'started', id: 'a' },
     ]);
     expect(nextToSend(items)).toBeNull();
@@ -126,14 +142,14 @@ describe('which file goes next', () => {
   });
 
   it('a file found after a reload waits for „Trimite-le acum" when the screen asks first', () => {
-    const items = run([{ type: 'added', items: [added('a', { restored: true })] }]);
+    const items = run([{ type: 'added', items: [added('a', { restored: true })] }, kept('a')]);
     expect(nextToSend(items, false)).toBeNull();
     expect(nextToSend(items, true)?.id).toBe('a');
     expect(nextToSend(uploadReducer(items, { type: 'resumed' }), false)?.id).toBe('a');
   });
 
   it('a file on hold — an image chosen for a message not yet sent — is not sent', () => {
-    let items = run([{ type: 'added', items: [added('a', { meta: { hold: true } })] }]);
+    let items = run([{ type: 'added', items: [added('a', { meta: { hold: true } })] }, kept('a')]);
     expect(nextToSend(items)).toBeNull();
     items = uploadReducer(items, { type: 'meta', id: 'a', meta: { hold: false, messageId: 'm1' } });
     expect(nextToSend(items)?.id).toBe('a');

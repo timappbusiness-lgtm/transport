@@ -126,12 +126,22 @@ function clamp(fraction: number): number {
  * on a weak signal does better with one file at full speed than three at
  * a third. Failed ones wait for the person; restored ones wait for
  * `resumed` when the screen asks before sending them.
+ *
+ * And none goes before the device has answered whether it kept it
+ * (`kept` is no longer null): „se încarcă" then means the file is already
+ * safe from a closed tab. Without this the upload started a few
+ * milliseconds before the write to IndexedDB finished, and a tab closed
+ * in between lost the file — the browser test caught it under load.
  */
 export function nextToSend(items: readonly UploadItem[], includeRestored = true): UploadItem | null {
   if (items.some((item) => item.status === 'uploading')) return null;
   return (
     items.find(
-      (item) => item.status === 'waiting' && item.meta.hold !== true && (includeRestored || !item.restored),
+      (item) =>
+        item.status === 'waiting' &&
+        item.kept !== null &&
+        item.meta.hold !== true &&
+        (includeRestored || !item.restored),
     ) ?? null
   );
 }
