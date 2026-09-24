@@ -1,10 +1,9 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
-import {
-  removeRequestPhotoAction,
-  uploadRequestPhotoAction,
-} from '@/app/cerere/import-actions';
+import { useId, useState } from 'react';
+import { removeRequestPhotoAction } from '@/app/cerere/import-actions';
+import { UploadLine } from '@/components/ui/upload-line';
+import { uploadRoute } from '@/config/routes';
 import { requestsCopy } from '@/content/cereri';
 import {
   ACCEPTED_PHOTO_TYPES,
@@ -13,10 +12,11 @@ import {
   remainingPhotoSlots,
 } from '@/lib/photo-upload';
 import { shrinkPhoto as shrink } from '@/lib/photo-shrink';
-import { buttonClasses } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/icon';
 import { iconForAction } from '@/lib/icons';
+import { SEND_ERROR_MESSAGES, SendError, postUpload } from '@/lib/uploads/transport';
+import { useUploadQueue } from '@/lib/uploads/use-upload-queue';
 
 export interface ChosenPhoto {
   /** The path in the bucket, which is what the form submits. */
@@ -47,26 +47,37 @@ export function PhotoPanel({
 }) {
   const c = requestsCopy.form.photos;
   const id = useId();
-  const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
-  // Files whose upload failed — the connection dropped, the server said
-  // no. They stay chosen, and „Încearcă din nou" sends them again; before,
-  // the loop stopped at the first failure and every file after it was
-  // silently dropped with it.
-  const [failed, setFailed] = useState<File[]>([]);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [dragging, setDragging] = useState(false);
-  const remaining = remainingPhotoSlots(photos.length);
-  const busy = progress !== null;
 
-  async function upload(files: File[]) {
+  // Every chosen photo is kept on the device until the server has it, and
+  // sent under an id chosen once: a failed one stays with „Încearcă din
+  // nou", a reload sends what was still waiting, and a retry after a lost
+  // answer lands on the same object instead of a second one.
+  const queue = useUploadQueue({
+    scope: 'cerere-poze',
+    send: async (file, onProgress) => {
+      const small = await shrink(new File([file.blob], file.name, { type: file.type }));
+      const form = new FormData();
+      form.set('id', file.id);
+      form.set('photo', small);
+      const answer = await postUpload<{ path?: string }>(uploadRoute('poza-cerere'), form, onProgress);
+      if (typeof answer.path !== 'string') throw new SendError('server', SEND_ERROR_MESSAGES.server);
+      return { path: answer.path };
+    },
+    onUploaded: (item, result) => {
+      if (result?.path) onAdd({ path: result.path, preview: queue.previewOf(item.id) ?? '' });
+    },
+  });
+  const inFlight = queue.items.filter((item) => item.status !== 'uploaded');
+  const remaining = remainingPhotoSlots(photos.length + inFlight.length);
+
+  function pick(files: FileList | null) {
+    if (files === null || files.length === 0) return;
     setError(null);
-    const stillFailing: File[] = [];
-    let chosen = photos.length;
-    setProgress({ done: 0, total: files.length });
-
-    for (const [index, file] of files.entries()) {
-      setProgress({ done: index + 1, total: files.length });
+    let chosen = photos.length + inFlight.length;
+    const accepted: File[] = [];
+    for (const file of Array.from(files)) {
       const rejection = rejectPhoto(file, chosen);
       if (rejection !== null) {
         // Said, and the next file is still tried: one wrong file is not a
@@ -74,23 +85,10 @@ export function PhotoPanel({
         setError(rejection.message);
         continue;
       }
-      try {
-        const result = await uploadRequestPhotoAction(toFormData(await shrink(file)));
-        if (!result.ok) {
-          setError(result.message);
-          stillFailing.push(file);
-          continue;
-        }
-        chosen += 1;
-        onAdd({ path: result.path, preview: URL.createObjectURL(file) });
-      } catch {
-        stillFailing.push(file);
-      }
+      chosen += 1;
+      accepted.push(file);
     }
-
-    setFailed(stillFailing);
-    setProgress(null);
-    if (input.current !== null) input.current.value = '';
+    if (accepted.length > 0) queue.add(accepted);
   }
 
   function remove(photo: ChosenPhoto) {
@@ -100,11 +98,6 @@ export function PhotoPanel({
     // references the file and a failed delete costs a stray object rather
     // than a broken form.
     removeRequestPhotoAction(photo.path).catch(() => {});
-  }
-
-  function pick(files: FileList | null) {
-    if (files === null || files.length === 0 || busy) return;
-    void upload(Array.from(files));
   }
 
   return (
@@ -177,20 +170,17 @@ export function PhotoPanel({
             <Icon as={iconForAction('upload')} size="md" />
           </span>
           <span className="text-body font-medium text-foreground">{c.drop}</span>
-          <span className="text-small text-muted">
-            {progress !== null
-              ? c.uploadingOf(progress.done, progress.total)
-              : `${c.dropHint} ${c.remaining(remaining, MAX_PHOTOS)}`}
-          </span>
+          <span className="text-small text-muted">{`${c.dropHint} ${c.remaining(remaining, MAX_PHOTOS)}`}</span>
           <input
             id={id}
-            ref={input}
             type="file"
             multiple
             accept={ACCEPTED_PHOTO_TYPES.join(',')}
-            disabled={busy}
             aria-label={c.add}
-            onChange={(event) => pick(event.target.files)}
+            onChange={(event) => {
+              pick(event.target.files);
+              event.target.value = '';
+            }}
             className="sr-only"
           />
         </label>
@@ -204,30 +194,19 @@ export function PhotoPanel({
         </p>
       ) : null}
 
-      {failed.length > 0 && !busy ? (
-        <div
-          role="alert"
-          data-photo-failed={failed.length}
-          className="flex flex-wrap items-center gap-3 rounded-input border border-danger/45 bg-danger/8 px-3.5 py-2.5 text-body"
-        >
-          <p className="min-w-0 flex-1">{c.failed(failed.length)}</p>
-          <button
-            type="button"
-            onClick={() => void upload(failed)}
-            className={buttonClasses('secondary', 'sm')}
-          >
-            {c.retry}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFailed([])}
-            className="text-small text-muted underline underline-offset-4 hover:text-foreground"
-          >
-            {c.drop_failed}
-          </button>
+      {inFlight.length > 0 ? (
+        <div className="flex flex-col gap-2" data-photo-queue={inFlight.length}>
+          {inFlight.map((item) => (
+            <UploadLine
+              key={item.id}
+              item={item}
+              preview={queue.previewOf(item.id)}
+              onRetry={queue.retry}
+              onDiscard={queue.discard}
+            />
+          ))}
         </div>
       ) : null}
-
     </div>
   );
 }
@@ -255,10 +234,4 @@ export function PhotoPanelLocked() {
       <p className="max-w-[46ch] text-small text-muted">{c.signedOut}</p>
     </div>
   );
-}
-
-function toFormData(file: File): FormData {
-  const data = new FormData();
-  data.set('photo', file);
-  return data;
 }

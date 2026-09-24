@@ -5,6 +5,7 @@ import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
 import { announceSessionExpired } from '@/lib/continuity/session-store';
 import { browserFileStore, type FileStore, type StoredFile } from './file-store';
 import { nextToSend, summarise, uploadReducer, type UploadItem, type UploadSummary } from './queue';
+import { newUploadId } from './paths';
 import { SEND_ERROR_MESSAGES, SendError } from './transport';
 
 /** A file handed to the sender: the same id and bytes on every attempt. */
@@ -51,11 +52,6 @@ function uploadedResult(meta: StoredFile['meta']): Record<string, string> | null
   return result;
 }
 
-function newId(): string {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
-}
 
 /** The sentence for a failed send, whatever threw it. */
 export function failureMessage(error: unknown): { message: string; session: boolean } {
@@ -209,7 +205,7 @@ export function useUploadQueue({
     (files, meta = {}) => {
       const ids: string[] = [];
       const entries = files.map((file) => {
-        const id = newId();
+        const id = newUploadId();
         ids.push(id);
         blobs.current.set(id, file);
         preview(id, file);

@@ -12,6 +12,7 @@ import { NewVehicleForm } from '@/components/account/fleet-forms';
 import { DocumentExample } from '@/components/onboarding/document-example';
 import { buttonClasses } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/primitives';
+import { Thumbnail, UploadLine } from '@/components/ui/upload-line';
 import { inscriereCopy } from '@/content/inscriere';
 import {
   countChecklist,
@@ -29,7 +30,7 @@ import {
 } from '@/lib/document-reading';
 import { ACCEPTED_DOCUMENT_TYPES, MAX_DOCUMENT_BYTES, documentStoragePath } from '@/lib/documents';
 import { shrinkPhoto } from '@/lib/photo-shrink';
-import { NOT_KEPT_MESSAGES, statusLine, type UploadItem } from '@/lib/uploads/queue';
+import type { UploadItem } from '@/lib/uploads/queue';
 import { SendError, uploadToStorage } from '@/lib/uploads/transport';
 import { failureMessage, useUploadQueue, type QueuedFile } from '@/lib/uploads/use-upload-queue';
 import { cn } from '@/lib/utils';
@@ -348,7 +349,7 @@ function RequirementRow({
       </div>
 
       {uploads.map((item) => (
-        <UploadLine key={item.id} item={item} preview={preview(item.id)} onRetry={onRetry} onDiscard={onDiscard} />
+        <UploadLine key={item.id} className="mt-3" item={item} preview={preview(item.id)} onRetry={onRetry} onDiscard={onDiscard} />
       ))}
 
       {waiting !== null ? (
@@ -385,59 +386,6 @@ function RequirementRow({
         </label>
       </div>
     </li>
-  );
-}
-
-/** A file on its way: thumbnail, state, progress, and a retry when it failed. */
-function UploadLine({
-  item,
-  preview,
-  onRetry,
-  onDiscard,
-}: {
-  item: UploadItem;
-  preview: string | null;
-  onRetry: (id: string) => void;
-  onDiscard: (id: string) => void;
-}) {
-  return (
-    <div className="mt-3 flex gap-3 rounded-input border border-border bg-ground-alt p-2.5" data-upload-status={item.status}>
-      <Thumbnail item={item} preview={preview} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-small">{item.name}</p>
-        <p className="text-small text-muted">{statusLine(item)}</p>
-        {item.status === 'uploading' ? (
-          <div className="mt-1 h-1.5 overflow-hidden rounded-pill bg-surface">
-            <div className="h-full origin-left bg-accent" style={{ transform: `scaleX(${item.progress})` }} />
-          </div>
-        ) : null}
-        {item.status === 'failed' && item.error ? <p className="mt-1 text-small text-danger">{item.error}</p> : null}
-        {item.kept !== null && item.kept !== true ? (
-          <p className="mt-1 text-small text-muted">{NOT_KEPT_MESSAGES[item.kept]}</p>
-        ) : null}
-        {item.status === 'failed' ? (
-          <div className="mt-1.5 flex gap-4">
-            <button type="button" className="text-small link-accent" onClick={() => onRetry(item.id)}>
-              {c.retry}
-            </button>
-            <button type="button" className="text-small text-muted underline-offset-4 hover:underline" onClick={() => onDiscard(item.id)}>
-              {c.discard}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function Thumbnail({ item, preview }: { item: Pick<UploadItem, 'name' | 'type'>; preview: string | null }) {
-  return preview !== null ? (
-    // eslint-disable-next-line @next/next/no-img-element -- a blob: URL on the device, never optimised
-    <img src={preview} alt="" className="h-12 w-12 flex-none rounded-input object-cover" />
-  ) : (
-    <span className="flex h-12 w-12 flex-none items-center justify-center rounded-input bg-surface text-small text-muted">
-      {item.type === 'application/pdf' ? 'PDF' : '—'}
-    </span>
   );
 }
 

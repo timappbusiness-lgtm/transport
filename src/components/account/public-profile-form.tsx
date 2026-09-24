@@ -19,12 +19,12 @@ import {
   MAX_PUBLIC_DESCRIPTION,
   logoStoragePath,
 } from '@/lib/directory';
-import { createClient } from '@/lib/supabase/client';
 import { KeepingForm } from '@/components/ui/keeping-form';
 import { useKeptActionState } from '@/lib/continuity/use-kept-action-state';
 import { useUnsavedGuard } from '@/lib/continuity/use-unsaved-guard';
-import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
-import { announceSessionExpired } from '@/lib/continuity/session-store';
+import { UploadLine } from '@/components/ui/upload-line';
+import { SendError, uploadToStorage } from '@/lib/uploads/transport';
+import { failureMessage, useUploadQueue } from '@/lib/uploads/use-upload-queue';
 
 const EMPTY: ActionState = {};
 const c = accountCopy.publicProfile;
@@ -122,64 +122,56 @@ export function PublicProfileForm({ company, logoUrl }: { company: Company; logo
  * the `company-logos` bucket, so the file never passes through a server
  * action's body limit. The type and size are checked here for the message,
  * and by the bucket for the rule.
+ *
+ * The chosen file is kept on the device until the logo is saved
+ * (`useUploadQueue`): a dropped connection, a server error or a reload
+ * leaves it chosen, with „Încearcă din nou". The path is the company's one
+ * logo path, written with upsert, so a second attempt replaces rather than
+ * adds.
  */
 function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | null }) {
   const router = useRouter();
   const inputId = useId();
-  const [state, setState] = useState<ActionState>({});
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  // The file whose upload failed, kept so „Încearcă din nou" sends it
-  // again: the picker is emptied on every choice (so the same file can be
-  // chosen twice), and a failure used to leave nothing to retry with.
-  const [failed, setFailed] = useState<File | null>(null);
 
-  function upload(file: File) {
+  const queue = useUploadQueue({
+    scope: `logo:${company.id}`,
+    send: async (file, onProgress) => {
+      const path = logoStoragePath(company.id, file.type);
+      await uploadToStorage({ bucket: 'company-logos', path, file: file.blob, upsert: true, onProgress: (f) => onProgress(f * 0.9) });
+      const result = await setCompanyLogoAction(path);
+      if (result.error !== undefined) throw new SendError('refused', result.error);
+      onProgress(1);
+      return { path, notice: result.notice ?? '' };
+    },
+    onUploaded: (item, result) => {
+      setNotice(result?.notice ? result.notice : null);
+      // The logo shown is the one on the page; the file is on the server now.
+      queue.discard(item.id);
+      router.refresh();
+    },
+  });
+  const busy = queue.items.some((item) => item.status === 'uploading' || item.status === 'waiting');
+
+  function choose(file: File) {
     if (!(ACCEPTED_LOGO_TYPES as readonly string[]).includes(file.type) || file.size > MAX_LOGO_BYTES) {
-      setState({ error: c.logoHint });
+      setError(c.logoHint);
       return;
     }
-
-    startTransition(async () => {
-      setState({});
-      setFailed(null);
-      const path = logoStoragePath(company.id, file.type);
-      const { error } = await createClient()
-        .storage.from('company-logos')
-        .upload(path, file, { contentType: file.type, upsert: true });
-
-      if (error) {
-        setState({ error: 'Fișierul nu a putut fi încărcat. A rămas ales — încearcă din nou.' });
-        setFailed(file);
-        return;
-      }
-
-      try {
-        const result = await setCompanyLogoAction(path);
-        setState(result);
-        if (result.error !== undefined) setFailed(file);
-      } catch (thrown) {
-        const kind = failureKind(thrown);
-        if (kind === null) throw thrown;
-        if (kind === 'session') announceSessionExpired();
-        setState({ error: FAILURE_MESSAGES[kind] });
-        setFailed(file);
-        return;
-      }
-      router.refresh();
-    });
+    setError(null);
+    setNotice(null);
+    // One logo: a new choice replaces whatever was still waiting.
+    for (const item of queue.items) queue.discard(item.id);
+    queue.add([file]);
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-border pt-5">
+    <div className="flex flex-col gap-3 border-t border-border pt-5" data-logo-field>
       <p className="text-body font-medium">{c.logo}</p>
-      <FormError>{state.error}</FormError>
-      {failed !== null && !pending ? (
-        <div>
-          <button type="button" onClick={() => upload(failed)} className={buttonClasses('secondary', 'sm')}>
-            Încearcă din nou
-          </button>
-        </div>
-      ) : null}
+      <FormError>{error ?? undefined}</FormError>
+      <FormNotice>{notice ?? undefined}</FormNotice>
 
       <div className="flex flex-wrap items-center gap-4">
         {logoUrl ? (
@@ -195,28 +187,36 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
         ) : null}
 
         <label htmlFor={inputId} className={buttonClasses('secondary', 'sm')}>
-          {pending ? '…' : c.logoUpload}
+          {busy ? '…' : c.logoUpload}
         </label>
         <input
           id={inputId}
           type="file"
           accept={ACCEPTED_LOGO_TYPES.join(',')}
           className="sr-only"
-          disabled={pending}
+          disabled={busy}
+          data-logo-input
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = '';
-            if (file) upload(file);
+            if (file) choose(file);
           }}
         />
 
         {company.logo_path ? (
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || busy}
             onClick={() =>
               startTransition(async () => {
-                setState(await setCompanyLogoAction(null));
+                try {
+                  const result = await setCompanyLogoAction(null);
+                  setError(result.error ?? null);
+                  setNotice(result.notice ?? null);
+                } catch (thrown) {
+                  setError(failureMessage(thrown).message);
+                  return;
+                }
                 router.refresh();
               })
             }
@@ -226,6 +226,10 @@ function LogoField({ company, logoUrl }: { company: Company; logoUrl: string | n
           </button>
         ) : null}
       </div>
+
+      {queue.items.map((item) => (
+        <UploadLine key={item.id} item={item} preview={queue.previewOf(item.id)} onRetry={queue.retry} onDiscard={queue.discard} />
+      ))}
 
       <p className="text-small text-muted">{c.logoHint}</p>
     </div>

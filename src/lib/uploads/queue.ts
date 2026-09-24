@@ -129,7 +129,11 @@ function clamp(fraction: number): number {
  */
 export function nextToSend(items: readonly UploadItem[], includeRestored = true): UploadItem | null {
   if (items.some((item) => item.status === 'uploading')) return null;
-  return items.find((item) => item.status === 'waiting' && (includeRestored || !item.restored)) ?? null;
+  return (
+    items.find(
+      (item) => item.status === 'waiting' && item.meta.hold !== true && (includeRestored || !item.restored),
+    ) ?? null
+  );
 }
 
 export interface UploadSummary {
@@ -167,6 +171,12 @@ export function statusLine(item: Pick<UploadItem, 'status' | 'progress'>): strin
   if (item.status === 'uploading') return `${UPLOAD_STATUS_LABELS.uploading} — ${Math.round(item.progress * 100)}%`;
   return UPLOAD_STATUS_LABELS[item.status];
 }
+
+/** The two things a person can do with a file that did not go. */
+export const UPLOAD_ACTION_LABELS = {
+  retry: 'Încearcă din nou',
+  discard: 'Renunță',
+} as const;
 
 /** Why a chosen file will not survive a reload, when it will not. */
 export const NOT_KEPT_MESSAGES: Record<KeptReason, string> = {
