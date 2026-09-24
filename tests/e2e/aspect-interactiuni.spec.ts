@@ -204,9 +204,11 @@ test.describe('the account menu and the publish menu at the edges', () => {
 
   test('„Publică" opens its menu on the screen, wherever the button wrapped to', async ({ page }, testInfo) => {
     if (testInfo.project.name === 'desktop') await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(HARNESS('dashboard'));
-    const button = page.locator('button[aria-haspopup="menu"]').first();
-    const menu = page.getByRole('menu');
+    // The button is the header's now, on every page: a carrier's
+    // „Publică un traseu", drawn by the harness with its real menu.
+    await page.goto(`${HARNESS('antet')}&rol=transportator`);
+    const button = page.locator('[data-proba-antet] button[data-publish]');
+    const menu = page.getByRole('menu', { name: 'Ce vrei să publici' });
     await expect(async () => {
       if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
       await expect(menu).toBeVisible({ timeout: 500 });

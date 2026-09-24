@@ -44,7 +44,7 @@ test.describe('saving a search is offered where somebody would want one', () => 
     // The alert a client wants is still there beside it, in its
     // signed-out wording.
     await expect(
-      main.getByRole('button', { name: 'Intră în cont ca să primești anunțul' }),
+      main.getByRole('button', { name: 'Intră în cont ca să primești alerta' }),
     ).toBeVisible();
   });
 

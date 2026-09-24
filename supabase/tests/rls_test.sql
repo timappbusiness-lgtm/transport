@@ -415,6 +415,28 @@ select pg_temp.check('P1   a user can still edit their own name', 'guard',
   'f0000000-0000-0000-0000-000000000006', 'authenticated',
   $a$update public.profiles set full_name = 'Nume Nou' where id = auth.uid()$a$, 'allowed');
 
+-- The board's „N cereri noi de la ultima vizită" counts from
+-- profiles.last_seen_at, which the carrier's own session writes when it
+-- opens the board (src/app/cereri/actions.ts). No new rule: these pin the
+-- two the feature rests on — the owner may write it, nobody else may.
+select pg_temp.check('P1   a person records their own last visit to the board', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set last_seen_at = timestamptz '2026-09-24 10:00+00' where id = auth.uid()$a$, 'allowed',
+  p_verify => $v$select last_seen_at = timestamptz '2026-09-24 10:00+00'
+                 from public.profiles where id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('P1   nobody records a visit on somebody else''s profile', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.profiles set last_seen_at = timestamptz '2001-01-01 00:00+00'
+     where id = 'f0000000-0000-0000-0000-000000000007'$a$, 'blocked',
+  p_verify => $v$select last_seen_at is distinct from timestamptz '2001-01-01 00:00+00'
+                 from public.profiles where id = 'f0000000-0000-0000-0000-000000000007'$v$);
+
+select pg_temp.check('P1   an anonymous visitor records no visit at all', 'guard',
+  null, 'anon',
+  $a$update public.profiles set last_seen_at = now()$a$, 'blocked',
+  p_verify => $v$select count(*) = 0 from public.profiles where last_seen_at > now() - interval '1 minute'$v$);
+
 -- =====================================================================
 -- P2 - companies
 -- =====================================================================
