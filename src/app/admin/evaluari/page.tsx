@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { ModerateRating } from '@/components/admin/moderate-rating';
+import { AdminRatingFilters } from '@/components/admin/list-filters';
 import { Stars } from '@/components/ratings/star-input';
-import { FilterCheck, FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOrderRoute, companyRoute } from '@/config/routes';
 import { ratingsCopy } from '@/content/evaluari';
-import { filtersCopy } from '@/content/filtre';
 import { formatMoment } from '@/lib/ratings';
 import {
   ADMIN_RATINGS_PAGE_SIZE,
@@ -13,7 +12,6 @@ import {
   type AdminRatingQuery,
 } from '@/lib/ratings-source';
 import { loadAdminOrderCompanies } from '@/lib/orders-source';
-import { checkChipDef, chipsFromParams } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 import { withParam } from '@/lib/continuity/query';
@@ -21,7 +19,6 @@ import { withParam } from '@/lib/continuity/query';
 export const dynamic = 'force-dynamic';
 
 const c = ratingsCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -88,71 +85,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[64ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <div className="rounded-card border border-border bg-surface p-5">
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-        {/* Score, firm and „doar după dispute" on screen; „doar ascunse"
-            is the review of what was already moderated, and waits. */}
-        <FilterPanel
-          action={ROUTES.adminRatings}
-          screen="admin-evaluari"
-          chips={chipsFromParams(ROUTES.adminRatings, filterParams, [
-            checkChipDef('ascunse', c.filters.hidden),
-          ])}
-          canReset={Object.keys(filterParams).length > 0 || page > 1}
-          resetHref={ROUTES.adminRatings}
-          labels={{
-            more: filtersCopy.more,
-            active: filtersCopy.active,
-            apply: c.filters.apply,
-            clear: filtersCopy.clear,
-          }}
-          simple={
-            <>
-              <FilterField id="ar-score" label={c.filters.score}>
-                <select id="ar-score" name="nota" defaultValue={query.score === null ? '' : String(query.score)} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {[5, 4, 3, 2, 1].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterField id="ar-company" label={c.filters.company}>
-                <select id="ar-company" name="firma" defaultValue={query.companyId ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {/* The same list the orders screen filters by: a firm with
-                      orders is a firm that can have ratings, and a second
-                      query would be a second answer to the same question. */}
-                  {companies.map((company) => (
-                    <option key={company.company_id} value={company.company_id}>
-                      {company.company_name}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterCheck
-                id="ar-dispute"
-                name="dispute"
-                label={c.filters.afterDispute}
-                defaultChecked={query.afterDispute === true}
-              />
-            </>
-          }
-          advanced={
-            <FilterCheck
-              id="ar-hidden"
-              name="ascunse"
-              label={c.filters.hidden}
-              defaultChecked={query.hidden === true}
-            />
-          }
-        >
-          <span className="text-small text-muted">{c.list.total(formatNumber(total))}</span>
-        </FilterPanel>
-      </div>
+      <AdminRatingFilters
+        action={ROUTES.adminRatings}
+        resetHref={ROUTES.adminRatings}
+        params={filterParams}
+        canReset={Object.keys(filterParams).length > 0 || page > 1}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: company.company_name,
+        }))}
+      >
+        <span className="text-small text-muted">{c.list.total(formatNumber(total))}</span>
+      </AdminRatingFilters>
 
       {error !== null ? (
         <p className="rounded-card border border-danger/40 bg-danger/8 p-4 text-body">{error}</p>

@@ -1,20 +1,18 @@
 import Link from 'next/link';
 import { AuditEntryRow } from '@/components/admin/audit-entry';
+import { AdminAuditFilters } from '@/components/admin/list-filters';
 import { buttonClasses } from '@/components/ui/button';
-import { FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
-import { filtersCopy } from '@/content/filtre';
 import { auditCopy } from '@/content/jurnal';
 import { AUDIT_PAGE_SIZE, loadAuditFacets, loadAuditPage, type AuditQuery } from '@/lib/audit-source';
-import { chipsFromParams, paramsFromSearch, periodChipDefs } from '@/lib/filter-disclosure';
+import { paramsFromSearch } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = auditCopy;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -93,72 +91,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
-      <div className="rounded-card border border-border bg-surface p-5">
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-        {/* What, on what, by whom — the three questions an entry answers.
-            The period narrows them and waits, closed. */}
-        <FilterPanel
+      <div>
+        <AdminAuditFilters
           action={ROUTES.adminAuditLog}
-          screen="admin-jurnal"
-          chips={chipsFromParams(
-            ROUTES.adminAuditLog,
-            paramsFromSearch(toSearch(query, 1)),
-            periodChipDefs(c.filters.from, c.filters.to),
-            'p',
-          )}
-          canReset={filtered}
           resetHref={ROUTES.adminAuditLog}
-          labels={{
-            more: filtersCopy.more,
-            active: filtersCopy.active,
-            apply: c.filters.apply,
-            clear: c.filters.clear,
-          }}
-          simple={
-            <>
-              <FilterField id="ja-action" label={c.filters.action}>
-                <select id="ja-action" name="actiune" defaultValue={query.action ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {actions.map((facet) => (
-                    <option key={facet.value} value={facet.value}>
-                      {facet.value} ({facet.occurrences})
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterField id="ja-entity" label={c.filters.entity}>
-                <select id="ja-entity" name="entitate" defaultValue={query.entity ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {entities.map((facet) => (
-                    <option key={facet.value} value={facet.value}>
-                      {facet.value} ({facet.occurrences})
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterField id="ja-actor" label={c.filters.actor} hint={c.filters.actorHint}>
-                <input
-                  id="ja-actor"
-                  name="autor"
-                  defaultValue={query.actor ?? ''}
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  className={`${CONTROL} font-mono text-small`}
-                />
-              </FilterField>
-            </>
-          }
-          advanced={
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FilterField id="ja-from" label={c.filters.from}>
-                <input id="ja-from" name="de-la" type="date" defaultValue={query.from ?? ''} className={CONTROL} />
-              </FilterField>
-              <FilterField id="ja-to" label={c.filters.to}>
-                <input id="ja-to" name="pana-la" type="date" defaultValue={query.to ?? ''} className={CONTROL} />
-              </FilterField>
-            </div>
-          }
+          params={paramsFromSearch(toSearch(query, 1))}
+          canReset={filtered}
+          actions={actions.map((facet) => ({
+            value: facet.value,
+            label: `${facet.value} (${facet.occurrences})`,
+          }))}
+          entities={entities.map((facet) => ({
+            value: facet.value,
+            label: `${facet.value} (${facet.occurrences})`,
+          }))}
         >
           <a
             href={`${ROUTES.adminAuditLog}/export${toSearch(query, 1)}`}
@@ -166,7 +112,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
           >
             {c.filters.export}
           </a>
-        </FilterPanel>
+        </AdminAuditFilters>
         <p className="mt-2 text-small text-muted">{c.filters.exportHint}</p>
       </div>
 

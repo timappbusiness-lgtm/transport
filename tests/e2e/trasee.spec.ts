@@ -1,18 +1,11 @@
-import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { expect, test } from '@playwright/test';
+import { moreFilters, openMoreFilters as openFilters, settled } from './settled';
 
 /**
  * Everything except „de unde", „unde" and „tip vehicul" lives one click
  * down now, under „Mai multe filtre". The keys did not change, so the
  * URL assertions below are the ones they always were.
  */
-async function openFilters(page: Page): Promise<void> {
-  // Idempotent: the panel opens by itself when the URL carries one of
-  // the filters inside it, and clicking the summary then would shut it.
-  const panel = page.locator('main details').first();
-  if (await panel.evaluate((n: HTMLDetailsElement) => n.open)) return;
-  await page.getByText('Mai multe filtre').click();
-}
 
 /**
  * The departures board, browsed the way a visitor with a car to move
@@ -69,13 +62,23 @@ test.describe('trasee, signed out', () => {
   });
 
   test('a filtered direction survives the next search', async ({ page }) => {
-    // The panel is open already, because the link carries something in
-    // it — which is the whole reason it opens by itself.
+    // The link carries something from inside the panel, and the panel
+    // stays shut — its chip says so. A search from the three main fields
+    // keeps it anyway: the closed panel hides its fields, it does not
+    // drop them from the form.
     await page.goto('/trasee?directie=retur');
     await settled(page);
-    await page.selectOption('#f-from-country', 'IT');
+    await expect(moreFilters(page).panel).toBeHidden();
+    await expect(page.locator('[data-chip="tab"]')).toBeVisible();
+    await page.getByLabel('Tip vehicul', { exact: true }).selectOption({ index: 1 });
     await page.getByRole('button', { name: 'Caută' }).click();
 
+    await expect(page).toHaveURL(/vehicul=/);
+    await expect(page).toHaveURL(/directie=retur/);
+
+    await openFilters(page);
+    await page.selectOption('#f-from-country', 'IT');
+    await page.getByRole('button', { name: 'Caută' }).click();
     await expect(page).toHaveURL(/directie=retur/);
     await expect(page).toHaveURL(/tara-plecare=IT/);
   });

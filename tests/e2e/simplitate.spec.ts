@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { moreFilters, openMoreFilters, settled } from './settled';
 
 /**
  * The boards, as a dispatcher who is not comfortable with software meets
@@ -42,12 +42,11 @@ test.describe('three filters on screen, the rest one click down', () => {
         await expect(page.getByLabel(label, { exact: true })).toBeVisible();
       }
 
-      // Closed, and saying so. `details.open` is the browser's own state,
-      // not a class we could get wrong.
-      const panel = page.locator('main details').first();
-      await expect(panel).toBeAttached();
-      expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(false);
-      await expect(page.getByText('Mai multe filtre')).toBeVisible();
+      // Closed, and saying so to a screen reader as well as to the eye.
+      const { button, panel } = moreFilters(page);
+      await expect(button).toBeVisible();
+      await expect(button).toHaveAttribute('aria-expanded', 'false');
+      await expect(panel).toBeHidden();
 
       // Three filters, one sort control and nothing else. A number rather
       // than a list, because the point is the count.
@@ -57,27 +56,29 @@ test.describe('three filters on screen, the rest one click down', () => {
     test(`${path} opens the panel and everything in it`, async ({ page }) => {
       await page.goto(path);
       await settled(page);
-      await page.getByText('Mai multe filtre').click();
-      const panel = page.locator('main details').first();
-      expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
+      await openMoreFilters(page);
+      await expect(moreFilters(page).button).toHaveAttribute('aria-expanded', 'true');
       expect(await visibleFields(page)).toBeGreaterThan(10);
     });
   }
 });
 
 test.describe('a link somebody saved last month still works', () => {
-  test('and it opens the panel, so the board explains itself', async ({ page }) => {
-    // The keys are the ones they always were. What is new is that a
-    // board narrowed by four things somebody else chose says which four
-    // rather than looking arbitrarily empty.
+  test('and the board says what it applies without opening the panel', async ({ page }) => {
+    // The keys are the ones they always were. A board narrowed by four
+    // things somebody else chose says which four — on the button and as
+    // chips — rather than looking arbitrarily empty. It used to open the
+    // panel to say so; the panel now stays shut on every first load.
     await page.goto('/cereri?cine=curse&serviciu=expres&stare=nu-ruleaza&greutate=2500');
     await settled(page);
 
-    const panel = page.locator('main details').first();
-    expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
+    const { button, panel } = moreFilters(page);
+    await expect(button).toHaveAttribute('aria-expanded', 'false');
+    await expect(panel).toBeHidden();
 
-    // The badge counts what is narrowing the board.
-    await expect(page.locator('main summary').first()).toContainText('4');
+    // The badge counts what is narrowing the board, and there is a chip for each.
+    await expect(button).toContainText('4');
+    await expect(page.locator('[data-filter-chips] [data-chip]')).toHaveCount(4);
 
     // And the values survived the round trip.
     await expect(page.getByLabel('Tip de serviciu')).toHaveValue('expres');
@@ -88,8 +89,9 @@ test.describe('a link somebody saved last month still works', () => {
   test('the routes board keeps its own keys too', async ({ page }) => {
     await page.goto('/trasee?directie=retur&locuri=3&capacitate=1800');
     await settled(page);
-    const panel = page.locator('main details').first();
-    expect(await panel.evaluate((n: HTMLDetailsElement) => n.open)).toBe(true);
+    await expect(moreFilters(page).panel).toBeHidden();
+    await expect(moreFilters(page).button).toContainText('3');
+    await expect(page.locator('[data-filter-chips] [data-chip]')).toHaveCount(3);
     await expect(page.getByLabel('Direcția')).toHaveValue('retur');
     await expect(page.getByLabel(/Locuri libere/)).toHaveValue('3');
   });

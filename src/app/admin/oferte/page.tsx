@@ -1,9 +1,8 @@
 import Link from 'next/link';
+import { AdminOfferFilters } from '@/components/admin/list-filters';
 import { buttonClasses } from '@/components/ui/button';
-import { FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOfferRoute } from '@/config/routes';
-import { filtersCopy } from '@/content/filtre';
 import { offersCopy } from '@/content/oferte';
 import {
   OFFER_STATUS_LABELS,
@@ -17,14 +16,13 @@ import {
   loadAdminOffers,
   type AdminOfferQuery,
 } from '@/lib/offers-admin-source';
-import { chipsFromParams, paramsFromSearch, periodChipDefs } from '@/lib/filter-disclosure';
+import { paramsFromSearch } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export const dynamic = 'force-dynamic';
 
 const c = offersCopy.admin;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -108,70 +106,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[62ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <div className="rounded-card border border-border bg-surface p-5">
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-        {/* State and sender are what the team looks for; the period is
-            the refinement, under „Mai multe filtre", closed. */}
-        <FilterPanel
-          action={ROUTES.adminOffers}
-          screen="admin-oferte"
-          simpleClassName="grid gap-3 sm:grid-cols-2"
-          chips={chipsFromParams(
-            ROUTES.adminOffers,
-            paramsFromSearch(toSearch(query, 1)),
-            periodChipDefs(c.filters.from, c.filters.to),
-            'p',
-          )}
-          canReset={filtered}
-          resetHref={ROUTES.adminOffers}
-          labels={{
-            more: filtersCopy.more,
-            active: filtersCopy.active,
-            apply: c.filters.apply,
-            clear: filtersCopy.clear,
-          }}
-          simple={
-            <>
-              <FilterField id="ao-status" label={c.filters.status}>
-                <select id="ao-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {OFFER_STATUS_ORDER.map((value) => (
-                    <option key={value} value={value}>
-                      {OFFER_STATUS_LABELS[value]}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterField id="ao-company" label={c.filters.company}>
-                <select
-                  id="ao-company"
-                  name="firma"
-                  defaultValue={query.companyId ?? ''}
-                  className={CONTROL}
-                >
-                  <option value="">{c.filters.any}</option>
-                  {companies.map((company) => (
-                    <option key={company.company_id} value={company.company_id}>
-                      {company.company_name} ({company.offers_count})
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-            </>
-          }
-          advanced={
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FilterField id="ao-from" label={c.filters.from}>
-                <input id="ao-from" name="de-la" type="date" defaultValue={query.from ?? ''} className={CONTROL} />
-              </FilterField>
-              <FilterField id="ao-to" label={c.filters.to}>
-                <input id="ao-to" name="pana-la" type="date" defaultValue={query.to ?? ''} className={CONTROL} />
-              </FilterField>
-            </div>
-          }
-        />
-      </div>
+      <AdminOfferFilters
+        action={ROUTES.adminOffers}
+        resetHref={ROUTES.adminOffers}
+        params={paramsFromSearch(toSearch(query, 1))}
+        canReset={filtered}
+        statuses={OFFER_STATUS_ORDER.map((value) => ({ value, label: OFFER_STATUS_LABELS[value] }))}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: `${company.company_name} (${company.offers_count})`,
+        }))}
+      />
 
       {page.error !== null ? (
         <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">

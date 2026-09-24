@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { settled } from './settled';
+import { openMoreFilters, settled } from './settled';
 
 /**
  * Publishing a request and the board, without a database.
@@ -176,7 +176,7 @@ test.describe('the board with nothing on it', () => {
     await settled(page);
     // Both of these are one click down now, under „Mai multe filtre".
     // The keys they write are the ones they always wrote.
-    await page.getByText('Mai multe filtre').click();
+    await openMoreFilters(page);
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByLabel('Starea vehiculului').selectOption('nu-ruleaza');
     await page.getByRole('button', { name: 'Caută' }).click();

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { settled } from './settled';
+import { openMoreFilters, settled } from './settled';
 
 /**
  * Keeping the place, outside the request form: a failed request never
@@ -120,7 +120,7 @@ test.describe('a board keeps its filters', () => {
   test('leaving the board and coming back with the browser keeps them', async ({ page }) => {
     await page.goto('/cereri');
     await settled(page);
-    await page.getByText('Mai multe filtre').click();
+    await openMoreFilters(page);
     await page.getByLabel('Țara de plecare').selectOption('DE');
     await page.getByRole('button', { name: 'Caută' }).click();
     await expect(page).toHaveURL(/tara-plecare=DE/);

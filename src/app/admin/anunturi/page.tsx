@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { ExportModeration } from '@/components/admin/export-moderation';
+import { AdminListingFilters } from '@/components/admin/list-filters';
 import { ModerateListing } from '@/components/admin/moderate-listing';
-import { FilterCheck, FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, requestRoute } from '@/config/routes';
-import { filtersCopy } from '@/content/filtre';
 import { messagesCopy } from '@/content/mesaje';
 import { formatMoment } from '@/lib/orders';
 import { loadAdminOrderCompanies } from '@/lib/orders-source';
@@ -13,7 +12,6 @@ import {
   loadAdminListings,
   type AdminListingQuery,
 } from '@/lib/messages-source';
-import { checkChipDef, chipsFromParams, periodChipDefs } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -22,7 +20,7 @@ import { withParam } from '@/lib/continuity/query';
 export const dynamic = 'force-dynamic';
 
 const c = messagesCopy.admin.listings;
-const CONTROL = 'w-full rounded-input border border-border-strong bg-surface px-3 py-2 text-body';
+const LISTING_STATUSES = ['active', 'assigned', 'completed', 'cancelled', 'expired', 'suspended'];
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -114,80 +112,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         ))}
       </nav>
 
-      <div className="rounded-card border border-border bg-surface p-5">
-        <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
-        {/* State, firm and „doar sesizate" — what moderation opens this
-            screen for. The period and „doar ascunse" wait, closed; the
-            „cereri / trasee" switch above is the view, not a filter, and
-            every chip keeps it. */}
-        <FilterPanel
-          action={ROUTES.adminListings}
-          screen="admin-anunturi"
-          hidden={<input type="hidden" name="fel" value={kind} />}
-          chips={chipsFromParams(ROUTES.adminListings, filterParams, [
-            ...periodChipDefs(c.filters.from, c.filters.to),
-            checkChipDef('ascunse', c.filters.hidden),
-          ])}
-          canReset={Object.keys(filterParams).some((key) => key !== 'fel') || page > 1}
-          resetHref={viewHref}
-          labels={{
-            more: filtersCopy.more,
-            active: filtersCopy.active,
-            apply: c.filters.apply,
-            clear: filtersCopy.clear,
-          }}
-          simple={
-            <>
-              <FilterField id="al-status" label={c.filters.status}>
-                <select id="al-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {['active', 'assigned', 'completed', 'cancelled', 'expired', 'suspended'].map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterField id="al-company" label={c.filters.company}>
-                <select id="al-company" name="firma" defaultValue={query.companyId ?? ''} className={CONTROL}>
-                  <option value="">{c.filters.any}</option>
-                  {companies.map((company) => (
-                    <option key={company.company_id} value={company.company_id}>
-                      {company.company_name}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-
-              <FilterCheck
-                id="al-reported"
-                name="sesizate"
-                label={c.filters.reported}
-                defaultChecked={query.reported === true}
-              />
-            </>
-          }
-          advanced={
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FilterField id="al-from" label={c.filters.from}>
-                <input id="al-from" type="date" name="de-la" defaultValue={query.from ?? ''} className={CONTROL} />
-              </FilterField>
-              <FilterField id="al-to" label={c.filters.to}>
-                <input id="al-to" type="date" name="pana-la" defaultValue={query.to ?? ''} className={CONTROL} />
-              </FilterField>
-              <FilterCheck
-                id="al-hidden"
-                name="ascunse"
-                label={c.filters.hidden}
-                defaultChecked={query.hidden === true}
-              />
-            </div>
-          }
-        >
-          <span className="text-small text-muted">{c.total(formatNumber(total))}</span>
-        </FilterPanel>
-      </div>
+      <AdminListingFilters
+        action={ROUTES.adminListings}
+        resetHref={viewHref}
+        params={filterParams}
+        canReset={Object.keys(filterParams).some((key) => key !== 'fel') || page > 1}
+        hidden={<input type="hidden" name="fel" value={kind} />}
+        statuses={LISTING_STATUSES.map((value) => ({ value, label: value }))}
+        companies={companies.map((company) => ({
+          value: company.company_id,
+          label: company.company_name,
+        }))}
+      >
+        <span className="text-small text-muted">{c.total(formatNumber(total))}</span>
+      </AdminListingFilters>
 
       <ExportModeration />
 

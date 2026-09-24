@@ -1,5 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { settled } from './settled';
+import { expect, test } from '@playwright/test';
+import { openMoreFilters as openFilters, settled } from './settled';
 
 /**
  * Radius and weight, on both boards, without a database.
@@ -18,13 +18,6 @@ import { settled } from './settled';
  */
 
 const MOBILE = { width: 390, height: 844 };
-
-/** Idempotent: an inherited link opens the panel by itself. */
-async function openFilters(page: Page): Promise<void> {
-  const panel = page.locator('main details').first();
-  if (await panel.evaluate((n: HTMLDetailsElement) => n.open)) return;
-  await page.getByText('Mai multe filtre').click();
-}
 
 test.describe('the request board', () => {
   test('offers a locality, a radius and a maximum weight', async ({ page }) => {

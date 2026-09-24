@@ -50,7 +50,7 @@ export function FilterPanel({
   /** The (at most) three that stay on screen. */
   simple: ReactNode;
   /** The layout of those three; a narrow sidebar stacks them. */
-  simpleClassName?: string;
+  simpleClassName?: string | undefined;
   /** Everything else, inside the disclosure. */
   advanced: ReactNode;
   /** One per active advanced filter; their number is the button's count. */
