@@ -7,16 +7,30 @@
 //   2. an anti-fraud signal - a company flagged inactive or struck off
 //      never gets to post on the exchange
 //
-// POST { "cui": "RO12345678", "company_id": "<uuid>" }
+// POST { "cui": "RO12345678", "company_id": "<uuid>", "keep_details": true }
 //   company_id is optional; when present the snapshot is saved on the row.
+//   keep_details saves only the snapshot and its flags (the record, when it
+//   was checked, inactive or struck off, VAT) and leaves the name, address
+//   and reg. com. the person confirmed in the form as they are. Sign-up
+//   sends it: the form already offered ANAF's values, and what the person
+//   kept or corrected is theirs to decide; the snapshot is what staff and
+//   submit_company_for_review() compare against.
 //   Saving requires the caller to manage that company and the CUI to be the
 //   company's own (see authorize.ts): 403 or 409 otherwise, before ANAF is
 //   even called.
+//
+// Every answer that is not a company carries a `reason` the app turns into
+// a sentence, so a failed lookup is never silent:
+//   400 invalid        not a CUI, or its control digit is wrong
+//   404 not_found      ANAF has no company under this CUI
+//   503 unavailable    ANAF did not answer, or answered with an error
+// The record itself is mapped in map.ts.
 // =====================================================================
 
 import { corsFor } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { authorizeCompanyWrite, normaliseCui } from "./authorize.ts";
+import { authorizeCompanyWrite, hasValidControlDigit, normaliseCui } from "./authorize.ts";
+import { mapAnafRecord } from "./map.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -44,11 +58,18 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   try {
-    const { cui, company_id } = await req.json().catch(() => ({}));
+    const { cui, company_id, keep_details } = await req.json().catch(() => ({}));
     if (!cui) return jsonResponse(req, { error: "cui is required" }, 400);
 
     const parsedCui = normaliseCui(String(cui));
-    if (parsedCui === null) return jsonResponse(req, { error: "CUI invalid" }, 400);
+    if (parsedCui === null) return jsonResponse(req, { error: "CUI invalid", reason: "invalid" }, 400);
+    if (!hasValidControlDigit(parsedCui)) {
+      return jsonResponse(
+        req,
+        { error: "Cifra de control a CUI-ului nu se potrivește", reason: "invalid" },
+        400,
+      );
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
@@ -93,7 +114,7 @@ Deno.serve(async (req: Request) => {
       // so the client can retry rather than treating the company as invalid.
       return jsonResponse(
         req,
-        { error: `ANAF indisponibil (HTTP ${anafResponse.status})`, retryable: true },
+        { error: `ANAF indisponibil (HTTP ${anafResponse.status})`, reason: "unavailable", retryable: true },
         503,
       );
     }
@@ -102,43 +123,32 @@ Deno.serve(async (req: Request) => {
     const record = payload?.found?.[0];
 
     if (!record) {
-      return jsonResponse(req, { found: false, cui: parsedCui, message: "CUI negăsit la ANAF" }, 404);
+      return jsonResponse(
+        req,
+        { found: false, cui: parsedCui, reason: "not_found", message: "CUI negăsit la ANAF" },
+        404,
+      );
     }
 
-    const general = record.date_generale ?? {};
-    const inactive = record.stare_inactiv ?? {};
-    const vat = record.inregistrare_scop_Tva ?? {};
-
-    const result = {
-      found: true,
-      cui: parsedCui,
-      legal_name: general.denumire ?? null,
-      address: general.adresa ?? null,
-      reg_com: general.nrRegCom ?? null,
-      phone: general.telefon ?? null,
-      caen_code: general.cod_CAEN ?? null,
-      status_text: general.stare_inregistrare ?? null,
-      vat_payer: vat.scpTVA ?? false,
-      // The two fields that matter for fraud screening.
-      is_inactive: Boolean(inactive.statusInactivi),
-      is_struck_off: typeof general.stare_inregistrare === "string" &&
-        /radiat/i.test(general.stare_inregistrare),
-      checked_at: new Date().toISOString(),
-      raw: record,
-    };
+    const result = mapAnafRecord(record, parsedCui, new Date());
 
     if (company_id) {
+      const snapshot = {
+        anaf_payload: record,
+        anaf_checked_at: result.checked_at,
+        anaf_is_inactive: result.is_inactive || result.is_struck_off,
+        vat_payer: result.vat_payer,
+      };
       const { error } = await admin
         .from("companies")
-        .update({
-          anaf_payload: record,
-          anaf_checked_at: result.checked_at,
-          anaf_is_inactive: result.is_inactive || result.is_struck_off,
-          legal_name: result.legal_name ?? undefined,
-          reg_com: result.reg_com ?? undefined,
-          address: result.address ?? undefined,
-          vat_payer: result.vat_payer,
-        })
+        .update(
+          keep_details === true ? snapshot : {
+            ...snapshot,
+            legal_name: result.legal_name ?? undefined,
+            reg_com: result.reg_com ?? undefined,
+            address: result.address ?? undefined,
+          },
+        )
         .eq("id", company_id);
 
       if (error) console.error("verify-cui-anaf: could not persist snapshot", error.message);
@@ -148,6 +158,8 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("verify-cui-anaf failed", message);
-    return jsonResponse(req, { error: message, retryable: true }, 500);
+    // A timeout or a refused connection to ANAF lands here too: the same
+    // „try again or fill it in" as a 503, not a broken form.
+    return jsonResponse(req, { error: message, reason: "unavailable", retryable: true }, 500);
   }
 });

@@ -10,9 +10,13 @@ import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
 import { MAX_PUBLIC_DESCRIPTION } from '@/lib/directory';
 import { toAppError } from '@/lib/errors';
+import { cuiControlDigitOk, readLookupResponse, type LookupResult } from '@/lib/company-lookup';
+import { afterCompanyCreated, isJourneyAction } from '@/lib/carrier-journey';
+import { safeNextPath } from '@/lib/auth/next-path';
 import { createClient } from '@/lib/supabase/server';
 import { accountCopy } from '@/content/account';
 import { firmaCopy } from '@/content/firma';
+import { inscriereCopy } from '@/content/inscriere';
 import {
   MAX_RATE,
   MIN_RATE,
@@ -93,73 +97,71 @@ export async function setActiveCompanyAction(formData: FormData): Promise<void> 
 // Company creation (sign-up step 2)
 // ---------------------------------------------------------------------
 
-export interface CuiLookupState extends ActionState {
-  company?: {
-    cui: string;
-    legalName: string;
-    address: string | null;
-    county: string | null;
-    isInactive: boolean;
-  };
+/**
+ * Asks ANAF about a CUI, for the autofill in the company form.
+ *
+ * Called as the person types, once the control digit agrees — not from a
+ * submit. Every outcome is a state the form can say something about; the
+ * reading of the function's answer is `readLookupResponse`. A function
+ * that is down or not deployed is „unavailable", never a thrown error: the
+ * form still works by hand.
+ */
+export async function lookupCuiAction(raw: string): Promise<LookupResult> {
+  await requireContext();
+  const cui = normaliseCui(raw);
+  if (cui.length < 2 || cui.length > 10 || !cuiControlDigitOk(cui)) return { status: 'invalid', cui };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.functions.invoke('verify-cui-anaf', { body: { cui } });
+  if (!error) return readLookupResponse(cui, 200, data);
+
+  // A non-2xx answer: its status and body say which of the three it was.
+  const response = (error as { context?: unknown }).context;
+  if (response instanceof Response) {
+    const body = await response.json().catch(() => null);
+    return readLookupResponse(cui, response.status, body);
+  }
+  return readLookupResponse(cui, null, null);
 }
 
-export async function lookupCuiAction(
+export interface CuiLookupState extends ActionState {
+  company?: { cui: string; legalName: string; county: string | null; city: string | null };
+  warning?: string;
+}
+
+/**
+ * The same lookup for a form that submits — the assisted onboarding in
+ * admin, where staff press „Caută". One function behind both screens, so
+ * neither accepts a CUI the other would read differently.
+ */
+export async function lookupCuiFormAction(
   _previous: CuiLookupState,
   formData: FormData,
 ): Promise<CuiLookupState> {
-  await requireContext();
   const raw = text(formData, 'cui');
-  const cui = normaliseCui(raw);
-
-  if (cui.length < 2 || cui.length > 10) {
-    return { fieldErrors: { cui: 'CUI-ul are între 2 și 10 cifre.' }, values: { cui: raw } };
+  const result = await lookupCuiAction(raw);
+  const values = { cui: raw };
+  switch (result.status) {
+    case 'found': {
+      const { company } = result;
+      const warning = company.isStruckOff
+        ? inscriereCopy.company.struckOff
+        : company.isInactive
+          ? inscriereCopy.company.inactive
+          : undefined;
+      return {
+        company: { cui: result.cui, legalName: company.legalName, county: company.county, city: company.city },
+        values,
+        ...(warning ? { warning } : {}),
+      };
+    }
+    case 'invalid':
+      return { fieldErrors: { cui: inscriereCopy.company.typo }, values };
+    case 'not_found':
+      return { fieldErrors: { cui: inscriereCopy.company.notFound }, values };
+    default:
+      return { error: inscriereCopy.company.unavailable, values };
   }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase.functions.invoke('verify-cui-anaf', {
-    body: { cui },
-  });
-
-  if (error) {
-    return {
-      error: 'Nu am putut verifica CUI-ul la ANAF. Poți completa datele manual.',
-      values: { cui: raw },
-    };
-  }
-
-  const payload = data as {
-    found?: boolean;
-    legal_name?: string | null;
-    address?: string | null;
-    is_inactive?: boolean;
-    is_struck_off?: boolean;
-  } | null;
-
-  if (!payload?.found) {
-    return {
-      fieldErrors: { cui: 'CUI-ul nu a fost găsit la ANAF. Verifică cifrele.' },
-      values: { cui: raw },
-    };
-  }
-
-  if (payload.is_inactive || payload.is_struck_off) {
-    return {
-      error:
-        'Firma apare ca inactivă sau radiată la ANAF. Nu putem continua înregistrarea. Scrie-ne dacă este o eroare.',
-      values: { cui: raw },
-    };
-  }
-
-  return {
-    company: {
-      cui,
-      legalName: payload.legal_name ?? '',
-      address: payload.address ?? null,
-      county: null,
-      isInactive: false,
-    },
-    values: { cui: raw },
-  };
 }
 
 export async function createCompanyAction(
@@ -188,7 +190,7 @@ export async function createCompanyAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc('create_company', {
+  const { data: created, error } = await supabase.rpc('create_company', {
     p_cui: normaliseCui(cui),
     p_legal_name: legalName,
     p_company_type: companyType,
@@ -205,10 +207,25 @@ export async function createCompanyAction(
     };
   }
 
+  // The ANAF snapshot, saved on the company — without touching what the
+  // person kept or corrected (`keep_details`). It is what staff compare
+  // against and what submit_company_for_review() reads to refuse an
+  // inactive or struck-off company. A lookup that fails here changes
+  // nothing: the company exists, and staff check the details by hand.
+  if (created?.id) {
+    await supabase.functions
+      .invoke('verify-cui-anaf', {
+        body: { cui: normaliseCui(cui), company_id: created.id, keep_details: true },
+      })
+      .catch(() => null);
+  }
+
   revalidatePath('/cont', 'layout');
   // The company exists: the form's draft goes, here and in the browser.
   await deleteServerDraft(context.user.id, 'firma');
-  redirect(doneUrl(ROUTES.accountCompany, 'firma'));
+  const next = safeNextPath(text(formData, 'next'), '') || null;
+  const pentru = text(formData, 'pentru');
+  redirect(doneUrl(afterCompanyCreated(companyType, next, isJourneyAction(pentru) ? pentru : null), 'firma'));
 }
 
 // ---------------------------------------------------------------------
