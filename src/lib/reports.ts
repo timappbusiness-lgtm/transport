@@ -24,7 +24,8 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
 
 export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
   firma: 'Firmă',
-  anunt: 'Anunț',
+  // The enum value stays `anunt`; the words on screen do not.
+  anunt: 'Cerere sau traseu',
   mesaj: 'Mesaj',
   evaluare: 'Evaluare',
   altul: 'Altceva',
@@ -47,7 +48,8 @@ export function reportTarget(row: {
     return { href: '/admin/conversatii', label: 'Vezi conversația' };
   }
   if (row.kind === 'anunt' && row.cargo_listing_id) {
-    return { href: '/admin/anunturi', label: 'Vezi anunțul' };
+    // A cargo listing is a request.
+    return { href: '/admin/anunturi', label: 'Vezi cererea' };
   }
   if (row.kind === 'evaluare' && row.rating_id) {
     return { href: '/admin/evaluari', label: 'Vezi evaluarea' };

@@ -162,10 +162,10 @@ export const homeCopy = {
 
   forwarders: {
     eyebrow: 'Pentru case de expediții',
-    strong: 'Publici cursele o dată.',
+    strong: 'Publici cererile o dată.',
     soft: 'Primești oferte doar de la firme cu acte valabile.',
     lede:
-      'Cont de firmă pentru toată echipa, curse publice sau trimise doar transportatorilor tăi, și istoricul comenzilor într-un singur loc.',
+      'Cont de firmă pentru toată echipa, cereri de transport publice sau trimise doar transportatorilor tăi, și istoricul comenzilor într-un singur loc.',
     points: [
       'Un cont de firmă, mai mulți dispeceri',
       'Vezi documentele fiecărui ofertant',
@@ -178,8 +178,8 @@ export const homeCopy = {
   finalCta: {
     strong: 'Ai o mașină de mutat',
     soft: 'sau un loc liber pe platformă?',
-    lede: 'Publici o cerere sau anunți un traseu. Formularul te duce pas cu pas.',
+    lede: 'Publici o cerere de transport sau un traseu. Formularul te duce pas cu pas.',
     primary: 'Publică o cerere',
-    secondary: 'Anunță un traseu',
+    secondary: 'Publică un traseu',
   },
 } as const;

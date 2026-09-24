@@ -3,7 +3,6 @@ import { DocumentHistory } from '@/components/account/document-history';
 import { DocumentsScreen } from '@/components/account/documents-screen';
 import { ReviewQueue } from '@/components/admin/review-queue';
 import { CarrierHome } from '@/components/app/dashboard/carrier';
-import { navContextOf } from '@/components/app/nav-context';
 import { TopBar } from '@/components/app/top-bar';
 import { CompletenessCard } from '@/components/firma/completeness-card';
 import { CoverageTab } from '@/components/firma/coverage-tab';
@@ -31,7 +30,6 @@ import { inscriereCopy } from '@/content/inscriere';
 import { messagesCopy } from '@/content/mesaje';
 import { offersCopy } from '@/content/oferte';
 import { completeness, tabsFor } from '@/lib/company-profile';
-import { publishActions } from '@/lib/navigation';
 import { orderStatusLabel } from '@/lib/orders';
 import {
   ACTIVE_ORDERS,
@@ -316,10 +314,9 @@ export function DashboardSection() {
   return (
     <ProbaAccountShell pathname={ROUTES.account}>
       <div className="flex flex-col gap-8">
-        <TopBar
-          title={appCopy.home.greeting(firstName)}
-          actions={publishActions(navContextOf(PROBA_CONTEXT))}
-        />
+        {/* As on the page: the role's publish button is the header's, on
+            every page, so the dashboard does not draw a second one. */}
+        <TopBar title={appCopy.home.greeting(firstName)} actions={[]} />
         <OrdersWidget orders={ACTIVE_ORDERS} side="carrier" />
         <RatingsWidget pending={PENDING_RATINGS} />
         <CarrierHome

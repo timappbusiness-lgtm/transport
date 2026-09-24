@@ -40,9 +40,9 @@ export async function seriesStateAction(
   return {
     notice:
       action === 'pauza'
-        ? 'Seria este pe pauză. Plecările deja publicate rămân.'
+        ? 'Seria este pe pauză. Traseele deja publicate rămân.'
         : action === 'reluare'
           ? 'Seria a fost repornită.'
-          : 'Seria a fost oprită. Plecările deja publicate rămân.',
+          : 'Seria a fost oprită. Traseele deja publicate rămân.',
   };
 }

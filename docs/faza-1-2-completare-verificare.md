@@ -54,7 +54,7 @@ la fel de privată.
    - **Trebuie să dispară** butonul „Salvează ca ciornă". O serie nu are ciornă.
 4. Alege **luni** și o dată „Până la" peste o lună. Apasă **„Publică seria"**.
 5. Ajungi pe `/cont/trasee`.
-   - **Trebuie să apară** secțiunea **„Plecări care se repetă"** cu seria,
+   - **Trebuie să apară** secțiunea **„Trasee care se repetă"** cu seria,
      insigna **„Activă"**, regula scrisă în cuvinte („În fiecare luni"), data
      până la care ține și numărul de înmatriculare.
 
@@ -66,7 +66,7 @@ la fel de privată.
 ### 2. Ce plecări urmează din ea — 1 min *(transportator A)*
 
 1. Pe aceeași pagină, sub seria activă.
-   - **Trebuie să apară** „Următoarele plecări" și câteva date, ca `2026-10-05`.
+   - **Trebuie să apară** „Următoarele trasee" și câteva date, ca `2026-10-05`.
 2. Numără-le și verifică pe calendar că sunt **luni**.
 
 > Datele de aici sunt calculate în ecran, de `src/lib/recurrence.ts`. Jobul de
@@ -97,7 +97,7 @@ la fel de privată.
 3. `/cont/trasee`.
    - Seria **trebuie să fie „Pe pauză"**, cu motivul scris întreg:
      *„Vehiculul nu mai are documentele valide…"*.
-   - **Nu trebuie să mai apară** „Următoarele plecări": cât e pe pauză, nu
+   - **Nu trebuie să mai apară** „Următoarele trasee": cât e pe pauză, nu
      promitem plecări care nu vin.
    - **Plecările deja publicate rămân.** Cine a rezervat un loc nu pierde nimic.
 4. **[e-mail]** Transportatorul primește anunțul `series_paused`. Până la

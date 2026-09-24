@@ -10,6 +10,8 @@ import { Card, DataRow } from '@/components/ui/primitives';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import type { AccountContext, Company } from '@/lib/auth/account';
+import { navContextOf } from '@/components/app/nav-context';
+import { publishActions } from '@/lib/navigation';
 import type { CarrierDashboard } from '@/lib/dashboard-source';
 import type { DetourFit } from '@/lib/matching';
 import type { OfferSettings } from '@/lib/offers';
@@ -215,21 +217,29 @@ export function CarrierHome({
         <h2 id="actiuni" className="text-h3">
           {h.quickActions}
         </h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link
-            href={`${ROUTES.accountDepartureNew}?directie=tur`}
-            // The bar's „Publică" is this screen's primary; a second
-            // filled button for the same thing splits the eye.
-            className={buttonClasses('secondary', 'sm')}
-          >
-            {c.actions.tur}
-          </Link>
-          <Link
-            href={`${ROUTES.accountDepartureNew}?directie=retur`}
-            className={buttonClasses('secondary', 'sm')}
-          >
-            {c.actions.retur}
-          </Link>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* The header's „Publică un traseu", in the same order: the tour,
+              the return, and — quieter, because it is available rather
+              than first — a request. One list, `publishActions`, so the
+              two cannot disagree. The bar's button is this screen's
+              primary; a second filled button for the same thing would
+              split the eye. */}
+          {publishActions(navContextOf(context)).map((action) =>
+            action.secondary === true ? (
+              <Link
+                key={action.href}
+                href={action.href}
+                data-secondary="true"
+                className="px-2 text-small text-muted underline underline-offset-4 hover:text-foreground"
+              >
+                {action.label}
+              </Link>
+            ) : (
+              <Link key={action.href} href={action.href} className={buttonClasses('secondary', 'sm')}>
+                {action.label}
+              </Link>
+            ),
+          )}
           <Link href={ROUTES.accountFleet} className={buttonClasses('secondary', 'sm')}>
             {c.actions.vehicle}
           </Link>

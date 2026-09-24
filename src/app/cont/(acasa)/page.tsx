@@ -25,8 +25,6 @@ import { isOnBoard, type MyRequest } from '@/lib/my-requests';
 import { loadMyRequests } from '@/lib/my-requests-source';
 import { HandoverBanner } from '@/components/onboarding/handover-banner';
 import { loadHandover } from '@/lib/onboarding-source';
-import { publishActions } from '@/lib/navigation';
-import { navContextOf } from '@/components/app/nav-context';
 import { loadMyOrders } from '@/lib/orders-source';
 import { loadMyRatings } from '@/lib/ratings-source';
 import { loadPricing } from '@/lib/plans-source';
@@ -45,11 +43,12 @@ const h = appCopy.home;
 export default async function Page() {
   const context = await requireAccountContext(ROUTES.account);
   const firstName = context.profile?.full_name?.split(' ')[0] ?? null;
-  const actions = publishActions(navContextOf(context));
-
   return (
     <div className="flex flex-col gap-8">
-      <TopBar title={h.greeting(firstName)} actions={actions} />
+      {/* No publish button here: the header carries it on every page, and a
+          second one under it for the same thing splits the eye. The quick
+          actions below repeat it in the role's order. */}
+      <TopBar title={h.greeting(firstName)} actions={[]} />
       <Body context={context} />
     </div>
   );

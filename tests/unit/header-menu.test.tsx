@@ -1,7 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '@/config/routes';
-import { FOOTER_NAV, NO_NAV_COUNTS, PUBLIC_NAV, headerMenu, type NavContext } from '@/lib/navigation';
+import {
+  FOOTER_NAV,
+  NO_NAV_COUNTS,
+  PUBLIC_NAV,
+  headerBar,
+  headerMenu,
+  publishMenu,
+  type NavContext,
+  type NavCounts,
+} from '@/lib/navigation';
 
 /**
  * The header's account area, rendered to markup without a browser.
@@ -39,19 +48,29 @@ function context(over: Partial<NavContext> = {}): NavContext {
 }
 
 function render(
-  user: { name: string; ctx?: NavContext; counts?: { messages: number; offers: number } } | null,
+  user: { name: string; ctx?: NavContext; counts?: NavCounts } | null,
   pathname = '/',
 ): string {
   mockPathname = pathname;
   if (user === null) return renderToStaticMarkup(<HeaderNav user={null} />);
+  const ctx = user.ctx ?? context();
+  const counts = user.counts ?? NO_NAV_COUNTS;
   return renderToStaticMarkup(
     <HeaderNav
       user={{
         name: user.name,
-        items: headerMenu(user.ctx ?? context(), user.counts ?? NO_NAV_COUNTS),
+        bar: headerBar(ctx, counts),
+        items: headerMenu(ctx, counts),
+        publish: publishMenu(ctx),
       }}
     />,
   );
+}
+
+/** The labels of the bar's links, in order. */
+function barLabels(html: string): string[] {
+  const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
+  return [...nav.matchAll(/<a [^>]*>([^<]+)(?:<[^/][\s\S]*?)?<\/a>/g)].map((m) => m[1]!.trim());
 }
 
 describe('the name in the bar', () => {
@@ -81,17 +100,34 @@ describe('the name in the bar', () => {
   });
 });
 
-describe('the way back in from a public page', () => {
-  it('is a visible button, not only the menu', () => {
+describe('the primary action beside the name', () => {
+  it('is „Publică un traseu" for a carrier, a menu rather than a link', () => {
     const html = render({ name: 'Ana' }, '/cereri');
-    expect(html).toContain('Contul meu');
+    const button = html.match(/<button[^>]*data-publish[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+    expect(button).toContain('Publică un traseu');
+    expect(button).toContain('Traseu nou');
+    expect(button).toContain('aria-haspopup="menu"');
+    // The name is the way into the account; the button is the work.
+    expect(html).not.toMatch(/>Contul meu</);
   });
 
-  it('is not repeated inside the account, where it points at where you are', () => {
-    const inside = render({ name: 'Ana' }, ROUTES.account);
-    const outside = render({ name: 'Ana' }, '/cereri');
-    const count = (html: string) => html.split('Contul meu').length - 1;
-    expect(count(inside)).toBeLessThan(count(outside));
+  it('is „Publică o cerere" for a forwarder and a private client, and goes straight there', () => {
+    for (const ctx of [
+      context({ companyType: 'expeditie' }),
+      context({ accountType: 'individual', companyType: null, role: null }),
+    ]) {
+      const html = render({ name: 'Ana', ctx }, '/cereri');
+      const link = html.match(/<a[^>]*data-publish[^>]*>[\s\S]*?<\/a>/)?.[0] ?? '';
+      expect(link).toContain(`href="${ROUTES.newRequest}"`);
+      expect(link).toContain('Publică o cerere');
+      expect(link).toContain('Cerere nouă');
+    }
+  });
+
+  it('is absent for a driver, who publishes nothing', () => {
+    const html = render({ name: 'Ana', ctx: context({ role: 'driver' }) }, ROUTES.accountTransports);
+    expect(html).not.toContain('data-publish');
+    expect(html).not.toContain('Publică');
   });
 
   it('leaves a signed-out header exactly as it was', () => {
@@ -136,8 +172,10 @@ describe('what the menu is given to draw', () => {
     }
   });
 
-  it('numbers only the two things that wait on somebody', () => {
-    const items = headerMenu(context({ companyType: 'expeditie' }), { messages: 3, offers: 2 });
+  it('numbers only the things that wait on somebody', () => {
+    const counts = { messages: 3, offers: 2 };
+    const ctx = context({ companyType: 'expeditie' });
+    const items = [...headerBar(ctx, counts), ...headerMenu(ctx, counts)];
     const badge = (href: string) => items.find((item) => item.href === href)?.badge;
     expect(badge(ROUTES.accountMessages)).toBe(3);
     expect(badge(ROUTES.accountOffers)).toBe(2);
@@ -151,7 +189,7 @@ describe('what the menu is given to draw', () => {
     expect(badgeLabel(10)).toBe('9+');
     expect(badgeLabel(120)).toBe('9+');
     // The count itself is untouched; only what is drawn is capped.
-    const items = headerMenu(context({ companyType: 'expeditie' }), { messages: 120, offers: 0 });
+    const items = headerBar(context({ companyType: 'expeditie' }), { messages: 120, offers: 0 });
     expect(items.find((item) => item.href === ROUTES.accountMessages)?.badge).toBe(120);
   });
 
@@ -161,6 +199,66 @@ describe('what the menu is given to draw', () => {
     const html = render({ name: 'Ana' });
     expect(html).not.toContain('role="menu"');
     expect(html).not.toContain('Ieșire');
+  });
+});
+
+describe('the bar, signed in', () => {
+  it('is the work of that kind of account, not the public five', () => {
+    expect(barLabels(render({ name: 'Ana' }, '/cereri'))).toEqual([
+      'Cereri de transport',
+      'Traseele mele',
+      'Oferte trimise',
+      'Transporturi',
+      'Mesaje',
+    ]);
+    expect(
+      barLabels(render({ name: 'Ana', ctx: context({ companyType: 'expeditie' }) }, '/cereri')),
+    ).toEqual(['Cursele mele', 'Oferte primite', 'Trasee disponibile', 'Transporturi', 'Mesaje']);
+    expect(
+      barLabels(
+        render({ name: 'Ana', ctx: context({ accountType: 'individual', companyType: null, role: null }) }),
+      ),
+    ).toEqual(['Cererile mele', 'Oferte primite', 'Mesaje', 'Trasee disponibile']);
+    expect(barLabels(render({ name: 'Ana', ctx: context({ role: 'driver' }) }))).toEqual([
+      'Transporturile mele',
+    ]);
+  });
+
+  it('carries the new requests on the board, and nothing at zero', () => {
+    const counts = { messages: 3, offers: 0, newRequests: 12 };
+    const html = render({ name: 'Ana', counts }, ROUTES.account);
+    const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
+    expect(nav).toMatch(/Cereri de transport<span[^>]*>[\s\S]*?9\+/);
+    // Heard as new, not as waiting on somebody.
+    expect(nav).toMatch(/9\+<span class="sr-only"> noi<\/span>/);
+    expect(nav).toMatch(/3<span class="sr-only"> care așteaptă<\/span>/);
+    // Said on the closed „Meniu" too, where the bar folds away on a phone.
+    expect(html).toContain('data-nav-dot');
+
+    const none = render({ name: 'Ana', counts: { messages: 0, offers: 0, newRequests: 0 } }, ROUTES.account);
+    expect(none).not.toContain('data-nav-dot');
+    expect(none.slice(none.indexOf('<nav'), none.indexOf('</nav>'))).not.toContain('9+');
+  });
+
+  it('marks the board as current on the board, and a detail page under it', () => {
+    const html = render({ name: 'Ana' }, '/cereri/abc');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-current="page"[^>]*>Cereri de transport/);
+  });
+
+  it('keeps a driver\'s one entry in the bar at every width, with no „Meniu" to open', () => {
+    const html = render({ name: 'Ana', ctx: context({ role: 'driver' }) }, ROUTES.account);
+    expect(html).not.toContain('data-nav-toggle');
+    const nav = html.match(/<nav [^>]*>/)?.[0] ?? '';
+    expect(nav).not.toMatch(/class="[^"]*(?<![:-])\bhidden\b/);
+    expect(nav).toContain('flex-row');
+  });
+
+  it('folds into „Meniu" a step earlier than the public bar, because its words are longer', () => {
+    const html = render({ name: 'Ana' }, '/');
+    const toggle = html.match(/<button[^>]*data-nav-toggle[^>]*>/)?.[0] ?? '';
+    expect(toggle).toContain('xl:hidden');
+    expect(html.match(/<nav [^>]*>/)?.[0]).toContain('xl:flex');
   });
 });
 
@@ -186,13 +284,14 @@ describe('the public bar', () => {
   it.each(['/', '/cereri', '/intrebari-frecvente', '/cont'])(
     'on %s says „Cum funcționează" exactly once and nothing else twice',
     (pathname) => {
-      for (const user of [null, { name: 'Ana' }] as const) {
-        const html = render(user, pathname);
-        const nav = html.slice(html.indexOf('<nav'), html.indexOf('</nav>'));
-        const labels = [...nav.matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((m) => m[1]);
-        expect(labels).toEqual(PUBLIC_NAV.map((l) => l.label));
-        expect(html.match(/Cum funcționează/g)).toHaveLength(1);
-      }
+      const html = render(null, pathname);
+      expect(barLabels(html)).toEqual(PUBLIC_NAV.map((l) => l.label));
+      expect(html.match(/Cum funcționează/g)).toHaveLength(1);
+      // Signed in, it is in the account menu, which is not in the
+      // document until it is opened; the bar never repeats it.
+      const signedIn = render({ name: 'Ana' }, pathname);
+      expect(signedIn).not.toContain('Cum funcționează');
+      expect(new Set(barLabels(signedIn)).size).toBe(barLabels(signedIn).length);
     },
   );
 
@@ -210,7 +309,7 @@ describe('the public bar', () => {
   it('is one list: a row from lg, a panel behind „Meniu" below it', () => {
     // Below lg the five links do not fit, and a row that scrolls inside
     // itself showed „Cereri, Trase" with nothing to say there was more.
-    for (const user of [null, { name: 'Ana' }] as const) {
+    for (const user of [null] as const) {
       const html = render(user, '/');
       expect(html.match(/<nav /g)).toHaveLength(1);
       const toggle = html.match(/<button[^>]*data-nav-toggle[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';

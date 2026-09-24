@@ -78,7 +78,7 @@ export const pricesCopy = {
     yes: 'Da',
     no: 'Nu',
     result: 'Estimare',
-    empty: 'Alege plecarea și destinația pentru o estimare.',
+    empty: 'Alege localitatea de plecare și destinația pentru o estimare.',
     same: 'Alege două localități diferite.',
     distance: (km: string) => `${km} km estimați pe șosea`,
     zone: 'Tarif aplicat',

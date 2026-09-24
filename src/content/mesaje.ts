@@ -74,7 +74,7 @@ export const messagesCopy = {
     block: 'Blochează expeditorul',
     blockTitle: 'Blochezi acest cont?',
     blockHint:
-      'Nu mai poate deschide conversații noi cu tine de pe anunțuri. Firele comenzilor în curs rămân deschise — transportul tot trebuie făcut.',
+      'Nu mai poate deschide conversații noi cu tine de pe cererile sau traseele tale. Firele comenzilor în curs rămân deschise — transportul tot trebuie făcut.',
     blockSubmit: 'Blochează',
     blockDone: 'Contul a fost blocat.',
     unblock: 'Deblochează',
@@ -85,8 +85,8 @@ export const messagesCopy = {
     send: 'Trimite mesaj',
     /** Spus înainte de a consuma din cotă, nu după. */
     gate:
-      'Deschiderea unei conversații consumă un contact din abonament, o singură dată pe anunț. Dacă ai scris deja aici, nu se mai numără.',
-    gateFree: 'Ai deschis deja contactul pentru anunțul acesta. Nu se mai numără.',
+      'Deschiderea unei conversații consumă un contact din abonament, o singură dată pe cerere sau traseu. Dacă ai scris deja aici, nu se mai numără.',
+    gateFree: 'Ai deschis deja contactul aici. Nu se mai numără.',
     orderTab: 'Mesaje',
   },
 
@@ -107,8 +107,11 @@ export const messagesCopy = {
     },
     listings: {
       eyebrow: 'Administrare',
-      title: 'Anunțuri',
-      lede: 'Cererile și traseele de pe platformă. Un anunț ascuns iese de pe panoul public, dar rămâne la proprietar, cu motivul.',
+      // Never „anunțuri": what clients publish is a „cerere de transport",
+      // what carriers publish a „traseu", and one word for both is the
+      // confusion the public side was built to avoid.
+      title: 'Cereri și trasee',
+      lede: 'Cererile de transport și traseele de pe platformă. Ce ascunzi iese de pe panoul public, dar rămâne la proprietar, cu motivul.',
       tabs: { cereri: 'Cereri', trasee: 'Trasee' } as Record<string, string>,
       filters: {
         title: 'Filtre',
@@ -122,24 +125,24 @@ export const messagesCopy = {
         apply: 'Filtrează',
         clear: 'Vezi toate',
       },
-      total: (n: string) => `${n} anunțuri`,
-      empty: 'Niciun anunț pentru filtrele astea.',
+      total: (n: string) => `${n} rezultate`,
+      empty: 'Nimic pentru filtrele astea.',
       emptyBody: 'Schimbă starea, firma sau intervalul.',
       photos: (n: number) => (n === 1 ? 'o fotografie' : `${n} fotografii`),
       reports: (n: number) => (n === 1 ? 'o sesizare' : `${n} sesizări`),
       hiddenLabel: 'Ascuns',
       hide: 'Ascunde de pe panou',
-      hideTitle: 'Ascunde anunțul',
+      hideTitle: 'Scoate de pe panou',
       hideHint:
         'Motivul îl vede și proprietarul, în contul lui. Scrie-l ca pentru el, nu ca pentru noi.',
       hideSubmit: 'Ascunde',
-      hideDone: 'Anunțul a fost ascuns.',
+      hideDone: 'Gata: nu mai apare pe panoul public.',
       restore: 'Repune pe panou',
-      restoreTitle: 'Repune anunțul',
+      restoreTitle: 'Repune pe panou',
       restoreSubmit: 'Repune',
-      restoreDone: 'Anunțul a fost repus.',
+      restoreDone: 'Gata: apare din nou pe panoul public.',
       suspendCompany: 'Vezi firma',
-      openListing: 'Vezi anunțul',
+      openListing: 'Vezi pe panou',
     },
     export: {
       title: 'Export sesizări și moderare',
@@ -150,11 +153,11 @@ export const messagesCopy = {
     },
   },
 
-  /** Ce vede proprietarul unui anunț ascuns, în contul lui. */
+  /** What the owner of a hidden request or route sees in their account. */
   owner: {
     hidden: 'Scos de pe panou de echipa platformei',
     hiddenReason: 'Motivul:',
     hiddenWhat:
-      'Anunțul nu mai apare pe panoul public. Corectează ce este de corectat și scrie-ne — îl punem la loc.',
+      'Nu mai apare pe panoul public până nu corectezi ce este de corectat. Scrie-ne după aceea și ne uităm din nou.',
   },
 } as const;

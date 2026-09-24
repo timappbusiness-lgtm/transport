@@ -61,8 +61,8 @@ export const seoCopy = {
 
   departures: {
     title: 'Trasee disponibile',
-    lede: 'Plecări anunțate de transportatori, pe tur și pe retur.',
-    empty: 'Niciun traseu anunțat acum pe această rută.',
+    lede: 'Trasee publicate de transportatori, pe tur și pe retur.',
+    empty: 'Niciun traseu publicat acum pe această rută.',
     emptyAction: 'Vezi toate traseele',
     all: 'Vezi toate traseele',
   },

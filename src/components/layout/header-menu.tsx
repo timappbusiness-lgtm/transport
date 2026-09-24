@@ -9,33 +9,41 @@ import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForRoute, uiIcon } from '@/lib/icons';
 import { signOutAction } from '@/app/auth-actions';
+import { PublishMenu } from '@/components/app/publish-menu';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
-import { PUBLIC_NAV, currentPublicHref, type BadgedNavItem } from '@/lib/navigation';
+import { BOARD_SEEN_EVENT } from '@/lib/board-news';
+import {
+  GROUP_LABELS,
+  PUBLIC_NAV,
+  activeHref,
+  currentPublicHref,
+  type BadgedNavItem,
+  type NavGroup,
+  type PublishMenuSpec,
+} from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { KeepingForm } from '@/components/ui/keeping-form';
+import { PILL_QUIET, PILL_SOLID } from './header-shell';
 
 export interface HeaderUser {
   name: string;
   /**
-   * The menu itself, built by `headerMenu` from the same `buildNav` the
-   * sidebar reads. The component draws what it is given and decides
+   * The bar: what this person actually uses, board first for a carrier,
+   * their own requests first for a client. Built by `headerBar` from the
+   * same `buildNav` the sidebar reads.
+   */
+  bar: readonly BadgedNavItem[];
+  /**
+   * The account menu: everything the bar does not show, in the sidebar's
+   * groups, then the public pages and — for staff — /admin. Built by
+   * `headerMenu`. The component draws what it is given and decides
    * nothing about who may see what.
    */
   items: readonly BadgedNavItem[];
+  /** The role's primary action — „Publică un traseu", „Publică o cerere" — or none. */
+  publish: PublishMenuSpec | null;
 }
-
-/**
- * The bar's one filled pill — „Publică o cerere", or „Contul meu" — in the
- * bright accent, because it is the primary action on a dark surface. Dark
- * ink on it is 8.80:1, and the pill against the bar 6.12:1 and ΔE00 55.
- */
-// `whitespace-nowrap` is load-bearing: without it a label wraps to two or
-// three lines on a phone and the pill grows taller than the bar it sits in.
-const PILL_SOLID =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill bg-accent-bright px-3 py-1.5 text-small font-semibold text-on-accent-bright transition-[background-color,transform] duration-(--duration-quick) hover:bg-accent-bright-hover motion-safe:active:scale-[0.98] sm:px-4';
-const PILL_QUIET =
-  'inline-flex items-center justify-center whitespace-nowrap rounded-pill px-2 py-1.5 text-small text-white/85 transition-[color,background-color] duration-150 hover:bg-white/12 hover:text-white sm:px-3';
 
 /** Where the account area begins. Inside it, the brand leads to /cont. */
 function insideAccount(pathname: string): boolean {
@@ -102,6 +110,24 @@ function useCoarsePointer(): boolean {
     () => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches,
     () => false,
   );
+}
+
+/**
+ * Whether the board has been seen since the header was drawn.
+ *
+ * The header stays mounted from page to page, so the count it was drawn
+ * with would outlive the visit that made it old news. The board says it
+ * was seen (`MarkBoardSeen`), and the badge on „Cereri de transport"
+ * drops at once.
+ */
+function useBoardSeen(): boolean {
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const onSeen = () => setSeen(true);
+    window.addEventListener(BOARD_SEEN_EVENT, onSeen);
+    return () => window.removeEventListener(BOARD_SEEN_EVENT, onSeen);
+  }, []);
+  return seen;
 }
 
 /** The header's right half, reading the path from the router. */
@@ -204,25 +230,42 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
     }
   }
 
-  const signedIn = user !== null;
-  const showAccountButton = signedIn && !insideAccount(pathname);
-  const currentHref = currentPublicHref(pathname);
+  const boardSeen = useBoardSeen();
+  const bar: BarLink[] = user
+    ? user.bar.map((item) => ({
+        href: item.href,
+        label: item.label,
+        // Seen on this visit: no longer new, whatever the count said.
+        badge: boardSeen && item.href === ROUTES.requests ? 0 : item.badge,
+      }))
+    : PUBLIC_NAV.map((link) => ({ ...link, badge: 0 }));
+  const currentHref = user ? activeHref(user.bar, pathname) : currentPublicHref(pathname);
 
   return (
     <>
-      <PublicNav currentHref={currentHref} />
+      {/* Signed in, the bar is the work; signed out, the shop window. The
+          work has longer words, so it moves into the „Meniu" panel a step
+          earlier. A driver's one entry fits a phone, and a menu that opens
+          onto a single link is a tap for nothing. */}
+      <BarNav
+        links={bar}
+        currentHref={currentHref}
+        inline={user ? (bar.length <= 1 ? 'always' : 'xl') : 'lg'}
+      />
 
       {user ? (
-        <div className="flex min-w-0 flex-none items-center gap-1.5">
-          {/* The one visible way back in from a public page. Only where
-              there is room for it beside five links and a name: below
-              `xl` the name itself is the link to /cont, and the menu's
-              first item says the same thing. */}
-          {showAccountButton ? (
-            <Link href={ROUTES.account} className={cn(PILL_SOLID, 'hidden xl:inline-flex')}>
-              {accountCopy.nav.dashboard}
-            </Link>
-          ) : null}
+        // Shrinks, so the name inside it can give way: `flex-none` here
+        // held the whole group at its full width, and with „Publică un
+        // traseu" beside the name the bar overflowed at 640px.
+        <div className="flex min-w-0 flex-initial items-center gap-1.5">
+          {/* The role's one primary action, on every page — the button the
+              bar used to spend on „Contul meu", which the name beside it
+              already is. A driver publishes nothing and gets no button. */}
+          <PublishMenu
+            spec={user.publish}
+            variant="bar"
+            compactLabel={user.publish?.compactLabel}
+          />
 
           <div ref={menuRef} className="relative min-w-0">
             {/* The pill never grows past its content and never pushes the
@@ -309,12 +352,21 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                 onKeyDown={onMenuKeyDown}
                 className="absolute right-0 z-50 mt-2 max-h-[calc(100dvh-5.5rem)] w-60 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-card border border-border bg-surface text-foreground shadow-float"
               >
-                {user.items.map((item) => {
+                {user.items.map((item, index) => {
                   const current = pathname === item.href;
                   const glyph = iconForRoute(item.href);
+                  const heading = sectionHeading(user.items, index);
                   return (
+                    <div key={item.href} role="none">
+                    {heading !== null ? (
+                      <p
+                        role="presentation"
+                        className="border-t border-border px-4 pb-1 pt-3 font-mono text-label uppercase tracking-[0.12em] text-muted"
+                      >
+                        {heading}
+                      </p>
+                    ) : null}
                     <Link
-                      key={item.href}
                       href={item.href}
                       role="menuitem"
                       aria-current={current ? 'page' : undefined}
@@ -330,11 +382,15 @@ export function HeaderNavView({ user, pathname }: { user: HeaderUser | null; pat
                         <span className="truncate">{item.label}</span>
                       </span>
                       {countLabel(item.badge) === null ? null : (
-                        <Badge kind="count" label={accountCopy.nav.waiting}>
+                        <Badge
+                          kind="count"
+                          label={item.href === ROUTES.requests ? accountCopy.nav.fresh : accountCopy.nav.waiting}
+                        >
                           {countLabel(item.badge)}
                         </Badge>
                       )}
                     </Link>
+                    </div>
                   );
                 })}
                 <KeepingForm action={signOutAction} className="border-t border-border">
@@ -390,18 +446,53 @@ function SignInLink({ pathname }: { pathname: string }) {
   );
 }
 
+/** One link in the bar, with the number waiting on it (usually none). */
+interface BarLink {
+  href: string;
+  label: string;
+  badge: number;
+}
+
 /**
- * The public bar: five links, built once in `PUBLIC_NAV`, drawn once.
- *
- * From `lg` they sit in the bar. Below it they do not fit — measured, the
- * five links need 880px signed out beside the two actions — and the row
- * used to scroll sideways inside itself, which on a phone showed
- * „Cereri, Trase" and nothing to say there was more. So below `lg` the
- * same list is a panel under the bar, opened by „Meniu": a word beside
- * the icon, never the icon alone. It closes on a choice, on Escape and on
- * a press outside it.
+ * The heading above an entry in the account menu, when it opens a new
+ * section: the sidebar's groups, then „Platformă". The first section —
+ * the dashboard and the work — has none; it is what the menu is for.
  */
-function PublicNav({ currentHref }: { currentHref: string | null }) {
+function sectionHeading(items: readonly BadgedNavItem[], index: number): string | null {
+  const item = items[index];
+  if (item === undefined || index === 0) return null;
+  const previous = items[index - 1];
+  if (previous === undefined || previous.group === item.group) return null;
+  const work: NavGroup[] = ['principal', 'transport', 'expeditii'];
+  // The work can span two groups for a firm that does both; it is one
+  // section in a menu this small.
+  if (work.includes(item.group) && work.includes(previous.group)) return null;
+  return GROUP_LABELS[item.group];
+}
+
+/**
+ * The bar's links: built by `navigation.ts`, drawn once.
+ *
+ * Signed out, the five public pages (`PUBLIC_NAV`); signed in, the work
+ * of this kind of account (`headerBar`), board first for a carrier.
+ *
+ * From `inline` up they sit in the bar. Below it they do not fit — the
+ * public five need 880px beside the two actions, the signed-in five more
+ * than that — and a row that scrolled sideways inside itself used to show
+ * „Cereri, Trase" and nothing to say there was more. So below it the same
+ * list is a panel under the bar, opened by „Meniu": a word beside the
+ * icon, never the icon alone. It closes on a choice, on Escape and on a
+ * press outside it.
+ */
+function BarNav({
+  links,
+  currentHref,
+  inline,
+}: {
+  links: readonly BarLink[];
+  currentHref: string | null;
+  inline: 'lg' | 'xl' | 'always';
+}) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -428,41 +519,71 @@ function PublicNav({ currentHref }: { currentHref: string | null }) {
     };
   }, [open]);
 
+  // Written out rather than built from `inline`: Tailwind only ships the
+  // classes it can read in the source.
+  const at =
+    inline === 'always'
+      ? {
+          toggle: '',
+          panel:
+            'static mt-0 flex max-h-none flex-none flex-row gap-0 overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none',
+          link: '',
+        }
+      : inline === 'lg'
+      ? {
+          toggle: 'lg:hidden',
+          panel:
+            'lg:max-h-none lg:overflow-visible lg:static lg:mt-0 lg:flex lg:flex-none lg:flex-row lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none',
+          link: 'max-lg:justify-start max-lg:rounded-input max-lg:px-3 max-lg:py-3 max-lg:text-body',
+        }
+      : {
+          toggle: 'xl:hidden',
+          panel:
+            'xl:max-h-none xl:overflow-visible xl:static xl:mt-0 xl:flex xl:flex-none xl:flex-row xl:gap-0 xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none',
+          link: 'max-xl:justify-start max-xl:rounded-input max-xl:px-3 max-xl:py-3 max-xl:text-body xl:px-2.5',
+        };
+
   return (
     <>
-      <button
-        ref={toggleRef}
-        type="button"
-        data-nav-toggle
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen((value) => !value)}
-        className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30 lg:hidden')}
-      >
-        <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
-        Meniu
-      </button>
+      {inline === 'always' ? null : (
+        <button
+          ref={toggleRef}
+          type="button"
+          data-nav-toggle
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((value) => !value)}
+          className={cn(PILL_QUIET, 'flex-none gap-1.5 border border-white/30', at.toggle)}
+        >
+          <Icon as={uiIcon(open ? 'close' : 'menu')} size="sm" />
+          Meniu
+          {/* Something waiting behind the closed menu is said on it. */}
+          {!open && links.some((link) => link.badge > 0) ? (
+            <span aria-hidden="true" data-nav-dot className="size-2 rounded-full bg-accent-bright" />
+          ) : null}
+        </button>
+      )}
       <nav
         ref={navRef}
         id={id}
         aria-label="Navigare"
         data-open={open ? 'true' : undefined}
         className={cn(
-          // Below lg: a panel under the bar, shown only when open.
-          // Never taller than the screen under the bar: a phone held
-          // sideways is 390px high, and a panel cut off at the bottom
+          // Below the breakpoint: a panel under the bar, shown only when
+          // open. Never taller than the screen under the bar: a phone
+          // held sideways is 390px high, and a panel cut off at the bottom
           // hid its last links with no way to reach them.
           'absolute inset-x-0 top-full mt-2 hidden max-h-[calc(100dvh-5.5rem)] flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-card border border-white/15 bg-dark-from p-2 shadow-float data-[open=true]:flex',
-          'lg:max-h-none lg:overflow-visible',
-          // From lg: the row inside the bar.
-          'lg:static lg:mt-0 lg:flex lg:flex-none lg:flex-row lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none',
+          // From the breakpoint: the row inside the bar.
+          at.panel,
         )}
       >
-        {PUBLIC_NAV.map((page) => {
+        {links.map((page) => {
           // The page you are on, in the bright accent with a bar under
           // it: the state is said by `aria-current` and shown by more
           // than colour.
           const current = page.href === currentHref;
+          const count = countLabel(page.badge);
           return (
             <Link
               key={page.href}
@@ -471,12 +592,22 @@ function PublicNav({ currentHref }: { currentHref: string | null }) {
               aria-current={current ? 'page' : undefined}
               className={cn(
                 PILL_QUIET,
-                'max-lg:justify-start max-lg:rounded-input max-lg:px-3 max-lg:py-3 max-lg:text-body',
+                'gap-1.5',
+                at.link,
                 current &&
                   'text-accent-bright underline decoration-accent-bright decoration-2 underline-offset-[6px] hover:text-accent-bright',
               )}
             >
               {page.label}
+              {count === null ? null : (
+                // New requests are not waiting on anybody; they are new.
+                <Badge
+                  kind="count"
+                  label={page.href === ROUTES.requests ? accountCopy.nav.fresh : accountCopy.nav.waiting}
+                >
+                  {count}
+                </Badge>
+              )}
             </Link>
           );
         })}

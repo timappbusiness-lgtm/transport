@@ -98,7 +98,7 @@ test.describe('seria care se repetă', () => {
     await page.getByRole('button', { name: 'Publică seria' }).click();
     await page.waitForURL(/\/cont\/trasee/);
 
-    await expect(page.getByRole('heading', { name: 'Plecări care se repetă' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Trasee care se repetă' })).toBeVisible();
     await expect(page.getByText('Cluj-Napoca → București').first()).toBeVisible();
     await expect(page.getByText('În fiecare luni').first()).toBeVisible();
   });
@@ -107,10 +107,10 @@ test.describe('seria care se repetă', () => {
     await signIn(page, CARRIER);
     await page.goto('/cont/trasee');
 
-    const series = page.getByRole('heading', { name: 'Plecări care se repetă' });
+    const series = page.getByRole('heading', { name: 'Trasee care se repetă' });
     test.skip(!(await series.isVisible()), 'Nicio serie.');
 
-    await expect(page.getByText('Următoarele plecări').first()).toBeVisible();
+    await expect(page.getByText('Următoarele trasee').first()).toBeVisible();
     // Datele sunt afișate ca YYYY-MM-DD, monospațiat.
     await expect(page.getByText(/^\d{4}-\d{2}-\d{2}$/).first()).toBeVisible();
   });
@@ -123,10 +123,10 @@ test.describe('seria care se repetă', () => {
     test.skip((await pause.count()) === 0, 'Nicio serie activă.');
     await pause.click();
 
-    await expect(page.getByText('Seria este pe pauză. Plecările deja publicate rămân.')).toBeVisible();
+    await expect(page.getByText('Seria este pe pauză. Traseele deja publicate rămân.')).toBeVisible();
     await expect(page.getByText('Pe pauză').first()).toBeVisible();
     // Cât e pe pauză, nu mai promitem plecări care nu vin.
-    await expect(page.getByText('Următoarele plecări')).toHaveCount(0);
+    await expect(page.getByText('Următoarele trasee')).toHaveCount(0);
   });
 
   test('și repornirea o pune la loc', async ({ page }) => {

@@ -42,6 +42,12 @@ export interface Profile {
   is_test: boolean;
   /** Set when the mail provider said this address will never work. */
   email_undeliverable_at: string | null;
+  /**
+   * When a carrier last opened the requests board — written by the board
+   * itself (`markBoardSeenAction`) and read for „cereri noi de la ultima
+   * vizită". Null until the first visit.
+   */
+  last_seen_at: string | null;
 }
 
 export interface Company {
@@ -135,7 +141,7 @@ export const getAccountContext = cache(async (): Promise<AccountContext | null> 
     supabase
       .from('profiles')
       .select(
-        'id, full_name, email, phone, phone_verified, account_type, terms_version_accepted, is_test, email_undeliverable_at',
+        'id, full_name, email, phone, phone_verified, account_type, terms_version_accepted, is_test, email_undeliverable_at, last_seen_at',
       )
       .eq('id', user.id)
       .maybeSingle(),

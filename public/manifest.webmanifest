@@ -19,7 +19,7 @@
   ],
   "shortcuts": [
     { "name": "Publică o cerere", "url": "/cerere/noua" },
-    { "name": "Cereri", "url": "/cereri" },
-    { "name": "Trasee", "url": "/trasee" }
+    { "name": "Cereri de transport", "short_name": "Cereri", "url": "/cereri" },
+    { "name": "Trasee disponibile", "short_name": "Trasee", "url": "/trasee" }
   ]
 }

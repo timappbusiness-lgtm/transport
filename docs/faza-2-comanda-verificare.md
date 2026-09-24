@@ -51,7 +51,7 @@ clientului și verifică-i existența înainte să începi. Dacă nu e acolo,
    starea **„Confirmată"**.
 2. **Dispecer** → `/cont/transporturi`. Aceeași comandă, cu insigna
    **„Necesită acțiunea ta"**.
-3. **Șofer** → `/cont/transporturi`. Pagina spune **„Nicio cursă alocată."**
+3. **Șofer** → `/cont/transporturi`. Pagina spune **„Niciun transport alocat."**
 
 **Trebuie să vezi:** clientul nu are niciun buton de acțiune, ci propoziția
 **„Transportatorul programează ridicarea."** Dispecerul are butonul

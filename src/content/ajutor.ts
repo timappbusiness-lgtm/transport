@@ -53,7 +53,7 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
         audience: ['client', 'toti'],
         keywords: ['marfa', 'anunt', 'masina', 'vehicul'],
         answer: [
-          'Din „Publică" → „Cerere de transport". Ai nevoie de localitatea de încărcare, cea de descărcare, perioada în care se poate încărca și datele vehiculului.',
+          'Din butonul „Publică o cerere" din bara de sus. Ai nevoie de localitatea de încărcare, cea de descărcare, perioada în care se poate încărca și datele vehiculului.',
           'Cererea ajunge pe panoul public, iar transportatorii care circulă pe ruta ta primesc o alertă. Primești oferte în cont.',
           'Poți retrage o cerere oricând, cât timp nu ai acceptat o ofertă.',
         ],
@@ -61,23 +61,23 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
       },
       {
         id: 'cum-public-o-plecare',
-        question: 'Cum public o plecare?',
+        question: 'Cum public un traseu?',
         audience: ['transportator'],
         keywords: ['traseu', 'tur', 'retur', 'bursa'],
         answer: [
-          'Din „Trasee" → „Adaugă plecare". Alegi vehiculul, direcția (tur sau retur), de unde pleci, unde ajungi și în ce zile.',
-          'Plecarea apare pe bursă numai dacă firma este verificată și vehiculul are ITP, RCA și copie conformă valabile. Dacă unul lipsește, îți spunem care.',
+          'Din butonul „Publică un traseu" din bara de sus: „Traseu pe tur" sau „Traseu pe retur". Alegi vehiculul, direcția (tur sau retur), de unde pleci, unde ajungi și în ce zile.',
+          'Traseul apare pe bursă numai dacă firma este verificată și vehiculul are ITP, RCA și copie conformă valabile. Dacă unul lipsește, îți spunem care.',
         ],
-        link: { href: '/cont/trasee/nou', label: 'Adaugă o plecare' },
+        link: { href: '/cont/trasee/nou', label: 'Publică un traseu' },
       },
       {
         id: 'cum-repet-o-plecare',
-        question: 'Cum fac o plecare care se repetă?',
+        question: 'Cum fac un traseu care se repetă?',
         audience: ['transportator'],
         keywords: ['serie', 'saptamanal', 'recurent', 'automat'],
         answer: [
-          'În formularul de plecare bifează „Se repetă" și alege fie zilele din săptămână, fie la câte zile se repetă, plus data până la care ține.',
-          'De acolo plecările se publică singure, cu două săptămâni înainte. Fiecare este o plecare obișnuită: o poți retrage separat, fără să oprești seria.',
+          'În formularul de traseu bifează „Se repetă" și alege fie zilele din săptămână, fie la câte zile se repetă, plus data până la care ține.',
+          'De acolo traseele se publică singure, cu două săptămâni înainte. Fiecare este un traseu obișnuit: o poți retrage separat, fără să oprești seria.',
           'Dacă vehiculului îi expiră un document, seria se oprește și primești un mesaj. După ce reînnoiești, o pornești la loc din aceeași listă.',
         ],
         link: { href: '/cont/trasee', label: 'Vezi seriile' },
@@ -193,7 +193,7 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
         keywords: ['expirat', 'memento', 'reinnoire'],
         answer: [
           'Primești un memento înainte de expirare, apoi încă unul în ziua în care expiră.',
-          'Un vehicul cu ITP, RCA sau copie conformă expirate iese de pe bursă până la reînnoire. Plecările lui se retrag automat și se întorc singure după ce încarci documentul nou și îl aprobăm.',
+          'Un vehicul cu ITP, RCA sau copie conformă expirate iese de pe bursă până la reînnoire. Traseele lui se retrag automat și se întorc singure după ce încarci documentul nou și îl aprobăm.',
           'Dacă expiră un document al firmei, iese de pe bursă firma întreagă.',
         ],
       },
@@ -203,7 +203,7 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
         audience: ['transportator'],
         keywords: ['blocat', 'oprit', 'sanctiune'],
         answer: [
-          'Anunțurile tale ies de pe panouri și nu mai poți publica sau trimite oferte. Contul rămâne al tău și vezi tot ce ai în el.',
+          'Cererile și traseele tale ies de pe panouri și nu mai poți publica sau trimite oferte. Contul rămâne al tău și vezi tot ce ai în el.',
           'Motivul este scris în cont. Suspendarea se ridică după ce se rezolvă.',
           'Comenzile în curs nu se opresc: transportul tot trebuie făcut, iar mesajele de pe el rămân deschise.',
         ],
@@ -243,8 +243,8 @@ export const HELP_SECTIONS: readonly HelpSection[] = [
         audience: ['transportator'],
         keywords: ['contact', 'abonament', 'cota'],
         answer: [
-          'Deschiderea unei conversații de pe un anunț consumă un contact din abonament, exact ca „Vezi datele de contact".',
-          'Se numără o singură dată pe anunț: dacă ai scris deja acolo, nu se mai numără.',
+          'Deschiderea unei conversații de pe o cerere de transport consumă un contact din abonament, exact ca „Vezi datele de contact".',
+          'Se numără o singură dată pe cerere: dacă ai scris deja acolo, nu se mai numără.',
           'Firele de pe oferte și de pe comenzi sunt gratuite.',
         ],
       },

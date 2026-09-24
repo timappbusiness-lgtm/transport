@@ -70,47 +70,70 @@ function chevron(page: Page) {
   return page.getByRole('button', { name: 'Meniul contului' });
 }
 
-/** The labels each role should find in the menu, in this order. */
-const EXPECTED: Record<string, { who: keyof typeof ACCOUNTS; items: string[] }> = {
+/** The bar's entries, without their badges, in the order read. */
+async function barLabels(page: Page): Promise<string[]> {
+  return page
+    .getByRole('navigation', { name: 'Navigare' })
+    .locator('a')
+    .evaluateAll((links) => links.map((link) => link.firstChild?.textContent?.trim() ?? ''));
+}
+
+/** What each role finds in the bar, the button beside it, and where sign-in leaves it. */
+const EXPECTED: Record<
+  string,
+  { who: keyof typeof ACCOUNTS; bar: string[]; publish: string | null; menu: string[]; lands: RegExp }
+> = {
   'an individual': {
     who: 'individual',
-    items: ['Contul meu', 'Cererile mele', 'Oferte', 'Mesaje', 'Profil'],
+    bar: ['Cererile mele', 'Oferte primite', 'Mesaje', 'Trasee disponibile'],
+    publish: 'Publică o cerere',
+    menu: ['Contul meu', 'Cereri de transport', 'Firme', 'Abonamente', 'Cum funcționează'],
+    lands: /\/cont$/,
   },
   'a carrier owner': {
     who: 'carrierOwner',
-    items: [
-      'Contul meu',
-      'Traseele mele',
-      'Cereri de transport',
-      'Oferte trimise',
-      'Mesaje',
-      'Documente',
-      'Profil',
-    ],
+    bar: ['Cereri de transport', 'Traseele mele', 'Oferte trimise', 'Transporturi', 'Mesaje'],
+    publish: 'Publică un traseu',
+    menu: ['Contul meu', 'Publică o cerere', 'Trasee disponibile', 'Firme', 'Abonamente', 'Cum funcționează'],
+    // The board once the firm's file is done; its next step until then.
+    lands: /\/cereri$|\/cont\/firma\/(creare|flota|documente)/,
   },
   'a forwarder': {
     who: 'forwarderPending',
-    items: ['Contul meu', 'Cursele mele', 'Oferte primite', 'Mesaje', 'Documente', 'Profil'],
+    bar: ['Cursele mele', 'Oferte primite', 'Trasee disponibile', 'Transporturi', 'Mesaje'],
+    publish: 'Publică o cerere',
+    menu: ['Contul meu', 'Cereri de transport', 'Firme', 'Abonamente', 'Cum funcționează'],
+    lands: /\/cont$/,
   },
   'a driver': {
     who: 'driver',
-    items: ['Contul meu', 'Transporturile mele', 'Profil'],
+    bar: ['Transporturile mele'],
+    publish: null,
+    menu: ['Contul meu', 'Firme', 'Abonamente', 'Cum funcționează'],
+    lands: /\/cont$/,
   },
 };
 
-test.describe('what each role finds in the menu', () => {
-  for (const [label, { who, items }] of Object.entries(EXPECTED)) {
-    test(`${label} gets exactly their own pages`, async ({ page }) => {
+test.describe('what each role finds in the header', () => {
+  for (const [label, { who, bar, publish, menu }] of Object.entries(EXPECTED)) {
+    test(`${label}: the bar, the button and the menu`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
       await signIn(page, ACCOUNTS[who], label);
-      await page.goto('/cereri');
+      await page.goto('/firme');
+
+      expect(await barLabels(page)).toEqual(bar);
+
+      const button = page.locator('header [data-publish]');
+      if (publish === null) await expect(button).toHaveCount(0);
+      else await expect(button).toContainText(publish);
 
       await chevron(page).click();
-      const menu = accountMenu(page);
-      await expect(menu).toBeVisible();
-
-      const labels = await menu.getByRole('menuitem').allInnerTexts();
-      // Ieșire is the last item and is a form, not a link.
-      expect(labels.map((text) => text.split('\n')[0]?.trim())).toEqual([...items, 'Ieșire']);
+      const items = await accountMenu(page).getByRole('menuitem').allInnerTexts();
+      const labels = items.map((text) => text.split('\n')[0]?.trim());
+      for (const item of menu) expect(labels, item).toContain(item);
+      expect(labels.at(-1)).toBe('Ieșire');
+      // Between the bar and the menu, every page once.
+      expect(labels.filter((item) => bar.includes(item ?? ''))).toEqual([]);
     });
   }
 
@@ -171,11 +194,14 @@ test.describe('the way into the account', () => {
     await expect(page).toHaveURL(/\/cont$/);
   });
 
-  test('and so is the visible button beside it', async ({ page }) => {
+  test('and so is the first item of its menu', async ({ page }) => {
     await signIn(page, ACCOUNTS.carrierOwner, 'carrier owner');
     await page.goto('/cereri');
 
-    await page.getByRole('link', { name: 'Contul meu' }).first().click();
+    // The button beside the name is the role's work now — „Publică un
+    // traseu" — and „Contul meu" opens the menu instead.
+    await chevron(page).click();
+    await accountMenu(page).getByRole('menuitem', { name: 'Contul meu' }).click();
     await expect(page).toHaveURL(/\/cont$/);
   });
 
@@ -324,22 +350,37 @@ test.describe('the badges', () => {
       .innerText()
       .catch(() => '');
 
-    await chevron(page).click();
-    const inMenu = await accountMenu(page)
-      .getByRole('menuitem', { name: /Mesaje/ })
+    // Mesaje is in the bar for every role now, not in the menu.
+    const inBar = await page
+      .getByRole('navigation', { name: 'Navigare' })
+      .getByRole('link', { name: /Mesaje/ })
       .innerText()
       .catch(() => '');
 
     // Both read „Mesaje" plus the same count, or neither carries one.
     const digits = (text: string) => text.replace(/\D+/g, '');
-    expect(digits(inMenu)).toBe(digits(inSidebar));
+    expect(digits(inBar)).toBe(digits(inSidebar));
   });
 });
 
 test.describe('where sign-in leaves you', () => {
-  test('on the dashboard, not the marketing homepage', async ({ page }) => {
+  for (const [label, { who, lands }] of Object.entries(EXPECTED)) {
+    test(`${label}: never the marketing homepage`, async ({ page }) => {
+      await signIn(page, ACCOUNTS[who], label);
+      await expect(page).toHaveURL(lands);
+    });
+  }
+
+  test('a carrier on the board opens on its own view', async ({ page }) => {
     await signIn(page, ACCOUNTS.carrierOwner, 'carrier owner');
-    await expect(page).toHaveURL(/\/cont$/);
+    test.skip(!/\/cereri$/.test(page.url()), 'The seeded carrier has an unfinished file.');
+    const view = page.getByRole('navigation', { name: 'Ce cereri vezi' });
+    await expect(view.getByRole('link', { name: 'Potrivite cu firma mea' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await view.getByRole('link', { name: 'Toate cererile' }).click();
+    await expect(page).toHaveURL(/doar=toate/);
   });
 
   test('or on the page you were asked to sign in for', async ({ page }) => {

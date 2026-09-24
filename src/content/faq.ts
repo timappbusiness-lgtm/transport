@@ -90,7 +90,7 @@ export const STATIC_FAQ: Record<FaqGroupId, FaqEntry[]> = {
       id: 'pe-sens-expres',
       question: 'Ce înseamnă transport pe sens și expres?',
       answer: [
-        'Pe sens, vehiculul tău ocupă un loc liber pe o platformă care are deja drum pe ruta ta, deci prețul este mai mic. Expres înseamnă o plecare dedicată, cu termen mai scurt și preț mai mare.',
+        'Pe sens, vehiculul tău ocupă un loc liber pe o platformă care are deja drum pe ruta ta, deci prețul este mai mic. Expres înseamnă un transport dedicat, cu termen mai scurt și preț mai mare.',
       ],
     },
   ],

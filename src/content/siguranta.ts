@@ -187,8 +187,8 @@ export const verificationCopy = {
         'Firma nu răspunde după acceptarea ofertei',
         'Altceva',
       ],
-      company: 'Firma sau anunțul la care te referi',
-      companyHint: 'Numele firmei, CUI-ul sau linkul anunțului, dacă îl ai.',
+      company: 'Firma, cererea sau traseul la care te referi',
+      companyHint: 'Numele firmei, CUI-ul sau linkul cererii ori al traseului, dacă îl ai.',
       details: 'Detalii',
       detailsHint: 'Ce s-a întâmplat, pe scurt. Nu trimite documente aici.',
       submit: 'Trimite sesizarea',
@@ -208,7 +208,7 @@ export const verificationCopy = {
     items: [
       {
         q: 'Ce se întâmplă cu o comandă dacă expiră un document?',
-        a: 'Comanda nu se anulează singură. Transportul aflat în curs este semnalat echipei noastre, iar firma nu mai poate prelua alte curse până la reînnoire.',
+        a: 'Comanda nu se anulează singură. Transportul aflat în curs este semnalat echipei noastre, iar firma nu mai poate prelua alte transporturi până la reînnoire.',
       },
       {
         q: 'Pot vedea documentele firmei?',

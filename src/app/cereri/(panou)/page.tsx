@@ -10,17 +10,11 @@ import { buttonClasses } from '@/components/ui/button';
 import { ROUTES } from '@/config/routes';
 import { appCopy } from '@/content/app';
 import { requestsCopy } from '@/content/cereri';
-import { getAccountContext, type Company } from '@/lib/auth/account';
-import { ROUTE_COLUMNS, toCarrierRoutes } from '@/lib/dashboard-source';
-import {
-  bestRouteDetour,
-  carries,
-  detourOk,
-  type CarrierProfile,
-  type CarrierRoute,
-  type DetourFit,
-} from '@/lib/matching';
-import { loadDetourSettings } from '@/lib/matching-settings-source';
+import { getAccountContext } from '@/lib/auth/account';
+import { boardIsTheirs, loadNewRequestCount, onlyForCompany } from '@/lib/board-match-source';
+import { newRequestsLine } from '@/lib/board-news';
+import { gateHref } from '@/lib/carrier-journey';
+import type { DetourFit } from '@/lib/matching';
 import { filtersFromBoard } from '@/lib/saved-searches';
 import {
   EMPTY_REQUEST_FILTERS,
@@ -41,6 +35,9 @@ import { sortRequests } from '@/lib/board-sort';
 import { loadJourney } from '@/lib/journey-source';
 import { safeNextPath } from '@/lib/auth/next-path';
 import { RememberBoard } from '@/components/continuity/board-memory';
+import { MarkBoardSeen } from '@/components/requests/mark-board-seen';
+import { BoardView } from '@/components/requests/board-view';
+import { requestRoute } from '@/config/routes';
 
 export const metadata: Metadata = {
   title: 'Cereri de transport',
@@ -73,25 +70,31 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const filters = parseRequestFilters(params);
+  // Who is looking decides one default: a carrier's board opens on what
+  // the carrier can take. Everything else about the filters is the
+  // address, as before.
+  const context = await getAccountContext();
+  const company = context?.activeCompany ?? null;
+  const canFilterByCompany = boardIsTheirs(company);
+  const filterOptions = { mineByDefault: canFilterByCompany };
+  const filters = parseRequestFilters(params, filterOptions);
   const sort = parseSort(typeof params[SORT_KEY] === 'string' ? (params[SORT_KEY] as string) : null, REQUEST_SORTS);
   const c = requestsCopy.board;
 
   const widened = filters.mine || filters.near !== null;
-  const [all, context] = await Promise.all([
+  const [all, newCount] = await Promise.all([
     loadRequests(filters, widened ? SCAN_LIMIT : BOARD_LIMIT),
-    getAccountContext(),
+    // The same number as the badge in the header: one cached read.
+    loadNewRequestCount(context),
   ]);
 
-  // „Doar cele potrivite cu firma mea" is applied here rather than in the
-  // query: what a firm carries is coverage, categories, equipment and the
-  // detour its own routes allow, and none of those are columns on the
-  // board view. The rule is `src/lib/matching.ts` — the same one the
-  // dashboard and the alert e-mails use, so the three cannot disagree.
-  const company = context?.activeCompany ?? null;
-  const canFilterByCompany = company !== null && company.company_type !== 'expeditie';
+  // „Potrivite cu firma mea" is applied here rather than in the query:
+  // what a firm carries is coverage, categories, equipment and the detour
+  // its own routes allow, and none of those are columns on the board
+  // view. The rule is `src/lib/matching.ts` — the same one the dashboard,
+  // the header's count and the alert e-mails use, so none can disagree.
   const applyMine = filters.mine && canFilterByCompany;
-  const mine = applyMine ? await onlyForCompany(all, company) : null;
+  const mine = applyMine && company !== null ? await onlyForCompany(all, company) : null;
   const requests = sortRequests(mine?.requests ?? all, sort).slice(0, BOARD_LIMIT);
   // One „now" for the whole page, so every card on it agrees.
   const now = new Date();
@@ -101,6 +104,16 @@ export default async function Page({
   // long the documents take to upload.
   const journey = context?.profile?.account_type === 'company' ? await loadJourney(context) : null;
   const here = `${ROUTES.requests}${boardQuery(params)}`;
+  // A carrier's one next step on each card: the offer, or — while the firm
+  // cannot send one yet — the step that is missing, which comes back here.
+  const offerHref =
+    canFilterByCompany && context?.activeRole !== 'driver' && journey !== null
+      ? (id: string) =>
+          journey.stage === 'verified'
+            ? `${requestRoute(id)}#oferta`
+            : (gateHref(journey.stage, 'oferta', requestRoute(id)) ?? requestRoute(id))
+      : null;
+  const news = canFilterByCompany ? newRequestsLine(newCount) : null;
   // Right after a firm's sign-up, before the e-mail link is opened: the
   // board is readable, and says what to do with the link.
   const confirming = context === null && typeof params.confirma === 'string' ? params.confirma : null;
@@ -109,6 +122,10 @@ export default async function Page({
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
       {/* The way back from a detail page returns to these filters. */}
       <RememberBoard board={ROUTES.requests} />
+      {/* What was new is no longer new once a carrier has seen it — told
+          to the server after the page is on the screen, not while it is
+          drawn, so a prefetch never clears a count nobody read. */}
+      {canFilterByCompany ? <MarkBoardSeen renderedAt={now.toISOString()} /> : null}
       <header className="max-w-[46rem]">
         <h1 className="text-h1">{c.title}</h1>
         <p className="mt-3 text-body-lg text-muted">{c.lede}</p>
@@ -130,7 +147,7 @@ export default async function Page({
               watch, so it sits beside „Caută" — as a text link, not a
               second button. A bordered control on its own row under the
               filters is a fourth thing to decide about above the list. */}
-          <BoardFilters filters={filters} sort={sort} showMine={canFilterByCompany}>
+          <BoardFilters filters={filters} sort={sort} mineByDefault={canFilterByCompany}>
             <SaveSearch
               filters={filtersFromBoard({
                 fromCountry: filters.fromCountry,
@@ -150,6 +167,14 @@ export default async function Page({
         </aside>
 
         <section aria-label={c.title}>
+          {canFilterByCompany ? (
+            <BoardView
+              mine={filters.mine}
+              mineHref={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: true }, filterOptions)}`}
+              allHref={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false }, filterOptions)}`}
+              news={news}
+            />
+          ) : null}
           {filters.mine && !canFilterByCompany ? (
             <p className="mb-4 rounded-card border border-border bg-surface p-4 text-body text-muted">
               {requestsCopy.filters.mineNoCompany}
@@ -173,12 +198,13 @@ export default async function Page({
                     // it says so rather than leaving the carrier to wonder
                     // why a Hamburg run is on their list.
                     {...detourNote(mine?.detours[request.id])}
+                    {...(offerHref === null ? {} : { offerHref: offerHref(request.id) })}
                   />
                 ))}
               </ul>
             </>
           ) : applyMine ? (
-            <MineEmptyState filters={filters} />
+            <MineEmptyState filters={filters} options={filterOptions} />
           ) : (
             <EmptyState filters={filters} signedIn={context !== null} />
           )}
@@ -283,71 +309,19 @@ function detourNote(fit: DetourFit | undefined): { note?: string } {
 }
 
 /**
- * The board narrowed to what this firm can actually do.
- *
- * Two rules, both from `src/lib/matching.ts`: `carries()` for coverage,
- * categories and equipment, and the detour for how far off the firm's
- * own published routes each request sits. A firm with no measurable
- * route keeps every request `carries()` allowed — unmeasured is not the
- * same as unsuitable.
- */
-async function onlyForCompany(
-  requests: readonly PublicRequest[],
-  company: Company,
-): Promise<{ requests: PublicRequest[]; detours: Record<string, DetourFit> }> {
-  const [routes, settings] = await Promise.all([loadCompanyRoutes(company.id), loadDetourSettings()]);
-  const profile = profileOf(company);
-
-  const kept = requests.filter(
-    (request) => carries(request, profile) && detourOk(request, routes, settings),
-  );
-
-  const detours: Record<string, DetourFit> = {};
-  for (const request of kept) {
-    const fit = bestRouteDetour(request, routes, settings);
-    if (fit !== null) detours[request.id] = fit;
-  }
-
-  return { requests: kept, detours };
-}
-
-function profileOf(company: Company): CarrierProfile {
-  return {
-    companyType: company.company_type,
-    coverageScope: company.coverage_scope,
-    coverageCounties: company.coverage_counties,
-    coverageCountries: company.coverage_countries,
-    vehicleTypesAccepted: company.vehicle_types_accepted,
-    equipment: company.equipment,
-    services: company.services,
-  };
-}
-
-async function loadCompanyRoutes(companyId: string): Promise<CarrierRoute[]> {
-  if (!isSupabaseConfigured()) return [];
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('truck_listings')
-    .select(ROUTE_COLUMNS)
-    .eq('company_id', companyId)
-    .eq('status', 'active');
-
-  if (error) {
-    console.error('[cereri] routes query failed', { message: error.message });
-    return [];
-  }
-  return toCarrierRoutes(data ?? []);
-}
-
-/**
  * „Potrivite cu firma mea" found nothing.
  *
  * A different screen from the general empty board: the board is not
  * empty, the filter is strict, and what to do about it is to loosen the
  * tolerance or drop the filter — not to publish a request.
  */
-function MineEmptyState({ filters }: { filters: RequestFilters }) {
+function MineEmptyState({
+  filters,
+  options,
+}: {
+  filters: RequestFilters;
+  options: { mineByDefault: boolean };
+}) {
   const c = requestsCopy.empty;
   return (
     <div>
@@ -357,7 +331,7 @@ function MineEmptyState({ filters }: { filters: RequestFilters }) {
         body={c.mineBody}
         action={
           <Link
-            href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false })}`}
+            href={`${ROUTES.requests}${requestFiltersToQuery({ ...filters, mine: false }, options)}`}
             className={buttonClasses('primary', 'md')}
           >
             {c.mineClear}

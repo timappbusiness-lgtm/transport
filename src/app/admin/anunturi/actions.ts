@@ -32,7 +32,7 @@ export async function hideListingAction(
   const requestId = text(formData, 'request_id');
   const routeId = text(formData, 'route_id');
   const reason = text(formData, 'reason');
-  if (requestId === '' && routeId === '') return { error: 'Lipsește anunțul.' };
+  if (requestId === '' && routeId === '') return { error: 'Lipsește cererea sau traseul.' };
   if (reason === '') return { fieldErrors: { reason: 'Scrie de ce îl ascunzi.' } };
 
   const supabase = await createClient();
@@ -44,7 +44,7 @@ export async function hideListingAction(
   if (error) return { error: toAppError(error, 'admin.hideListing').message };
 
   revalidatePath(ROUTES.adminListings);
-  return { notice: 'Anunțul a fost ascuns.' };
+  return { notice: 'Gata: nu mai apare pe panoul public.' };
 }
 
 export async function restoreListingAction(
@@ -56,7 +56,7 @@ export async function restoreListingAction(
   const requestId = text(formData, 'request_id');
   const routeId = text(formData, 'route_id');
   const reason = text(formData, 'reason');
-  if (requestId === '' && routeId === '') return { error: 'Lipsește anunțul.' };
+  if (requestId === '' && routeId === '') return { error: 'Lipsește cererea sau traseul.' };
   if (reason === '') return { fieldErrors: { reason: 'Scrie de ce îl repui.' } };
 
   const supabase = await createClient();
@@ -68,7 +68,7 @@ export async function restoreListingAction(
   if (error) return { error: toAppError(error, 'admin.restoreListing').message };
 
   revalidatePath(ROUTES.adminListings);
-  return { notice: 'Anunțul a fost repus.' };
+  return { notice: 'Gata: apare din nou pe panoul public.' };
 }
 
 /** Ascunderea unui mesaj dintr-o conversație sesizată. */
