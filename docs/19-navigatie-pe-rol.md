@@ -120,6 +120,7 @@ decides with `landingAfterSignIn` (`src/lib/landing.ts`):
 
 | Who | Lands on |
 |---|---|
+| Anybody with terms still to accept | `/cont`, where the gate asks for them (a public page draws no gate) |
 | Carrier, file done or with us for checking | `/cereri` |
 | Carrier, no firm / no vehicle / documents missing or rejected | `/cont/firma/creare` / `/cont/firma/flota` / `/cont/firma/documente` |
 | Carrier, suspended | `/cont` (the dashboard says why) |

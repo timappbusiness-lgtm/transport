@@ -15,6 +15,7 @@ function input(over: Partial<LandingInput> = {}): LandingInput {
     companyType: 'transport',
     role: 'owner',
     stage: 'verified',
+    termsPending: false,
     ...over,
   };
 }
@@ -41,6 +42,15 @@ describe('a carrier', () => {
   });
 });
 
+describe('terms not yet accepted', () => {
+  it('come first, for everybody: the gate that asks for them is the account\'s', () => {
+    // The board is a public page and draws no gate; landing a carrier
+    // there would let them work under terms they have not accepted.
+    expect(landingAfterSignIn(input({ termsPending: true }))).toBe(ROUTES.account);
+    expect(landingAfterSignIn(input({ stage: 'documents', termsPending: true }))).toBe(ROUTES.account);
+  });
+});
+
 describe('everybody else', () => {
   it('a firm account with no firm yet: creating it', () => {
     expect(landingAfterSignIn(input({ companyType: null, role: null, stage: null }))).toBe(
@@ -51,7 +61,13 @@ describe('everybody else', () => {
   it('a forwarder, a private client and a driver: their account', () => {
     expect(landingAfterSignIn(input({ companyType: 'expeditie', stage: null }))).toBe(ROUTES.account);
     expect(
-      landingAfterSignIn({ accountType: 'individual', companyType: null, role: null, stage: null }),
+      landingAfterSignIn({
+        accountType: 'individual',
+        companyType: null,
+        role: null,
+        stage: null,
+        termsPending: false,
+      }),
     ).toBe(ROUTES.account);
     expect(landingAfterSignIn(input({ role: 'driver' }))).toBe(ROUTES.account);
   });

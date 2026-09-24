@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ROUTES } from '@/config/routes';
 import { getAccountContext } from '@/lib/auth/account';
+import { needsTermsAcceptance } from '@/content/legal';
 import { loadJourney } from '@/lib/journey-source';
 import { landingAfterSignIn } from '@/lib/landing';
 
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
     companyType: context.activeCompany?.company_type ?? null,
     role: context.activeRole,
     stage: journey?.stage ?? null,
+    termsPending: needsTermsAcceptance(context.profile?.terms_version_accepted),
   });
   return NextResponse.redirect(new URL(target, request.nextUrl.origin));
 }

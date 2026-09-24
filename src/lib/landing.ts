@@ -6,7 +6,7 @@ import type { AccountType, CompanyType, MemberRole } from './navigation';
  * Where somebody lands after signing in with nowhere particular to go.
  *
  * With somewhere to go — the page they were on, the step of a form — they
- * go back there, always (`returnPathAfterAuth`). This is only for the
+ * go back there, always (`explicitNextAfterAuth`). This is only for the
  * sign-in pressed from the homepage or typed in directly.
  *
  * A carrier opens the platform to see requests they can bid on, so they
@@ -27,9 +27,16 @@ export interface LandingInput {
   role: MemberRole | null;
   /** The carrier journey's stage, for a firm's account; null otherwise. */
   stage: JourneyStage | null;
+  /**
+   * Terms to accept before anything else. The gate that asks is the
+   * account's (`src/app/cont/layout.tsx`); a public page does not draw it,
+   * so landing on the board would let somebody work without it.
+   */
+  termsPending: boolean;
 }
 
 export function landingAfterSignIn(input: LandingInput): string {
+  if (input.termsPending) return ROUTES.account;
   if (input.role === 'driver') return ROUTES.account;
   if (input.accountType !== 'company') return ROUTES.account;
 
