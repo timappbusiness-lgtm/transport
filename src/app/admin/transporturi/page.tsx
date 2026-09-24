@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { buttonClasses } from '@/components/ui/button';
+import { FilterCheck, FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
 import { ROUTES, adminOrderRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
+import { filtersCopy } from '@/content/filtre';
 import { formatMoney } from '@/lib/offers';
 import { ORDER_STEPS, formatMoment, orderStatusLabel, type OrderStatus } from '@/lib/orders';
 import {
@@ -11,6 +13,7 @@ import {
   loadAdminOrders,
   type AdminOrderQuery,
 } from '@/lib/orders-source';
+import { chipsFromParams, paramsFromSearch, periodChipDefs } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -99,90 +102,76 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[66ch] text-body text-muted">{c.lede}</p>
       </div>
 
-      <form
-        method="get"
-        action={ROUTES.adminOrders}
-        className="rounded-card border border-border bg-surface p-5"
-      >
+      <div className="rounded-card border border-border bg-surface p-5">
         <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
+        {/* State, carrier and „doar disputele" are the three the team
+            opens this screen with; the period waits, closed. */}
+        <FilterPanel
+          action={ROUTES.adminOrders}
+          screen="admin-transporturi"
+          chips={chipsFromParams(
+            ROUTES.adminOrders,
+            paramsFromSearch(toSearch(query, 1)),
+            periodChipDefs(c.filters.from, c.filters.to),
+            'p',
+          )}
+          canReset={filtered}
+          resetHref={ROUTES.adminOrders}
+          labels={{
+            more: filtersCopy.more,
+            active: filtersCopy.active,
+            apply: c.filters.apply,
+            clear: filtersCopy.clear,
+          }}
+          simple={
+            <>
+              <FilterField id="at-status" label={c.filters.status}>
+                <select id="at-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
+                  <option value="">{c.filters.any}</option>
+                  {FILTERABLE.map((value) => (
+                    <option key={value} value={value}>
+                      {orderStatusLabel(value)}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-status" className="text-small font-medium">
-              {c.filters.status}
-            </label>
-            <select id="at-status" name="stare" defaultValue={query.status ?? ''} className={CONTROL}>
-              <option value="">{c.filters.any}</option>
-              {FILTERABLE.map((value) => (
-                <option key={value} value={value}>
-                  {orderStatusLabel(value)}
-                </option>
-              ))}
-            </select>
-          </div>
+              <FilterField id="at-company" label={c.filters.company}>
+                <select
+                  id="at-company"
+                  name="firma"
+                  defaultValue={query.companyId ?? ''}
+                  className={CONTROL}
+                >
+                  <option value="">{c.filters.any}</option>
+                  {companies.map((company) => (
+                    <option key={company.company_id} value={company.company_id}>
+                      {company.company_name} ({company.orders_count})
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-company" className="text-small font-medium">
-              {c.filters.company}
-            </label>
-            <select
-              id="at-company"
-              name="firma"
-              defaultValue={query.companyId ?? ''}
-              className={CONTROL}
-            >
-              <option value="">{c.filters.any}</option>
-              {companies.map((company) => (
-                <option key={company.company_id} value={company.company_id}>
-                  {company.company_name} ({company.orders_count})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-from" className="text-small font-medium">
-              {c.filters.from}
-            </label>
-            <input
-              id="at-from"
-              name="de-la"
-              type="date"
-              defaultValue={query.from ?? ''}
-              className={CONTROL}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="at-to" className="text-small font-medium">
-              {c.filters.to}
-            </label>
-            <input
-              id="at-to"
-              name="pana-la"
-              type="date"
-              defaultValue={query.to ?? ''}
-              className={CONTROL}
-            />
-          </div>
-        </div>
-
-        <label className="mt-3 flex items-center gap-2 text-body">
-          <input type="checkbox" name="dispute" value="da" defaultChecked={query.disputedOnly} />
-          {c.filters.disputed}
-        </label>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
-            {c.filters.apply}
-          </button>
-          {filtered ? (
-            <a href={ROUTES.adminOrders} className="text-body text-muted underline-offset-4 hover:underline">
-              {c.filters.clear}
-            </a>
-          ) : null}
-        </div>
-      </form>
+              <FilterCheck
+                id="at-disputed"
+                name="dispute"
+                label={c.filters.disputed}
+                defaultChecked={query.disputedOnly}
+              />
+            </>
+          }
+          advanced={
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FilterField id="at-from" label={c.filters.from}>
+                <input id="at-from" name="de-la" type="date" defaultValue={query.from ?? ''} className={CONTROL} />
+              </FilterField>
+              <FilterField id="at-to" label={c.filters.to}>
+                <input id="at-to" name="pana-la" type="date" defaultValue={query.to ?? ''} className={CONTROL} />
+              </FilterField>
+            </div>
+          }
+        />
+      </div>
 
       {page.error !== null ? (
         <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">

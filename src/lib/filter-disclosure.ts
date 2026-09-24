@@ -40,15 +40,6 @@ export function advancedStorageKey(screen: string): string {
   return `${STORAGE_PREFIX}${screen}`;
 }
 
-/** sessionStorage, or nothing — private windows and blocked storage throw. */
-export function sessionStore(): Storage | null {
-  try {
-    return typeof window === 'undefined' ? null : window.sessionStorage;
-  } catch {
-    return null;
-  }
-}
-
 /** Whether this screen's panel was left open earlier in this session. */
 export function wasLeftOpen(storage: Pick<Storage, 'getItem'> | null, screen: string): boolean {
   if (storage === null) return false;
@@ -134,6 +125,7 @@ export function chipsFromParams(
   base: string,
   params: Params,
   defs: readonly ParamChipDef[],
+  pageKey = 'pagina',
 ): FilterChip[] {
   const chips: FilterChip[] = [];
   for (const def of defs) {
@@ -141,7 +133,36 @@ export function chipsFromParams(
     if (value === null) continue;
     const label = def.label(value);
     if (label === null) continue;
-    chips.push({ id: def.key, label, href: hrefWithout(base, params, [def.key]) });
+    chips.push({ id: def.key, label, href: hrefWithout(base, params, [def.key], pageKey) });
   }
   return chips;
+}
+
+/**
+ * The staff lists' period, „De la" and „Până la", as two chips: each end
+ * can be removed on its own, as each is its own field.
+ */
+export function periodChipDefs(
+  fromLabel: string,
+  toLabel: string,
+  keys: { from: string; to: string } = { from: 'de-la', to: 'pana-la' },
+): ParamChipDef[] {
+  return [
+    { key: keys.from, label: (v) => `${fromLabel}: ${chipDate(v)}` },
+    { key: keys.to, label: (v) => `${toLabel}: ${chipDate(v)}` },
+  ];
+}
+
+/** A checkbox filter (`value="da"`): its chip is its own label. */
+export function checkChipDef(key: string, label: string): ParamChipDef {
+  return { key, label: (v) => (v === 'da' ? label : null) };
+}
+
+/**
+ * The validated filters of a staff list as plain params, without the
+ * page: what the chips are built from, so a date the page ignored as
+ * malformed draws no chip claiming it is applied.
+ */
+export function paramsFromSearch(search: string): Record<string, string> {
+  return Object.fromEntries(new URLSearchParams(search));
 }

@@ -136,8 +136,7 @@ export const ratingsCopy = {
       hidden: 'Doar ascunse',
       afterDispute: 'Doar după dispute',
       apply: 'Filtrează',
-      clear: 'Vezi toate',
-    },
+          },
     list: {
       total: (n: string) => `${n} evaluări`,
       open: 'Deschide',

@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { countLabel } from '@/lib/badges';
-import {
-  ADVANCED_OPEN_ON_LOAD,
-  rememberChoice,
-  sessionStore,
-  wasLeftOpen,
-} from '@/lib/filter-disclosure';
+import { browserStorage } from '@/lib/continuity/drafts';
+import { ADVANCED_OPEN_ON_LOAD, rememberChoice, wasLeftOpen } from '@/lib/filter-disclosure';
 import { ICON_GAP, UI_ICONS, iconForAction } from '@/lib/icons';
 import { cn } from '@/lib/utils';
+
+function subscribeNothing() {
+  return () => {};
+}
 
 const FOCUSABLE =
   'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href]';
@@ -53,16 +53,20 @@ export function AdvancedFilters({
   countLabelText: (n: number) => string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(ADVANCED_OPEN_ON_LOAD);
+  // Closed on the server and on the first paint. After hydration it
+  // opens only if the person opened it earlier in this tab's session:
+  // nothing in the address can.
+  const leftOpen = useSyncExternalStore(
+    subscribeNothing,
+    () => wasLeftOpen(browserStorage('session'), screen),
+    () => ADVANCED_OPEN_ON_LOAD,
+  );
+  // What the person did on this page, which wins over what they did before.
+  const [choice, setChoice] = useState<boolean | null>(null);
+  const open = choice ?? leftOpen;
   const focusOnOpen = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = `${useId()}-mai-multe-filtre`;
-
-  // Only ever opens it, and only when the person opened it earlier in
-  // this session: nothing in the address can.
-  useEffect(() => {
-    if (wasLeftOpen(sessionStore(), screen)) setOpen(true);
-  }, [screen]);
 
   useEffect(() => {
     if (!open || !focusOnOpen.current) return;
@@ -73,8 +77,8 @@ export function AdvancedFilters({
   function toggle() {
     const next = !open;
     focusOnOpen.current = next;
-    setOpen(next);
-    rememberChoice(sessionStore(), screen, next);
+    setChoice(next);
+    rememberChoice(browserStorage('session'), screen, next);
   }
 
   const shown = countLabel(count);

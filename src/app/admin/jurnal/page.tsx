@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { AuditEntryRow } from '@/components/admin/audit-entry';
 import { buttonClasses } from '@/components/ui/button';
+import { FilterField, FilterPanel } from '@/components/ui/filter-panel';
 import { EyebrowPill } from '@/components/ui/primitives';
 import { ROUTES } from '@/config/routes';
+import { filtersCopy } from '@/content/filtre';
 import { auditCopy } from '@/content/jurnal';
 import { AUDIT_PAGE_SIZE, loadAuditFacets, loadAuditPage, type AuditQuery } from '@/lib/audit-source';
+import { chipsFromParams, paramsFromSearch, periodChipDefs } from '@/lib/filter-disclosure';
 import { formatNumber } from '@/lib/requests';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -90,114 +93,82 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
         <p className="mt-2 max-w-[62ch] text-body text-muted">{c.hero.lede}</p>
       </div>
 
-      <form
-        method="get"
-        action={ROUTES.adminAuditLog}
-        className="rounded-card border border-border bg-surface p-5"
-      >
+      <div className="rounded-card border border-border bg-surface p-5">
         <h2 className="mb-4 text-body font-medium">{c.filters.title}</h2>
+        {/* What, on what, by whom — the three questions an entry answers.
+            The period narrows them and waits, closed. */}
+        <FilterPanel
+          action={ROUTES.adminAuditLog}
+          screen="admin-jurnal"
+          chips={chipsFromParams(
+            ROUTES.adminAuditLog,
+            paramsFromSearch(toSearch(query, 1)),
+            periodChipDefs(c.filters.from, c.filters.to),
+            'p',
+          )}
+          canReset={filtered}
+          resetHref={ROUTES.adminAuditLog}
+          labels={{
+            more: filtersCopy.more,
+            active: filtersCopy.active,
+            apply: c.filters.apply,
+            clear: c.filters.clear,
+          }}
+          simple={
+            <>
+              <FilterField id="ja-action" label={c.filters.action}>
+                <select id="ja-action" name="actiune" defaultValue={query.action ?? ''} className={CONTROL}>
+                  <option value="">{c.filters.any}</option>
+                  {actions.map((facet) => (
+                    <option key={facet.value} value={facet.value}>
+                      {facet.value} ({facet.occurrences})
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-action" className="text-small font-medium">
-              {c.filters.action}
-            </label>
-            <select
-              id="ja-action"
-              name="actiune"
-              defaultValue={query.action ?? ''}
-              className={CONTROL}
-            >
-              <option value="">{c.filters.any}</option>
-              {actions.map((facet) => (
-                <option key={facet.value} value={facet.value}>
-                  {facet.value} ({facet.occurrences})
-                </option>
-              ))}
-            </select>
-          </div>
+              <FilterField id="ja-entity" label={c.filters.entity}>
+                <select id="ja-entity" name="entitate" defaultValue={query.entity ?? ''} className={CONTROL}>
+                  <option value="">{c.filters.any}</option>
+                  {entities.map((facet) => (
+                    <option key={facet.value} value={facet.value}>
+                      {facet.value} ({facet.occurrences})
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-entity" className="text-small font-medium">
-              {c.filters.entity}
-            </label>
-            <select
-              id="ja-entity"
-              name="entitate"
-              defaultValue={query.entity ?? ''}
-              className={CONTROL}
-            >
-              <option value="">{c.filters.any}</option>
-              {entities.map((facet) => (
-                <option key={facet.value} value={facet.value}>
-                  {facet.value} ({facet.occurrences})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-actor" className="text-small font-medium">
-              {c.filters.actor}
-            </label>
-            <input
-              id="ja-actor"
-              name="autor"
-              defaultValue={query.actor ?? ''}
-              placeholder="00000000-0000-0000-0000-000000000000"
-              className={`${CONTROL} font-mono text-small`}
-            />
-            <p className="text-small text-muted">{c.filters.actorHint}</p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-from" className="text-small font-medium">
-              {c.filters.from}
-            </label>
-            <input
-              id="ja-from"
-              name="de-la"
-              type="date"
-              defaultValue={query.from ?? ''}
-              className={CONTROL}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="ja-to" className="text-small font-medium">
-              {c.filters.to}
-            </label>
-            <input
-              id="ja-to"
-              name="pana-la"
-              type="date"
-              defaultValue={query.to ?? ''}
-              className={CONTROL}
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button type="submit" className={buttonClasses('primary', 'sm')}>
-            {c.filters.apply}
-          </button>
+              <FilterField id="ja-actor" label={c.filters.actor} hint={c.filters.actorHint}>
+                <input
+                  id="ja-actor"
+                  name="autor"
+                  defaultValue={query.actor ?? ''}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  className={`${CONTROL} font-mono text-small`}
+                />
+              </FilterField>
+            </>
+          }
+          advanced={
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FilterField id="ja-from" label={c.filters.from}>
+                <input id="ja-from" name="de-la" type="date" defaultValue={query.from ?? ''} className={CONTROL} />
+              </FilterField>
+              <FilterField id="ja-to" label={c.filters.to}>
+                <input id="ja-to" name="pana-la" type="date" defaultValue={query.to ?? ''} className={CONTROL} />
+              </FilterField>
+            </div>
+          }
+        >
           <a
             href={`${ROUTES.adminAuditLog}/export${toSearch(query, 1)}`}
             className={buttonClasses('secondary', 'sm')}
           >
             {c.filters.export}
           </a>
-          {filtered ? (
-            <a
-              href={ROUTES.adminAuditLog}
-              className="text-body text-muted underline-offset-4 hover:underline"
-            >
-              {c.filters.clear}
-            </a>
-          ) : null}
-        </div>
+        </FilterPanel>
         <p className="mt-2 text-small text-muted">{c.filters.exportHint}</p>
-      </form>
+      </div>
 
       {page.error !== null ? (
         <p role="alert" className="rounded-card border border-danger/45 bg-danger/8 p-4 text-body">
