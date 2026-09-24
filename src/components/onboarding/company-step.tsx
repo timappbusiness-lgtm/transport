@@ -4,10 +4,10 @@ import {
   createOnboardingCompanyAction,
   type OnboardingState,
 } from '@/app/admin/inscrieri/actions';
-import { lookupCuiAction, type CuiLookupState } from '@/app/cont/actions';
+import { lookupCuiFormAction, type CuiLookupState } from '@/app/cont/actions';
 import { FormError } from '@/components/auth/form';
 import { buttonClasses } from '@/components/ui/button';
-import { COUNTIES } from '@/lib/counties';
+import { COUNTIES, countyCodeFor } from '@/lib/counties';
 import { COMPANY_TYPE_LABELS } from '@/lib/directory';
 import { onboardingCopy } from '@/content/inscrieri';
 import { KeepingForm } from '@/components/ui/keeping-form';
@@ -28,7 +28,7 @@ const FIELD =
  * să fie aceeași funcție.
  */
 export function CompanyStep({ onboardingId }: { onboardingId: string }) {
-  const [lookup, lookupAction, looking] = useKeptActionState(lookupCuiAction, EMPTY_LOOKUP);
+  const [lookup, lookupAction, looking] = useKeptActionState(lookupCuiFormAction, EMPTY_LOOKUP);
   const [state, action, pending] = useKeptActionState(createOnboardingCompanyAction, EMPTY);
   const found = lookup.company;
 
@@ -50,6 +50,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
         </button>
         <FormError>{lookup.fieldErrors?.cui}</FormError>
         <FormError>{lookup.error}</FormError>
+        <FormError>{lookup.warning}</FormError>
       </KeepingForm>
 
       {/* `key` on the found CUI: a second lookup has to redraw the
@@ -98,7 +99,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
 
           <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.county}
-            <select name="county" defaultValue="" className={FIELD}>
+            <select name="county" defaultValue={countyCodeFor(found?.county) ?? ''} className={FIELD}>
               <option value="">—</option>
               {COUNTIES.map((county) => (
                 <option key={county.code} value={county.code}>
@@ -110,7 +111,7 @@ export function CompanyStep({ onboardingId }: { onboardingId: string }) {
 
           <label className="flex flex-col gap-1.5 text-body font-medium">
             {c.city}
-            <input name="city" className={FIELD} />
+            <input name="city" defaultValue={found?.city ?? ''} className={FIELD} />
           </label>
 
           <label className="flex flex-col gap-1.5 text-body font-medium">

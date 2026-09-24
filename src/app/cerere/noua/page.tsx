@@ -32,6 +32,7 @@ async function loadForm(params: SearchParams): Promise<{
   today: string;
   signedIn: boolean;
   serverDraft: DraftEnvelope<StoredRequest> | null;
+  accountPhone: string | null;
 }> {
   const prefill = parsePrefill(params);
   const prefilled = hasPrefill(prefill);
@@ -52,6 +53,7 @@ async function loadForm(params: SearchParams): Promise<{
     today: isoToday(new Date()),
     signedIn: context !== null,
     serverDraft,
+    accountPhone: context?.profile?.phone ?? null,
   };
 }
 
@@ -60,7 +62,7 @@ export default async function Page({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { initial, prefilled, today, signedIn, serverDraft } = await loadForm(await searchParams);
+  const { initial, prefilled, today, signedIn, serverDraft, accountPhone } = await loadForm(await searchParams);
   const c = requestsCopy.form;
 
   return (
@@ -86,6 +88,7 @@ export default async function Page({
           today={today}
           signedIn={signedIn}
           serverDraft={serverDraft}
+          accountPhone={accountPhone}
         />
       </section>
     </div>

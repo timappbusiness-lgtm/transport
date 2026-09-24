@@ -1,23 +1,26 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { uploadEvidenceAction, type UploadState } from '@/app/cont/transporturi/actions';
-import { FormError } from '@/components/auth/form';
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { buttonClasses } from '@/components/ui/button';
+import { UploadLine } from '@/components/ui/upload-line';
+import { uploadRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
-import { FAILURE_MESSAGES, failureKind } from '@/lib/continuity/network';
-import {
-  dropPending,
-  keepPending,
-  listPending,
-  pendingScope,
-  type PendingUpload,
-} from '@/lib/continuity/pending-uploads';
-import { announceSessionExpired } from '@/lib/continuity/session-store';
 import { shrinkPhoto } from '@/lib/photo-shrink';
 import { MAX_EDGE_PX, canResizeInBrowser, scaleToFit } from '@/lib/photo-upload';
+import { SEND_ERROR_MESSAGES, SendError, postUpload } from '@/lib/uploads/transport';
+import { useUploadQueue } from '@/lib/uploads/use-upload-queue';
 
 const c = ordersCopy.capture;
+
+/**
+ * Where a photograph waits on the phone: the order and the kind of shot.
+ * The same shape the first version of this screen used, so photographs
+ * it kept before this one existed are still found and sent.
+ */
+export function captureScope(orderId: string, kind: string): string {
+  return `${orderId}:${kind}`;
+}
 
 /**
  * Four photographs, one at a time, camera first.
@@ -28,18 +31,16 @@ const c = ordersCopy.capture;
  * photograph is uploaded as it is taken rather than all four at the
  * end, so a signal that drops halfway costs one retry and not the set.
  *
- * Nothing is ever lost to a failed upload, and now not to a reload
- * either. A photograph is drawn down to size (a camera file is several
- * megabytes, over the limit a request may carry), kept in IndexedDB the
- * moment it is taken, and removed from there only when the server has
- * it. A failure keeps it and offers „Trimite din nou", which sends the
- * same photograph — before, the button reopened the camera and the shot
- * had to be taken again. A page opened with photographs still waiting
- * says so and sends them on request.
+ * Nothing is lost to a failed upload, a reload or a closed tab. A
+ * photograph is drawn down to size, kept in IndexedDB the moment it is
+ * taken (`useUploadQueue`), and removed from there only when the server
+ * has it. Each one shows its own state and progress; a failure keeps it
+ * with „Trimite din nou", which sends the same photograph under the same
+ * id — so a retry after a lost answer finds the row the first attempt
+ * made instead of adding a fifth photograph. A page opened with
+ * photographs still waiting says so and sends them on request.
  *
- * The count comes from the server alone. It used to add the upload's
- * own tally to a count the page had already refreshed, so one
- * photograph advanced the prompts by two.
+ * The count comes from the server alone.
  */
 export function PhotoCapture({
   orderId,
@@ -56,100 +57,52 @@ export function PhotoCapture({
   /** Shown once the set is complete. */
   done?: React.ReactNode;
 }) {
-  const scope = pendingScope(orderId, kind);
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  /** Taken and not yet on the server: in memory, and in IndexedDB when it can. */
-  const [waiting, setWaiting] = useState<PendingUpload[]>([]);
-  /** Found in IndexedDB on arrival, from an earlier visit. */
-  const [fromBefore, setFromBefore] = useState(false);
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null);
   const [geoAsked, setGeoAsked] = useState(false);
   const [geoDenied, setGeoDenied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const have = count;
+  const queue = useUploadQueue({
+    scope: captureScope(orderId, kind),
+    // Photographs from an earlier visit wait for „Trimite-le acum": the
+    // driver may be at another car by now.
+    autoResume: false,
+    send: async (file, onProgress) => {
+      const form = new FormData();
+      form.set('id', file.id);
+      form.set('order_id', orderId);
+      form.set('kind', kind);
+      if (typeof file.meta.lat === 'number' && typeof file.meta.lng === 'number') {
+        form.set('lat', String(file.meta.lat));
+        form.set('lng', String(file.meta.lng));
+      }
+      form.set('photo', new File([file.blob], file.name, { type: file.type }));
+      const answer = await postUpload<{ id?: string }>(uploadRoute('dovada'), form, onProgress);
+      if (typeof answer.id !== 'string') throw new SendError('server', SEND_ERROR_MESSAGES.server);
+      return { id: answer.id };
+    },
+    onUploaded: () => router.refresh(),
+  });
+
+  const pending = queue.items.filter((item) => item.status !== 'uploaded');
+  const restored = pending.filter((item) => item.restored && item.status === 'waiting');
+  const have = Math.min(count + pending.length - restored.length, prompts.length);
   const total = prompts.length;
-  const complete = have >= total;
-
-  useEffect(() => {
-    let cancelled = false;
-    listPending(scope).then((found) => {
-      if (cancelled || found.length === 0) return;
-      setWaiting(found);
-      setFromBefore(true);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [scope]);
-
-  /** One photograph to the server; true when it arrived. */
-  async function send(item: PendingUpload): Promise<boolean> {
-    const data = new FormData();
-    data.set('order_id', orderId);
-    data.set('kind', kind);
-    if (geo !== null) {
-      data.set('lat', String(geo.lat));
-      data.set('lng', String(geo.lng));
-    }
-    data.set('photo', new File([item.blob], item.name, { type: item.type }));
-
-    let result: UploadState;
-    try {
-      result = await uploadEvidenceAction({}, data);
-    } catch (thrown) {
-      const failure = failureKind(thrown);
-      if (failure === null) throw thrown;
-      if (failure === 'session') announceSessionExpired();
-      setError(FAILURE_MESSAGES[failure]);
-      return false;
-    }
-    if (result.error !== undefined || (result.saved ?? 0) === 0) {
-      setError(result.error ?? FAILURE_MESSAGES.server);
-      return false;
-    }
-    await dropPending(item.id);
-    return true;
-  }
-
-  /** Everything waiting, oldest first; stops at the first failure. */
-  async function sendAll(queue: PendingUpload[]) {
-    setBusy(true);
-    setError(null);
-    const left = [...queue];
-    while (left.length > 0) {
-      const ok = await send(left[0]!);
-      if (!ok) break;
-      left.shift();
-    }
-    setWaiting(left);
-    if (left.length === 0) setFromBefore(false);
-    setBusy(false);
-  }
+  const complete = count >= total;
 
   async function taken(file: File | undefined) {
     if (file === undefined) return;
     if (inputRef.current !== null) inputRef.current.value = '';
     setBusy(true);
-    const small = await shrinkPhoto(file);
-    const item: PendingUpload = {
-      id: crypto.randomUUID(),
-      scope,
-      blob: small,
-      name: small.name,
-      type: small.type,
-      createdAt: Date.now(),
-    };
-    await keepPending(item);
-    await sendAll([...waiting, item]);
-  }
-
-  async function discard() {
-    for (const item of waiting) await dropPending(item.id);
-    setWaiting([]);
-    setFromBefore(false);
-    setError(null);
+    try {
+      // Drawn down first: what is kept on the phone is what is sent.
+      const small = await shrinkPhoto(file);
+      queue.add([small], geo === null ? {} : { lat: geo.lat, lng: geo.lng });
+    } finally {
+      setBusy(false);
+    }
   }
 
   /**
@@ -190,26 +143,40 @@ export function PhotoCapture({
           <li
             key={prompt}
             aria-label={prompt}
-            className={`h-1.5 flex-1 rounded-pill ${index < have ? 'bg-success' : 'bg-border'}`}
+            className={`h-1.5 flex-1 rounded-pill ${index < count ? 'bg-success' : index < have ? 'bg-border-strong' : 'bg-border'}`}
           />
         ))}
       </ol>
 
-      {fromBefore && waiting.length > 0 && !busy && error === null ? (
-        <div data-photo-waiting={waiting.length} className="rounded-input border border-border bg-ground-alt p-3">
-          <p className="text-body">{c.waiting(waiting.length)}</p>
+      {restored.length > 0 ? (
+        <div data-photo-waiting={restored.length} className="rounded-input border border-border bg-ground-alt p-3">
+          <p className="text-body">{c.waiting(restored.length)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <button type="button" onClick={() => void sendAll(waiting)} className={buttonClasses('primary', 'sm')}>
+            <button type="button" onClick={queue.resume} className={buttonClasses('primary', 'sm')}>
               {c.sendWaiting}
             </button>
             <button
               type="button"
-              onClick={() => void discard()}
+              onClick={() => restored.forEach((item) => queue.discard(item.id))}
               className="text-small text-muted underline underline-offset-4"
             >
               {c.discardWaiting}
             </button>
           </div>
+        </div>
+      ) : null}
+
+      {pending.length > 0 ? (
+        <div className="flex flex-col gap-2" data-photo-queue={pending.length}>
+          {pending.map((item) => (
+            <UploadLine
+              key={item.id}
+              item={item}
+              preview={queue.previewOf(item.id)}
+              onRetry={queue.retry}
+              onDiscard={queue.discard}
+            />
+          ))}
         </div>
       ) : null}
 
@@ -254,27 +221,6 @@ export function PhotoCapture({
       ) : (
         done
       )}
-
-      {error !== null && !busy ? (
-        <div data-photo-failed={waiting.length} className="rounded-input border border-danger/40 bg-danger/8 p-3">
-          <FormError>{error}</FormError>
-          <p className="mt-1 text-small text-muted">{c.failed}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            {waiting.length > 0 ? (
-              <button type="button" onClick={() => void sendAll(waiting)} className={buttonClasses('secondary', 'sm')}>
-                {c.retry}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="text-small text-muted underline underline-offset-4"
-            >
-              {c.retake}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

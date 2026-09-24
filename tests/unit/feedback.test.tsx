@@ -181,7 +181,9 @@ describe('toasts', () => {
     const forms = walk(join(ROOT, 'src/components')).filter((f) =>
       read(f.slice(ROOT.length + 1)).includes('useActionToast(state)'),
     );
-    expect(forms.length).toBeGreaterThanOrEqual(5);
+    // Four since the documents screen replaced DocumentUpload: each file
+    // there says its own state on its row, which a toast would only repeat.
+    expect(forms.length).toBeGreaterThanOrEqual(4);
     for (const file of forms) {
       const source = read(file.slice(ROOT.length + 1));
       expect(source, file).toContain('<FormError>{state.error}</FormError>');

@@ -16,7 +16,6 @@ import { describe, expect, it, vi } from 'vitest';
  */
 
 vi.mock('@/app/cerere/import-actions', () => ({
-  uploadRequestPhotoAction: async () => ({ ok: false }),
   removeRequestPhotoAction: async () => {},
 }));
 

@@ -12905,6 +12905,40 @@ select pg_temp.check('DRF  and a deleted account takes its drafts with it', 'fix
   p_after => $s$delete from auth.users where id = 'f0000000-0000-0000-0000-0000000000d1'$s$,
   p_verify => $v$select count(*) = 0 from public.form_drafts where user_id = 'f0000000-0000-0000-0000-0000000000d1'$v$);
 
+-- =====================================================================
+-- SLT - câte mașini încap pe un vehicul (20261008100000)
+--
+-- The number a carrier gives at sign-up, kept on the vehicle. The
+-- vehicles table's own policies decide who writes it; the check decides
+-- what can be written.
+-- =====================================================================
+
+select pg_temp.check('SLT  a carrier says how many cars fit on a vehicle it adds', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, platform_slots)
+     values ('fc000000-0000-0000-0000-000000000001', 'B200LOC', 'platforma_auto', 8)$a$,
+  'allowed');
+
+select pg_temp.check('SLT  but not none', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, platform_slots)
+     values ('fc000000-0000-0000-0000-000000000001', 'B201LOC', 'platforma_auto', 0)$a$,
+  'blocked');
+
+select pg_temp.check('SLT  nor a number no car transporter has', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$insert into public.vehicles (company_id, plate_number, vehicle_type, platform_slots)
+     values ('fc000000-0000-0000-0000-000000000001', 'B202LOC', 'platforma_auto', 40)$a$,
+  'blocked');
+
+select pg_temp.check('SLT  nor on another firm''s vehicle', 'guard',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$update public.vehicles set platform_slots = 5 where plate_number = 'B203LOC'$a$,
+  'blocked',
+  p_setup => $s$insert into public.vehicles (company_id, plate_number, vehicle_type)
+                values ('fc000000-0000-0000-0000-000000000001', 'B203LOC', 'platforma_auto')$s$,
+  p_verify => $v$select platform_slots is null from public.vehicles where plate_number = 'B203LOC'$v$);
+
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
               count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),

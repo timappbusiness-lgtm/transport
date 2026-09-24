@@ -32,7 +32,6 @@ vi.mock('@/app/draft-actions', () => ({
 vi.mock('@/app/cerere/import-actions', () => ({
   previewRequestPhotosAction: async () => ({}),
   attachListingPhotoAction: async () => ({ ok: false }),
-  uploadRequestPhotoAction: async () => ({ ok: false }),
   removeRequestPhotoAction: async () => {},
   extractFromLinkAction: async () => ({ ok: false }),
   extractFromPhotoAction: async () => ({ ok: false }),

@@ -242,11 +242,14 @@ A new screen follows these:
    actions. The notice with that link comes with `KeepingForm` and the
    `/cont` and `/admin` shells — never the root layout, where one more
    client component left the 404 page blank one load in a few hundred.
-7. **An upload that fails keeps the file** and offers „Încearcă din nou";
-   a retry does not upload twice. Photos are drawn down with
-   `shrinkPhoto` before a server action (4 MB ceiling); a photo taken in
-   the field goes through IndexedDB (`pending-uploads.ts`) until the
-   server has it.
+7. **Every upload goes through `useUploadQueue`** (`src/lib/uploads/`):
+   the file is in IndexedDB from the moment it is chosen until the server
+   confirms it, each file shows its state with `UploadLine`, and a
+   failure keeps it with „Încearcă din nou". The file is sent under an id
+   chosen once on the device and the object path and row id come from
+   it, so a retry or a reload never stores it twice. Photos the server
+   re-encodes go through `/api/incarcare/[tip]`; photos are drawn down
+   with `shrinkPhoto` first (4 MB ceiling).
 8. **A list's filters, sort and page are in the address**, and a link that
    changes one keeps the others (`withParam`). A detail page links back to
    its board with `BackToBoard`. An e-mail links to the exact place — the

@@ -3,19 +3,19 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { removeRouteAction } from '@/app/cont/fleet-actions';
 import { DocumentHistory, type HistoryRow } from '@/components/account/document-history';
-import { DocumentUpload } from '@/components/account/document-upload';
 import { AddRouteForm, EditVehicleForm, type VehicleSpecs } from '@/components/account/fleet-forms';
-import { RequirementList, type RequirementRow } from '@/components/account/requirement-list';
 import { EyebrowPill, StatusBadge } from '@/components/ui/primitives';
+import { buttonClasses } from '@/components/ui/button';
+import { inscriereCopy } from '@/content/inscriere';
+import { countChecklist, progressLabel } from '@/lib/document-checklist';
+import { isRequirementState } from '@/lib/documents';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireAccountContext } from '@/lib/auth/account';
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/lib/supabase/database.types';
 import { COUNTRY_OPTIONS, VEHICLE_TYPE_LABELS, formatPlate } from '@/lib/vehicles';
 import { KeepingForm } from '@/components/ui/keeping-form';
 
-type DocumentKind = Database['public']['Enums']['document_kind'];
 
 export const metadata: Metadata = { title: 'Vehicul' };
 
@@ -86,15 +86,18 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
   const vehicle = vehicleResult.data as Vehicle | null;
   if (!vehicle) notFound();
 
-  const requirements = (requirementsResult.data ?? []) as RequirementRow[];
+  // The documents themselves are on the one documents screen; here, how
+  // far along they are and the way there.
+  const counts = countChecklist(
+    (requirementsResult.data ?? []).flatMap((row) =>
+      isRequirementState(row.state) ? [{ isBlocking: row.is_blocking === true, state: row.state }] : [],
+    ),
+  );
   const labels = Object.fromEntries(
     ((labelsResult.data ?? []) as { kind: string; label_ro: string }[]).map((row) => [
       row.kind,
       row.label_ro,
     ]),
-  );
-  const kinds = requirements.flatMap((row) =>
-    row.kind && row.label_ro ? [{ kind: row.kind as DocumentKind, label: row.label_ro }] : [],
   );
   const routes = (routesResult.data ?? []) as RouteRow[];
   const c = accountCopy.fleet;
@@ -130,12 +133,15 @@ export default async function Page({ params }: { params: Promise<{ vehicleId: st
         <div className="flex flex-col gap-6">
           <section className="rounded-card border border-border bg-surface p-5">
             <h2 className="text-body font-medium">{c.vehicleDocuments}</h2>
-            <div className="mt-3">
-              <RequirementList rows={requirements} />
-            </div>
-            <div className="mt-5 border-t border-border pt-5">
-              <DocumentUpload companyId={company.id} vehicleId={vehicleId} kinds={kinds} />
-            </div>
+            <p className="mt-2 text-body text-muted" data-vehicle-documents>
+              {counts.blockingTotal > 0 ? progressLabel(counts) : inscriereCopy.documents.allBlocking}
+            </p>
+            <Link
+              href={`${ROUTES.accountDocuments}?vehicul=${vehicleId}`}
+              className={`${buttonClasses('primary', 'sm')} mt-4`}
+            >
+              {inscriereCopy.vehicles.documentsFor}
+            </Link>
           </section>
 
           <section className="rounded-card border border-border bg-surface p-5">

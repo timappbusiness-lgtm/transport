@@ -109,10 +109,10 @@ export type IndividualSignUpField = 'fullName' | 'email' | 'password' | 'phone' 
  * `phone_is_on_file` and `phone_verified` in the database for the two
  * different bars and which action each one guards.
  *
- * `requirePhone` is false for a company sign-up: the firm's number comes
- * from its ANAF record and its profile, and asking the person who happens
- * to be registering for their own mobile would be collecting a personal
- * detail we have no use for.
+ * `requirePhone` is set for both kinds of account. A firm's sign-up used
+ * to skip it and ask for the firm's number later, on the firm's form; the
+ * shortened carrier journey asks once, here, and offers this number as
+ * the firm's contact on the next step instead of asking again.
  */
 export function validateIndividualSignUp(input: {
   fullName: string;

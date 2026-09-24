@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES, vehicleRoute } from '@/config/routes';
 import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
-import { doneUrl } from '@/lib/continuity/drafts';
 import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import {
   ACCEPTED_DOCUMENT_TYPES,
@@ -102,18 +101,37 @@ function readSpecs(formData: FormData): Specs {
 // Vehicles
 // ---------------------------------------------------------------------
 
+export interface VehicleState extends ActionState {
+  /** The vehicle just added: the form stays, empty, for the next one. */
+  created?: { id: string; plate: string };
+}
+
+/**
+ * „Câte mașini încap": a whole number between 1 and 15, or nothing. The
+ * database refuses anything else (`vehicles_platform_slots_ck`); this is
+ * the sentence before the refusal.
+ */
+function slots(formData: FormData): number | null | 'invalid' {
+  const raw = text(formData, 'platform_slots');
+  if (raw === null) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 1 && value <= 15 ? value : 'invalid';
+}
+
 export async function createVehicleAction(
-  _prev: ActionState,
+  _prev: VehicleState,
   formData: FormData,
-): Promise<ActionState> {
+): Promise<VehicleState> {
   const { context, company } = await requireCompany();
 
   const plate = normalizePlate(String(formData.get('plate_number') ?? ''));
   const type = String(formData.get('vehicle_type') ?? '') as VehicleType;
   const { values, fieldErrors } = readSpecs(formData);
+  const platformSlots = slots(formData);
 
   if (plate.length < 4) fieldErrors.plate_number = 'Număr de înmatriculare invalid.';
   if (!VEHICLE_TYPE_ORDER.includes(type)) fieldErrors.vehicle_type = 'Alege tipul vehiculului.';
+  if (platformSlots === 'invalid') fieldErrors.platform_slots = 'Scrie un număr între 1 și 15.';
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
   const supabase = await createClient();
@@ -124,6 +142,7 @@ export async function createVehicleAction(
       plate_number: plate,
       vehicle_type: type,
       vin: text(formData, 'vin')?.toUpperCase() ?? null,
+      platform_slots: platformSlots === 'invalid' ? null : platformSlots,
       ...values,
     })
     .select('id')
@@ -139,9 +158,13 @@ export async function createVehicleAction(
   }
 
   revalidatePath(ROUTES.accountFleet);
-  // The vehicle exists: the form's draft goes, here and in the browser.
+  revalidatePath(ROUTES.accountDocuments);
+  // The vehicle exists: the form's draft goes on the account here, and in
+  // the browser when the form reads `created`. The person stays, with an
+  // empty form, for „Adaugă încă un vehicul" — the documents are asked for
+  // later, when they want something that needs them.
   await deleteServerDraft(context.user.id, 'vehicul');
-  redirect(doneUrl(vehicleRoute(data.id), 'vehicul'));
+  return { created: { id: data.id, plate }, notice: `${plate} a fost adăugat.` };
 }
 
 export async function updateVehicleAction(
@@ -259,12 +282,17 @@ export interface RegisterDocumentInput {
 }
 
 /**
- * Called after the browser has uploaded the file into the company's folder.
+ * Registers a document whose file is already in the bucket.
  *
- * The row lands as 'uploaded' whatever this sends — a database trigger sees
- * to that — and only `review_document()` can approve it. The size and type
- * check here is a courtesy that produces a readable message; the storage
- * policies enforce the real limits.
+ * Idempotent on the document id, which the device chose once and sends on
+ * every attempt: a retry after a lost answer finds the row the first
+ * attempt made (`documents_pkey`) and reports success instead of a
+ * duplicate. The bucket's and the table's own policies enforce the real
+ * limits; this is the readable sentence before them.
+ *
+ * Reading the document with AI is a separate call (`readDocumentAction`),
+ * made by the screen once this answers: the file is safe and counted the
+ * moment it is registered, whatever the model then does.
  */
 export async function registerDocumentAction(
   input: RegisterDocumentInput,
@@ -291,22 +319,20 @@ export async function registerDocumentAction(
     uploaded_by: context.user.id,
   });
 
-  if (error) return { error: toAppError(error, 'documents.register').message };
-
-  // Reading the document with AI only pre-fills the reviewer's form. If it
-  // is unavailable the document still goes to review and the reviewer types
-  // the dates, so this failure is reported but never blocks the upload.
-  const { error: parseError } = await supabase.functions.invoke('parse-document', {
-    body: { document_id: input.documentId },
-  });
+  // The same id twice is the same document: the first attempt got through
+  // and only its answer was lost — when the row is this firm's own. An id
+  // that collides with anything else is refused, not reported as saved.
+  if (error) {
+    const again =
+      error.code === '23505' && /documents_pkey/.test(error.message)
+        ? await supabase.from('documents').select('id').eq('id', input.documentId).eq('company_id', company.id).maybeSingle()
+        : { data: null };
+    if (!again.data) return { error: toAppError(error, 'documents.register').message };
+  }
 
   revalidatePath(ROUTES.accountDocuments);
   revalidatePath(ROUTES.account);
   if (input.vehicleId) revalidatePath(vehicleRoute(input.vehicleId));
 
-  return {
-    notice: parseError
-      ? 'Document încărcat. Îl verificăm și îți confirmăm data de expirare.'
-      : 'Document încărcat și citit automat. Urmează verificarea de către echipa platformei.',
-  };
+  return { notice: 'Document încărcat. Urmează verificarea de către echipa platformei.' };
 }

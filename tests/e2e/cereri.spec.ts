@@ -77,7 +77,10 @@ test.describe('the steps', () => {
     await expect(page.getByRole('radio', { name: 'Standard' })).toBeChecked();
     await page.getByRole('button', { name: 'Continuă' }).click();
 
-    await expect(page.getByLabel('Telefon')).toBeVisible();
+    // Nobody is signed in: the name, the number and the address are asked
+    // once, on the account form, not here and then again there.
+    await expect(page.locator('[data-contact-from-account]')).toBeVisible();
+    await expect(page.getByLabel('Telefon')).toHaveCount(0);
     // Nobody is signed in, so there is no publish button — an account is
     // offered instead, and the wording says what is already saved.
     await expect(page.getByRole('button', { name: 'Publică cererea' })).toHaveCount(0);
@@ -114,6 +117,7 @@ test.describe('the steps', () => {
     await fillVehicle(page);
 
     await expect(page.getByLabel('Ce este avariat')).toHaveCount(0);
+    await page.locator('[data-optional="masina"] > summary').click();
     await page.getByLabel('Are avarii').check();
     await expect(page.getByLabel('Ce este avariat')).toBeVisible();
   });

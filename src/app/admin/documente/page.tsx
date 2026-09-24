@@ -45,7 +45,7 @@ async function load(): Promise<{ documents: PendingDocument[]; companies: Pendin
     supabase
       .from('documents')
       .select(
-        'id, kind, scope, valid_until, created_at, company:companies(legal_name), vehicle:vehicles(plate_number)',
+        'id, kind, scope, valid_until, extracted, file_path, created_at, company:companies(legal_name), vehicle:vehicles(plate_number)',
       )
       .in('status', ['uploaded', 'parsing', 'pending'])
       .order('created_at', { ascending: true })
@@ -76,7 +76,21 @@ async function load(): Promise<{ documents: PendingDocument[]; companies: Pendin
     (reqResult.data ?? []).map((row) => [`${row.scope}:${row.kind}`, row]),
   );
 
-  const documents: PendingDocument[] = (docsResult.data ?? []).map((row) => {
+  // The file itself, for the reviewer to look at: the bucket is private,
+  // so a link that works for a quarter of an hour. Storage lets a platform
+  // admin read the bucket; anyone else gets no link rather than an error.
+  const rows = docsResult.data ?? [];
+  const paths = rows.map((row) => row.file_path).filter((path): path is string => typeof path === 'string');
+  const signed = new Map<string, string>();
+  if (paths.length > 0) {
+    const { data, error } = await supabase.storage.from('documents').createSignedUrls(paths, 15 * 60);
+    if (error) console.error('[admin/documente] signed urls failed', { message: error.message });
+    for (const entry of data ?? []) {
+      if (entry.path && entry.signedUrl) signed.set(entry.path, entry.signedUrl);
+    }
+  }
+
+  const documents: PendingDocument[] = rows.map((row) => {
     const requirement = requirements.get(`${row.scope}:${row.kind}`);
     const company = Array.isArray(row.company) ? row.company[0] : row.company;
     const vehicle = Array.isArray(row.vehicle) ? row.vehicle[0] : row.vehicle;
@@ -85,6 +99,8 @@ async function load(): Promise<{ documents: PendingDocument[]; companies: Pendin
       kind: row.kind,
       scope: row.scope,
       valid_until: row.valid_until,
+      declared: declaredDate(row.extracted),
+      fileUrl: row.file_path ? (signed.get(row.file_path) ?? null) : null,
       created_at: row.created_at,
       companyName: company?.legal_name ?? '—',
       plate: vehicle?.plate_number ?? null,
@@ -123,4 +139,10 @@ async function load(): Promise<{ documents: PendingDocument[]; companies: Pendin
   );
 
   return { documents, companies };
+}
+
+/** The date the firm confirmed when it uploaded, kept beside what the model read. */
+function declaredDate(extracted: unknown): string | null {
+  const declared = (extracted as { declared?: { valid_until?: unknown } } | null)?.declared?.valid_until;
+  return typeof declared === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(declared) ? declared : null;
 }

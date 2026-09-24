@@ -85,7 +85,7 @@ function SignUpForm({
 }: {
   action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState>;
   copy: typeof authCopy.individualSignUp | typeof authCopy.companySignUp;
-  /** A private person is asked for a number; a firm's comes from its profile. */
+  /** Both are asked for a number now: it is the one a client or a carrier rings. */
   withPhone?: boolean;
   /** Where the confirmation link should come back to. */
   next?: string;
@@ -114,12 +114,12 @@ function SignUpForm({
       />
       {withPhone ? (
         <Field
-          label={authCopy.individualSignUp.phone}
+          label={copy.phone}
           name="phone"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
-          hint={authCopy.individualSignUp.phoneHint}
+          hint={copy.phoneHint}
           defaultValue={state.values?.phone}
           error={state.fieldErrors?.phone}
         />
@@ -150,7 +150,7 @@ export function IndividualSignUpForm({ next = '' }: { next?: string }) {
 }
 
 export function CompanySignUpForm({ next = '' }: { next?: string }) {
-  return <SignUpForm action={signUpCompanyAction} copy={authCopy.companySignUp} next={next} />;
+  return <SignUpForm action={signUpCompanyAction} copy={authCopy.companySignUp} withPhone next={next} />;
 }
 
 export function ResendConfirmationForm({ email, next = '' }: { email: string; next?: string }) {

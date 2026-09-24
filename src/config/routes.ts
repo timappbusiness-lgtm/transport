@@ -109,17 +109,6 @@ export type Route = (typeof ROUTES)[RouteKey];
  * One vehicle's page. A function rather than an entry in ROUTES, which
  * holds literal paths so `Route` stays a union of strings.
  */
-/**
- * One document of the company file, on its own screen.
- *
- * The kind is the enum value, which is already URL-safe and is what the
- * page looks the requirement up by — a slug would be a second name for
- * the same thing and a second place to keep them in step.
- */
-export function companyDocumentRoute(kind: string): string {
-  return `${ROUTES.accountDocuments}/${kind}`;
-}
-
 export function vehicleRoute(vehicleId: string): string {
   return `${ROUTES.accountFleet}/${vehicleId}`;
 }
@@ -180,3 +169,12 @@ export const UNBUILT_ROUTES: readonly Route[] = [] as const;
 // real page now. `PlaceholderPage` stays for the next route that needs a
 // stub — the mechanism is what keeps a link in the footer from being a
 // 404, and rebuilding it later costs more than leaving it.
+
+/**
+ * Where the browser posts a photograph the server re-encodes (EXIF gone)
+ * before storing: a request's photos, a driver's evidence, a message's
+ * images. One route per kind, `src/app/api/incarcare/[tip]/route.ts`.
+ */
+export function uploadRoute(kind: 'poza-cerere' | 'dovada' | 'atasament'): string {
+  return `/api/incarcare/${kind}`;
+}

@@ -11,6 +11,10 @@ export interface PendingDocument {
   kind: string;
   scope: string;
   valid_until: string | null;
+  /** What the firm said the date is, when it uploaded. */
+  declared: string | null;
+  /** A short-lived link to the file, or null when none could be made. */
+  fileUrl: string | null;
   created_at: string;
   companyName: string;
   plate: string | null;
@@ -67,11 +71,24 @@ export function ReviewQueue({
                     ? `${c.documents.extracted}: ${formatDateRo(doc.valid_until)}`
                     : c.documents.noExtracted}
                 </p>
+                {doc.declared ? (
+                  <p className="mt-1 font-mono text-small text-muted" data-declared-date>
+                    {c.documents.declared}: {formatDateRo(doc.declared)}
+                    {doc.valid_until && doc.valid_until !== doc.declared ? ` — ${c.documents.differs}` : ''}
+                  </p>
+                ) : null}
+                {doc.fileUrl ? (
+                  <p className="mt-2">
+                    <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="text-small underline underline-offset-4" data-document-file>
+                      {c.documents.open}
+                    </a>
+                  </p>
+                ) : null}
                 <div className="mt-4">
                   <DocumentReview
                     documentId={doc.id}
                     hasExpiry={doc.hasExpiry}
-                    extractedValidUntil={doc.valid_until}
+                    extractedValidUntil={doc.valid_until ?? doc.declared}
                   />
                 </div>
               </li>

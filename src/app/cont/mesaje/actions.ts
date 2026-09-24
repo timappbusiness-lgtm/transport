@@ -4,9 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { requireAccountContext } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
-import { normaliseImage } from '@/lib/listing-image';
-import { MAX_ATTACHMENTS, validateAttachment, validateMessage } from '@/lib/messages';
+import { validateMessage } from '@/lib/messages';
 import { createClient } from '@/lib/supabase/server';
+import { isDuplicateRow, isUuid } from '@/lib/uploads/paths';
 
 export interface MessageState {
   error?: string;
@@ -14,6 +14,8 @@ export interface MessageState {
   fieldErrors?: Record<string, string>;
   /** The message went out: the composer can be emptied. */
   sent?: boolean;
+  /** Its id, for the images that follow it. */
+  messageId?: string;
 }
 
 function text(formData: FormData, name: string): string {
@@ -26,15 +28,18 @@ function refresh(conversationId?: string) {
 }
 
 /**
- * Trimiterea unui mesaj, cu imaginile lui.
+ * Trimiterea unui mesaj. Imaginile lui urcă după, una câte una.
  *
  * Mesajul întâi, atașamentele după: dacă o imagine cade, textul a ajuns
  * deja, ceea ce este ordinea bună. Invers ar însemna imagini orfane în
- * bucket după fiecare eroare de rețea.
+ * bucket după fiecare eroare de rețea. Imaginile merg prin
+ * `/api/incarcare/atasament`, fiecare cu progresul ei și păstrată pe
+ * dispozitiv până ajunge, legată de mesaj prin `message_id`.
  *
- * Imaginile se re-codează pe server, ca peste tot: EXIF-ul dispare, nu
- * pentru că formularul a cerut-o, ci pentru că funcția asta o face
- * întotdeauna.
+ * Id-ul mesajului îl alege dispozitivul, o dată. O a doua apăsare după un
+ * răspuns pierdut găsește mesajul pe care l-a făcut prima și îl ia drept
+ * trimis — înainte, a doua apăsare se lovea de garda de mesaj repetat, iar
+ * imaginile nu mai ajungeau niciodată.
  */
 export async function sendMessageAction(
   _previous: MessageState,
@@ -47,51 +52,29 @@ export async function sendMessageAction(
   const body = text(formData, 'body');
   if (conversationId === '') return { error: 'Lipsește conversația.' };
 
-  const files = formData
-    .getAll('attachments')
-    .filter((f): f is File => f instanceof File && f.size > 0)
-    .slice(0, MAX_ATTACHMENTS);
+  const given = text(formData, 'message_id');
+  const messageId = isUuid(given) ? given : crypto.randomUUID();
+  const attachments = Math.max(0, Math.trunc(Number(text(formData, 'attachment_count')) || 0));
 
-  const problem = validateMessage(body, files.length);
+  const problem = validateMessage(body, attachments);
   if (problem !== null) return { fieldErrors: { body: problem } };
 
-  for (const file of files) {
-    const bad = validateAttachment(file);
-    if (bad !== null) return { fieldErrors: { attachments: bad } };
-  }
-
   const supabase = await createClient();
-  // Mesajul întâi, imaginile după. Dacă o imagine cade, textul a ajuns
-  // deja — ordinea inversă ar lăsa fișiere orfane în bucket după fiecare
-  // eroare de rețea.
-  const { data: inserted, error } = await supabase
+  const { error } = await supabase
     .from('messages')
-    .insert({ conversation_id: conversationId, sender_user_id: userId, body })
-    .select('id')
-    .single();
+    .insert({ id: messageId, conversation_id: conversationId, sender_user_id: userId, body });
 
-  if (error) return { error: toAppError(error, 'mesaje.send').message };
-
-  for (const [index, file] of files.entries()) {
-    const buffer = await normaliseImage(Buffer.from(await file.arrayBuffer()));
-    const path = `${conversationId}/${inserted.id}-${index}.jpg`;
-    const upload = await supabase.storage
-      .from('message-attachments')
-      .upload(path, buffer, { contentType: 'image/jpeg', upsert: false });
-    if (upload.error) {
-      return { error: toAppError(upload.error, 'mesaje.upload').message };
-    }
-    const { error: rowError } = await supabase.from('message_attachments').insert({
-      message_id: inserted.id,
-      conversation_id: conversationId,
-      file_path: path,
-      uploaded_by: userId,
-    });
-    if (rowError) return { error: toAppError(rowError, 'mesaje.attach').message };
+  if (error) {
+    // Already there under this id: the first press got through and only
+    // its answer was lost.
+    const { data: existing } = isDuplicateRow(error)
+      ? await supabase.from('messages').select('id').eq('id', messageId).eq('sender_user_id', userId).maybeSingle()
+      : { data: null };
+    if (!existing) return { error: toAppError(error, 'mesaje.send').message };
   }
 
   refresh(conversationId);
-  return { sent: true };
+  return { sent: true, messageId };
 }
 
 /** Marcarea firului ca citit. Prin RPC-ul care exista deja. */

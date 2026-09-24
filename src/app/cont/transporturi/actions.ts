@@ -5,7 +5,6 @@ import { ROUTES, transportRoute } from '@/config/routes';
 import { ordersCopy } from '@/content/comenzi';
 import { requireAccountContext } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
-import { normaliseImage } from '@/lib/listing-image';
 import { validateChecklist, type ChecklistValues } from '@/lib/orders';
 import { CONDITION_CHECKLIST } from '@/lib/orders';
 import { createClient } from '@/lib/supabase/server';
@@ -209,86 +208,13 @@ export async function addIncidentAction(
   return { notice: ordersCopy.evidence.incidentSaved };
 }
 
-export interface UploadState {
-  error?: string;
-  /** How many landed, so the capture screen can count down. */
-  saved?: number;
-}
-
-/**
- * Photographs, and the signature, which is a photograph of a kind.
- *
- * Two things happen to every file, in two places and for two different
- * reasons — the browser resizes so a driver on a Romanian mobile
- * connection is not waiting a minute, and the server re-encodes with
- * sharp because that is what actually guarantees the EXIF block is
- * gone. A phone photo's EXIF routinely holds the coordinates of where
- * it was taken, which here is somebody's address.
- *
- * Coordinates therefore never come from the file. When the driver
- * allowed location for this capture, the browser's own answer arrives
- * as two form fields and is stored in two columns, where it is visible
- * and deletable like any other data.
- */
-export async function uploadEvidenceAction(
-  _previous: UploadState,
-  formData: FormData,
-): Promise<UploadState> {
-  const context = await requireAccountContext(ROUTES.accountTransports);
-
-  const orderId = text(formData, 'order_id');
-  const kind = text(formData, 'kind');
-  const note = text(formData, 'note');
-  if (orderId === '' || kind === '') return { error: 'Lipsește comanda.' };
-
-  const files = formData.getAll('photo').filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) return { error: 'Alege cel puțin o fotografie.' };
-
-  const lat = Number(text(formData, 'lat'));
-  const lng = Number(text(formData, 'lng'));
-  const hasGeo = Number.isFinite(lat) && Number.isFinite(lng) && text(formData, 'lat') !== '';
-
-  const supabase = await createClient();
-  let saved = 0;
-
-  for (const file of files) {
-    let body: Buffer;
-    try {
-      body = await normaliseImage(Buffer.from(await file.arrayBuffer()));
-    } catch {
-      // A file sharp refuses is not a photograph, whatever it is called.
-      return { error: 'Unul dintre fișiere nu este o fotografie validă.', saved };
-    }
-
-    const id = crypto.randomUUID();
-    const path = `${orderId}/${id}.jpg`;
-    const upload = await supabase.storage
-      .from('order-evidence')
-      .upload(path, body, { contentType: 'image/jpeg', upsert: false });
-
-    if (upload.error) {
-      return { error: toAppError(upload.error, 'orders.upload').message, saved };
-    }
-
-    const { error } = await supabase.from('order_evidence').insert({
-      id,
-      order_id: orderId,
-      kind: kind as never,
-      file_path: path,
-      note: note === '' ? null : note,
-      uploaded_by: context.user.id,
-      company_id: context.activeCompany?.id ?? null,
-      lat: hasGeo ? lat : null,
-      lng: hasGeo ? lng : null,
-    });
-    if (error) return { error: toAppError(error, 'orders.evidence').message, saved };
-
-    saved += 1;
-  }
-
-  refresh(orderId);
-  return { saved };
-}
+// Photographs (pickup, delivery, the signature) go through
+// `/api/incarcare/dovada`: a route, so the phone can show the progress,
+// and idempotent on the id the phone chose, so a retry never adds a
+// second row. There, as here before, sharp re-encodes every file — the
+// EXIF block, with the coordinates of somebody's address, does not
+// survive — and coordinates come only from the browser, when the driver
+// allowed them, into two columns that can be seen and deleted.
 
 /** Staff hiding one piece of evidence, with a reason that lands in the audit. */
 export async function hideEvidenceAction(

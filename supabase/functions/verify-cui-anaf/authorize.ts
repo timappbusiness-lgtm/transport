@@ -18,6 +18,23 @@ export function normaliseCui(raw: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
+/**
+ * The CUI's last digit is a control digit: the others, right-aligned under
+ * the key 7 5 3 2 1 7 5 3 2, summed, times ten, modulo eleven (ten reads
+ * as zero). A CUI that fails it is a typo, and asking ANAF about it only
+ * spends the rate limit on a „negăsit".
+ */
+export function hasValidControlDigit(cui: number): boolean {
+  const digits = String(cui);
+  if (digits.length < 2 || digits.length > 10) return false;
+  const body = digits.slice(0, -1).padStart(9, "0");
+  const key = [7, 5, 3, 2, 1, 7, 5, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 9; i += 1) sum += Number(body[i]) * key[i]!;
+  const control = (sum * 10) % 11 % 10;
+  return control === Number(digits[digits.length - 1]);
+}
+
 export interface CompanyWriteChecks {
   /** is_company_manager(company_id), evaluated with the caller's JWT. */
   callerManages(companyId: string): Promise<boolean>;

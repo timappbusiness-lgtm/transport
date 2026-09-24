@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CarrierBanner } from '@/components/onboarding/carrier-banner';
+import { JourneyBanner } from '@/components/onboarding/journey-banner';
 import { DepartureCard } from '@/components/departures/departure-card';
 import { FiltersForm } from '@/components/departures/filters-form';
 import { SavedSearchButton } from '@/components/departures/saved-search-button';
@@ -24,7 +24,7 @@ import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { EmptyState as EmptyCard } from '@/components/ui/empty-state';
 import { DEPARTURE_SORTS, SORT_KEY, parseSort } from '@/lib/board-simplicity';
 import { sortDepartures } from '@/lib/board-sort';
-import { carrierStage } from '@/lib/carrier-onboarding';
+import { loadJourney } from '@/lib/journey-source';
 import { RememberBoard } from '@/components/continuity/board-memory';
 
 export const metadata: Metadata = {
@@ -63,18 +63,7 @@ export default async function Page({
   // The same sentence as on /cereri, for the same reason: a carrier who
   // has just signed up is on a board, not on a form, and this is where
   // the remaining step has to be said.
-  const company = context?.activeCompany ?? null;
-  const stage =
-    context?.profile?.account_type === 'company'
-      ? carrierStage(
-          company === null
-            ? null
-            : {
-                verificationStatus: company.verification_status,
-                isSuspended: company.is_suspended,
-              },
-        )
-      : 'ready';
+  const journey = context?.profile?.account_type === 'company' ? await loadJourney(context) : null;
 
   return (
     <div className="mx-auto w-full max-w-[72rem] px-[clamp(16px,4vw,56px)] py-10 sm:py-14">
@@ -87,7 +76,9 @@ export default async function Page({
       </header>
 
       <div className="mt-8 flex flex-col gap-8">
-        {stage === 'ready' ? null : <CarrierBanner stage={stage} />}
+        {journey !== null && journey.stage !== 'verified' ? (
+          <JourneyBanner stage={journey.stage} minutes={journey.minutes} back={ROUTES.routes} />
+        ) : null}
 
         <aside className="rounded-card border border-border bg-surface p-5 shadow-card">
           <FiltersForm filters={filters} sort={sort} />
