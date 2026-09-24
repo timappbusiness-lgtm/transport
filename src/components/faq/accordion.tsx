@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/ui/icon';
 import { uiIcon } from '@/lib/icons';
 import type { FaqEntry } from '@/content/faq';
+import { splitColumns } from '@/lib/columns';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,11 +25,18 @@ export function FaqAccordion({
   entries,
   className,
   defaultOpenId,
+  columns = 1,
 }: {
   entries: readonly FaqEntry[];
   className?: string | undefined;
   /** Opened on first render, for a page linked to a single question. */
   defaultOpenId?: string | undefined;
+  /**
+   * Two, from the `lg` width up: two independent stacks, never a grid of
+   * rows. An answer that opens moves only the questions under it, in its
+   * own column; the one beside it keeps its height and its place.
+   */
+  columns?: 1 | 2;
 }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(
     () => new Set(defaultOpenId ? [defaultOpenId] : []),
@@ -43,9 +51,16 @@ export function FaqAccordion({
   }
 
   return (
-    <div className={cn('grid gap-3', className)}>
-      {entries.map((entry) => (
-        <Item key={entry.id} entry={entry} open={open.has(entry.id)} onToggle={toggle} />
+    <div
+      data-faq-accordion
+      className={cn('grid items-start gap-3', columns === 2 && 'lg:grid-cols-2', className)}
+    >
+      {splitColumns(entries, columns).map((stack, index) => (
+        <div key={index} data-faq-column={index} className="flex min-w-0 flex-col gap-3">
+          {stack.map((entry) => (
+            <Item key={entry.id} entry={entry} open={open.has(entry.id)} onToggle={toggle} />
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -63,7 +78,7 @@ function Item({
   const panelId = `${useId()}-panel`;
 
   return (
-    <div className="rounded-card border border-border bg-surface">
+    <div data-faq-item className="min-w-0 rounded-card border border-border bg-surface">
       <h3 className="text-body">
         <button
           type="button"
@@ -76,7 +91,7 @@ function Item({
             'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-foreground',
           )}
         >
-          <span>{entry.question}</span>
+          <span className="min-w-0 [overflow-wrap:anywhere]">{entry.question}</span>
           <Icon
             as={uiIcon('expand')}
             size="md"

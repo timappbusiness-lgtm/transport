@@ -42,7 +42,7 @@ export default async function Page() {
           <h2 id={group.id} className="text-h3">
             {group.title}
           </h2>
-          <FaqAccordion entries={group.entries} className="mt-5 lg:grid-cols-2" />
+          <FaqAccordion entries={group.entries} columns={2} className="mt-5" />
         </section>
       ))}
 

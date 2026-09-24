@@ -205,7 +205,7 @@ function BillingFaq({ settings }: { settings: PricingSettings }) {
       <h2 id="facturare" className="text-h3">
         {c.faq.title}
       </h2>
-      <FaqAccordion entries={entries} className="mt-6 lg:grid-cols-2" />
+      <FaqAccordion entries={entries} columns={2} className="mt-6" />
       <p className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-body">
         {[c.faq.links.faq, c.faq.links.verification].map((link) => (
           <Link

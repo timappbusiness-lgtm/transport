@@ -246,6 +246,28 @@
     scroll-padding-top: 5.5rem;
   }
 
+  /*
+   * The same at the bottom, on a phone: a bar stuck or fixed to the bottom
+   * of the screen covers exactly where the browser scrolls a field that
+   * takes the focus — Tab, the keyboard's „next", or the form jumping to
+   * the first error. On /cerere/noua the year and the „Mai multe" box
+   * landed under „Continuă" (390px, before). Each bar says it is there
+   * with a data attribute; the page keeps focus above it.
+   */
+  @media (width < 40rem) {
+    html:has([data-action-bar]) {
+      scroll-padding-bottom: 6rem;
+    }
+    html:has([data-save-bar]) {
+      scroll-padding-bottom: calc(9.5rem + env(safe-area-inset-bottom));
+    }
+  }
+  @media (width < 64rem) {
+    html:has([data-bottom-nav]):not(:has([data-save-bar])) {
+      scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

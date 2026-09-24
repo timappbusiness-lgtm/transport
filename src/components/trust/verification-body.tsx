@@ -106,7 +106,7 @@ function Documents({ documents }: { documents: PublicRequirement[] }) {
       </h2>
       <p className="mt-2 max-w-[60ch] text-body text-muted">{c.documents.lede}</p>
 
-      <div className="mt-6 hidden overflow-hidden rounded-card border border-border bg-surface sm:block">
+      <div className="mt-6 hidden overflow-x-auto rounded-card border border-border bg-surface sm:block">
         <table className="w-full border-collapse text-body">
           <thead>
             <tr>

@@ -99,8 +99,14 @@ export default async function AccountLayout({ children }: { children: React.Reac
             </div>
           </aside>
 
-          {/* The bottom bar is fixed, so the content needs room under it. */}
-          <div id="continut" className="min-w-0 flex-1 pb-20 lg:pb-0">
+          {/* The bottom bar is fixed, so the content needs room under it —
+              and a bar that sticks to the bottom of the screen (the save
+              bar, the message box) has to stop above it, not under it:
+              `--bottom-bar` is the fixed bar's height, read by those. */}
+          <div
+            id="continut"
+            className="min-w-0 flex-1 pb-20 [--bottom-bar:calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0 lg:[--bottom-bar:0px]"
+          >
             <AccountNotices profile={context.profile} />
             {banner ? (
               <div className="mb-6">
