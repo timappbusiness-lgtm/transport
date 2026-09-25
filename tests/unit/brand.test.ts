@@ -53,6 +53,11 @@ const EXEMPT: { file: string; line: RegExp; why: string }[] = [
     why: 'the setting is read under this name by migration 20260918160000, which cannot change',
   },
   {
+    file: 'src/config/company.ts',
+    line: /@gmail\.com'/,
+    why: 'the operator mailbox is named after the brand; it is data, and temporary until the domain — a mailbox does not rename itself with BRAND_NAME',
+  },
+  {
     file: 'src/content/legal/cookies-1.0.ts',
     line: /_company/,
     why: 'a published version of a legal text is kept as it was published; 1.1 names the cookie as it is now',

@@ -94,6 +94,11 @@ export default function Page() {
           <Detail label={c.operator.legalName} value={operatorField('legalName')} />
           <Detail label={c.operator.cui} value={operatorField('cui')} />
           <Detail label={c.operator.regCom} value={operatorField('regCom')} />
+          <Detail label={c.operator.euid} value={operatorField('euid')} />
+          <Detail
+            label={c.operator.vat}
+            value={OPERATOR.vatPayer ? c.operator.vatPayer : c.operator.vatNonPayer}
+          />
           <Detail label={c.operator.address} value={operatorField('address')} />
         </dl>
       </section>
