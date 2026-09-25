@@ -112,7 +112,10 @@ test.describe('trasee, signed out', () => {
   test('no company, plate or phone leaks onto the board', async ({ page }) => {
     await page.goto('/trasee');
     await settled(page);
-    const body = (await page.locator('body').innerText()).toLowerCase();
+    // The board, not the page: since 25 September the footer names the
+    // company that operates the site („Operat de … SRL", Legea 365/2002),
+    // which is the site identifying itself, not a carrier leaking.
+    const body = (await page.locator('main').innerText()).toLowerCase();
     // The board is built on v_departures_public, which carries none of
     // these columns; this is the belt to that braces.
     expect(body).not.toMatch(/\bs\.?r\.?l\.?\b/);
