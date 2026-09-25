@@ -93,12 +93,17 @@ test.describe('the site links to them', () => {
     }
   });
 
-  test('the sign-up form links to the terms and says which version', async ({ page }) => {
-    await page.goto(ROUTES.signUpIndividual);
-    await expect(page.locator(`a[href="${ROUTES.terms}"]`).first()).toBeVisible();
-    await expect(page.locator(`a[href="${ROUTES.privacy}"]`).first()).toBeVisible();
-    await expect(page.getByText(/\(versiunea \d+\.\d+\)/)).toBeVisible();
-  });
+  for (const signUp of [ROUTES.signUpIndividual, ROUTES.signUpCompany]) {
+    test(`${signUp} links to all three and says which version`, async ({ page }) => {
+      // The cookie policy was missing from both forms until 25 September.
+      await page.goto(signUp);
+      const form = page.locator('form').filter({ has: page.locator('input[name="terms"]') });
+      for (const { href } of PAGES) {
+        await expect(form.locator(`a[href="${href}"]`).first()).toBeVisible();
+      }
+      await expect(page.getByText(/\(versiunea \d+\.\d+\)/)).toBeVisible();
+    });
+  }
 
   test('the verification page links to them too', async ({ page }) => {
     // „Verificat" is explained there, and that is where somebody should
