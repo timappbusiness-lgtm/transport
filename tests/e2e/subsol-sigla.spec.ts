@@ -2,9 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { BRAND_NAME } from '../../src/config/brand';
 import { MARK } from '../../src/config/brand-mark';
 import {
+  BADGE_MAX_WIDTH,
+  BADGE_WIDTH,
   CONSUMER_REDRESS,
   REDRESS_LABEL,
-  redressName,
   type RedressEntry,
 } from '../../src/config/consumer-redress';
 import { ROUTES } from '../../src/config/routes';
@@ -34,43 +35,65 @@ async function redressRow(page: Page) {
 }
 
 function badge(page: Page, entry: RedressEntry) {
-  return page
-    .getByRole('contentinfo')
-    .getByRole('link', { name: `${redressName(entry)} (se deschide într-o filă nouă)`, exact: true });
+  return page.getByRole('contentinfo').getByRole('link', { name: entry.name, exact: true });
+}
+
+/** What the browser actually drew: the file's own size and the box on screen. */
+async function drawn(page: Page, entry: RedressEntry) {
+  return badge(page, entry)
+    .locator('img')
+    .evaluate((img: HTMLImageElement) => ({
+      complete: img.complete,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      width: img.getBoundingClientRect().width,
+      height: img.getBoundingClientRect().height,
+    }));
 }
 
 test.describe('the ANPC badges in the footer', () => {
   for (const where of PAGES) {
-    test(`are on ${where.name}, both, in a row of their own`, async ({ page }) => {
+    test(`are on ${where.name}: the official images, in the annex order, linked`, async ({ page }) => {
       await page.goto(where.path);
       const row = await redressRow(page);
       await expect(row).toBeVisible();
 
-      const heights: number[] = [];
+      // SAL first, then SOL, as Annex 2 prints them.
+      const order = await row.locator('a[data-redress]').evaluateAll((links) =>
+        links.map((a) => (a as HTMLElement).dataset.redress),
+      );
+      expect(order).toEqual(CONSUMER_REDRESS.map((e) => e.key));
+
       for (const entry of CONSUMER_REDRESS) {
         const link = badge(page, entry);
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute('href', entry.href);
         await expect(link).toHaveAttribute('target', '_blank');
         await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-        await expect(link).toContainText(entry.label, { ignoreCase: true });
-        await expect(link).toContainText('Detalii', { ignoreCase: true });
-        heights.push(await link.evaluate((el) => el.getBoundingClientRect().height));
-      }
-      // Same height, whatever the wording does.
-      expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
+        await expect(link).toHaveAccessibleDescription('Se deschide într-o filă nouă.');
+        const img = link.locator('img');
+        await expect(img).toHaveAttribute('alt', entry.name);
+        await expect(img).toHaveAttribute('src', entry.image.src);
 
-      // Not mixed in with the navigation: nothing in the footer's nav
-      // points outside the site, and the row holds nothing but the badges.
+        // Loaded, not a broken image, and the file is the one the config names.
+        await expect.poll(async () => (await drawn(page, entry)).complete).toBe(true);
+        const box = await drawn(page, entry);
+        expect(box.naturalWidth, entry.key).toBe(entry.image.width);
+        expect(box.naturalHeight, entry.key).toBe(entry.image.height);
+        // Never stretched: drawn at the file's own ratio.
+        expect(box.width / box.height).toBeCloseTo(box.naturalWidth / box.naturalHeight, 1);
+      }
+
+      // Not mixed in with the navigation.
       const nav = page.getByRole('contentinfo').getByRole('navigation', { name: 'Secundar' });
       await expect(nav.locator('a[target="_blank"]')).toHaveCount(0);
       await expect(row.getByRole('link')).toHaveCount(CONSUMER_REDRESS.length);
     });
   }
 
-  for (const width of [360, 390] as const) {
-    test(`nothing overflows at ${width}px, and the badges stack`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 800 });
+  for (const width of [360, 390, 768, 1440] as const) {
+    test(`at ${width}px: nothing overflows, and the badges are the size other sites show`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
       for (const where of PAGES) {
         await page.goto(where.path);
         await redressRow(page);
@@ -78,33 +101,36 @@ test.describe('the ANPC badges in the footer', () => {
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
         expect(overflow, where.path).toBeLessThanOrEqual(0);
+
         const boxes = [];
         for (const entry of CONSUMER_REDRESS) {
+          await expect.poll(async () => (await drawn(page, entry)).complete).toBe(true);
           const box = await badge(page, entry).boundingBox();
           expect(box, `${entry.key} on ${where.path}`).not.toBeNull();
-          // Inside the viewport, not clipped at either edge.
           expect(box!.x, where.path).toBeGreaterThanOrEqual(0);
           expect(box!.x + box!.width, where.path).toBeLessThanOrEqual(width);
-          // Its own content fits inside it.
-          const clipped = await badge(page, entry).evaluate((el) =>
-            [...el.querySelectorAll('span')].some((s) => s.scrollWidth > s.clientWidth + 1),
-          );
-          expect(clipped, `${entry.key} clips its text on ${where.path}`).toBe(false);
+          const img = await drawn(page, entry);
+          expect(img.width / img.height).toBeCloseTo(img.naturalWidth / img.naturalHeight, 1);
           boxes.push(box!);
         }
-        expect(boxes[1]!.y, where.path).toBeGreaterThan(boxes[0]!.y + boxes[0]!.height - 1);
+        const [sal, sol] = boxes as [NonNullable<(typeof boxes)[number]>, NonNullable<(typeof boxes)[number]>];
+        if (width >= 640) {
+          // Side by side, 250 wide, level, a small gap between.
+          expect(Math.round(sal.width), where.path).toBe(BADGE_WIDTH);
+          expect(Math.round(sol.width), where.path).toBe(BADGE_WIDTH);
+          expect(Math.abs(sal.y - sol.y), where.path).toBeLessThanOrEqual(1);
+          const gap = sol.x - (sal.x + sal.width);
+          expect(gap, where.path).toBeGreaterThan(0);
+          expect(gap, where.path).toBeLessThanOrEqual(16);
+        } else {
+          // Stacked, the full width up to 300.
+          expect(sol.y, where.path).toBeGreaterThan(sal.y + sal.height - 1);
+          expect(sal.width, where.path).toBeLessThanOrEqual(BADGE_MAX_WIDTH);
+          expect(sal.width, where.path).toBeGreaterThan(BADGE_WIDTH);
+        }
       }
     });
   }
-
-  test('side by side from a tablet up', async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 900 });
-    await page.goto(ROUTES.home);
-    await redressRow(page);
-    const [sol, sal] = await Promise.all(CONSUMER_REDRESS.map((e) => badge(page, e).boundingBox()));
-    expect(Math.abs(sol!.y - sal!.y)).toBeLessThanOrEqual(1);
-    expect(sal!.x).toBeGreaterThan(sol!.x + sol!.width);
-  });
 
   test('each shows a focus ring when reached with the keyboard', async ({ page }) => {
     await page.goto(ROUTES.home);
