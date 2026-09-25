@@ -1,0 +1,16 @@
+{
+  "generatedBy": "pnpm brand",
+  "inputs": "93ea6b23f5eb1d241799d22a7bcb049f0804a4f14abf6e4d06ec509b3cdae3ee",
+  "files": [
+    "src/app/icon.svg",
+    "public/icons/favicon-32.png",
+    "public/icons/apple-touch-icon.png",
+    "public/icons/icon-192.png",
+    "public/icons/icon-512.png",
+    "public/icons/icon-192-maskable.png",
+    "public/icons/icon-512-maskable.png",
+    "public/brand/mark-email.png",
+    "public/brand/og.png",
+    "supabase/functions/_shared/brand.ts"
+  ]
+}

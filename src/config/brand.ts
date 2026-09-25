@@ -4,6 +4,16 @@
  */
 export const BRAND_NAME = 'Coridor' as const;
 
+/**
+ * The name in lowercase ASCII letters and digits, for the places a name
+ * has to be a token: a file name, a crawler's name in a robots.txt group.
+ * „Rută Nouă" would be „rutanoua".
+ */
+export const BRAND_SLUG = BRAND_NAME.normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g, '');
+
 export const BRAND_TAGLINE_RO = 'Transport auto cu firme verificate' as const;
 
 /**

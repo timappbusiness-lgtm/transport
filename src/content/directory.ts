@@ -8,6 +8,8 @@
  * hold a figure that nobody can check.
  */
 
+import { BRAND_NAME } from '@/config/brand';
+
 export const directoryCopy = {
   signup: {
     eyebrow: 'Pentru transportatori',
@@ -91,7 +93,7 @@ export const directoryCopy = {
     metaTitle: (name: string, city: string | null) =>
       city ? `${name} — transport auto, ${city}` : `${name} — transport auto`,
     metaDescription: (name: string) =>
-      `Documentele firmei ${name}, acoperirea și traseele publicate, pe Coridor.`,
+      `Documentele firmei ${name}, acoperirea și traseele publicate, pe ${BRAND_NAME}.`,
     back: 'Toate firmele',
     shield: {
       title: 'Scut de conformitate',

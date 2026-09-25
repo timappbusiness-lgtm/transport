@@ -7,6 +7,8 @@
 // touch the network.
 // =====================================================================
 
+import { BRAND_NAME } from "../_shared/brand.ts";
+
 export interface SendResult {
   ok: boolean;
   error?: string;
@@ -153,8 +155,9 @@ export function renderValues(
   payload: Record<string, unknown>,
   siteUrl: string,
 ): Record<string, unknown> {
-  // `site_url` first so a payload that carries its own wins — a producer
-  // that knows better than the environment is rare but should not be
-  // overridden by it.
-  return { site_url: siteUrl, ...payload };
+  // `site_url` and `brand` first so a payload that carries its own wins —
+  // a producer that knows better than the environment is rare but should
+  // not be overridden by it. `brand` is the name, from the generated copy
+  // of `src/config/brand.ts`, so no template spells it out.
+  return { site_url: siteUrl, brand: BRAND_NAME, ...payload };
 }

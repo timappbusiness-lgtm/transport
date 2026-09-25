@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { BRAND_NAME } from '../../src/config/brand';
 
 /**
  * Povestea întreagă a unei înscrieri asistate, cu baza pornită.
@@ -325,7 +326,7 @@ test.describe('firma își preia contul', () => {
     await page.getByRole('button', { name: 'Preiau contul' }).click();
 
     await page.waitForURL(/\/cont/);
-    await expect(page.getByText('Contul a fost pregătit de echipa Coridor')).toBeVisible();
+    await expect(page.getByText(`Contul a fost pregătit de echipa ${BRAND_NAME}`)).toBeVisible();
     await expect(page.getByText(/Poți schimba orice/)).toBeVisible();
   });
 

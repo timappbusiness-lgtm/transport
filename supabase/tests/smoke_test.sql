@@ -458,5 +458,29 @@ select pg_temp.check('the nightly sweep, the reminders and the listing cleanup a
   (select count(*) = 3 from cron.job
    where jobname in ('nightly-compliance-sweep', 'nightly-expiry-reminders', 'hourly-listing-cleanup')));
 
+-- ---------------------------------------------------------------------
+-- 19. The platform's name is nowhere in the live database
+--
+-- The name is not decided and lives only in src/config/brand.ts, which the
+-- database cannot read. scripts/db-test.sh passes it in; the proper noun
+-- is matched case-sensitively, because „coridor" is also a Romanian word
+-- the route pages use, and the lowercase form only as an address.
+-- ---------------------------------------------------------------------
+\if :{?brand}
+select pg_temp.check('no function body carries the platform name or an address on it',
+  (select count(*) = 0 from pg_proc p
+   where p.prosrc like '%' || :'brand' || '%'
+      or p.prosrc like '%@' || :'brand_slug' || '.%'
+      or p.prosrc like '%' || :'brand_slug' || '.ro%'));
+select pg_temp.check('no comment on any object carries it',
+  (select count(*) = 0 from pg_description d where d.description like '%' || :'brand' || '%'));
+select pg_temp.check('no view definition carries it',
+  (select count(*) = 0 from pg_views v where v.definition like '%' || :'brand' || '%'));
+select pg_temp.check('no route page carries it: the layout adds the name to every title',
+  (select count(*) = 0 from public.seo_pages s where to_jsonb(s)::text like '%' || :'brand' || '%'));
+\else
+\echo 'SKIP  the platform-name checks: run through scripts/db-test.sh, which passes the name'
+\endif
+
 \echo ''
 \echo 'All checks passed.'

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SeoPageBody } from '@/components/seo/page-body';
-import { SITE_URL } from '@/config/brand';
+import { BRAND_NAME, SITE_URL } from '@/config/brand';
+import { OG_IMAGE } from '@/config/brand-assets';
 import { loadPage, loadPublishedPages } from '@/lib/seo-pages-source';
 import { loadSeoPageData } from '@/lib/seo-data-source';
 import { indexingMetadata } from '@/lib/seo-indexing';
@@ -42,7 +43,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       url,
       title: page.title,
       description: page.intro.slice(0, 200),
-      siteName: 'Coridor',
+      siteName: BRAND_NAME,
+      images: [OG_IMAGE],
       locale: 'ro_RO',
     },
     ...indexingMetadata(true),

@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { BRAND_NAME, SITE_URL } from '@/config/brand';
+import { BRAND_NAME, BRAND_SLUG, SITE_URL } from '@/config/brand';
 import { ROUTES, UNBUILT_ROUTES } from '@/config/routes';
 
 describe('brand', () => {
   it('exposes the brand name from a single constant', () => {
-    expect(BRAND_NAME).toBe('Coridor');
+    // Not pinned to a value: the name is being decided, and a test that
+    // spells it out is one more file to change. `brand.test.ts` checks
+    // that nothing else spells it out either.
+    expect(BRAND_NAME.trim()).toBe(BRAND_NAME);
+    expect(BRAND_NAME.length).toBeGreaterThan(1);
+    expect(BRAND_SLUG).toMatch(/^[a-z0-9]+$/);
   });
 
   it('resolves a usable site URL', () => {

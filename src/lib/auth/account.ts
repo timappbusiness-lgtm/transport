@@ -114,7 +114,10 @@ export interface AccountContext {
 }
 
 /** Cookie holding the active company for multi-company users. */
-export const ACTIVE_COMPANY_COOKIE = 'coridor_company';
+export const ACTIVE_COMPANY_COOKIE = 'app_company';
+
+/** How long the choice of company is remembered; the cookie policy says the same. */
+export const ACTIVE_COMPANY_COOKIE_DAYS = 30;
 
 const COMPANY_COLUMNS =
   'id, cui, legal_name, display_name, company_type, verification_status, verification_note, is_suspended, suspended_at, suspension_reason, county, city, address, website, contact_email, contact_phone, public_profile_enabled, slug, public_description, logo_path, coverage_scope, coverage_counties, coverage_countries, vehicle_types_accepted, equipment, services, indicative_rate_ron_per_km, indicative_rate_note, base_address_hidden, legal_representative, alerts_enabled, alerts_email, profile_updated_at';

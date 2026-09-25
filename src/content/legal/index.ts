@@ -1,6 +1,6 @@
-import { CONFIDENTIALITATE_1_0 } from './confidentialitate-1.0';
-import { COOKIES_1_0 } from './cookies-1.0';
-import { TERMENI_1_0 } from './termeni-1.0';
+import { CONFIDENTIALITATE_1_1 } from './confidentialitate-1.1';
+import { COOKIES_1_1 } from './cookies-1.1';
+import { TERMENI_1_1 } from './termeni-1.1';
 import type { LegalDocument } from './document';
 
 /**
@@ -12,9 +12,9 @@ import type { LegalDocument } from './document';
  * record that cannot be read back.
  */
 export const LEGAL_DOCUMENTS = {
-  termeni: TERMENI_1_0,
-  confidentialitate: CONFIDENTIALITATE_1_0,
-  cookies: COOKIES_1_0,
+  termeni: TERMENI_1_1,
+  confidentialitate: CONFIDENTIALITATE_1_1,
+  cookies: COOKIES_1_1,
 } as const satisfies Record<string, LegalDocument>;
 
 /**

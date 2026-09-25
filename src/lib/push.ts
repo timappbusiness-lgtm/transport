@@ -64,7 +64,7 @@ export function supportFor(facts: BrowserFacts): PushSupport {
 // When to show the card
 // ---------------------------------------------------------------------
 
-export const DISMISS_KEY = 'coridor.push.dismissed';
+export const DISMISS_KEY = 'app.push.dismissed';
 /** A refusal is respected for this long before the card comes back. */
 export const DISMISS_DAYS = 30;
 

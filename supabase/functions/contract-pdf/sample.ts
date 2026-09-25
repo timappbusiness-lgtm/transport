@@ -5,6 +5,7 @@
  * name starts with „Exemplu", the addresses are @exemplu.ro.
  */
 
+import { BRAND_NAME } from '../_shared/brand.ts';
 import type { RenderData } from './snapshot.ts';
 
 export const SAMPLE_RENDER_DATA: RenderData = {
@@ -50,7 +51,7 @@ export const SAMPLE_RENDER_DATA: RenderData = {
     generated_at: '2026-09-24T10:30:00.654321+00:00',
     generated_by: { name: 'Ștefan Țurcanu', side: 'carrier' },
     operator: {
-      brand: 'Coridor',
+      brand: BRAND_NAME,
       legal_name: '',
       cui: '',
       reg_com: '',

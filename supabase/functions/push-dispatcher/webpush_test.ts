@@ -86,7 +86,7 @@ Deno.test('the VAPID header carries a token and the public key', async () => {
   const headers = await vapidHeaders('https://fcm.googleapis.com/fcm/send/abc', {
     publicKey: toBase64Url(raw),
     privateKey: jwk.d!,
-    subject: 'mailto:contact@coridor.ro',
+    subject: 'mailto:contact@exemplu.ro',
   });
 
   assertStringIncludes(headers.Authorization, 'vapid t=');
@@ -96,7 +96,7 @@ Deno.test('the VAPID header carries a token and the public key', async () => {
   const [, claims] = token.split('.');
   const parsed = JSON.parse(new TextDecoder().decode(fromBase64Url(claims)));
   assertEquals(parsed.aud, 'https://fcm.googleapis.com');
-  assertEquals(parsed.sub, 'mailto:contact@coridor.ro');
+  assertEquals(parsed.sub, 'mailto:contact@exemplu.ro');
 });
 
 Deno.test('the VAPID token expires within a day', async () => {

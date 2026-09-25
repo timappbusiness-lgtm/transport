@@ -6,14 +6,16 @@ import {
   templateVariables,
   variablesIn,
 } from "./render.ts";
+import { renderValues } from "./send.ts";
 import { TEMPLATES, WITHOUT_PRODUCER } from "./templates.ts";
+import { BRAND_NAME } from "../_shared/brand.ts";
 
 /**
  * The two things worth testing about an e-mail nobody will read twice:
  * that a broken one never leaves, and that the Romanian is Romanian.
  */
 
-const SITE = "https://coridor.ro";
+const SITE = "https://exemplu.ro";
 
 Deno.test("a template renders its subject, body and action", () => {
   const mail = render("company_verified", TEMPLATES.company_verified!, {
@@ -24,7 +26,7 @@ Deno.test("a template renders its subject, body and action", () => {
   assertEquals(mail.subject, "Transport Rapid SRL este verificată");
   assertStringIncludes(mail.html, "Transport Rapid SRL");
   assertStringIncludes(mail.html, `${SITE}/cont/trasee/nou`);
-  assertStringIncludes(mail.text, "Publică primul traseu: https://coridor.ro/cont/trasee/nou");
+  assertStringIncludes(mail.text, "Publică primul traseu: https://exemplu.ro/cont/trasee/nou");
 });
 
 Deno.test("a missing variable throws instead of shipping a hole", () => {
@@ -190,7 +192,7 @@ Deno.test("the deletion e-mail carries the link that stops the clock", () => {
     mail.html,
     `${SITE}/stergere/anuleaza?t=6f1d0c7a-0000-0000-0000-00000000abcd`,
   );
-  assertStringIncludes(mail.text, "Anulează ștergerea: https://coridor.ro/stergere/anuleaza");
+  assertStringIncludes(mail.text, "Anulează ștergerea: https://exemplu.ro/stergere/anuleaza");
   assertStringIncludes(mail.subject, "02.10.2026");
 });
 
@@ -221,4 +223,39 @@ Deno.test("every template renders with its own variables filled", () => {
     assert(!mail.html.includes("{{"), `${name} left a placeholder in the html`);
     assert(!mail.text.includes("{{"), `${name} left a placeholder in the text`);
   }
+});
+
+// ---------------------------------------------------------------------
+// The brand: one name, from the generated copy, and the mark beside it
+// ---------------------------------------------------------------------
+
+Deno.test("the header carries the mark beside the name, as decoration", () => {
+  const values = renderValues({ company_name: "Transport Rapid SRL" }, SITE);
+  const mail = render("company_verified", TEMPLATES.company_verified!, values, {
+    markUrl: `${SITE}/brand/mark-email.png`,
+  });
+  // An empty alt: with images off the name beside it is all that shows,
+  // not a broken icon and not the name twice.
+  assertStringIncludes(mail.html, `<img src="${SITE}/brand/mark-email.png" width="32" height="32" alt=""`);
+  assertStringIncludes(mail.html, `>${BRAND_NAME}</td>`);
+  assert(mail.text.endsWith(BRAND_NAME));
+});
+
+Deno.test("without a mark the header is the name alone", () => {
+  const mail = render("company_verified", TEMPLATES.company_verified!, renderValues({ company_name: "X SRL" }, SITE));
+  assert(!mail.html.includes("<img"));
+  assertStringIncludes(mail.html, `>${BRAND_NAME}</p>`);
+});
+
+Deno.test("no template spells the name out: it arrives as {{ brand }}", () => {
+  for (const [name, template] of Object.entries(TEMPLATES)) {
+    const text = [template.subject, ...template.lines, template.action?.label ?? ""].join("\n");
+    assert(!text.includes(BRAND_NAME), `${name} writes the brand name instead of {{ brand }}`);
+  }
+  const invitation = render(
+    "company_invitation",
+    TEMPLATES.company_invitation!,
+    renderValues({ invited_by: "Ana", company_name: "X SRL", role: "dispecer" }, SITE),
+  );
+  assertStringIncludes(invitation.text, `firmei X SRL pe ${BRAND_NAME}, cu rolul dispecer`);
 });

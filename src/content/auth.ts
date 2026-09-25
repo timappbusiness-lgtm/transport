@@ -49,6 +49,8 @@ export const authCopy = {
     termsLink: 'Termenii și condițiile',
     and: 'și',
     privacyLink: 'Politica de confidențialitate',
+    cookiesLead: 'Cum folosim cookie-urile:',
+    cookiesLink: 'Politica de cookie-uri',
     submit: 'Creează contul',
     hasAccount: 'Ai deja cont?',
     signIn: 'Autentifică-te',

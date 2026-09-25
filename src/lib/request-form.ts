@@ -397,7 +397,7 @@ export function firstStepWithError(draft: RequestDraft, today: string): RequestS
  * The key carries a version. A draft written by an older shape of the form
  * is dropped rather than rendered half-missing.
  */
-export const DRAFT_STORAGE_KEY = 'coridor.cerere.v1';
+export const DRAFT_STORAGE_KEY = 'app.cerere.v1';
 
 export function serialiseDraft(draft: RequestDraft): string {
   return JSON.stringify(draft);

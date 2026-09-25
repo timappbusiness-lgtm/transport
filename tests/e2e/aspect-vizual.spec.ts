@@ -153,9 +153,16 @@ test.describe('the focus ring is unchanged', () => {
     // darkest ground, and reads as the focus rather than as text.
     await page.goto('/');
     const link = page.locator('[data-surface="dark"] a:visible').first();
-    await link.focus();
-    const colour = await link.evaluate((n) => getComputedStyle(n).outlineColor);
-    expect(colour).toBe('rgb(79, 209, 216)');
+    // The header's session half streams in behind a signed-out fallback
+    // and React swaps one for the other a moment after `load`, identical
+    // or not — so a focus given before the swap lands on a node that is
+    // then removed, and its computed style reads empty. Focus and read
+    // again until the header is the final one, as a person tabbing in
+    // would. (The swap itself is reported in PR #67; it predates it.)
+    await expect(async () => {
+      await link.focus();
+      expect(await link.evaluate((n) => getComputedStyle(n).outlineColor)).toBe('rgb(79, 209, 216)');
+    }).toPass();
   });
 });
 

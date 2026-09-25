@@ -22,7 +22,7 @@ import {
   robotsPatternMatches,
 } from "./listing.ts";
 
-const UA = "coridorbot";
+const UA = "exemplubot";
 
 // ---------------------------------------------------------------------
 // The address
@@ -103,7 +103,7 @@ Deno.test("a group naming us beats the catch-all, wherever it sits", () => {
     "User-agent: *",
     "Disallow:",
     "",
-    "User-agent: CoridorBot",
+    "User-agent: ExempluBot",
     "Disallow: /",
   ].join("\n");
   assertFalse(robotsAllows(txt, UA, "/auto/vw-golf"));
@@ -114,7 +114,7 @@ Deno.test("and a group naming us can allow what the catch-all forbids", () => {
     "User-agent: *",
     "Disallow: /",
     "",
-    "User-agent: CoridorBot",
+    "User-agent: ExempluBot",
     "Allow: /auto/",
     "Disallow: /",
   ].join("\n");
@@ -134,10 +134,10 @@ Deno.test("on a tie, Allow wins", () => {
 });
 
 Deno.test("consecutive User-agent lines share one group", () => {
-  const txt = ["User-agent: A", "User-agent: CoridorBot", "Disallow: /"].join("\n");
+  const txt = ["User-agent: A", "User-agent: ExempluBot", "Disallow: /"].join("\n");
   const groups = parseRobots(txt);
   assertEquals(groups.length, 1);
-  assertEquals(groups[0]?.agents, ["a", "coridorbot"]);
+  assertEquals(groups[0]?.agents, ["a", "exemplubot"]);
   assertFalse(robotsAllows(txt, UA, "/x"));
 });
 

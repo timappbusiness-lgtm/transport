@@ -3,7 +3,7 @@
  *
  * Only the publishable key is ever read here. The secret/service-role key
  * must never reach this app: it bypasses RLS, and every authorization
- * decision in Coridor is a database decision.
+ * decision in this platform is a database decision.
  */
 export function supabaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

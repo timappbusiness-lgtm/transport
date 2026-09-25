@@ -60,4 +60,4 @@ export function seenAt(renderedAt: string, now: Date): string | null {
 }
 
 /** Sent on `window` when the board is on the screen, so the header drops its badge. */
-export const BOARD_SEEN_EVENT = 'coridor:cereri-vazute';
+export const BOARD_SEEN_EVENT = 'app:cereri-vazute';

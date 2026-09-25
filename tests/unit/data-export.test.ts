@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BRAND_SLUG } from '@/config/brand';
 import {
   buildExportArchive,
   crc32,
@@ -138,7 +139,7 @@ describe('exportStoragePath', () => {
       new Date('2026-09-18T21:30:00Z'),
     );
     expect(path.startsWith('8a1f0000-0000-0000-0000-000000000001/')).toBe(true);
-    expect(path).toContain('coridor-date-2026-09-19-c0ffee12.zip');
+    expect(path).toContain(`${BRAND_SLUG}-date-2026-09-19-c0ffee12.zip`);
   });
 
   it('stamps the date in the timezone people here live in', () => {

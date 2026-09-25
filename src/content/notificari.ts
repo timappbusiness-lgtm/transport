@@ -8,6 +8,8 @@
  * what arrives rather than by nagging.
  */
 
+import { BRAND_NAME } from '@/config/brand';
+
 export const pushCopy = {
   card: {
     title: 'Vrei să afli imediat?',
@@ -22,7 +24,7 @@ export const pushCopy = {
     /** iOS Safari, before the site is installed. */
     iosTitle: 'Pe iPhone, mai întâi instalează aplicația',
     iosBody:
-      'Apasă butonul de partajare din Safari, alege „Adaugă la ecranul principal”, apoi deschide Coridor de acolo și activează notificările.',
+      `Apasă butonul de partajare din Safari, alege „Adaugă la ecranul principal”, apoi deschide ${BRAND_NAME} de acolo și activează notificările.`,
     iosDismiss: 'Am înțeles',
   },
 

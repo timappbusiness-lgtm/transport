@@ -1,4 +1,4 @@
-# Coridor — vehicle transport marketplace
+# Vehicle transport marketplace
 
 A Romanian vehicle transport marketplace: a Next.js app, a Supabase database
 with a document-compliance engine, edge functions and n8n workflows.
@@ -71,6 +71,29 @@ Tailwind v4, Vitest, Playwright. `src/` holds the app; `docs/`, `design/`,
 Deno, not Node. See `supabase/functions/README.md`.
 
 Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+### The name and the logo
+
+The platform's name is not decided. It is written in one place,
+`BRAND_NAME` in `src/config/brand.ts`, and read from there by every page,
+the web manifest, the e-mails, the contract PDF, the SMS text and the
+listing crawler's name. The logo mark carries no letter
+(`src/config/brand-mark.ts`, drawn by `<LogoMark>` and `<Logo>` in
+`src/components/brand/`), so it survives a new name as it is.
+
+After changing the name, the tagline, the mark or a colour token, run one
+command and commit what it writes:
+
+```bash
+pnpm brand
+```
+
+It redraws the favicon, the app icons (192, 512 and their maskable
+versions, the 180px iOS icon), the e-mail mark and the 1200×630 social
+image, and writes `supabase/functions/_shared/brand.ts`, the copy of the
+name and mark the edge functions import. `tests/unit/brand.test.ts` fails
+if the name is written anywhere else, or if any of those files is older
+than its inputs. The edge functions need a deploy to pick up the new copy.
 
 ## Setup (database)
 

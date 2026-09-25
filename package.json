@@ -1,5 +1,5 @@
 {
-  "name": "coridor",
+  "name": "transport",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,6 +20,7 @@
     "check:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno check --node-modules-dir=none supabase/functions/*/index.ts",
     "test:functions": "DENO_NO_PACKAGE_JSON=1 npx -y deno test --no-prompt --node-modules-dir=none supabase/functions",
     "gen:types": "bash scripts/gen-types.sh",
+    "brand": "node scripts/brand/generate.ts",
     "seed:departures": "bash scripts/seed-departures.sh",
     "seed:requests": "bash scripts/seed-requests.sh"
   },
@@ -46,6 +47,7 @@
     "all-the-cities": "^3.1.0",
     "eslint": "^9.18.0",
     "eslint-config-next": "16.3.5",
+    "fontkit": "2.0.4",
     "pdfjs-dist": "^6.3.289",
     "pdfkit": "0.20.2",
     "tailwindcss": "4.3.3",

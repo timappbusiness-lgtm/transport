@@ -10,7 +10,14 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-db="coridor_test_$(date +%s)_$$"
+db="transport_test_$(date +%s)_$$"
+
+# The platform's name, read from the one file that holds it, so the smoke
+# suite can check that no function, comment or page in the database spells
+# it out. The name is not decided; nothing but src/config/brand.ts may.
+brand="$(sed -n "s/^export const BRAND_NAME = '\(.*\)' as const;$/\1/p" "$root/src/config/brand.ts")"
+[[ -n "$brand" ]] || { echo "BRAND_NAME not found in src/config/brand.ts"; exit 1; }
+brand_slug="$(printf '%s' "$brand" | iconv -f UTF-8 -t ASCII//TRANSLIT 2>/dev/null | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]')"
 
 cleanup() { dropdb --if-exists "$db" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -38,7 +45,8 @@ status=0
 for suite in ${suites[@]}; do
   echo
   echo "== ${suite}_test.sql"
-  if ! psql_run ${DB_TEST_VERBOSE:+-v verbose=1} -f "$root/supabase/tests/${suite}_test.sql" 2>&1 | sed -E 's/^psql:[^ ]+ (NOTICE|INFO):  //'; then
+  if ! psql_run ${DB_TEST_VERBOSE:+-v verbose=1} -v brand="$brand" -v brand_slug="$brand_slug" \
+      -f "$root/supabase/tests/${suite}_test.sql" 2>&1 | sed -E 's/^psql:[^ ]+ (NOTICE|INFO):  //'; then
     status=1
   fi
 done

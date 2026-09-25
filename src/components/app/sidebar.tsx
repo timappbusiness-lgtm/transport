@@ -4,7 +4,7 @@ import { countLabel } from '@/lib/badges';
 import { Icon } from '@/components/ui/icon';
 import { ICON_GAP, iconForAction, iconForRoute } from '@/lib/icons';
 import { CompanySwitcher } from '@/components/app/company-switcher';
-import { BRAND_NAME } from '@/config/brand';
+import { Logo } from '@/components/brand/logo';
 import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { appCopy } from '@/content/app';
@@ -54,8 +54,8 @@ export function Sidebar({
           own application who clicks the brand means „take me to the top of
           this", and being thrown out to the public site is the oldest way
           to lose them. */}
-      <Link href={ROUTES.account} className="font-display text-body-lg font-medium">
-        {BRAND_NAME}
+      <Link href={ROUTES.account} className="self-start text-body-lg">
+        <Logo size={24} />
       </Link>
 
       <CompanySwitcher context={context} />

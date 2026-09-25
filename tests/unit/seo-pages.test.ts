@@ -306,14 +306,14 @@ describe('structured data', () => {
   });
 
   it('builds a breadcrumb list with absolute URLs and no self-link', () => {
-    const json = breadcrumbJsonLd(breadcrumbs(route, 'Acasă'), 'https://coridor.ro');
+    const json = breadcrumbJsonLd(breadcrumbs(route, 'Acasă'), 'https://exemplu.ro');
     const items = json?.itemListElement as { item?: string; position: number }[];
-    expect(items[0]?.item).toBe('https://coridor.ro/');
+    expect(items[0]?.item).toBe('https://exemplu.ro/');
     expect(items.at(-1)?.item).toBeUndefined();
     expect(items.at(-1)?.position).toBe(3);
   });
 
   it('writes nothing for a trail with nowhere to go', () => {
-    expect(breadcrumbJsonLd([{ label: 'Acasă', href: null }], 'https://coridor.ro')).toBeNull();
+    expect(breadcrumbJsonLd([{ label: 'Acasă', href: null }], 'https://exemplu.ro')).toBeNull();
   });
 });

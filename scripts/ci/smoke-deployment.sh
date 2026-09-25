@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Asks a fresh deployment whether it is actually serving.
 #
-#   bash scripts/ci/smoke-deployment.sh https://coridor-abc123.vercel.app
+#   bash scripts/ci/smoke-deployment.sh https://transport-abc123.vercel.app
 #
 # A build that succeeds and a site that answers are different things: a
 # missing environment variable throws at request time, long after the build

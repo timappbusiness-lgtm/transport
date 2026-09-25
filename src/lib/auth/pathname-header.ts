@@ -6,4 +6,4 @@
  * Its own module so that reading it from a server component does not pull
  * the middleware — and `next/server` with it — into every page.
  */
-export const PATHNAME_HEADER = 'x-coridor-pathname';
+export const PATHNAME_HEADER = 'x-app-pathname';

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
-import { ACTIVE_COMPANY_COOKIE, getAccountContext, isManager, redirectToSignIn } from '@/lib/auth/account';
+import { ACTIVE_COMPANY_COOKIE, ACTIVE_COMPANY_COOKIE_DAYS, getAccountContext, isManager, redirectToSignIn } from '@/lib/auth/account';
 import { doneUrl } from '@/lib/continuity/drafts';
 import { deleteServerDraft } from '@/lib/continuity/server-drafts';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
@@ -86,7 +86,9 @@ export async function setActiveCompanyAction(formData: FormData): Promise<void> 
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 60 * 60 * 24 * 365,
+    // As long as the cookie policy says: long enough not to ask again
+    // every visit, short enough not to outlive a change of job.
+    maxAge: 60 * 60 * 24 * ACTIVE_COMPANY_COOKIE_DAYS,
   });
 
   revalidatePath('/cont', 'layout');

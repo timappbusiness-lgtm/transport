@@ -1,6 +1,7 @@
 # Working agreement
 
-Coridor — a Romanian vehicle transport marketplace. Next.js app in `src/`,
+A Romanian vehicle transport marketplace; its name is not decided yet and
+lives only in `src/config/brand.ts`. Next.js app in `src/`,
 Supabase database in `supabase/`, n8n workflows in `n8n/`.
 
 ## Session rules
@@ -321,7 +322,11 @@ pnpm check:functions   # Deno type-check for the edge functions
 ## Conventions
 
 - The brand name lives only in `src/config/brand.ts`; internal links only in
-  `src/config/routes.ts`.
+  `src/config/routes.ts`. `tests/unit/brand.test.ts` fails on the name
+  written anywhere else, and after changing it `pnpm brand` regenerates the
+  icons, the social image and the edge functions' copy. Browser storage keys
+  use the neutral `app` prefix, never the name: renaming a key loses what
+  people left in it.
 - UI copy is Romanian with correct diacritics; regulatory terms stay Romanian
   (`copie conformă`, `ITP`, `RCA`). Code and technical docs are English.
 - Never show invented numbers as real data. Samples are labelled as samples,

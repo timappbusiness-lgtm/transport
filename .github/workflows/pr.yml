@@ -177,7 +177,7 @@ jobs:
         with:
           script: |
             const url = process.env.PREVIEW_URL;
-            const marker = '<!-- coridor-preview -->';
+            const marker = '<!-- preview-deployment -->';
             const body = [
               marker,
               '**Preview**: ' + url,

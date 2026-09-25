@@ -110,7 +110,7 @@ export const TEMPLATES: Record<string, Template> = {
     subject: "{{ invited_by }} vă invită în echipa {{ company_name }}",
     lines: [
       "Bună ziua,",
-      "{{ invited_by }} v-a invitat să vă alăturați firmei {{ company_name }} pe Coridor, cu rolul {{ role }}.",
+      "{{ invited_by }} v-a invitat să vă alăturați firmei {{ company_name }} pe {{ brand }}, cu rolul {{ role }}.",
       "Invitația este valabilă șapte zile. Ca să o acceptați, aveți nevoie de un cont pe aceeași adresă de e-mail.",
     ],
     action: { label: "Vezi invitația", href: "{{ site_url }}/cont/invitatii" },
@@ -445,7 +445,7 @@ export const TEMPLATES: Record<string, Template> = {
   },
 
   message_received: {
-    subject: "Aveți un mesaj nou pe Coridor",
+    subject: "Aveți un mesaj nou pe {{ brand }}",
     lines: [
       "Bună ziua,",
       "Cineva v-a scris despre {{ context }}. Mesajul este în căsuța dumneavoastră de pe platformă.",
@@ -650,10 +650,10 @@ export const TEMPLATES: Record<string, Template> = {
   // --- Înscriere asistată ----------------------------------------------
 
   assisted_claim: {
-    subject: "Contul firmei {{ company_name }} vă așteaptă pe Coridor",
+    subject: "Contul firmei {{ company_name }} vă așteaptă pe {{ brand }}",
     lines: [
       "Bună ziua,",
-      "{{ full_name }}, am pregătit contul firmei {{ company_name }} pe Coridor, așa cum am vorbit. Datele firmei, documentele și mașinile sunt deja acolo.",
+      "{{ full_name }}, am pregătit contul firmei {{ company_name }} pe {{ brand }}, așa cum am vorbit. Datele firmei, documentele și mașinile sunt deja acolo.",
       "Ce mai rămâne este să vă alegeți o parolă. Noi nu am ales una și nu avem cum să vedem ce alegeți dumneavoastră.",
       "Linkul de mai jos funcționează o singură dată și expiră pe {{ expires_at }}. După ce îl folosiți, contul este al dumneavoastră și puteți schimba orice.",
       "Dacă nu ați cerut asta, nu apăsați nimic și scrieți-ne — nu se întâmplă nimic până nu deschideți linkul.",

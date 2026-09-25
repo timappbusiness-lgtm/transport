@@ -143,7 +143,7 @@ test.describe('the card asks once, at the right moment', () => {
 
       // And it is the browser that remembers, not the session.
       const stored = await page.evaluate(() =>
-        window.localStorage.getItem('coridor.push.dismissed'),
+        window.localStorage.getItem('app.push.dismissed'),
       );
       expect(stored).not.toBeNull();
       void context;

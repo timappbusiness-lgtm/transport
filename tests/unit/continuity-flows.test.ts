@@ -243,7 +243,7 @@ describe('a finished form clears its draft', () => {
     expect(parseDone('parola')).toBeNull();
     expect(parseDone('traseu.../x')).toBeNull();
     expect(parseDone(null)).toBeNull();
-    expect(draftKey('traseu')).toBe('coridor.ciorna.traseu');
+    expect(draftKey('traseu')).toBe('app.ciorna.traseu');
   });
 
   it('checks the same shapes the table does, before asking it', () => {

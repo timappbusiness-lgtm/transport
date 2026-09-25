@@ -87,6 +87,13 @@ export function ClaimForm({
           .
         </span>
       </label>
+      <p className="text-small text-muted">
+        Cum folosim cookie-urile:{' '}
+        <a href={ROUTES.cookies} className="link-accent">
+          Politica de cookie-uri
+        </a>
+        .
+      </p>
       <FormError>{state.fieldErrors?.terms}</FormError>
 
       <div>

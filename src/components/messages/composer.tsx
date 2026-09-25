@@ -23,7 +23,7 @@ const c = messagesCopy.composer;
 
 /** The id the next message goes out under, kept until it has gone. */
 function messageIdKey(conversationId: string): string {
-  return `coridor:mesaj-id:${conversationId}`;
+  return `app:mesaj-id:${conversationId}`;
 }
 
 function readMessageId(conversationId: string): string | null {

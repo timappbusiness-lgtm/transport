@@ -12,6 +12,8 @@
  * requirement rows themselves.
  */
 
+import { BRAND_NAME } from '@/config/brand';
+
 export const trustCopy = {
   /** The band that sits under the activity section. */
   cta: {
@@ -102,7 +104,7 @@ export const verificationCopy = {
     strong: 'Cum verificăm',
     soft: 'firmele de transport.',
     lede:
-      'Pe Coridor pot trimite oferte doar firmele cu documentele aprobate și în termen de valabilitate. Mai jos explicăm exact ce verificăm și ce nu.',
+      `Pe ${BRAND_NAME} pot trimite oferte doar firmele cu documentele aprobate și în termen de valabilitate. Mai jos explicăm exact ce verificăm și ce nu.`,
   },
 
   steps: {

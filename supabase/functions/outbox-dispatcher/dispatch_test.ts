@@ -20,7 +20,7 @@ import { TEMPLATES } from "./templates.ts";
  * a variable nobody supplies fails here rather than in somebody's inbox.
  */
 
-const SITE_URL = "https://coridor.ro";
+const SITE_URL = "https://exemplu.ro";
 
 /**
  * A value for every variable any template uses.
@@ -143,7 +143,7 @@ async function drain(rows: QueueRow[], fetchImpl: typeof fetch): Promise<void> {
           : undefined,
       });
       result = await sendEmail(
-        { apiKey: "k", from: "nu-raspunde@coridor.ro", senderName: "Coridor", fetchImpl },
+        { apiKey: "k", from: "nu-raspunde@exemplu.ro", senderName: "Exemplu", fetchImpl },
         row.to_email,
         mail.subject,
         mail.html,

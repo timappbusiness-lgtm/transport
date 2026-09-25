@@ -145,9 +145,9 @@ Deno.test("the code is six digits, leading zeros kept", () => {
 });
 
 Deno.test("the message says what it is, how long it lasts and not to share it", () => {
-  const message = verificationMessage("123456", "Coridor");
+  const message = verificationMessage("123456", "Exemplu");
   assert(message.startsWith("123456"));
-  assert(message.includes("Coridor"));
+  assert(message.includes("Exemplu"));
   assert(message.includes("10 minute"));
   assert(message.includes("Nu îl da nimănui"));
   // An SMS is 160 characters, and every one over that is a second SMS.
