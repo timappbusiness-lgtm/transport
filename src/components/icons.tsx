@@ -47,23 +47,3 @@ export function Car({ className }: IconProps) {
     </svg>
   );
 }
-
-/**
- * Two cars stacked on a platform over a road line — the brand mark.
- *
- * Every stroke is `currentColor`, so it works on the dark header bar and on
- * a light surface without a second variant. It used to name colour tokens
- * directly, which made it invisible the moment it sat on a dark ground.
- */
-export function BrandMark({ className }: IconProps) {
-  return (
-    <svg className={className} width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-      <path d="M2.5 23h21" stroke="currentColor" strokeOpacity=".35" strokeWidth="2" strokeLinecap="round" />
-      <path d="M2.5 23h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M3 18.5h20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M3 9.5h20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M6 9.5V6.5l2.5-3h8l2.5 3v3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-      <path d="M6 18.5v-3l2.5-3h8l2.5 3v3" stroke="currentColor" strokeOpacity=".6" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
-}
