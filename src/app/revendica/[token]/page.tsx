@@ -76,7 +76,13 @@ export default async function Page({ params }: { params: Promise<{ token: string
 
       <Card className="p-4">
         <h2 className="text-body font-medium">{c.notYou}</h2>
-        <p className="mt-1 text-small text-muted">{c.notYouBody}</p>
+        <p className="mt-1 text-small text-muted">
+          {c.notYouBody}{' '}
+          <Link href={ROUTES.contact} className="underline underline-offset-2 hover:text-foreground">
+            {c.notYouLink}
+          </Link>
+          .
+        </p>
       </Card>
     </main>
   );

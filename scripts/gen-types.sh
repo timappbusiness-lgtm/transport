@@ -15,7 +15,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-db="coridor_types_$(date +%s)_$$"
+db="transport_types_$(date +%s)_$$"
 work="$(mktemp -d)"
 out="$root/src/lib/supabase/database.types.ts"
 
@@ -50,7 +50,7 @@ for f in "$root"/supabase/migrations/*.sql; do
 done
 
 cat > "$work/package.json" <<'JSON'
-{ "name": "coridor-gen-types", "private": true, "type": "module" }
+{ "name": "transport-gen-types", "private": true, "type": "module" }
 JSON
 
 npm i --prefix "$work" --no-audit --no-fund --silent @supabase/postgres-meta@0.91.6 >/dev/null 2>&1

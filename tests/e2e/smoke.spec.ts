@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { BRAND_NAME } from '../../src/config/brand';
 import { UNBUILT_ROUTES } from '../../src/config/routes';
 
 test.describe('homepage', () => {
@@ -8,7 +9,7 @@ test.describe('homepage', () => {
     // The promise the headline may make is the one the platform keeps:
     // the firms are verified. It says nothing about delivery.
     await expect(page.locator('h1')).toContainText('firme verificate');
-    await expect(page.locator('header')).toContainText('Coridor');
+    await expect(page.locator('header')).toContainText(BRAND_NAME);
   });
 
   test('the document is in Romanian', async ({ page }) => {

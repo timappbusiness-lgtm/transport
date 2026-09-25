@@ -136,12 +136,12 @@ test.describe('a board keeps its filters', () => {
     await page.goto('/trasee?directie=retur');
     await settled(page);
     await expect
-      .poll(() => page.evaluate(() => sessionStorage.getItem('coridor.panou./trasee')))
+      .poll(() => page.evaluate(() => sessionStorage.getItem('app.panou./trasee')))
       .toBe('?directie=retur');
     await page.goto('/cereri?tara-plecare=DE');
     await settled(page);
     await expect
-      .poll(() => page.evaluate(() => sessionStorage.getItem('coridor.panou./cereri')))
+      .poll(() => page.evaluate(() => sessionStorage.getItem('app.panou./cereri')))
       .toBe('?tara-plecare=DE');
   });
 });

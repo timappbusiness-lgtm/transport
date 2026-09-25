@@ -1,4 +1,5 @@
 import { expect, test, type ConsoleMessage, type Page } from '@playwright/test';
+import { BRAND_NAME } from '../../src/config/brand';
 
 /**
  * Every public page, swept for the failures that do not announce
@@ -146,7 +147,7 @@ test.describe('the site header is the same everywhere', () => {
       // would actually be wrong.
       const banner = page.getByRole('banner');
       await expect(banner).toHaveCount(1);
-      await expect(banner).toContainText('Coridor');
+      await expect(banner).toContainText(BRAND_NAME);
       await expect(banner.locator('a[href="/"]').first()).toBeVisible();
     });
   }

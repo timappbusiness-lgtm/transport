@@ -14,7 +14,7 @@
 
 import type { DraftStorage } from './drafts';
 
-const PREFIX = 'coridor.panou.';
+const PREFIX = 'app.panou.';
 
 /** The query as the board wrote it, or '' — never anything that is not a query. */
 export function cleanBoardQuery(raw: string | null | undefined): string {

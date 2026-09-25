@@ -40,6 +40,12 @@ function TermsCheckbox({ label, error }: { label: string; error?: string | undef
           <span className="text-small">(versiunea {CURRENT_TERMS_VERSION})</span>
         </span>
       </label>
+      {/* Outside the label: the cookie policy is something to read, not
+          something the box accepts. */}
+      <p className="pl-6.5 text-small text-muted">
+        {authCopy.individualSignUp.cookiesLead}{' '}
+        <TextLink href={ROUTES.cookies}>{authCopy.individualSignUp.cookiesLink}</TextLink>.
+      </p>
       {error ? <p className="text-small text-danger">{error}</p> : null}
     </div>
   );

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { BRAND_NAME } from '../../src/config/brand';
 
 /**
  * The PWA and the push permission rules, without a database.
@@ -19,7 +20,7 @@ test.describe('the app is installable', () => {
     expect(response?.status()).toBe(200);
 
     const manifest = JSON.parse(await response!.text());
-    expect(manifest.name).toContain('Coridor');
+    expect(manifest.name).toContain(BRAND_NAME);
     expect(manifest.display).toBe('standalone');
     expect(manifest.start_url).toBe('/cont');
     expect(manifest.lang).toBe('ro');

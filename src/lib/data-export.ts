@@ -12,6 +12,8 @@
  * 1989.
  */
 
+import { BRAND_NAME, BRAND_SLUG } from '@/config/brand';
+
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
   for (let i = 0; i < 256; i += 1) {
@@ -151,7 +153,7 @@ export function toCsv(rows: Record<string, unknown>[]): string {
   return `﻿${lines.join('\r\n')}\r\n`;
 }
 
-export const EXPORT_README = `Arhiva cu datele tale de pe Coridor
+export const EXPORT_README = `Arhiva cu datele tale de pe ${BRAND_NAME}
 
 date.json   tot ce avem despre tine, în format JSON
 *.csv       aceleași liste, pe rând, ca să poată fi deschise în Excel
@@ -205,5 +207,5 @@ export function buildExportArchive(payload: Record<string, unknown>): Uint8Array
 
 /** Where the archive lives: the caller's own folder, which is what the policy allows. */
 export function exportStoragePath(userId: string, exportId: string, now: Date): string {
-  return `${userId}/coridor-date-${exportDateStamp(now)}-${exportId.slice(0, 8)}.zip`;
+  return `${userId}/${BRAND_SLUG}-date-${exportDateStamp(now)}-${exportId.slice(0, 8)}.zip`;
 }

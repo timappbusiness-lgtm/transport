@@ -45,7 +45,9 @@ describe('the test-send list against the templates that exist', () => {
   });
 
   it('carries a value for every variable any template uses', () => {
-    const needed = variableNames(source).filter((v) => v !== 'site_url');
+    // `site_url` and `brand` are added by the dispatcher itself
+    // (`renderValues`), never carried by a payload.
+    const needed = variableNames(source).filter((v) => v !== 'site_url' && v !== 'brand');
     const missing = needed.filter((v) => MAIL_SAMPLE_PAYLOAD[v] === undefined);
     expect(missing).toEqual([]);
   });

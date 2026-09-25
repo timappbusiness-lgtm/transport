@@ -10,10 +10,13 @@
  * picked up and sent.
  *
  * IndexedDB, not `localStorage`: it holds Blobs, and a photograph is a
- * megabyte. The database and store keep the names the driver's photos
- * were first kept under (`coridor-trimiteri` / `poze`), so a photograph
- * waiting on a phone from before this file existed is still found. Every
- * call is wrapped — a private window, a full disk, an old browser all
+ * megabyte. The database was renamed once, before the pilot, when every
+ * key the platform leaves in a browser lost the brand name (a name that
+ * is not decided yet has no business in a phone's storage): a photograph
+ * still queued under the old name on that day was not picked up again.
+ * With no users yet that was the cheapest day to do it; from here on the
+ * name stays, because a rename is exactly that loss. Every call is
+ * wrapped — a private window, a full disk, an old browser all
  * mean the file lives only in memory, which the screen then says.
  */
 
@@ -95,7 +98,7 @@ export type FileStore = ReturnType<typeof createFileStore>;
 // Backends
 // ---------------------------------------------------------------------
 
-const DB_NAME = 'coridor-trimiteri';
+const DB_NAME = 'app-trimiteri';
 const STORE = 'poze';
 
 function open(): Promise<IDBDatabase | null> {

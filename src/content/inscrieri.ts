@@ -8,6 +8,9 @@
  * pe care nu l-a făcut el. Fiecare propoziție de acolo răspunde la
  * „stai, ce e asta?".
  */
+
+import { BRAND_NAME } from '@/config/brand';
+
 export const onboardingCopy = {
   admin: {
     meta: { title: 'Înscrieri asistate' },
@@ -141,7 +144,7 @@ export const onboardingCopy = {
   claim: {
     meta: { title: 'Preia contul firmei' },
     title: (company: string) => `Contul pentru ${company}`,
-    lede: 'Echipa Coridor a pregătit contul acestei firme. Ca să îl preiei, alege-ți o parolă.',
+    lede: `Echipa ${BRAND_NAME} a pregătit contul acestei firme. Ca să îl preiei, alege-ți o parolă.`,
     filled: 'Ce am completat deja',
     documents: (n: number) => (n === 1 ? 'un document încărcat' : `${n} documente încărcate`),
     vehicles: (n: number) => (n === 1 ? 'un vehicul adăugat' : `${n} vehicule adăugate`),
@@ -164,14 +167,15 @@ export const onboardingCopy = {
 
     /** Ce citește cineva care nu a cerut asta. */
     notYou: 'Nu ai cerut tu asta?',
-    notYouBody: 'Nu se întâmplă nimic până nu alegi o parolă. Scrie-ne la contact@coridor.ro și ștergem tot ce am pregătit.',
+    notYouBody: 'Nu se întâmplă nimic până nu alegi o parolă. Scrie-ne și ștergem tot ce am pregătit:',
+    notYouLink: 'datele de contact',
 
     confirmEmail: 'Ți-am trimis un e-mail de confirmare. Deschide-l, apoi revino la linkul acesta ca să termini preluarea.',
   },
 
   /** Bannerul de pe tabloul de bord, după preluare. */
   banner: {
-    title: 'Contul a fost pregătit de echipa Coridor',
+    title: `Contul a fost pregătit de echipa ${BRAND_NAME}`,
     filled: (staff: string) => `${staff} a completat pentru tine:`,
     company: 'datele firmei',
     documents: (n: number) => (n === 1 ? 'un document' : `${n} documente`),

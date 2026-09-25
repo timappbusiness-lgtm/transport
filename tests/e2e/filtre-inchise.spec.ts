@@ -247,7 +247,7 @@ for (const screen of SCREENS) {
       await visit(other, screen.path);
       await expect(moreFilters(other).panel).toBeHidden();
       // Nothing carried over for it to open from, so it stays closed after hydration too.
-      const key = `coridor:mai-multe-filtre:${await moreFilters(other).root.getAttribute('data-advanced-filters')}`;
+      const key = `app:mai-multe-filtre:${await moreFilters(other).root.getAttribute('data-advanced-filters')}`;
       expect(await other.evaluate((k) => sessionStorage.getItem(k), key)).toBeNull();
       expect(await page.evaluate((k) => sessionStorage.getItem(k), key)).toBe('deschis');
       await expect(moreFilters(other).button).toHaveAttribute('aria-expanded', 'false');

@@ -47,7 +47,7 @@ export type LocalDraftForm = (typeof LOCAL_DRAFT_FORMS)[number];
  * same form — an offer on one request and an offer on another.
  */
 export function draftKey(form: DraftForm | LocalDraftForm, scope?: string | null): string {
-  return scope ? `coridor.ciorna.${form}.${scope}` : `coridor.ciorna.${form}`;
+  return scope ? `app.ciorna.${form}.${scope}` : `app.ciorna.${form}`;
 }
 
 /** Largest payload kept, in characters. The database refuses more too. */

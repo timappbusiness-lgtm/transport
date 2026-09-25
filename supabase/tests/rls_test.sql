@@ -6454,7 +6454,37 @@ select pg_temp.check('PUB  and the refusal says where to write', 'fix',
   'blocked',
   p_setup => $s$update public.profiles set phone_verified = false
                   where id = 'f0000000-0000-0000-0000-000000000006';
-                update public.deletion_settings set support_email = 'ajutor@coridor.ro' where id$s$);
+                update public.deletion_settings set support_email = 'ajutor@exemplu.ro' where id$s$);
+
+-- With no support address set, the refusal used to name one on a domain
+-- guessed from the brand name, which nobody owns. It points at the
+-- Contact page now, and never writes an address nobody configured.
+do $pub$
+declare
+  v_err text;
+begin
+  begin
+    update public.profiles set phone_verified = false
+      where id = 'f0000000-0000-0000-0000-000000000006';
+    update public.deletion_settings set support_email = null where id;
+    perform set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000006', true);
+    set local role authenticated;
+    begin
+      perform public.reveal_contact('f1000000-0000-0000-0000-000000000001', null);
+    exception when others then
+      v_err := sqlerrm;
+    end;
+    reset role;
+    raise exception using errcode = 'ZZ999', message = 'rollback';
+  exception when sqlstate 'ZZ999' then
+    null;
+  end;
+
+  insert into rls_results (label, kind, pass, detail)
+  values ('PUB  with no support address the refusal points at the Contact page, never a guessed one', 'fix',
+          coalesce(v_err like '%din pagina Contact%' and v_err not like '%@%', false),
+          coalesce(v_err, 'no refusal'));
+end $pub$;
 
 -- =====================================================================
 -- STF - staff confirming a number by hand
@@ -12982,7 +13012,7 @@ begin
   perform set_config('request.jwt.claim.sub', p_user::text, true);
   select contract_id into v_id
   from public.generate_order_contract(p_order,
-         '{"brand":"Coridor","legal_name":"Operator SRL","cui":"123"}'::jsonb);
+         '{"brand":"Platforma","legal_name":"Operator SRL","cui":"123"}'::jsonb);
   perform set_config('request.jwt.claim.sub', '', true);
   return v_id;
 end $gc$;

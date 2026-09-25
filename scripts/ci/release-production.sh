@@ -13,7 +13,7 @@
 # newer commit's run is queued behind this one (concurrency: main-release)
 # and deploys once its own migrations are in.
 #
-# Production names its commit in the x-coridor-commit header, set in
+# Production names its commit in the x-app-commit header, set in
 # next.config.ts from VERCEL_GIT_COMMIT_SHA.
 set -euo pipefail
 
@@ -26,7 +26,7 @@ summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 served() {
   { curl -s -o /dev/null -D - --max-time 30 "${url}/" || true; } \
     | tr -d '\r' \
-    | awk 'tolower($1) == "x-coridor-commit:" { print $2 }'
+    | awk 'tolower($1) == "x-app-commit:" { print $2 }'
 }
 
 head=$(git ls-remote origin refs/heads/main | cut -f1)

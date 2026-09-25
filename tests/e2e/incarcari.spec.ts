@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(
     () =>
       new Promise<void>((resolve) => {
-        const request = indexedDB.deleteDatabase('coridor-trimiteri');
+        const request = indexedDB.deleteDatabase('app-trimiteri');
         request.onsuccess = request.onerror = request.onblocked = () => resolve();
       }),
   );

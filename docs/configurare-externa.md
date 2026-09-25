@@ -34,6 +34,7 @@ ordine.
 | 9 | Publicarea paginilor SEO și indexarea | Madalin | Traficul organic |
 | 10 | Furnizor de SMS (opțional la pilot) | Decizie client | Confirmarea telefonului |
 | 11 | Cele două rotițe de potrivire, verificate | Madalin | Nimic — au valori implicite care funcționează |
+| 12 | Pictograma oficială ANPC SAL, descărcată și pusă în subsol | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
 
 ---
 
@@ -59,21 +60,22 @@ după pasul 2, folosește butonul de la pasul 2.
 
 ## 2. Variabilele de mail pe Edge Functions
 
-**Ce:** patru variabile, dintre care două obligatorii.
+**Ce:** cinci variabile, dintre care trei obligatorii.
 
 | Variabila | Obligatorie | Exemplu | Ce face |
 |---|---|---|---|
 | `RESEND_API_KEY` | **da** | `re_xxx` | Cheia de API. Fără ea nu pleacă nimic |
-| `MAIL_FROM` | **da** | `nu-raspunde@coridor.ro` | Adresa de pe care pleacă. Trebuie să fie pe domeniul verificat la pasul 1 |
-| `MAIL_SENDER_NAME` | nu | `Coridor` | Numele afișat înaintea adresei |
-| `MAIL_REPLY_TO` | nu | `contact@coridor.ro` | Unde ajunge un răspuns. Fără el, răspunsurile se duc la `MAIL_FROM`, adică nicăieri |
+| `MAIL_FROM` | **da** | `nu-raspunde@domeniul-vostru.ro` | Adresa de pe care pleacă. Trebuie să fie pe domeniul verificat la pasul 1 |
+| `SITE_URL` | **da** | `https://domeniul-vostru.ro` | Adresa site-ului. Fiecare e-mail are un link spre o pagină și sigla de sus se ia de aici (`/brand/mark-email.png`). Fără ea dispecerul se oprește și o numește, în loc să trimită linkuri spre un domeniu ghicit |
+| `MAIL_SENDER_NAME` | nu | numele platformei | Numele afișat înaintea adresei. Lipsă, se folosește `BRAND_NAME` din `src/config/brand.ts` |
+| `MAIL_REPLY_TO` | nu | `contact@domeniul-vostru.ro` | Unde ajunge un răspuns. Fără el, răspunsurile se duc la `MAIL_FROM`, adică nicăieri |
 
 **Unde exact:** Supabase Dashboard → Project Settings → Edge Functions →
 Secrets → Add new secret, pentru fiecare. Sau:
 
 ```bash
-supabase secrets set RESEND_API_KEY=re_xxx MAIL_FROM=nu-raspunde@coridor.ro \
-  MAIL_SENDER_NAME=Coridor MAIL_REPLY_TO=contact@coridor.ro
+supabase secrets set RESEND_API_KEY=re_xxx MAIL_FROM=nu-raspunde@domeniul-vostru.ro \
+  SITE_URL=https://domeniul-vostru.ro MAIL_REPLY_TO=contact@domeniul-vostru.ro
 ```
 
 **Cum verifici:** intră pe `/admin/notificari`. Secțiunea „Furnizorul de
@@ -237,6 +239,12 @@ export const OPERATOR: LegalEntity = {
 `/cookies` nu mai trebuie să conțină nicăieri `[de completat]`, iar banda
 galbenă de sus de pe `/contact` trebuie să dispară.
 
+**De știut:** contractele de transport generate *înainte* să fie completate
+datele păstrează `[de completat]` la punctul 2 pentru totdeauna — o
+versiune de contract nu se mai schimbă. Pentru o comandă în curs, se
+generează o versiune nouă după ce datele sunt în cod. Telefonul e opțional
+în cod, dar `/cont/ajutor` îl arată ca lipsă până e completat.
+
 ## 7. Tarifele orientative
 
 **Ce:** cifrele din `price_rates` sunt **placeholder**, marcate ca atare
@@ -359,6 +367,28 @@ ultimele 30 de zile." Schimbi înapoi la 90. Ambele schimbări apar în
 completat rămâne cu al lui.
 
 ---
+
+## 12. Pictograma oficială ANPC (SAL)
+
+**Ce:** în subsolul fiecărei pagini există un rând „Protecția
+consumatorilor" cu legătura spre platforma ANPC de soluționare alternativă
+a litigiilor (`https://reclamatiisal.anpc.ro/`). Până acum e un buton
+simplu, cu formularea oficială: pictograma oficială (250×50) nu a putut fi
+descărcată din mediul în care s-a lucrat, iar o copie desenată de noi ar fi
+imitat un semn oficial. SOL (platforma europeană) nu apare: s-a închis pe
+20 iulie 2025, iar Ordinul ANPC 270/2026 a scos-o din Ordinul 449/2022.
+
+**Unde exact:**
+
+1. Descarcă pictograma SAL de pe `anpc.ro` și salveaz-o ca
+   `public/anpc/sal.png` (sau `.svg`).
+2. În `src/config/consumer-redress.ts`, la intrarea `sal`, pune
+   `badge: { src: '/anpc/sal.png', width: 250, height: 50 }`.
+
+**Cum verifici:** subsolul arată pictograma în locul butonului, pe `/`, pe
+`/cont` și pe `/admin`; un clic deschide `reclamatiisal.anpc.ro` într-o filă
+nouă. Avocatul confirmă legătura și formularea — punctul 13 din
+`docs/09-verificare-juridica.md`.
 
 ## Ce rămâne de decis, nu de configurat
 

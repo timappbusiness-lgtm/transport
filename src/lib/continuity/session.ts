@@ -20,7 +20,7 @@ import { withNext } from '@/lib/auth/next-path';
  * the browser unchanged when the error already has one, and never sends
  * the message in production — so the digest is the part that arrives.
  */
-export const SESSION_EXPIRED_DIGEST = 'CORIDOR_SESSION_EXPIRED';
+export const SESSION_EXPIRED_DIGEST = 'APP_SESSION_EXPIRED';
 
 export const SESSION_EXPIRED_MESSAGE =
   'Sesiunea ta a expirat. Ce ai completat a rămas aici — intră din nou în cont, apoi apasă încă o dată pe buton.';
@@ -42,7 +42,7 @@ export function isSessionExpired(error: unknown): boolean {
  * tells the others. The tab whose form hit the expired session is
  * listening, and says „you are back in, press the button again".
  */
-export const SESSION_CHANNEL = 'coridor.sesiune';
+export const SESSION_CHANNEL = 'app.sesiune';
 
 export type SessionMessage = { type: 'restored' };
 

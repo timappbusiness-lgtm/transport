@@ -174,8 +174,8 @@ describe('a draft in the browser', () => {
   });
 
   it('is kept per form and per scope', () => {
-    expect(draftKey('cerere')).toBe('coridor.ciorna.cerere');
-    expect(draftKey('oferta', 'abc')).toBe('coridor.ciorna.oferta.abc');
+    expect(draftKey('cerere')).toBe('app.ciorna.cerere');
+    expect(draftKey('oferta', 'abc')).toBe('app.ciorna.oferta.abc');
     expect(isDraftForm('cerere')).toBe(true);
     expect(isDraftForm('orice')).toBe(false);
   });
@@ -238,7 +238,7 @@ describe('asking before leaving', () => {
     expect(shouldAskBeforeLeaving({ dirty: false, confirmed: false })).toBe(false);
   });
 
-  const here = new URL('https://coridor.ro/cont/firma?sectiune=identitate');
+  const here = new URL('https://exemplu.ro/cont/firma?sectiune=identitate');
   const plain = { button: 0, metaKey: false, ctrlKey: false, shiftKey: false, altKey: false, defaultPrevented: false };
   const anchor = (href: string, extra: Partial<{ target: string; hasDownload: boolean }> = {}) => ({
     href,

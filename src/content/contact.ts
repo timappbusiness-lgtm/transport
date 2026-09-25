@@ -16,7 +16,7 @@ export const contactCopy = {
   meta: {
     title: 'Contact',
     description:
-      'Cum ne scrii: adresa de e-mail pentru platformă, adresa pentru date personale și datele firmei care operează Coridor.',
+      'Cum ne scrii: adresa de e-mail pentru platformă, adresa pentru date personale și datele firmei care operează platforma.',
   },
   hero: {
     eyebrow: 'Contact',

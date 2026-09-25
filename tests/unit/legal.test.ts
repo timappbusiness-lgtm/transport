@@ -6,6 +6,8 @@ import {
   type LegalDocument,
 } from '@/content/legal';
 import { OPERATOR, REQUIRED_FIELDS, missingLegalFields, operatorLine } from '@/config/company';
+import { RETIRED_REDRESS } from '@/config/consumer-redress';
+import { ACTIVE_COMPANY_COOKIE, ACTIVE_COMPANY_COOKIE_DAYS } from '@/lib/auth/account';
 
 const DOCUMENTS = Object.values(LEGAL_DOCUMENTS) as LegalDocument[];
 
@@ -158,7 +160,15 @@ describe('the cookie notice', () => {
     // whether it is necessary — which is the moment a banner becomes
     // mandatory rather than a decision made months later.
     expect(text).toContain('sb-');
-    expect(text).toContain('coridor_company');
+    expect(text).toContain(`„${ACTIVE_COMPANY_COOKIE}"`);
+  });
+
+  it('says how long each lasts, and the code agrees', () => {
+    // 1.0 said 30 days while the cookie was set for 365; the session
+    // cookie „lasted the session" while the library keeps it 400 days.
+    expect(ACTIVE_COMPANY_COOKIE_DAYS).toBe(30);
+    expect(text).toContain(`Durează ${ACTIVE_COMPANY_COOKIE_DAYS} de zile`);
+    expect(text).toContain('cel mult 400 de zile');
   });
 
   it('says there is no advertising and no analytics', () => {
@@ -170,8 +180,22 @@ describe('the cookie notice', () => {
     expect(text).toContain('nu am avea ce să îți cerem');
   });
 
-  it('mentions what sits in browser storage instead', () => {
-    expect(text).toContain('Ciorna cererii');
+  it('mentions what sits in browser storage instead, all of it', () => {
+    // Drafts (and their copy on the account), unsent short texts, files
+    // waiting to upload, where you were on a board, the message id, a
+    // dismissed note: 1.0 listed two of these and said none reached us.
+    for (const kept of [
+      'Ciorna unui formular lung',
+      'o copie stă și în contul tău',
+      'Textul scurt pe care nu l-ai trimis',
+      'Pozele și documentele alese pentru încărcare',
+      'Mai multe filtre',
+      'Un identificator pentru următorul mesaj',
+      'nota despre notificări',
+    ]) {
+      expect(text, kept).toContain(kept);
+    }
+    expect(text).not.toContain('nu ajung niciodată la noi');
   });
 });
 
@@ -213,5 +237,28 @@ describe('the operator details', () => {
     expect(line).toContain('CUI');
     expect(line).not.toContain('undefined');
     expect(line).not.toContain('null');
+  });
+});
+
+describe('consumer redress in the documents in force', () => {
+  const all = Object.values(LEGAL_DOCUMENTS)
+    .flatMap((d) => d.sections.flatMap((s) => [s.title, ...s.body, ...(s.list ?? []), s.link?.href ?? '']))
+    .join(' ');
+
+  it('no document sends a consumer to the closed European platform', () => {
+    // It closed on 20 July 2025; terms 1.0 still pointed at it.
+    expect(all).not.toContain('platforma europeană de soluționare online');
+    expect(all).not.toContain(RETIRED_REDRESS.sol.href);
+  });
+
+  it('the terms name the ANPC platform the footer links to', () => {
+    const terms = LEGAL_DOCUMENTS.termeni.sections.flatMap((s) => s.body).join(' ');
+    expect(terms).toContain('reclamatiisal.anpc.ro');
+  });
+
+  it('the privacy policy says where an IP address is kept as it is', () => {
+    const privacy = LEGAL_DOCUMENTS.confidentialitate.sections.flatMap((s) => [...s.body, ...(s.list ?? [])]).join(' ');
+    expect(privacy).toContain('când accepți un contract de transport, păstrăm adresa IP și browserul așa cum sunt');
+    expect(privacy).toContain('24 de luni, apoi se șterge');
   });
 });

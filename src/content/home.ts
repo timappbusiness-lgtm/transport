@@ -56,7 +56,7 @@ export const homeCopy = {
       free: 'liber',
     },
     corridor: {
-      title: 'Coridor și ocol acceptat',
+      title: 'Pe coridor, cu ocol acceptat',
       from: 'München',
       fromCc: 'DE' as CountryCode,
       to: 'Cluj-Napoca',

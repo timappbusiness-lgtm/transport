@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/primitives';
+import { BRAND_NAME } from '@/config/brand';
 import { onboardingCopy } from '@/content/inscrieri';
 import type { HandoverSummary } from '@/lib/onboarding-source';
 
@@ -25,7 +26,9 @@ export function HandoverBanner({ summary }: { summary: HandoverSummary }) {
   return (
     <Card className="border-success/45 bg-success/8 p-4">
       <h2 className="text-h3">{c.title}</h2>
-      <p className="mt-1 text-body text-muted">{c.filled(summary.staff_name)}</p>
+      {/* The database sends the staff member's name, or nothing when they
+          never filled it in; the team's name comes from the one constant. */}
+      <p className="mt-1 text-body text-muted">{c.filled(summary.staff_name.trim() || `echipa ${BRAND_NAME}`)}</p>
       <ul className="mt-2 flex flex-wrap gap-1.5">
         {filled.map((item) => (
           <li

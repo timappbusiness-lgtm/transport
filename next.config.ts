@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
     // într-un iframe străin; fără `Referrer-Policy`, id-urile din URL
     // pleacă la fiecare navigare spre exterior.
     const headers = [...securityHeaders(process.env.NEXT_PUBLIC_SUPABASE_URL)];
-    if (commit) headers.push({ key: 'x-coridor-commit', value: commit });
+    if (commit) headers.push({ key: 'x-app-commit', value: commit });
     return [{ source: '/:path*', headers }];
   },
 };

@@ -129,7 +129,7 @@ test.describe('the request form keeps its place', () => {
     await toContact(page);
     // The draft as the next morning might find it: the loading date passed.
     await page.evaluate(() => {
-      const key = 'coridor.ciorna.cerere';
+      const key = 'app.ciorna.cerere';
       const envelope = JSON.parse(localStorage.getItem(key) ?? '{}');
       envelope.payload.draft.loadingFrom = '2020-01-01';
       localStorage.setItem(key, JSON.stringify(envelope));

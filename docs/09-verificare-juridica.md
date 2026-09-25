@@ -108,6 +108,95 @@ contează.
     transporturilor.** Publicăm anunțuri și punem părțile în legătură. De
     confirmat că asta nu ne aduce obligații de licențiere.
 
+## Blocant de la prima vânzare online către consumatori
+
+13. **SAL și SOL (ANPC).** Ordinul ANPC 449/2022 cere comercianților care
+    vând online către consumatori să afișeze pe site două pictograme cu
+    legătură: SAL (soluționarea alternativă a litigiilor) și SOL
+    (platforma europeană de soluționare online a litigiilor).
+    - **Când devine obligatoriu pentru noi:** obligația privește vânzarea
+      către consumatori. Din momentul în care vindem abonamente online,
+      cu plata pe site, unui consumator, este obligatorie. Azi abonamentele
+      le cumpără firme și plata nu e online, iar persoanele fizice folosesc
+      platforma gratuit. De confirmat dacă serviciul gratuit către
+      consumatori ne aduce obligația deja. Rândul e oricum în subsolul
+      fiecărei pagini, de pe 25 septembrie 2026, ca să nu depindă de o
+      amintire.
+    - **Ce am pus:** numai SAL, cu legătura `https://reclamatiisal.anpc.ro/`,
+      ca buton simplu cu formularea oficială, într-un rând al lui, pe toate
+      paginile, inclusiv în cont și în zona echipei
+      (`src/config/consumer-redress.ts`). Pictograma oficială nu a putut fi
+      descărcată; se pune în doi pași, `docs/configurare-externa.md` §12.
+    - **De ce nu SOL:** platforma europeană a fost desființată prin
+      Regulamentul (UE) 2024/3228 și s-a închis pe 20 iulie 2025; o
+      legătură spre ea după data aceea poate induce în eroare. Ordinul ANPC
+      270/2026 (7 aprilie 2026) a modificat Ordinul 449/2022: a scos
+      referirile la SOL și a trecut SAL pe platforma reclamatiisal.anpc.ro,
+      cu o pictogramă nouă de 250×50. **Sursele sunt comunicatul ANPC și
+      presa; textul oficial nu a putut fi deschis** (anpc.ro și
+      legislatie.just.ro erau inaccesibile din mediul de lucru).
+    - **De confirmat:** (a) că SOL nu mai trebuie afișat; (b) legătura
+      exactă pentru SAL; (c) dacă e obligatorie pictograma oficială, nu
+      un buton, și unde (prima pagină, subsol); (d) termenul de
+      conformare cu Ordinul 270/2026; (e) punctul 12 din contractul de
+      transport menționează ANPC și SAL — de aliniat cu ce se confirmă.
+    - Termenii 1.1 (§11) nu mai trimit la platforma europeană; e singura
+      schimbare față de 1.0.
+
+## Ce spun textele și nu face produsul (verificat pe 25 septembrie 2026)
+
+Am citit fiecare frază din cele trei documente față de cod. Contradicțiile
+de fapt, mici și fără echivoc, sunt corectate în versiunile 1.1 (termeni
+§11; confidențialitate: adresa IP la acceptarea contractului, termenul de
+24 de luni al jurnalului deciziilor; cookie-uri: numele și durata
+cookie-ului de firmă, durata sesiunii, tot ce ține browserul). Restul cer
+o decizie — construim ce promite textul, sau schimbăm textul — și nu le-am
+rescris:
+
+- **Termeni §12 — reacceptarea.** „…ți-o arătăm la următoarea
+  autentificare, ca să o accepți înainte de a continua." Întrebarea apare
+  numai la intrarea în `/cont`; publicarea unei cereri, deschiderea unui
+  contact, salvarea unei căutări și cererea de abonament merg și fără
+  acceptare, iar baza de date nu verifică. Propunere: verificarea în
+  acțiunile publice (cod), nu schimbarea textului.
+- **Termeni §3, §8, §9 — suspendarea de către echipă.** „Îți spunem
+  motivul și ai dreptul să răspunzi." Nu există ecran sau funcție pentru
+  o suspendare decisă de echipă; suspendarea automată (act expirat) există
+  și anunță motivul. Persoanele fizice nu pot fi suspendate deloc.
+- **Termeni §7 — abonamentul.** Nu spune de planul gratuit (3 deschideri
+  pe lună) și nici de perioada de probă de 30 de zile; promite 30 de zile
+  de preaviz la schimbarea prețului, pentru care nu există mecanism.
+- **Termeni §9 — renunțarea.** „Contul se oprește imediat." Ștergerea e
+  blocată cât ai transporturi neîncheiate sau ești singurul proprietar al
+  unei firme cu alți membri.
+- **Confidențialitate §4 — cererile persoanelor fizice, 12 luni.** Nu
+  există job care să le șteargă; secțiunea spune că termenele ei sunt
+  aplicate efectiv.
+- **Confidențialitate §5 — deschiderea contactelor.** „…o poți vedea în
+  exportul datelor tale." Exportul arată doar deschiderile făcute de tine;
+  cine ți-a deschis numărul nu vezi nicăieri.
+- **Confidențialitate §7 — exportul.** „…o arhivă cu tot ce avem despre
+  tine." Lipsesc vehiculele, șoferii, căutările salvate, sesizările,
+  evaluările și mesajele primite, contractele și acceptările, istoricul
+  termenilor și fișierele însele.
+- **Confidențialitate §4 — dovezile transportului.** „La anonimizare se
+  șterg odată cu restul datelor tale." Se șterg numai la anonimizarea unei
+  firme; la ștergerea unui client persoană fizică rămân numele și
+  semnătura primitorului.
+- **Confidențialitate §3 — e-mailurile despre cont „nu pot fi oprite".**
+  Amintirea despre un act care expiră are link de dezabonare.
+- **Confidențialitate §3, §7 — marketingul.** Consimțământ „bifat separat"
+  și retragere „dintr-un clic": nu există nici bifa, nici e-mailuri de
+  marketing. Promisiunea nu e încălcată azi, dar mecanismul lipsește.
+- **Confidențialitate §5, §6 — cine mai vede datele.** Nu sunt numiți
+  furnizorul de e-mail (Resend), serviciile de notificări ale browserelor
+  și, când va fi pornit, furnizorul de SMS. „Singurul transfer" în afara
+  UE e îndoielnic: Resend, Vercel și Supabase sunt firme americane.
+  Regiunea Vercel nu e fixată în cod.
+- **Termeni §3, §11 — mărunte.** Vârsta de 18 ani nu e declarată nicăieri
+  la înscriere; termenul de răspuns e 30 de zile în termeni și două zile
+  lucrătoare pe `/contact`.
+
 ## De știut înainte de discuție
 
 - Nu încasăm bani pentru transport. Nu există escrow, comision sau plată în

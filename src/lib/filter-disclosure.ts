@@ -32,7 +32,7 @@ export interface FilterChip {
 /** The first paint, on every screen, whatever the address carries. */
 export const ADVANCED_OPEN_ON_LOAD = false;
 
-const STORAGE_PREFIX = 'coridor:mai-multe-filtre:';
+const STORAGE_PREFIX = 'app:mai-multe-filtre:';
 const OPEN = 'deschis';
 
 /** One key per screen: /cereri remembering its panel says nothing about /trasee. */
