@@ -67,11 +67,11 @@ export function readTokens(root: string): Tokens {
   return out;
 }
 
-/** The two strokes, on the 24-unit grid. */
-function glyph(ramp: string, deck: string, stroke: number): string {
+/** The car and the deck, on the 24-unit grid. */
+function glyph(car: string, deck: string, stroke: number): string {
   return (
-    `<g fill="none" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">` +
-    `<path d="${MARK.deck}" stroke="${deck}"/><path d="${MARK.ramp}" stroke="${ramp}"/></g>`
+    `<path d="${MARK.car}" fill="${car}"/>` +
+    `<path d="${MARK.deck}" fill="none" stroke="${deck}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"/>`
   );
 }
 
@@ -198,7 +198,7 @@ export const BRAND_SLUG = ${JSON.stringify(BRAND_SLUG)};
 
 export const MARK = {
   grid: ${MARK.grid},
-  ramp: ${JSON.stringify(MARK.ramp)},
+  car: ${JSON.stringify(MARK.car)},
   deck: ${JSON.stringify(MARK.deck)},
 } as const;
 `;

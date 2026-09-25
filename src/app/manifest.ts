@@ -13,10 +13,9 @@ import { BACKGROUND_COLOR, THEME_COLOR } from '@/config/theme';
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${BRAND_NAME} — transport auto`,
+    name: BRAND_NAME,
     short_name: BRAND_NAME,
-    description:
-      'Bursă de transport auto pentru România și Europa. Cereri, trasee și transportatori cu documente verificate.',
+    description: `${BRAND_NAME}: bursa de transport auto pentru România și Europa. Cereri, trasee și transportatori cu documente verificate.`,
     lang: 'ro',
     dir: 'ltr',
     start_url: ROUTES.account,

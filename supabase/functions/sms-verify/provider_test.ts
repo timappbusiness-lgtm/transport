@@ -1,4 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
+import { BRAND_NAME } from "../_shared/brand.ts";
 import {
   generateCode,
   hashCode,
@@ -150,8 +151,15 @@ Deno.test("the message says what it is, how long it lasts and not to share it", 
   assert(message.includes("Exemplu"));
   assert(message.includes("10 minute"));
   assert(message.includes("Nu îl da nimănui"));
-  // An SMS is 160 characters, and every one over that is a second SMS.
-  assert(message.length <= 160, `${message.length} de caractere`);
+});
+
+Deno.test("with the platform's real name it is one SMS, not two", () => {
+  // ă, î, ș and ț are not in the GSM 7-bit alphabet, so the message goes
+  // as UCS-2, whose single segment is 70 characters, not 160. The old
+  // text was 77 with the new name: two SMS, twice the price, every time.
+  const message = verificationMessage("123456", BRAND_NAME);
+  assert(/[ăâîșț]/.test(message), "the Unicode limit applies");
+  assert(message.length <= 70, `${message.length} de caractere`);
 });
 
 Deno.test("the hash is what the database stores, and the code is not in it", async () => {

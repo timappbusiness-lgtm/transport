@@ -16,8 +16,7 @@ import { StatsBand } from '@/components/home/stats-band';
 import { BRAND_NAME } from '@/config/brand';
 
 const TITLE = `${BRAND_NAME} — transport auto cu firme verificate`;
-const DESCRIPTION =
-  'Publici gratuit cererea de transport auto și primești oferte doar de la transportatori cu documente valabile. Rute naționale și internaționale, tarife orientative.';
+const DESCRIPTION = `Pe ${BRAND_NAME} publici gratuit cererea de transport auto și primești oferte doar de la transportatori cu documente valabile. Rute naționale și internaționale, tarife orientative.`;
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

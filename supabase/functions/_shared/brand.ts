@@ -5,13 +5,13 @@
 // import from src/, so the name and the mark reach them through this copy.
 // tests/unit/brand.test.ts fails when it falls behind.
 
-export const BRAND_NAME = "Coridor";
+export const BRAND_NAME = "Transauto Bursa";
 
 /** Lowercase ASCII letters and digits: a file name, a crawler's name. */
-export const BRAND_SLUG = "coridor";
+export const BRAND_SLUG = "transautobursa";
 
 export const MARK = {
   grid: 24,
-  ramp: "M3 18 H6.5 L13 6 H21",
-  deck: "M11 18 H21",
+  car: "M3.5 13.5 V10 Q3.5 8 5.5 8 H7.5 L10.5 4 H16 L19 8 H19.5 Q21.5 8 21.5 10 V13.5 Z",
+  deck: "M2 20 L5 17 H22",
 } as const;

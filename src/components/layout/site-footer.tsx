@@ -24,7 +24,7 @@ export async function SiteFooter() {
         <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
           <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <Logo size={24} className="text-body text-foreground" />
-            <span>— bursă de transport auto pentru România și Europa.</span>
+            <span>— transport auto pentru România și Europa, cu firme verificate.</span>
           </p>
           <nav aria-label="Secundar" className="flex flex-wrap gap-5">
             {FOOTER_NAV.map((l) => (

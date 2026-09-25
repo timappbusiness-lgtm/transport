@@ -58,8 +58,7 @@ export const metadata: Metadata = {
     default: `${BRAND_NAME} — ${BRAND_TAGLINE_RO}`,
     template: `%s — ${BRAND_NAME}`,
   },
-  description:
-    'Bursă de transport auto pentru România și Europa. Cereri de transport și transportatori cu documente verificate.',
+  description: `${BRAND_NAME}: bursa de transport auto pentru România și Europa. Cereri de transport și transportatori cu documente verificate.`,
   // The homepage sets its own title, description and Open Graph values from
   // the copy in the homepage brief. These are the app-wide defaults.
   // One flag, read in one place — `NEXT_PUBLIC_SEO_INDEXABLE=1` on the

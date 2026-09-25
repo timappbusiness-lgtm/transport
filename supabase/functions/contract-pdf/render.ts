@@ -69,6 +69,7 @@ export interface PdfDoc {
   lineWidth(width: number): PdfDoc;
   lineCap(cap: string): PdfDoc;
   lineJoin(join: string): PdfDoc;
+  fill(color?: string): PdfDoc;
   save(): PdfDoc;
   restore(): PdfDoc;
   translate(x: number, y: number): PdfDoc;
@@ -228,9 +229,9 @@ export async function renderContractPdf(contract: ContractDocument, deps: Render
   const markPt = 14;
   doc.save();
   doc.translate(left, y).scale(markPt / MARK.grid);
+  doc.path(MARK.car).fill(PRINT.color.muted);
   doc.lineWidth(2.75).lineCap('round').lineJoin('round').strokeColor(PRINT.color.muted);
   doc.path(MARK.deck).stroke();
-  doc.path(MARK.ramp).stroke();
   doc.restore();
   style(SEMIBOLD, PRINT.size.small, PRINT.color.muted);
   doc.text(contract.info.author, left + markPt + 2 * PRINT.step, y + (markPt - PRINT.size.small * 1.21) / 2, {

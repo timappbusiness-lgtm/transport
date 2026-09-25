@@ -96,7 +96,7 @@ test.describe('the logo', () => {
         const header = page.locator('header').first();
         const mark = header.locator('svg[data-logo-mark]').first();
         await expect(mark).toBeVisible();
-        await expect(mark.locator(`path[d="${MARK.ramp}"]`)).toHaveCount(1);
+        await expect(mark.locator(`path[d="${MARK.car}"]`)).toHaveCount(1);
         // Polled: the header's session half replaces the signed-out one a
         // moment after load, and a box read across the swap is null.
         await expect.poll(async () => (await mark.boundingBox())?.width).toBe(24);

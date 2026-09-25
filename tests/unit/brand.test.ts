@@ -159,7 +159,7 @@ describe('what `pnpm brand` wrote is up to date', () => {
 
   it('the favicon is the mark', () => {
     const svg = readFileSync(FAVICON_SVG, 'utf8');
-    expect(svg).toContain(`d="${MARK.ramp}"`);
+    expect(svg).toContain(`d="${MARK.car}"`);
     expect(svg).toContain(`d="${MARK.deck}"`);
   });
 });
