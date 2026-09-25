@@ -42,8 +42,7 @@ test.describe('the consumer-redress row in the footer', () => {
         await expect(link).toHaveAttribute('target', '_blank');
         await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
         // A tap target a thumb can hit.
-        const box = await link.boundingBox();
-        expect(box!.height).toBeGreaterThanOrEqual(24);
+        await expect.poll(async () => (await link.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(24);
       }
 
       // Not mixed in with the navigation: nothing in the footer's nav
@@ -98,7 +97,9 @@ test.describe('the logo', () => {
         const mark = header.locator('svg[data-logo-mark]').first();
         await expect(mark).toBeVisible();
         await expect(mark.locator(`path[d="${MARK.ramp}"]`)).toHaveCount(1);
-        expect((await mark.boundingBox())!.width).toBe(24);
+        // Polled: the header's session half replaces the signed-out one a
+        // moment after load, and a box read across the swap is null.
+        await expect.poll(async () => (await mark.boundingBox())?.width).toBe(24);
 
         const brand = header.getByRole('link', { name: BRAND_NAME }).first();
         await expect(brand).toBeVisible();
