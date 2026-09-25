@@ -5,8 +5,9 @@
  * show two pictograms on its site: SAL (soluționarea alternativă a
  * litigiilor, the national alternative dispute resolution entities) and
  * SOL (soluționarea online a litigiilor, the European Commission's online
- * dispute resolution platform). The footer draws both, in the look of the
- * official badges (`src/components/layout/anpc-badges.tsx`).
+ * dispute resolution platform). The footer shows ANPC's own artwork from
+ * Annex 2 (`src/components/layout/anpc-badges.tsx`), in the annex's order:
+ * SAL, then SOL.
  *
  * - **SAL** points at the ANPC complaints platform, reclamatiisal.anpc.ro,
  *   since ANPC Order 270/2026 (7 April 2026).
@@ -21,63 +22,54 @@
  *   whether it stays — `docs/09-verificare-juridica.md`, item 13 — and
  *   removing it is deleting the `sol` entry below.
  *
- * Both facts come from public reporting of the two acts and of the
- * Commission's notice; the sandbox this was written in could not open
- * anpc.ro, legislatie.just.ro or ec.europa.eu.
- *
- * The official pictograms are 250×50 and ANPC publishes them for traders
- * to download and host. They are not in the repository: nobody here could
- * download them. Until they are, the badges are our own markup in the
- * official layout and the official blue, with the word „ANPC" where the
- * SAL pictogram carries the authority's coat of arms — drawing a copy of
- * the arms would be imitating an official mark. `docs/configurare-externa.md`
- * §12 has the two steps that swap in the official files.
+ * The images are cut from the annex as published (`docs/anpc/anexa-2.png`)
+ * by `pnpm anpc`, because the separate files on anpc.ro could not be
+ * downloaded from where this was written. They are the official artwork,
+ * untouched: nothing here draws, recolours or restyles them.
  */
 
 export interface RedressEntry {
-  key: 'sol' | 'sal';
-  /** The official wording, exactly; the badge prints it in capitals. */
+  key: 'sal' | 'sol';
+  /** The official wording, exactly, as printed on the badge. */
   label: string;
+  /** What a screen reader hears for the badge: the image's alt text. */
+  name: string;
   href: string;
-  /** SAL carries the authority beside its wording, SOL does not. */
-  withAuthority: boolean;
-  /**
-   * The official ANPC pictogram, once somebody has downloaded it from
-   * anpc.ro and saved it under `public/`. `null` draws our own badge.
-   */
-  badge: { src: string; width: 250; height: 50 } | null;
+  /** The file in `public/`, at twice the size it is shown at. */
+  image: { src: string; width: number; height: number };
   /** When the service behind the link closed, if it has. */
   closedOn: string | null;
 }
 
 export const CONSUMER_REDRESS: readonly RedressEntry[] = [
   {
-    key: 'sol',
-    label: 'Soluționarea online a litigiilor',
-    href: 'https://ec.europa.eu/consumers/odr',
-    withAuthority: false,
-    badge: null,
-    closedOn: '2025-07-20',
-  },
-  {
     key: 'sal',
     label: 'Soluționarea alternativă a litigiilor',
+    name: 'Soluționarea alternativă a litigiilor — ANPC',
     href: 'https://reclamatiisal.anpc.ro/',
-    withAuthority: true,
-    badge: null,
+    image: { src: '/anpc/sal.png', width: 500, height: 126 },
     closedOn: null,
   },
+  {
+    key: 'sol',
+    label: 'Soluționarea online a litigiilor',
+    name: 'Soluționarea online a litigiilor',
+    href: 'https://ec.europa.eu/consumers/odr',
+    image: { src: '/anpc/sol.png', width: 500, height: 126 },
+    closedOn: '2025-07-20',
+  },
 ];
+
+/** The width each badge is shown at on a wide screen, in CSS pixels. */
+export const BADGE_WIDTH = 250;
+
+/** The widest a badge grows on a phone, where it takes the full width. */
+export const BADGE_MAX_WIDTH = 300;
 
 export function redressEntry(key: RedressEntry['key']): RedressEntry {
   const entry = CONSUMER_REDRESS.find((e) => e.key === key);
   if (!entry) throw new Error(`no consumer redress entry ${key}`);
   return entry;
-}
-
-/** What a screen reader hears for one badge: the wording, then who. */
-export function redressName(entry: RedressEntry): string {
-  return `${entry.label} — ANPC`;
 }
 
 /** The heading of the footer row, for screen readers and for the tests. */

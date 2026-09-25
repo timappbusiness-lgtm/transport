@@ -22,7 +22,8 @@
     "gen:types": "bash scripts/gen-types.sh",
     "brand": "node scripts/brand/generate.ts",
     "seed:departures": "bash scripts/seed-departures.sh",
-    "seed:requests": "bash scripts/seed-requests.sh"
+    "seed:requests": "bash scripts/seed-requests.sh",
+    "anpc": "node scripts/anpc/crop.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

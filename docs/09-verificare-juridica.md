@@ -122,21 +122,25 @@ contează.
       consumatori ne aduce obligația deja. Rândul e oricum în subsolul
       fiecărei pagini, de pe 25 septembrie 2026, ca să nu depindă de o
       amintire.
-    - **Ce am pus (actualizat pe 25 septembrie 2026):** ambele insigne,
-      SOL și SAL, în aspectul pictogramelor oficiale — chenar albastru
-      rotunjit pe alb, formularea oficială cu majuscule, butonul „DETALII",
-      iar la SAL „ANPC" în stânga, după o linie verticală — într-un rând al
-      lor, în subsolul fiecărei pagini, inclusiv în cont și în zona echipei
+    - **Ce am pus (actualizat pe 25 septembrie 2026):** pictogramele
+      oficiale din Anexa 2 a ordinului ANPC, în ordinea din anexă — SAL (cu
+      emblema ANPC), apoi SOL — într-un rând al lor, în subsolul fiecărei
+      pagini, inclusiv în cont și în zona echipei
       (`src/config/consumer-redress.ts`, `src/components/layout/anpc-badges.tsx`).
-      Legături: SAL `https://reclamatiisal.anpc.ro/`, SOL
+      Fiecare are 250 px lățime pe ecran mare și toată lățimea, până la
+      300 px, pe telefon, cu proporțiile originale. Legături: SAL
+      `https://reclamatiisal.anpc.ro/`, SOL
       `https://ec.europa.eu/consumers/odr`. Fiecare se deschide într-o filă
       nouă.
-    - **Nu sunt fișierele oficiale.** Pictogramele ANPC nu au putut fi
-      descărcate din mediul de lucru, așa că insignele sunt desenate de noi,
-      în albastrul pictogramelor. În locul stemei ANPC de pe pictograma
-      SAL scrie „ANPC": o stemă redesenată de noi ar fi imitat un semn
-      oficial. Fișierele oficiale se pun în doi pași,
-      `docs/configurare-externa.md` §12.
+    - **De unde sunt imaginile.** Fișierele separate de pe anpc.ro nu au
+      putut fi descărcate din mediul de lucru, așa că insignele sunt
+      decupate din facsimilul anexei (`docs/anpc/anexa-2.png`), cu
+      `pnpm anpc` (`scripts/anpc/crop.ts`). Nu sunt redesenate, recolorate
+      sau modificate; singura schimbare este hârtia albă din afara
+      colțurilor rotunjite, făcută transparentă ca să nu apară pe subsolul
+      gri. **Anexa aceasta conține încă SOL, deci este varianta din Ordinul
+      449/2022.** Ordinul 270/2026 anunță o pictogramă SAL nouă, de
+      250×50, care poate arăta altfel.
     - **SOL este afișat din decizia proprietarului, deși platforma e
       închisă.** Platforma europeană a fost desființată prin Regulamentul
       (UE) 2024/3228 și s-a închis pe 20 iulie 2025; adresa de mai sus
@@ -151,9 +155,9 @@ contează.
       lucru).
     - **De confirmat:** (a) dacă SOL rămâne sau se scoate — scoaterea
       înseamnă ștergerea intrării `sol` din `consumer-redress.ts`; (b)
-      legătura exactă pentru SAL; (c) dacă e obligatorie pictograma
-      oficială, nu o reproducere a aspectului ei, și dacă „ANPC" scris în
-      locul stemei este acceptabil până atunci; (d) unde trebuie să apară
+      legătura exactă pentru SAL; (c) dacă pictograma SAL din Anexa 2 a
+      Ordinului 449/2022 mai este cea valabilă sau trebuie înlocuită cu
+      cea nouă din Ordinul 270/2026; (d) unde trebuie să apară
       (prima pagină, subsol, bara de meniu); (e) termenul de conformare cu
       Ordinul 270/2026; (f) punctul 12 din contractul de transport
       menționează ANPC și SAL — de aliniat cu ce se confirmă.

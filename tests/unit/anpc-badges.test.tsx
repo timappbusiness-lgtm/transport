@@ -1,126 +1,111 @@
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
+import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { AnpcBadges, SalBadge, SolBadge } from '@/components/layout/anpc-badges';
-import { CONSUMER_REDRESS, redressEntry, redressName } from '@/config/consumer-redress';
-import { contrast } from './contrast.test';
+import { AnpcBadges } from '@/components/layout/anpc-badges';
+import { BADGE_WIDTH, CONSUMER_REDRESS, redressEntry } from '@/config/consumer-redress';
 
 /**
- * The ANPC badges in the footer: the authority's colours, kept to the two
- * badges, and each badge one link that says where it goes.
+ * The ANPC badges in the footer are ANPC's own artwork from Annex 2, cut by
+ * `pnpm anpc` from `docs/anpc/anexa-2.png`. What is checked here: the files
+ * are there, at twice the size they are shown at, and the config says the
+ * same sizes; the order is the annex's; each badge is one link, named by
+ * its image, to the official page.
  */
 
-const CSS = readFileSync('src/app/globals.css', 'utf8');
-const BADGES = 'src/components/layout/anpc-badges.tsx';
-
-function sources(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...sources(path));
-    else if (/\.(tsx?|css)$/.test(entry.name)) out.push(path);
-  }
-  return out;
+/** Width and height from a PNG's header, without decoding it. */
+function pngSize(path: string): { width: number; height: number } {
+  const bytes = readFileSync(path);
+  expect(bytes.subarray(1, 4).toString('ascii'), `${path} is a PNG`).toBe('PNG');
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
-function token(name: string): string {
-  const match = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`).exec(CSS);
-  if (!match) throw new Error(`--color-${name} missing`);
-  return match[1]!.toLowerCase();
-}
-
-describe('the ANPC colours', () => {
-  it('are the blue sampled from the official badges and plain white', () => {
-    expect(token('anpc-blue')).toBe('#292b6e');
-    expect(token('anpc-paper')).toBe('#ffffff');
+describe('the official files', () => {
+  it('are kept with the annex they were cut from', () => {
+    expect(existsSync('docs/anpc/anexa-2.png')).toBe(true);
+    const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { scripts: Record<string, string> };
+    expect(pkg.scripts.anpc).toBe('node scripts/anpc/crop.ts');
   });
 
-  it('are used by the two badges and by nothing else', () => {
-    const users = sources('src').filter(
-      (file) => file !== 'src/app/globals.css' && /anpc-(?:blue|paper)/.test(readFileSync(file, 'utf8')),
-    );
-    expect(users).toEqual([BADGES]);
-    const badges = readFileSync(BADGES, 'utf8');
-    expect(badges).toMatch(/export function SolBadge/);
-    expect(badges).toMatch(/export function SalBadge/);
-  });
+  it.each(CONSUMER_REDRESS.map((e) => [e.key, e] as const))(
+    '%s is a PNG at twice the width it is shown at, and the config knows its size',
+    (_key, entry) => {
+      const file = `public${entry.image.src}`;
+      expect(existsSync(file), file).toBe(true);
+      const size = pngSize(file);
+      expect(size).toEqual({ width: entry.image.width, height: entry.image.height });
+      expect(size.width).toBe(BADGE_WIDTH * 2);
+    },
+  );
 
-  it('exist as values in the stylesheet only', () => {
-    const holders = sources('src').filter((file) => /#292b6e/i.test(readFileSync(file, 'utf8')));
-    expect(holders).toEqual(['src/app/globals.css']);
-  });
+  it.each(CONSUMER_REDRESS.map((e) => [e.key, e] as const))(
+    '%s keeps every pixel of the badge; only the paper outside its rounded corners is clear',
+    async (_key, entry) => {
+      const { data, info } = await sharp(`public${entry.image.src}`)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const alpha = (x: number, y: number) => data[(y * info.width + x) * info.channels + 3];
+      // The corner is outside the rounded border: clear, so no white shows
+      // on the grey footer.
+      expect(alpha(0, 0)).toBe(0);
+      expect(alpha(info.width - 1, info.height - 1)).toBe(0);
+      // The middle and the length of the sides are the badge: opaque.
+      expect(alpha(Math.floor(info.width / 2), Math.floor(info.height / 2))).toBe(255);
+      expect(alpha(Math.floor(info.width / 2), 4)).toBe(255);
+      // And the clear part is the corners and a hairline, nothing more.
+      let clear = 0;
+      for (let i = 3; i < data.length; i += info.channels) if (data[i] === 0) clear += 1;
+      expect(clear / (info.width * info.height)).toBeLessThan(0.03);
+    },
+  );
 
-  it('and the badges borrow none of ours: no accent, no surface, no ink as a colour', () => {
-    const classes = readFileSync(BADGES, 'utf8');
-    expect(classes).not.toMatch(/\b(?:bg|text|border|fill|stroke)-(?:accent|surface|foreground|muted|ground|background)/);
-  });
-
-  it('read on each other at the AAA floor, both ways', () => {
-    expect(contrast(token('anpc-blue'), token('anpc-paper'))).toBeGreaterThanOrEqual(7);
+  it('are the same height, so the two sit level side by side', () => {
+    const [sal, sol] = CONSUMER_REDRESS.map((e) => e.image.height);
+    expect(sal).toBe(sol);
   });
 });
 
 describe('the badges', () => {
   const html = renderToStaticMarkup(<AnpcBadges />);
 
-  it('are two, SOL then SAL, as on the official sites', () => {
-    expect(CONSUMER_REDRESS.map((e) => e.key)).toEqual(['sol', 'sal']);
+  it('are in the annex order: SAL with the emblem, then SOL', () => {
+    expect(CONSUMER_REDRESS.map((e) => e.key)).toEqual(['sal', 'sol']);
     expect(html.match(/<a /g)).toHaveLength(2);
-    expect(html.indexOf('data-redress="sol"')).toBeLessThan(html.indexOf('data-redress="sal"'));
+    expect(html.indexOf('data-redress="sal"')).toBeLessThan(html.indexOf('data-redress="sol"'));
   });
 
   it.each(CONSUMER_REDRESS.map((e) => [e.key, e] as const))(
-    '%s is one link to the official page, in a new tab, telling nothing back',
+    '%s is one link to the official page, in a new tab, named by its image',
     (_key, entry) => {
-      const link = new RegExp(`<a [^>]*data-redress="${entry.key}"[^>]*>`).exec(html)?.[0] ?? '';
-      expect(link).toContain(`href="${entry.href}"`);
-      expect(link).toContain('target="_blank"');
-      expect(link).toContain('rel="noopener noreferrer"');
-      expect(link).toContain(`aria-label="${redressName(entry)} (se deschide într-o filă nouă)"`);
-      // A visible focus ring, not the browser default that a reset may take away.
-      expect(link).toContain('focus-visible:outline-2');
+      const link = new RegExp(`<a [^>]*data-redress="${entry.key}"[^>]*>(.*?)</a>`).exec(html);
+      expect(link).not.toBeNull();
+      const [open, inner] = [link![0].slice(0, link![0].indexOf('>') + 1), link![1]!];
+      expect(open).toContain(`href="${entry.href}"`);
+      expect(open).toContain('target="_blank"');
+      expect(open).toContain('rel="noopener noreferrer"');
+      expect(open).toContain('aria-describedby="anpc-badge-new-tab"');
+      expect(open).toContain('focus-visible:outline-2');
+      // The image is the whole content, and its alt text is the name.
+      expect(inner).toMatch(new RegExp(`^<img [^>]*alt="${entry.name}"[^>]*/?>$`));
+      expect(inner).toContain(`src="${entry.image.src}"`);
+      expect(inner).toContain(`width="${BADGE_WIDTH}"`);
+      // Sized, never stretched: the height follows the file.
+      expect(inner).toContain('h-auto');
     },
   );
 
-  it('are named by their wording and the authority', () => {
-    expect(redressName(redressEntry('sol'))).toBe('Soluționarea online a litigiilor — ANPC');
-    expect(redressName(redressEntry('sal'))).toBe('Soluționarea alternativă a litigiilor — ANPC');
+  it('say they open a new tab without changing their names', () => {
+    expect(html).toMatch(/<span id="anpc-badge-new-tab" hidden="">Se deschide într-o filă nouă\.<\/span>/);
+    expect(redressEntry('sal').name).toBe('Soluționarea alternativă a litigiilor — ANPC');
+    expect(redressEntry('sol').name).toBe('Soluționarea online a litigiilor');
   });
 
-  it('print the wording on two lines and a DETALII pill, hidden from a screen reader so nothing is read twice', () => {
-    for (const entry of CONSUMER_REDRESS) {
-      const one = renderToStaticMarkup(
-        entry.key === 'sal' ? <SalBadge entry={entry} /> : <SolBadge entry={entry} />,
-      );
-      expect(one).toContain('aria-hidden="true"');
-      expect(one).toContain('>a litigiilor</span>');
-      // One sentence when the markup is read as text, not two words glued.
-      const text = one.replace(/<[^>]+>/g, '');
-      expect(text.toLowerCase()).toContain(entry.label.toLowerCase());
-      expect(one).toContain('>Detalii</span>');
-      expect(one).toContain('uppercase');
-    }
-  });
-
-  it('SAL carries the authority on its left, behind a rule; SOL does not', () => {
-    const sal = renderToStaticMarkup(<SalBadge entry={redressEntry('sal')} />);
-    const sol = renderToStaticMarkup(<SolBadge entry={redressEntry('sol')} />);
-    expect(sal).toMatch(/border-r-2 border-anpc-blue[^>]*>ANPC</);
-    expect(sol).not.toContain('>ANPC<');
-  });
-
-  it('draw no copy of the coat of arms: no image, no drawing, until the official file is added', () => {
-    expect(html).not.toMatch(/<svg|<img/);
-    for (const entry of CONSUMER_REDRESS) expect(entry.badge).toBeNull();
-  });
-
-  it('once the official file is in public/, show it as decoration inside the same link', () => {
-    const official = { ...redressEntry('sal'), badge: { src: '/anpc/sal.png', width: 250 as const, height: 50 as const } };
-    const one = renderToStaticMarkup(<SalBadge entry={official} />);
-    expect(one).toMatch(/<img[^>]*alt=""/);
-    expect(one).toContain('/anpc/sal.png');
-    expect(one).toContain(`aria-label="${redressName(official)} (se deschide într-o filă nouă)"`);
+  it('draw nothing of their own: no CSS badge, no colour of ours on them', () => {
+    const source = readFileSync('src/components/layout/anpc-badges.tsx', 'utf8');
+    expect(source).not.toMatch(/\b(?:bg|text|border|fill|stroke)-(?:accent|anpc)/);
+    expect(html).not.toContain('Detalii');
+    expect(html).not.toMatch(/<svg/);
   });
 });
 

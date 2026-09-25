@@ -34,7 +34,7 @@ ordine.
 | 9 | Publicarea paginilor SEO și indexarea | Madalin | Traficul organic |
 | 10 | Furnizor de SMS (opțional la pilot) | Decizie client | Confirmarea telefonului |
 | 11 | Cele două rotițe de potrivire, verificate | Madalin | Nimic — au valori implicite care funcționează |
-| 12 | Pictogramele oficiale ANPC (SOL și SAL), descărcate și puse în subsol | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
+| 12 | Pictogramele oficiale ANPC (SAL și SOL), din Anexa 2; de înlocuit cu fișierele ANPC când se pot descărca | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
 | 13 | Domeniul propriu și tot ce se mută pe el | Edi + Madalin | Orice e-mail (pasul 1), adresa canonică, indexarea |
 
 ---
@@ -394,34 +394,38 @@ completat rămâne cu al lui.
 
 ---
 
-## 12. Pictogramele oficiale ANPC (SOL și SAL)
+## 12. Pictogramele oficiale ANPC (SAL și SOL)
 
-**Ce:** în subsolul fiecărei pagini există rândul „Protecția
-consumatorilor" cu două insigne în aspectul pictogramelor oficiale: SOL
-(`https://ec.europa.eu/consumers/odr`) și SAL
-(`https://reclamatiisal.anpc.ro/`). Sunt desenate de noi, în albastrul
-pictogramelor (`--color-anpc-blue`), pentru că fișierele oficiale nu au
-putut fi descărcate din mediul în care s-a lucrat. Pe insigna SAL scrie
-„ANPC" în locul stemei: o stemă redesenată ar fi imitat un semn oficial.
-SOL apare din decizia proprietarului, deși platforma europeană s-a închis
-pe 20 iulie 2025 — avocatul confirmă, punctul 13 din
-`docs/09-verificare-juridica.md`.
+**Ce:** în subsolul fiecărei pagini, rândul „Protecția consumatorilor"
+arată pictogramele oficiale din Anexa 2 a ordinului ANPC: SAL
+(`https://reclamatiisal.anpc.ro/`), apoi SOL
+(`https://ec.europa.eu/consumers/odr`). Fișierele sunt
+`public/anpc/sal.png` și `public/anpc/sol.png`, la dublul mărimii afișate
+(500 px lățime, afișate la 250), decupate din facsimilul anexei
+(`docs/anpc/anexa-2.png`) cu:
 
-**Unde exact, când avem fișierele oficiale:**
+```bash
+pnpm anpc
+```
 
-1. Descarcă pictogramele de pe `anpc.ro` (secțiunea pentru comercianți) și
-   salvează-le ca `public/anpc/sal.png` și `public/anpc/sol.png` (sau
-   `.svg`).
-2. În `src/config/consumer-redress.ts`, la fiecare intrare, pune
-   `badge: { src: '/anpc/sal.png', width: 250, height: 50 }` (respectiv
-   `sol`). Insigna desenată de noi se înlocuiește cu imaginea oficială,
-   în aceeași legătură.
+Comanda nu redesenează și nu recolorează nimic: găsește chenarul fiecărei
+insigne, o decupează, face transparentă hârtia albă din afara colțurilor
+și o micșorează la 500 px. SOL apare din decizia proprietarului, deși
+platforma europeană s-a închis pe 20 iulie 2025 — avocatul confirmă,
+punctul 13 din `docs/09-verificare-juridica.md`.
 
-**Cum verifici:** subsolul arată pictogramele oficiale în locul insignelor
-noastre, pe `/`, pe `/cont` și pe `/admin`; un clic deschide pagina
-oficială într-o filă nouă. `tests/unit/anpc-badges.test.tsx` și
-`tests/e2e/subsol-sigla.spec.ts` verifică legăturile, filele noi și
-înălțimea egală.
+**Când avem fișierele ANPC separate (sau pictograma nouă din Ordinul
+270/2026):**
+
+1. Descarcă-le de pe `anpc.ro` și salvează-le peste `public/anpc/sal.png`
+   și `public/anpc/sol.png`, la cel puțin 500 px lățime.
+2. În `src/config/consumer-redress.ts`, pune la fiecare intrare
+   `image.width` și `image.height` ale fișierului nou.
+   `tests/unit/anpc-badges.test.tsx` pică dacă nu se potrivesc.
+
+**Cum verifici:** subsolul arată cele două pictograme pe `/`, pe `/cont` și
+pe `/admin`, la 250 px lățime una lângă alta pe ecran mare și una sub alta
+pe telefon; un clic deschide pagina oficială într-o filă nouă.
 
 ## 13. Domeniul propriu
 
