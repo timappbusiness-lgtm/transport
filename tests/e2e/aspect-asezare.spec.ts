@@ -137,7 +137,13 @@ test.describe('layout sweep', () => {
         if (!top || last.contains(top) || top.contains(last)) return null;
         for (let bar: Element | null = top; bar && bar !== document.body; bar = bar.parentElement) {
           const position = getComputedStyle(bar).position;
-          if (position === 'fixed' || position === 'sticky') {
+          // A bottom bar, the one this is about. The sticky header covers
+          // whatever has scrolled up under it; a tall footer (the ANPC
+          // badges stacked on a phone, 25 September 2026) can leave the
+          // end of <main> exactly there at the bottom of the page, which
+          // is the page scrolled past it, not a bar hiding it.
+          const bottomBar = bar.getBoundingClientRect().top > innerHeight / 2;
+          if ((position === 'fixed' || position === 'sticky') && bottomBar) {
             return `${(last.textContent ?? '').trim().slice(0, 40)} under ${String(bar.className).slice(0, 60)}`;
           }
         }

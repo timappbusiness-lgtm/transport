@@ -1,11 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { BRAND_NAME } from '../../src/config/brand';
 import { MARK } from '../../src/config/brand-mark';
-import { CONSUMER_REDRESS, REDRESS_LABEL, RETIRED_REDRESS } from '../../src/config/consumer-redress';
+import {
+  CONSUMER_REDRESS,
+  REDRESS_LABEL,
+  redressName,
+  type RedressEntry,
+} from '../../src/config/consumer-redress';
 import { ROUTES } from '../../src/config/routes';
 
 /**
- * The footer's consumer-redress row and the logo, where people see them.
+ * The footer's ANPC badges and the logo, where people see them.
  *
  * The account and staff areas need a session and a database the sandbox
  * does not have, so they are the harness screens: the same account shell
@@ -28,58 +33,116 @@ async function redressRow(page: Page) {
   return row;
 }
 
-test.describe('the consumer-redress row in the footer', () => {
+function badge(page: Page, entry: RedressEntry) {
+  return page
+    .getByRole('contentinfo')
+    .getByRole('link', { name: `${redressName(entry)} (se deschide într-o filă nouă)`, exact: true });
+}
+
+test.describe('the ANPC badges in the footer', () => {
   for (const where of PAGES) {
-    test(`is on ${where.name}, in a row of its own`, async ({ page }) => {
+    test(`are on ${where.name}, both, in a row of their own`, async ({ page }) => {
       await page.goto(where.path);
       const row = await redressRow(page);
       await expect(row).toBeVisible();
 
+      const heights: number[] = [];
       for (const entry of CONSUMER_REDRESS) {
-        const link = row.getByRole('link', { name: new RegExp(entry.label) });
+        const link = badge(page, entry);
         await expect(link).toBeVisible();
         await expect(link).toHaveAttribute('href', entry.href);
         await expect(link).toHaveAttribute('target', '_blank');
-        await expect(link).toHaveAttribute('rel', /\bnoopener\b/);
-        // A tap target a thumb can hit.
-        await expect.poll(async () => (await link.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(24);
+        await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        await expect(link).toContainText(entry.label, { ignoreCase: true });
+        await expect(link).toContainText('Detalii', { ignoreCase: true });
+        heights.push(await link.evaluate((el) => el.getBoundingClientRect().height));
       }
+      // Same height, whatever the wording does.
+      expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
 
       // Not mixed in with the navigation: nothing in the footer's nav
-      // points outside the site, and the row holds nothing but redress.
+      // points outside the site, and the row holds nothing but the badges.
       const nav = page.getByRole('contentinfo').getByRole('navigation', { name: 'Secundar' });
       await expect(nav.locator('a[target="_blank"]')).toHaveCount(0);
       await expect(row.getByRole('link')).toHaveCount(CONSUMER_REDRESS.length);
     });
   }
 
-  test('never links to the closed European platform', async ({ page }) => {
-    for (const where of PAGES) {
-      await page.goto(where.path);
-      await expect(page.locator(`a[href^="${RETIRED_REDRESS.sol.href}"]`)).toHaveCount(0);
-      await expect(page.getByText(RETIRED_REDRESS.sol.label)).toHaveCount(0);
+  for (const width of [360, 390] as const) {
+    test(`nothing overflows at ${width}px, and the badges stack`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      for (const where of PAGES) {
+        await page.goto(where.path);
+        await redressRow(page);
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(overflow, where.path).toBeLessThanOrEqual(0);
+        const boxes = [];
+        for (const entry of CONSUMER_REDRESS) {
+          const box = await badge(page, entry).boundingBox();
+          expect(box, `${entry.key} on ${where.path}`).not.toBeNull();
+          // Inside the viewport, not clipped at either edge.
+          expect(box!.x, where.path).toBeGreaterThanOrEqual(0);
+          expect(box!.x + box!.width, where.path).toBeLessThanOrEqual(width);
+          // Its own content fits inside it.
+          const clipped = await badge(page, entry).evaluate((el) =>
+            [...el.querySelectorAll('span')].some((s) => s.scrollWidth > s.clientWidth + 1),
+          );
+          expect(clipped, `${entry.key} clips its text on ${where.path}`).toBe(false);
+          boxes.push(box!);
+        }
+        expect(boxes[1]!.y, where.path).toBeGreaterThan(boxes[0]!.y + boxes[0]!.height - 1);
+      }
+    });
+  }
+
+  test('side by side from a tablet up', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 900 });
+    await page.goto(ROUTES.home);
+    await redressRow(page);
+    const [sol, sal] = await Promise.all(CONSUMER_REDRESS.map((e) => badge(page, e).boundingBox()));
+    expect(Math.abs(sol!.y - sal!.y)).toBeLessThanOrEqual(1);
+    expect(sal!.x).toBeGreaterThan(sol!.x + sol!.width);
+  });
+
+  test('each shows a focus ring when reached with the keyboard', async ({ page }) => {
+    await page.goto(ROUTES.home);
+    // The link before the badges, then Tab: a keyboard move, so the ring
+    // the browser draws is the :focus-visible one people actually see.
+    await page.getByRole('contentinfo').getByRole('navigation', { name: 'Secundar' }).getByRole('link').last().focus();
+    for (const entry of CONSUMER_REDRESS) {
+      await page.keyboard.press('Tab');
+      const link = badge(page, entry);
+      await expect(link).toBeFocused();
+      const ring = await link.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { visible: el.matches(':focus-visible'), style: style.outlineStyle, width: parseFloat(style.outlineWidth) };
+      });
+      expect(ring.visible).toBe(true);
+      expect(ring.style).not.toBe('none');
+      expect(ring.width).toBeGreaterThanOrEqual(2);
     }
   });
 
-  test('opens the ANPC page in a new tab and leaves this one where it was', async ({ page, context }) => {
-    // The real site is not reachable from the test machine; what is under
-    // test is where the link goes and how, not ANPC's server.
+  test('open the official pages in a new tab and leave this one where it was', async ({ page, context }) => {
+    // The real sites are not reachable from the test machine; what is
+    // under test is where the links go and how, not the servers.
     for (const entry of CONSUMER_REDRESS) {
       await context.route(`${entry.href}**`, (route) =>
         route.fulfill({ status: 200, contentType: 'text/html', body: '<title>ANPC</title>' }),
       );
     }
     await page.goto(ROUTES.home);
-    const row = await redressRow(page);
+    await redressRow(page);
     for (const entry of CONSUMER_REDRESS) {
-      const [popup] = await Promise.all([
-        page.waitForEvent('popup'),
-        row.getByRole('link', { name: new RegExp(entry.label) }).click(),
-      ]);
+      const [popup] = await Promise.all([page.waitForEvent('popup'), badge(page, entry).click()]);
       await popup.waitForLoadState();
       expect(popup.url()).toBe(entry.href);
       // `noopener`: the new tab cannot reach back into ours.
       expect(await popup.evaluate(() => window.opener)).toBeNull();
+      // `noreferrer`: and it is not told which page sent it.
+      expect(await popup.evaluate(() => document.referrer)).toBe('');
       await popup.close();
     }
     await expect(page).toHaveURL(/\/$/);

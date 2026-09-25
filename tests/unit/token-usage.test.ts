@@ -124,6 +124,33 @@ describe('every colour class names a colour that exists', () => {
   });
 });
 
+describe('the palette is ours, with one exception', () => {
+  const ALL = [...CSS.matchAll(/^\s*--color-([a-z0-9-]+):/gm)].map((m) => m[1]!);
+
+  /** The platform's colour families: a new token joins one or says why not. */
+  const BRAND =
+    /^(?:background|ground-alt|surface|border(?:-strong)?|foreground|muted|ink-.+|dark-(?:from|to)|photo-(?:from|to)|success|warning|danger|accent(?:-.+)?|on-accent(?:-.+)?|tint-.+)$/;
+
+  /**
+   * Not the platform's colours and exempt from everything the brand
+   * palette is held to: the blue and the white of ANPC's SOL and SAL
+   * badges. They must look like the authority's badges, not like ours,
+   * so they follow no accent, surface or theme — and so they may only be
+   * used by those two badges, which `anpc-badges.test.tsx` checks.
+   */
+  const NOT_OURS = new Set(['anpc-blue', 'anpc-paper']);
+
+  it('every colour token belongs to a brand family or is listed as not ours', () => {
+    const strays = ALL.filter((name) => !BRAND.test(name) && !NOT_OURS.has(name));
+    expect(strays).toEqual([]);
+  });
+
+  it('and the exception is exactly the ANPC pair, nothing that looks like ours', () => {
+    const exempt = ALL.filter((name) => !BRAND.test(name));
+    expect(exempt.sort()).toEqual([...NOT_OURS].sort());
+  });
+});
+
 describe('the copies that have to be hexes agree with the stylesheet', () => {
   it('the theme colour is the ink token', () => {
     expect(THEME_COLOR.toLowerCase()).toBe(token('foreground'));

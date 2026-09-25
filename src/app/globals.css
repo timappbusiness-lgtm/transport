@@ -122,6 +122,17 @@
   --color-tint-clay: #f5e9e4;
   --color-tint-stone: #eceeef;
 
+  /* --- not ours: the ANPC badges ---
+     The blue of the official SAL and SOL pictograms, sampled from them,
+     and the white paper they are printed on. They are the authority's
+     colours, not the platform's: the two badges in the footer must look
+     like ANPC's, so these never follow the accent, a surface or a theme,
+     and nothing else may use them — tests/unit/anpc-badges.test.tsx keeps
+     them inside src/components/layout/anpc-badges.tsx. Blue on paper
+     12.4:1, paper on blue the same. */
+  --color-anpc-blue: #292b6e;
+  --color-anpc-paper: #ffffff;
+
   /* --- type --- */
   --font-display: var(--font-inter-tight), "Inter", system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
