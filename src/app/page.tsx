@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { OG_IMAGE } from '@/config/brand-assets';
 import { Activity } from '@/components/home/activity';
 import { CarrierCta } from '@/components/home/carrier-cta';
 import { Categories } from '@/components/home/categories';
@@ -28,6 +29,8 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: '/',
+    siteName: BRAND_NAME,
+    images: [OG_IMAGE],
   },
 };
 

@@ -30,6 +30,7 @@
 // should not wait on a supplier contract.
 // =====================================================================
 
+import { BRAND_NAME } from "../_shared/brand.ts";
 import { corsFor } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
@@ -43,7 +44,10 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BRAND = Deno.env.get("BRAND_NAME") ?? "Coridor";
+// One source for the name: the generated copy of `src/config/brand.ts`.
+// It used to be an environment variable with a spelled-out fallback, which
+// is two places to forget when the name changes.
+const BRAND = BRAND_NAME;
 
 function secrets(): ProviderSecrets {
   return {

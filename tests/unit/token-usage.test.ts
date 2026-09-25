@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { THEME_COLOR } from '@/config/theme';
+import manifest from '@/app/manifest';
+import { BACKGROUND_COLOR, THEME_COLOR } from '@/config/theme';
 
 /**
  * No colour in a component that is not a token.
@@ -14,10 +15,9 @@ import { THEME_COLOR } from '@/config/theme';
  * when the token moved. So this looks for the value itself, in any form,
  * anywhere in `src/` that is TypeScript.
  *
- * Two places are allowed to hold a hex, and both are checked against the
+ * One place is allowed to hold a hex, and it is checked against the
  * stylesheet instead: `src/config/theme.ts`, because a `<meta
- * name="theme-color">` is read before CSS, and the web manifest, which is
- * JSON.
+ * name="theme-color">` and the web manifest are read before CSS.
  */
 
 const CSS = readFileSync('src/app/globals.css', 'utf8');
@@ -124,17 +124,18 @@ describe('every colour class names a colour that exists', () => {
   });
 });
 
-describe('the two copies that have to be hexes agree with the stylesheet', () => {
+describe('the copies that have to be hexes agree with the stylesheet', () => {
   it('the theme colour is the ink token', () => {
     expect(THEME_COLOR.toLowerCase()).toBe(token('foreground'));
   });
 
-  it('and so is the web manifest', () => {
-    const manifest = JSON.parse(readFileSync('public/manifest.webmanifest', 'utf8')) as {
-      theme_color: string;
-      background_color: string;
-    };
-    expect(manifest.theme_color.toLowerCase()).toBe(token('foreground'));
-    expect(manifest.background_color.toLowerCase()).toBe(token('background'));
+  it('the start-up ground is the background token', () => {
+    expect(BACKGROUND_COLOR.toLowerCase()).toBe(token('background'));
+  });
+
+  it('and the web manifest says the same', () => {
+    const served = manifest();
+    expect(served.theme_color?.toLowerCase()).toBe(token('foreground'));
+    expect(served.background_color?.toLowerCase()).toBe(token('background'));
   });
 });

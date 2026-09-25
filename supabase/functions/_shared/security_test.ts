@@ -14,28 +14,28 @@ Deno.test("a missing ALLOWED_ORIGIN does not fall back to *", () => {
 });
 
 Deno.test("an origin on the list is echoed back", () => {
-  const allowed = allowedOrigins("https://coridor.ro, https://www.coridor.ro");
-  assertEquals(allowed, ["https://coridor.ro", "https://www.coridor.ro"]);
+  const allowed = allowedOrigins("https://exemplu.ro, https://www.exemplu.ro");
+  assertEquals(allowed, ["https://exemplu.ro", "https://www.exemplu.ro"]);
   assertEquals(
-    corsHeaders(request("https://www.coridor.ro"), allowed)["Access-Control-Allow-Origin"],
-    "https://www.coridor.ro",
+    corsHeaders(request("https://www.exemplu.ro"), allowed)["Access-Control-Allow-Origin"],
+    "https://www.exemplu.ro",
   );
 });
 
 Deno.test("a look-alike host is never echoed back", () => {
-  const allowed = allowedOrigins("https://coridor.ro");
-  const echoed = corsHeaders(request("https://coridor.ro.evil.example"), allowed)[
+  const allowed = allowedOrigins("https://exemplu.ro");
+  const echoed = corsHeaders(request("https://exemplu.ro.evil.example"), allowed)[
     "Access-Control-Allow-Origin"
   ];
   // Potrivirea este pe origine întreagă, nu pe prefix.
-  assertEquals(echoed, "https://coridor.ro");
+  assertEquals(echoed, "https://exemplu.ro");
 });
 
 Deno.test("a trailing slash is not a different origin", () => {
-  const allowed = allowedOrigins("https://coridor.ro/");
+  const allowed = allowedOrigins("https://exemplu.ro/");
   assertEquals(
-    corsHeaders(request("https://coridor.ro"), allowed)["Access-Control-Allow-Origin"],
-    "https://coridor.ro",
+    corsHeaders(request("https://exemplu.ro"), allowed)["Access-Control-Allow-Origin"],
+    "https://exemplu.ro",
   );
 });
 

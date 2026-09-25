@@ -14,6 +14,8 @@
 // missing variable, and it shows up on the admin screen.
 // =====================================================================
 
+import { BRAND_NAME } from "../_shared/brand.ts";
+
 export interface Template {
   /** What the subject line says. Substitutions allowed. */
   subject: string;
@@ -81,6 +83,12 @@ export interface RenderOptions {
   /** Where an unsubscribe link points, when the template allows one. */
   unsubscribeUrl?: string | undefined;
   brand?: string;
+  /**
+   * The mark, as an absolute URL to the PNG `pnpm brand` draws
+   * (`/brand/mark-email.png` on the site). Omitted, the header is the
+   * name alone.
+   */
+  markUrl?: string | undefined;
 }
 
 /**
@@ -88,9 +96,10 @@ export interface RenderOptions {
  *
  * Deliberately plain: a table-based responsive shell with inline styles,
  * because that is what survives Outlook, Gmail's clipping and a dark-mode
- * client. No images — a logo that does not load leaves a broken icon
- * where the sender's name should be, and half of Romanian business
- * e-mail is read with images off.
+ * client. One image at most, the mark, and never instead of the name:
+ * half of Romanian business e-mail is read with images off, so the name
+ * stays live text beside it and the image has an empty `alt` — blocked,
+ * it leaves a small gap, not a broken icon or a second copy of the name.
  */
 export function render(
   name: string,
@@ -98,7 +107,7 @@ export function render(
   values: Record<string, unknown>,
   options: RenderOptions = {},
 ): Rendered {
-  const brand = options.brand ?? 'Coridor';
+  const brand = options.brand ?? BRAND_NAME;
   const subject = substitute(template.subject, values, name);
   const lines = template.lines.map((line) => substitute(line, values, name));
   const action = template.action
@@ -128,12 +137,19 @@ export function render(
       `Schimbă-ți preferințele</a>.</p>`
     : '';
 
+  const htmlBrand = options.markUrl
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px">` +
+      `<tr><td style="padding:0 10px 0 0;vertical-align:middle">` +
+      `<img src="${escapeHtml(options.markUrl)}" width="32" height="32" alt="" style="display:block;border:0">` +
+      `</td><td style="vertical-align:middle;font-weight:600;font-size:17px">${escapeHtml(brand)}</td></tr></table>`
+    : `<p style="margin:0 0 24px;font-weight:600;font-size:17px">${escapeHtml(brand)}</p>`;
+
   const html = `<!doctype html>
 <html lang="ro">
   <head><meta charset="utf-8"><title>${escapeHtml(subject)}</title></head>
   <body style="margin:0;padding:24px;background:#f5f7f8;font-family:system-ui,-apple-system,sans-serif;color:#1c262b">
     <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px">
-      <p style="margin:0 0 24px;font-weight:600;font-size:17px">${escapeHtml(brand)}</p>
+      ${htmlBrand}
       ${htmlLines}
       ${htmlAction}
       ${htmlFooter}

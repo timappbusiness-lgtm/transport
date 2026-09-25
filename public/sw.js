@@ -19,7 +19,10 @@
  * needs processing.
  */
 
-const CACHE = 'coridor-shell-v1';
+// No brand name in here, on purpose: this file is served as it is, so a
+// name written into it would survive a rename. The version moves when the
+// pre-cached files change — v2 carries the icons drawn from the new mark.
+const CACHE = 'shell-v2';
 const OFFLINE_URL = '/offline.html';
 
 const SHELL = [OFFLINE_URL, '/icons/icon-192.png', '/icons/icon-512.png'];
@@ -68,17 +71,19 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: 'Coridor', body: event.data.text() };
+    payload = { title: '', body: event.data.text() };
   }
 
-  const title = payload.title || 'Coridor';
+  // Every push the dispatcher sends has a title; this is only for one
+  // that arrives malformed.
+  const title = payload.title || 'Notificare nouă';
   const options = {
     body: payload.body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192-maskable.png',
     // The tag is what makes a second notification of the same kind replace
     // the first instead of stacking six of them.
-    tag: payload.tag || 'coridor',
+    tag: payload.tag || 'notificare',
     renotify: true,
     data: { url: payload.deep_link || '/cont' },
     lang: 'ro',

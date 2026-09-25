@@ -9,11 +9,15 @@
  * ToUnicode map behind them: they print, and they copy out of the PDF as
  * ș and ț, not as boxes or as the cedilla look-alikes.
  *
- * Deliberately plain. No logo, no icon, no colour beyond the text greys,
- * no rule except a hairline where a table needs one. A contract is read
- * on paper by somebody deciding whether they are owed money.
+ * Deliberately plain. No icon, no colour beyond the text greys, no rule
+ * except a hairline where a table needs one. A contract is read on paper
+ * by somebody deciding whether they are owed money. The one mark is the
+ * platform's, small and grey beside its name at the top of the first
+ * page, the way a letterhead says who produced a document — never near a
+ * signature line, never in colour, never large enough to read as a seal.
  */
 
+import { MARK } from '../_shared/brand.ts';
 import type { Block, ContractDocument } from './document.ts';
 import type { Row } from './model.ts';
 
@@ -63,6 +67,13 @@ export interface PdfDoc {
   fillColor(color: string): PdfDoc;
   strokeColor(color: string): PdfDoc;
   lineWidth(width: number): PdfDoc;
+  lineCap(cap: string): PdfDoc;
+  lineJoin(join: string): PdfDoc;
+  save(): PdfDoc;
+  restore(): PdfDoc;
+  translate(x: number, y: number): PdfDoc;
+  scale(factor: number): PdfDoc;
+  path(d: string): PdfDoc;
   text(text: string, x?: number, y?: number, options?: Record<string, unknown>): PdfDoc;
   heightOfString(text: string, options?: Record<string, unknown>): number;
   moveTo(x: number, y: number): PdfDoc;
@@ -211,6 +222,22 @@ export async function renderContractPdf(contract: ContractDocument, deps: Render
     }
     y += PRINT.step;
   };
+
+  // Who produced the document: the mark and the platform's name, grey.
+  // The name is the brand the template wrote as the PDF's author.
+  const markPt = 14;
+  doc.save();
+  doc.translate(left, y).scale(markPt / MARK.grid);
+  doc.lineWidth(2.75).lineCap('round').lineJoin('round').strokeColor(PRINT.color.muted);
+  doc.path(MARK.deck).stroke();
+  doc.path(MARK.ramp).stroke();
+  doc.restore();
+  style(SEMIBOLD, PRINT.size.small, PRINT.color.muted);
+  doc.text(contract.info.author, left + markPt + 2 * PRINT.step, y + (markPt - PRINT.size.small * 1.21) / 2, {
+    width: width - markPt - 2 * PRINT.step,
+    lineBreak: false,
+  });
+  y += markPt + 4 * PRINT.step;
 
   // Title and the record under it.
   style(SEMIBOLD, PRINT.size.title);

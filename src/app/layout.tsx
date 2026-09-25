@@ -5,6 +5,7 @@ import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { ToastProvider } from '@/components/ui/toast';
 import { BRAND_NAME, BRAND_TAGLINE_RO, SITE_URL } from '@/config/brand';
+import { OG_IMAGE } from '@/config/brand-assets';
 import { indexingMetadata } from '@/lib/seo-indexing';
 import './globals.css';
 
@@ -67,14 +68,28 @@ export const metadata: Metadata = {
   // may still say `noindex` for its own reasons; the flag only ever grants
   // permission, never takes it from a page that refused.
   ...indexingMetadata(true),
-  manifest: '/manifest.webmanifest',
+  // The manifest comes from `src/app/manifest.ts`, which Next links by
+  // itself. The picture every shared link carries is drawn by `pnpm brand`.
+  openGraph: {
+    type: 'website',
+    locale: 'ro_RO',
+    siteName: BRAND_NAME,
+    images: [OG_IMAGE],
+  },
+  twitter: { card: 'summary_large_image', images: [OG_IMAGE.url] },
   appleWebApp: {
     capable: true,
     title: BRAND_NAME,
     statusBarStyle: 'default',
   },
+  // All three drawn from the mark by `pnpm brand`: the SVG for browsers
+  // that take one, a 32px PNG for those that do not, and the full-bleed
+  // 180px tile iOS rounds by itself.
   icons: {
-    icon: '/icon.svg',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+    ],
     apple: '/icons/apple-touch-icon.png',
   },
 };

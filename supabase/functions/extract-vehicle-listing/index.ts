@@ -26,6 +26,7 @@
 // thing about a source that survives step 6 is its hostname.
 // =====================================================================
 
+import { BRAND_NAME, BRAND_SLUG } from "../_shared/brand.ts";
 import { corsFor } from "../_shared/security.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -55,11 +56,16 @@ const MODEL = Deno.env.get("ANTHROPIC_EXTRACT_MODEL") ?? "claude-sonnet-5";
 
 // Who we say we are. A site that wants to refuse us has to be able to
 // name us, and a person reading their own logs has to be able to find us.
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://coridor.ro";
+// The bot is named after the brand, from the generated copy of
+// `src/config/brand.ts`, so a rename renames it too. The address is added
+// only when it is configured: a guessed domain in a user agent sends a
+// site owner looking for somebody else.
+const SITE_URL = Deno.env.get("SITE_URL") || null;
+const BOT_NAME = `${BRAND_NAME.normalize("NFD").replace(/[^A-Za-z0-9]/g, "")}Bot`;
 const USER_AGENT = Deno.env.get("LISTING_BOT_USER_AGENT") ??
-  `CoridorBot/1.0 (+${SITE_URL})`;
+  `${BOT_NAME}/1.0${SITE_URL ? ` (+${SITE_URL})` : ""}`;
 /** The token a robots.txt group would name, lowercase. */
-const UA_TOKEN = "coridorbot";
+const UA_TOKEN = `${BRAND_SLUG}bot`;
 
 // Without this, anonymous extraction is off rather than hashed with a
 // constant: a hash everybody can reproduce is not a hash, it is the

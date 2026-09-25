@@ -23,6 +23,7 @@
 // rather than both taking them.
 // =====================================================================
 
+import { BRAND_NAME } from "../_shared/brand.ts";
 import { secretsMatch } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { MissingVariable, render } from "./render.ts";
@@ -35,12 +36,15 @@ const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? null;
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? null;
 const MAIL_FROM = Deno.env.get("MAIL_FROM") ?? null;
-// Optional, both of them: a missing display name or reply-to degrades to
-// the plain sending address rather than stopping the run. Only the two
-// secrets above are things without which nothing can go out at all.
-const MAIL_SENDER_NAME = Deno.env.get("MAIL_SENDER_NAME") ?? undefined;
+// Optional, both of them: a missing reply-to degrades to the plain sending
+// address, and a missing display name to the brand name, rather than
+// stopping the run.
+const MAIL_SENDER_NAME = Deno.env.get("MAIL_SENDER_NAME") ?? BRAND_NAME;
 const MAIL_REPLY_TO = Deno.env.get("MAIL_REPLY_TO") ?? undefined;
-const SITE_URL = Deno.env.get("SITE_URL") ?? "https://coridor.ro";
+// Required, like the two above it. Every e-mail is a link to a page on
+// the site; without the site's address the link would point at a domain
+// guessed from the brand name, which is not decided and may not be ours.
+const SITE_URL = Deno.env.get("SITE_URL")?.replace(/\/+$/, "") || null;
 
 const BATCH = 50;
 
@@ -73,6 +77,7 @@ function missingSecret(): string | null {
   if (CRON_SECRET === null) return "CRON_SECRET";
   if (RESEND_API_KEY === null) return "RESEND_API_KEY";
   if (MAIL_FROM === null) return "MAIL_FROM";
+  if (SITE_URL === null) return "SITE_URL";
   return null;
 }
 
@@ -136,8 +141,9 @@ Deno.serve(async (req: Request) => {
             const unsubscribeUrl = template.unsubscribable
               ? `${SITE_URL}/cont/setari/notificari`
               : undefined;
-            const mail = render(row.template, template, renderValues(row.payload, SITE_URL), {
+            const mail = render(row.template, template, renderValues(row.payload, SITE_URL!), {
               unsubscribeUrl,
+              markUrl: `${SITE_URL}/brand/mark-email.png`,
             });
             result = await sendEmail(
               {

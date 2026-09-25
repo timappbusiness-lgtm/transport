@@ -7,7 +7,7 @@ import { formatSender, isHardBounce, isPermanent, renderValues, sendEmail } from
  * try again, or stop and let somebody look at it.
  */
 
-const CONFIG = { apiKey: "test-key", from: "Coridor <nu-raspunde@coridor.ro>" };
+const CONFIG = { apiKey: "test-key", from: "Exemplu <nu-raspunde@exemplu.ro>" };
 
 function respondWith(status: number): typeof fetch {
   return () => Promise.resolve(new Response(status === 200 ? "{}" : "", { status }));
@@ -92,12 +92,12 @@ Deno.test("the request carries the sender and the recipient", async () => {
 });
 
 Deno.test("the payload can override the site url, and usually does not", () => {
-  assertEquals(renderValues({}, "https://coridor.ro").site_url, "https://coridor.ro");
+  assertEquals(renderValues({}, "https://exemplu.ro").site_url, "https://exemplu.ro");
   assertEquals(
-    renderValues({ site_url: "https://altceva.ro" }, "https://coridor.ro").site_url,
+    renderValues({ site_url: "https://altceva.ro" }, "https://exemplu.ro").site_url,
     "https://altceva.ro",
   );
-  assertEquals(renderValues({ company_name: "X SRL" }, "https://coridor.ro").company_name, "X SRL");
+  assertEquals(renderValues({ company_name: "X SRL" }, "https://exemplu.ro").company_name, "X SRL");
 });
 
 // ---------------------------------------------------------------------
@@ -106,19 +106,19 @@ Deno.test("the payload can override the site url, and usually does not", () => {
 
 Deno.test("the display name is put in front of the address", () => {
   assertEquals(
-    formatSender("nu-raspunde@coridor.ro", "Coridor"),
-    '"Coridor" <nu-raspunde@coridor.ro>',
+    formatSender("nu-raspunde@exemplu.ro", "Exemplu"),
+    '"Exemplu" <nu-raspunde@exemplu.ro>',
   );
 });
 
 Deno.test("no display name leaves the address alone", () => {
-  assertEquals(formatSender("nu-raspunde@coridor.ro", undefined), "nu-raspunde@coridor.ro");
-  assertEquals(formatSender("nu-raspunde@coridor.ro", "   "), "nu-raspunde@coridor.ro");
+  assertEquals(formatSender("nu-raspunde@exemplu.ro", undefined), "nu-raspunde@exemplu.ro");
+  assertEquals(formatSender("nu-raspunde@exemplu.ro", "   "), "nu-raspunde@exemplu.ro");
 });
 
 Deno.test("a quote in the name cannot break the header", () => {
-  const sender = formatSender("a@b.ro", 'Cori"dor\\');
-  assertEquals(sender, '"Coridor" <a@b.ro>');
+  const sender = formatSender("a@b.ro", 'Exem"plu\\');
+  assertEquals(sender, '"Exemplu" <a@b.ro>');
 });
 
 Deno.test("reply-to is sent when there is one, and left out when there is not", async () => {
@@ -129,10 +129,10 @@ Deno.test("reply-to is sent when there is one, and left out when there is not", 
   };
 
   await sendEmail(
-    { ...CONFIG, replyTo: "contact@coridor.ro", fetchImpl: capture },
+    { ...CONFIG, replyTo: "contact@exemplu.ro", fetchImpl: capture },
     "cineva@example.ro", "S", "<p>x</p>", "x",
   );
-  assertEquals(body.reply_to, "contact@coridor.ro");
+  assertEquals(body.reply_to, "contact@exemplu.ro");
 
   await sendEmail({ ...CONFIG, fetchImpl: capture }, "cineva@example.ro", "S", "<p>x</p>", "x");
   assertEquals("reply_to" in body, false);
