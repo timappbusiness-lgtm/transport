@@ -16,7 +16,7 @@ import {
   operatorPhoneHref,
   operatorShortLine,
 } from '@/config/company';
-import { RETIRED_REDRESS } from '@/config/consumer-redress';
+import { redressEntry } from '@/config/consumer-redress';
 import { ACTIVE_COMPANY_COOKIE, ACTIVE_COMPANY_COOKIE_DAYS } from '@/lib/auth/account';
 
 const DOCUMENTS = Object.values(LEGAL_DOCUMENTS) as LegalDocument[];
@@ -284,9 +284,13 @@ describe('consumer redress in the documents in force', () => {
     .join(' ');
 
   it('no document sends a consumer to the closed European platform', () => {
-    // It closed on 20 July 2025; terms 1.0 still pointed at it.
+    // It closed on 20 July 2025; terms 1.0 still pointed at it. The footer
+    // shows its badge again on the owner's decision (consumer-redress.ts),
+    // but no legal text tells a consumer to go there.
+    const sol = redressEntry('sol');
+    expect(sol.closedOn).toBe('2025-07-20');
     expect(all).not.toContain('platforma europeană de soluționare online');
-    expect(all).not.toContain(RETIRED_REDRESS.sol.href);
+    expect(all).not.toContain(sol.href);
   });
 
   it('the terms name the ANPC platform the footer links to', () => {

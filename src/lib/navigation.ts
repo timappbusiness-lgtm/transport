@@ -788,8 +788,12 @@ export const PUBLIC_NAV: readonly PublicLink[] = [
  * The footer: everything the bar leaves out, plus the two boards again
  * under their longer names, because a footer is where somebody looks
  * when the bar did not have what they wanted.
+ *
+ * Two groups, drawn as two rows: what the platform does, then who we are
+ * and the documents. As one list the last two or three links wrapped onto
+ * a line of their own at every width, which read as an accident.
  */
-export const FOOTER_NAV: readonly PublicLink[] = [
+export const FOOTER_NAV_PLATFORM: readonly PublicLink[] = [
   { href: ROUTES.requests, label: 'Cereri de transport' },
   { href: ROUTES.routes, label: 'Trasee disponibile' },
   // The three the bar gives up once somebody is signed in, kept here for
@@ -800,11 +804,16 @@ export const FOOTER_NAV: readonly PublicLink[] = [
   { href: ROUTES.prices, label: 'Prețuri orientative' },
   { href: ROUTES.verification, label: 'Cum verificăm firmele' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
+];
+
+export const FOOTER_NAV_LEGAL: readonly PublicLink[] = [
   { href: ROUTES.contact, label: 'Contact' },
   { href: ROUTES.terms, label: 'Termeni' },
   { href: ROUTES.privacy, label: 'Confidențialitate' },
   { href: ROUTES.cookies, label: 'Cookie-uri' },
 ];
+
+export const FOOTER_NAV: readonly PublicLink[] = [...FOOTER_NAV_PLATFORM, ...FOOTER_NAV_LEGAL];
 
 /** The link in `PUBLIC_NAV` a path belongs to, or null. One at most. */
 export function currentPublicHref(pathname: string | null): string | null {
