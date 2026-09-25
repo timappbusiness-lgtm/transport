@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { Fragment } from 'react';
 import {
   CONSUMER_REDRESS,
   REDRESS_LABEL,
@@ -101,10 +102,13 @@ function Wording({ label }: { label: string }) {
   return (
     <span className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 px-3 py-2 text-center">
       <span className="text-label font-bold uppercase leading-tight tracking-normal [overflow-wrap:anywhere]">
-        {lines.map((line) => (
-          <span key={line} className="block">
-            {line}
-          </span>
+        {lines.map((line, i) => (
+          // A space between the two lines, so the text reads as one
+          // sentence when copied or searched, not „online" + „a litigiilor".
+          <Fragment key={line}>
+            {i > 0 ? ' ' : null}
+            <span className="block">{line}</span>
+          </Fragment>
         ))}
       </span>
       <span className="rounded-pill bg-anpc-blue px-3 py-0.5 text-label font-bold uppercase text-anpc-paper">

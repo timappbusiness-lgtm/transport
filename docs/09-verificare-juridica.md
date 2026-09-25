@@ -122,24 +122,41 @@ contează.
       consumatori ne aduce obligația deja. Rândul e oricum în subsolul
       fiecărei pagini, de pe 25 septembrie 2026, ca să nu depindă de o
       amintire.
-    - **Ce am pus:** numai SAL, cu legătura `https://reclamatiisal.anpc.ro/`,
-      ca buton simplu cu formularea oficială, într-un rând al lui, pe toate
-      paginile, inclusiv în cont și în zona echipei
-      (`src/config/consumer-redress.ts`). Pictograma oficială nu a putut fi
-      descărcată; se pune în doi pași, `docs/configurare-externa.md` §12.
-    - **De ce nu SOL:** platforma europeană a fost desființată prin
-      Regulamentul (UE) 2024/3228 și s-a închis pe 20 iulie 2025; o
-      legătură spre ea după data aceea poate induce în eroare. Ordinul ANPC
+    - **Ce am pus (actualizat pe 25 septembrie 2026):** ambele insigne,
+      SOL și SAL, în aspectul pictogramelor oficiale — chenar albastru
+      rotunjit pe alb, formularea oficială cu majuscule, butonul „DETALII",
+      iar la SAL „ANPC" în stânga, după o linie verticală — într-un rând al
+      lor, în subsolul fiecărei pagini, inclusiv în cont și în zona echipei
+      (`src/config/consumer-redress.ts`, `src/components/layout/anpc-badges.tsx`).
+      Legături: SAL `https://reclamatiisal.anpc.ro/`, SOL
+      `https://ec.europa.eu/consumers/odr`. Fiecare se deschide într-o filă
+      nouă.
+    - **Nu sunt fișierele oficiale.** Pictogramele ANPC nu au putut fi
+      descărcate din mediul de lucru, așa că insignele sunt desenate de noi,
+      în albastrul pictogramelor. În locul stemei ANPC de pe pictograma
+      SAL scrie „ANPC": o stemă redesenată de noi ar fi imitat un semn
+      oficial. Fișierele oficiale se pun în doi pași,
+      `docs/configurare-externa.md` §12.
+    - **SOL este afișat din decizia proprietarului, deși platforma e
+      închisă.** Platforma europeană a fost desființată prin Regulamentul
+      (UE) 2024/3228 și s-a închis pe 20 iulie 2025; adresa de mai sus
+      duce azi la anunțul Comisiei că platforma s-a închis. Ordinul ANPC
       270/2026 (7 aprilie 2026) a modificat Ordinul 449/2022: a scos
       referirile la SOL și a trecut SAL pe platforma reclamatiisal.anpc.ro,
-      cu o pictogramă nouă de 250×50. **Sursele sunt comunicatul ANPC și
-      presa; textul oficial nu a putut fi deschis** (anpc.ro și
-      legislatie.just.ro erau inaccesibile din mediul de lucru).
-    - **De confirmat:** (a) că SOL nu mai trebuie afișat; (b) legătura
-      exactă pentru SAL; (c) dacă e obligatorie pictograma oficială, nu
-      un buton, și unde (prima pagină, subsol); (d) termenul de
-      conformare cu Ordinul 270/2026; (e) punctul 12 din contractul de
-      transport menționează ANPC și SAL — de aliniat cu ce se confirmă.
+      cu o pictogramă nouă de 250×50. Ghidurile europene le cer
+      comercianților să scoată legătura spre platforma închisă, ca să nu
+      inducă în eroare consumatorul. **Sursele sunt comunicatul ANPC, presa
+      și anunțul Comisiei; textul oficial nu a putut fi deschis** (anpc.ro,
+      legislatie.just.ro și ec.europa.eu erau inaccesibile din mediul de
+      lucru).
+    - **De confirmat:** (a) dacă SOL rămâne sau se scoate — scoaterea
+      înseamnă ștergerea intrării `sol` din `consumer-redress.ts`; (b)
+      legătura exactă pentru SAL; (c) dacă e obligatorie pictograma
+      oficială, nu o reproducere a aspectului ei, și dacă „ANPC" scris în
+      locul stemei este acceptabil până atunci; (d) unde trebuie să apară
+      (prima pagină, subsol, bara de meniu); (e) termenul de conformare cu
+      Ordinul 270/2026; (f) punctul 12 din contractul de transport
+      menționează ANPC și SAL — de aliniat cu ce se confirmă.
     - Termenii 1.1 (§11) nu mai trimit la platforma europeană; e singura
       schimbare față de 1.0.
 

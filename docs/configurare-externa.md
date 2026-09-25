@@ -34,7 +34,7 @@ ordine.
 | 9 | Publicarea paginilor SEO și indexarea | Madalin | Traficul organic |
 | 10 | Furnizor de SMS (opțional la pilot) | Decizie client | Confirmarea telefonului |
 | 11 | Cele două rotițe de potrivire, verificate | Madalin | Nimic — au valori implicite care funcționează |
-| 12 | Pictograma oficială ANPC SAL, descărcată și pusă în subsol | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
+| 12 | Pictogramele oficiale ANPC (SOL și SAL), descărcate și puse în subsol | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
 | 13 | Domeniul propriu și tot ce se mută pe el | Edi + Madalin | Orice e-mail (pasul 1), adresa canonică, indexarea |
 
 ---
@@ -394,27 +394,34 @@ completat rămâne cu al lui.
 
 ---
 
-## 12. Pictograma oficială ANPC (SAL)
+## 12. Pictogramele oficiale ANPC (SOL și SAL)
 
-**Ce:** în subsolul fiecărei pagini există un rând „Protecția
-consumatorilor" cu legătura spre platforma ANPC de soluționare alternativă
-a litigiilor (`https://reclamatiisal.anpc.ro/`). Până acum e un buton
-simplu, cu formularea oficială: pictograma oficială (250×50) nu a putut fi
-descărcată din mediul în care s-a lucrat, iar o copie desenată de noi ar fi
-imitat un semn oficial. SOL (platforma europeană) nu apare: s-a închis pe
-20 iulie 2025, iar Ordinul ANPC 270/2026 a scos-o din Ordinul 449/2022.
-
-**Unde exact:**
-
-1. Descarcă pictograma SAL de pe `anpc.ro` și salveaz-o ca
-   `public/anpc/sal.png` (sau `.svg`).
-2. În `src/config/consumer-redress.ts`, la intrarea `sal`, pune
-   `badge: { src: '/anpc/sal.png', width: 250, height: 50 }`.
-
-**Cum verifici:** subsolul arată pictograma în locul butonului, pe `/`, pe
-`/cont` și pe `/admin`; un clic deschide `reclamatiisal.anpc.ro` într-o filă
-nouă. Avocatul confirmă legătura și formularea — punctul 13 din
+**Ce:** în subsolul fiecărei pagini există rândul „Protecția
+consumatorilor" cu două insigne în aspectul pictogramelor oficiale: SOL
+(`https://ec.europa.eu/consumers/odr`) și SAL
+(`https://reclamatiisal.anpc.ro/`). Sunt desenate de noi, în albastrul
+pictogramelor (`--color-anpc-blue`), pentru că fișierele oficiale nu au
+putut fi descărcate din mediul în care s-a lucrat. Pe insigna SAL scrie
+„ANPC" în locul stemei: o stemă redesenată ar fi imitat un semn oficial.
+SOL apare din decizia proprietarului, deși platforma europeană s-a închis
+pe 20 iulie 2025 — avocatul confirmă, punctul 13 din
 `docs/09-verificare-juridica.md`.
+
+**Unde exact, când avem fișierele oficiale:**
+
+1. Descarcă pictogramele de pe `anpc.ro` (secțiunea pentru comercianți) și
+   salvează-le ca `public/anpc/sal.png` și `public/anpc/sol.png` (sau
+   `.svg`).
+2. În `src/config/consumer-redress.ts`, la fiecare intrare, pune
+   `badge: { src: '/anpc/sal.png', width: 250, height: 50 }` (respectiv
+   `sol`). Insigna desenată de noi se înlocuiește cu imaginea oficială,
+   în aceeași legătură.
+
+**Cum verifici:** subsolul arată pictogramele oficiale în locul insignelor
+noastre, pe `/`, pe `/cont` și pe `/admin`; un clic deschide pagina
+oficială într-o filă nouă. `tests/unit/anpc-badges.test.tsx` și
+`tests/e2e/subsol-sigla.spec.ts` verifică legăturile, filele noi și
+înălțimea egală.
 
 ## 13. Domeniul propriu
 

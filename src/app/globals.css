@@ -127,7 +127,7 @@
      and the white paper they are printed on. They are the authority's
      colours, not the platform's: the two badges in the footer must look
      like ANPC's, so these never follow the accent, a surface or a theme,
-     and nothing else may use them — tests/unit/anpc-badges.test.ts keeps
+     and nothing else may use them — tests/unit/anpc-badges.test.tsx keeps
      them inside src/components/layout/anpc-badges.tsx. Blue on paper
      12.4:1, paper on blue the same. */
   --color-anpc-blue: #292b6e;
