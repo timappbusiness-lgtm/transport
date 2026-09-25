@@ -18,12 +18,14 @@
 # Supabase ones only step 1 runs):
 #   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF   read by the CLI
 #   SITE_ORIGIN    the origin the browser would send (default production)
-#   ANAF_TEST_CUI  a real, active CUI (default 14399840)
+#   ANAF_TEST_CUI  a real, active CUI (default 41150110, the operator's own,
+#                  so the report also shows whether ANAF agrees with
+#                  src/config/company.ts)
 #
 # Never fails the job: it reports. The summary is the result.
 set -uo pipefail
 
-cui="${ANAF_TEST_CUI:-14399840}"
+cui="${ANAF_TEST_CUI:-41150110}"
 origin="${SITE_ORIGIN:-https://transport-seven-sandy.vercel.app}"
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 work="$(mktemp -d)"
@@ -46,6 +48,20 @@ code=$(curl -s -o "$work/anaf.json" -w '%{http_code}' --max-time 25 \
 found=$(jq -r '(.found // []) | length' "$work/anaf.json" 2>/dev/null || echo "?")
 name=$(jq -r '.found[0].date_generale.denumire // empty' "$work/anaf.json" 2>/dev/null || true)
 say "- ANAF v9 from the runner: HTTP \`${code}\`, records found: \`${found}\`${name:+ (${name})}"
+# What ANAF says about the company, field by field, to hold against
+# src/config/company.ts. Public registry data; nothing here is secret.
+record=$(jq -c '.found[0] | {
+    denumire: .date_generale.denumire,
+    adresa: .date_generale.adresa,
+    nrRegCom: .date_generale.nrRegCom,
+    codPostal: .date_generale.codPostal,
+    telefon: .date_generale.telefon,
+    stare: .date_generale.stare_inregistrare,
+    platitorTVA: .inregistrare_scop_Tva.scpTVA,
+    inactiv: .stare_inactiv.statusInactivi,
+    sediu: (.adresa_sediu_social | {strada: .sdenumire_Strada, numar: .snumar_Strada, localitate: .sdenumire_Localitate, judet: .sdenumire_Judet, codPostal: .scod_Postal})
+  }' "$work/anaf.json" 2>/dev/null || true)
+[[ -n "$record" && "$record" != "null" ]] && say "  - ANAF record: \`${record}\`"
 
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" || -z "${SUPABASE_PROJECT_REF:-}" ]]; then
   say "- Supabase secrets not available to this run: the project checks are skipped."
@@ -96,7 +112,7 @@ code=$(curl -s -o "$work/fn.json" -D "$work/fn.headers" -w '%{http_code}' --max-
   -H "apikey: ${anon}" -H "Authorization: Bearer ${anon}" \
   -H 'Content-Type: application/json' -H "Origin: ${origin}" \
   -d "{\"cui\": \"${cui}\"}" || true)
-body=$(jq -c '{found, reason, error, legal_name, county, city, is_inactive, is_struck_off}' "$work/fn.json" 2>/dev/null || head -c 300 "$work/fn.json")
+body=$(jq -c '{found, reason, error, legal_name, address, county, city, postal_code, reg_com, phone, vat_payer, status_text, is_inactive, is_struck_off}' "$work/fn.json" 2>/dev/null || head -c 300 "$work/fn.json")
 allow=$(grep -i '^access-control-allow-origin:' "$work/fn.headers" | tr -d '\r' | cut -d' ' -f2- || true)
 say "- The function, called with \`Origin: ${origin}\`: HTTP \`${code}\`, body \`${body}\`"
 if [[ -z "$allow" ]]; then
@@ -104,5 +120,19 @@ if [[ -z "$allow" ]]; then
 else
   say "  - \`Access-Control-Allow-Origin: ${allow}\`"
 fi
+
+# 5. The VAT sentence under the subscription prices ----------------------
+# ANAF says whether the operator pays VAT; whether the plan prices include
+# it is a sentence staff type in /admin/planuri (pricing_settings.vat_label),
+# shown under every subscription amount. Read the way any visitor reads it:
+# the anon key, a public row. An empty value is reported, never filled in.
+code=$(curl -s -o "$work/vat.json" -w '%{http_code}' --max-time 20 \
+  "https://${ref}.supabase.co/rest/v1/pricing_settings?select=vat_label" \
+  -H "apikey: ${anon}" -H "Authorization: Bearer ${anon}" || true)
+vat=$(jq -r 'if type == "array" and length > 0 then (.[0].vat_label // "(empty)") else "(no row)" end' "$work/vat.json" 2>/dev/null || echo "(unreadable)")
+say ""
+say "## VAT line under the plan prices"
+say ""
+say "- \`pricing_settings.vat_label\` on the project: HTTP \`${code}\`, value \`${vat}\`"
 
 exit 0

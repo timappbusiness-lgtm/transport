@@ -87,7 +87,8 @@ export const adminDirectoryCopy = {
     trialDays: 'Perioada gratuită, în zile',
     trialDaysHint: 'Pornește când firma este aprobată. 0 o ascunde peste tot și nu mai pornește nimic.',
     vatLabel: 'Mențiune despre TVA',
-    vatLabelHint: 'Apare sub fiecare preț. Lasă gol dacă nu vrei să scrie nimic despre TVA.',
+    vatLabelHint:
+      'Apare lângă fiecare preț de abonament: pe pagina de abonamente, pe prima pagină, în întrebările frecvente, la cererea unui plan și în contul firmei. Firma este plătitoare de TVA, deci scrie clar dacă prețurile includ TVA sau nu. Gol, nu scrie nimic despre TVA.',
     manualBilling: 'Facturare manuală (transfer bancar)',
     manualBillingHint: 'Debifează când plata cu cardul este disponibilă.',
     billingEmail: 'E-mail pentru cererile de abonament',

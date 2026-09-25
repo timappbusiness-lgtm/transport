@@ -16,6 +16,7 @@ import {
   savingLabel,
   totalLabel,
   type BillingMonths,
+  vatSentence,
   type Plan,
   type PricingSettings,
 } from '@/lib/plans';
@@ -103,8 +104,10 @@ export function PlanCard({
             ) : price.saving > 0 ? (
               <p className="mt-2 text-small text-muted">{savingLabel(price.saving)}</p>
             ) : null}
-            {settings.vatLabel ? (
-              <p className="mt-2 text-small text-muted">{settings.vatLabel}</p>
+            {vatSentence(settings) ? (
+              <p data-vat="" className="mt-2 text-small text-muted">
+                {vatSentence(settings)}
+              </p>
             ) : null}
           </>
         ) : (

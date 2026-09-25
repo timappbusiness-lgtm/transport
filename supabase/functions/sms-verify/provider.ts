@@ -153,7 +153,10 @@ function defaultRandom(n: number): Uint8Array {
 
 /** The SMS itself. Short, because an SMS is 160 characters and costs money. */
 export function verificationMessage(code: string, brand: string): string {
-  return `${code} este codul tău ${brand}. Expiră în 10 minute. Nu îl da nimănui.`;
+  // One SMS, not two: ă and î make it a Unicode message, whose single
+  // segment holds 70 characters rather than 160. With the platform's name
+  // this is 68; the test measures it with the real name.
+  return `${code} e codul ${brand}, valabil 10 minute. Nu îl da nimănui.`;
 }
 
 /** `sha256` hex of the code, which is all the database ever sees. */

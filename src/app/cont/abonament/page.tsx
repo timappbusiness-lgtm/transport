@@ -6,7 +6,7 @@ import { ROUTES } from '@/config/routes';
 import { accountCopy } from '@/content/account';
 import { requireManagerContext } from '@/lib/auth/guards';
 import { formatDateRo } from '@/lib/format';
-import { audienceParam, formatLei, limitLabel, type Plan } from '@/lib/plans';
+import { audienceParam, formatLei, limitLabel, vatSentence, type Plan } from '@/lib/plans';
 import { loadPricing } from '@/lib/plans-source';
 import {
   loadCompanySubscription,
@@ -52,7 +52,7 @@ export default async function Page() {
       </div>
 
       {hasPlan ? (
-        <Current subscription={subscription} plan={plan} />
+        <Current subscription={subscription} plan={plan} vat={vatSentence(pricing.settings)} />
       ) : (
         <section className="rounded-card border border-border bg-surface p-5">
           <p className="text-body text-muted">{c.none}</p>
@@ -77,9 +77,12 @@ export default async function Page() {
 function Current({
   subscription,
   plan,
+  vat,
 }: {
   subscription: CompanySubscription;
   plan: Plan | null;
+  /** Whether the price includes VAT, as staff wrote it. */
+  vat: string | null;
 }) {
   const end = subscription.periodEnd === '' ? null : new Date(subscription.periodEnd);
 
@@ -111,6 +114,11 @@ function Current({
       {plan ? (
         <p className="mt-1 font-mono text-body tabular-nums text-muted">
           {formatLei(plan.monthlyPrice)} pe lună
+        </p>
+      ) : null}
+      {plan && vat ? (
+        <p data-vat="" className="text-small text-muted">
+          {vat}
         </p>
       ) : null}
 

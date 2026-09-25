@@ -69,6 +69,7 @@ function input(over: Partial<FaqInput> = {}): FaqInput {
     requirements: REQUIREMENTS,
     plan: PLAN,
     trialDays: 30,
+    vatLabel: null,
     reviewTimeLabel: 'în cel mult o zi lucrătoare',
     ...over,
   };
@@ -101,6 +102,15 @@ describe('the price', () => {
     const answer = find(buildFaq(input()), 'abonament')?.answer.join(' ') ?? '';
     expect(answer).toContain('costă 149 lei pe lună');
     expect(answer).toContain('Perioada gratuită de 30 de zile');
+  });
+
+  it('says whether the price includes VAT, in the words staff wrote', () => {
+    // The operator pays VAT. The sentence comes from pricing_settings and
+    // follows the price; the FAQ never writes one of its own.
+    const answer = find(buildFaq(input({ vatLabel: 'Prețurile nu includ TVA' })), 'abonament')?.answer ?? [];
+    expect(answer[1]).toBe('Prețurile nu includ TVA.');
+    const silent = find(buildFaq(input({ vatLabel: null })), 'abonament')?.answer.join(' ') ?? '';
+    expect(silent).not.toContain('TVA');
   });
 
   it('lists what the plan includes today, not what is coming', () => {

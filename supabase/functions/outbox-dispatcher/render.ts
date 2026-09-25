@@ -14,7 +14,7 @@
 // missing variable, and it shows up on the admin screen.
 // =====================================================================
 
-import { BRAND_NAME } from "../_shared/brand.ts";
+import { BRAND_NAME, OPERATOR_LINE } from "../_shared/brand.ts";
 
 export interface Template {
   /** What the subject line says. Substitutions allowed. */
@@ -89,6 +89,8 @@ export interface RenderOptions {
    * name alone.
    */
   markUrl?: string | undefined;
+  /** Who operates the platform, printed small under every message. */
+  operator?: string;
 }
 
 /**
@@ -108,6 +110,7 @@ export function render(
   options: RenderOptions = {},
 ): Rendered {
   const brand = options.brand ?? BRAND_NAME;
+  const operator = options.operator ?? OPERATOR_LINE;
   const subject = substitute(template.subject, values, name);
   const lines = template.lines.map((line) => substitute(line, values, name));
   const action = template.action
@@ -153,6 +156,7 @@ export function render(
       ${htmlLines}
       ${htmlAction}
       ${htmlFooter}
+      <p style="margin:24px 0 0;font-size:12px;line-height:1.5;color:#5b6b73">${escapeHtml(operator)}</p>
     </div>
   </body>
 </html>`;
@@ -162,7 +166,7 @@ export function render(
   if (canUnsubscribe) {
     textParts.push('', `Nu mai vrei mesajele astea? ${options.unsubscribeUrl}`);
   }
-  textParts.push('', brand);
+  textParts.push('', brand, operator);
 
   return { subject, html, text: textParts.join('\n') };
 }

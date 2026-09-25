@@ -20,6 +20,7 @@ export async function loadFaq(): Promise<FaqGroup[]> {
     requirements: verification.requirements,
     plan: highlightedPlan(pricing.plans, 'carrier'),
     trialDays: pricing.settings.trialDays,
+    vatLabel: pricing.settings.vatLabel,
     reviewTimeLabel: verification.reviewTimeLabel,
   });
 }

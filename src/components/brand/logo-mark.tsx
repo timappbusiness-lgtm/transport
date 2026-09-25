@@ -14,12 +14,12 @@ export type MarkTone = 'color' | 'mono';
  * passing a prop. `mono` is one colour, the text colour around it — for a
  * print, a stamp-sized use, or a surface we have not measured.
  */
-const TONES: Record<MarkTone, { ramp: string; deck: string }> = {
+const TONES: Record<MarkTone, { car: string; deck: string }> = {
   color: {
-    ramp: 'stroke-accent in-data-[surface=dark]:stroke-accent-bright',
+    car: 'fill-accent in-data-[surface=dark]:fill-accent-bright',
     deck: 'stroke-foreground in-data-[surface=dark]:stroke-accent-on-dark',
   },
-  mono: { ramp: 'stroke-current', deck: 'stroke-current' },
+  mono: { car: 'fill-current', deck: 'stroke-current' },
 };
 
 /**
@@ -44,18 +44,21 @@ export function LogoMark({
       width={size}
       height={size}
       viewBox={`0 0 ${MARK.grid} ${MARK.grid}`}
-      fill="none"
-      strokeWidth={markStroke(size)}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
       data-logo-mark={tone}
       data-size={size}
       className={cn('flex-none', className)}
     >
-      <path d={MARK.deck} className={stroke.deck} />
-      <path d={MARK.ramp} className={stroke.ramp} />
+      <path d={MARK.car} className={stroke.car} />
+      <path
+        d={MARK.deck}
+        fill="none"
+        strokeWidth={markStroke(size)}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={stroke.deck}
+      />
     </svg>
   );
 }

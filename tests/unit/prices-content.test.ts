@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { offersCopy } from '@/content/oferte';
 import { pricesCopy } from '@/content/preturi';
+import { seoCopy } from '@/content/transport-auto';
 
 /**
  * The same kind of guard as the homepage copy test: not the wording, which
@@ -74,5 +76,28 @@ describe('prices copy rules', () => {
   it('offers a way forward while the table is unpublished', () => {
     expect(pricesCopy.unpublished.title).toMatch(/în curând/i);
     expect(pricesCopy.unpublished.cta).toMatch(/cerere/i);
+  });
+});
+
+describe('VAT on the indicative prices', () => {
+  // The operator pays VAT, but these are a reference for what carriers
+  // charge, and the placeholder rates were never set on a VAT basis. Every
+  // place that shows one says it does not state VAT, rather than implying
+  // either answer; and no VAT rate or amount appears anywhere.
+  it('is stated beside the table, in the calculator, on the homepage band, on the route pages and in the offer form', () => {
+    for (const [where, text] of [
+      ['table', pricesCopy.table.vat],
+      ['calculator', pricesCopy.calculator.disclaimer],
+      ['homepage band', pricesCopy.home.lede],
+      ['route pages', seoCopy.price.note],
+      ['offer estimate', offersCopy.form.priceRange('1', '2')],
+      ['offer conditions', offersCopy.form.conditionsHint],
+    ] as const) {
+      expect(text, where).toMatch(/TVA/);
+    }
+  });
+
+  it('never names a VAT rate', () => {
+    expect(ALL.filter((s) => /\d+\s*%\s*TVA|TVA\s*\d+\s*%|19\s*%|21\s*%/.test(s))).toEqual([]);
   });
 });

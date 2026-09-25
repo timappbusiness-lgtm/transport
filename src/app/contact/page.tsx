@@ -9,6 +9,7 @@ import {
   has,
   missingLegalFields,
   operatorField,
+  operatorPhoneHref,
 } from '@/config/company';
 
 export const metadata: Metadata = {
@@ -72,7 +73,7 @@ export default function Page() {
               label={c.channels.phone.label}
               hint={c.channels.phone.hint}
               value={OPERATOR.phone}
-              href={`tel:${OPERATOR.phone.replace(/\s/g, '')}`}
+              href={operatorPhoneHref()}
             />
           ) : null}
         </dl>
@@ -94,6 +95,11 @@ export default function Page() {
           <Detail label={c.operator.legalName} value={operatorField('legalName')} />
           <Detail label={c.operator.cui} value={operatorField('cui')} />
           <Detail label={c.operator.regCom} value={operatorField('regCom')} />
+          <Detail label={c.operator.euid} value={operatorField('euid')} />
+          <Detail
+            label={c.operator.vat}
+            value={OPERATOR.vatPayer ? c.operator.vatPayer : c.operator.vatNonPayer}
+          />
           <Detail label={c.operator.address} value={operatorField('address')} />
         </dl>
       </section>

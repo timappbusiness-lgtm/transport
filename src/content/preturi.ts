@@ -60,6 +60,16 @@ export const pricesCopy = {
       'Sub aceste sume o cursă nu se justifică, oricât de scurtă ar fi: încărcarea, actele și drumul până la vehicul rămân aceleași.',
     note:
       'Tarifele interne sunt în lei, cele internaționale în euro, pentru că așa se decontează drumul: motorină, taxe de drum și traversări.',
+    /**
+     * The operator pays VAT, but these are not its prices: they are a
+     * reference for what carriers charge, and whether a carrier's price
+     * includes VAT depends on the carrier. The placeholder rates were
+     * never set on a VAT basis, so the honest sentence is that they do
+     * not say. When real rates are published on a stated basis, this
+     * sentence and the other `vat` lines in this file change with them
+     * (docs/configurare-externa.md §7).
+     */
+    vat: 'Tarifele nu precizează dacă includ TVA. Dacă prețul final îl include, transportatorul o spune în ofertă; dacă nu scrie, întreabă-l în firul ofertei.',
     notRunning: (pct: number) =>
       `Un vehicul care nu pornește și nu rulează are nevoie de troliu și de un om în plus. Se adaugă aproximativ ${pct}%.`,
   },
@@ -87,7 +97,7 @@ export const pricesCopy = {
     notRunningTag: 'Nu pornește',
     expressTag: 'Expres',
     disclaimer:
-      'Estimare orientativă. Prețul final îl stabilește transportatorul, după ce vede vehiculul și ruta.',
+      'Estimare orientativă, care nu precizează dacă include TVA. Prețul final îl stabilește transportatorul, după ce vede vehiculul și ruta, și tot el spune dacă include TVA.',
     cta: 'Publică o cerere cu aceste date',
     cityNote:
       'Lista de localități este deocamdată scurtă. Alege reședința de județ sau orașul mare cel mai apropiat — pentru o estimare, diferența intră în interval.',
@@ -204,7 +214,7 @@ export const pricesCopy = {
     strong: 'Un reper de preț,',
     soft: 'înainte să ceri oferte.',
     lede:
-      'Tarife orientative pe kilometru, pe clase de vehicule. Prețul final îl stabilește transportatorul.',
+      'Tarife orientative pe kilometru, pe clase de vehicule, fără să precizeze dacă includ TVA. Prețul final îl stabilește transportatorul.',
     ledeUnpublished:
       'Stabilim tarifele orientative împreună cu transportatorii din platformă. Le publicăm aici, pe clase de vehicule și pe distanță.',
     link: 'Toate clasele și calculatorul',

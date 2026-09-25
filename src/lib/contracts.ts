@@ -1,5 +1,5 @@
 import { BRAND_NAME } from '@/config/brand';
-import { OPERATOR } from '@/config/company';
+import { OPERATOR, fiscalCode, has } from '@/config/company';
 import { contractFileRoute } from '@/config/routes';
 import { contractCopy } from '@/content/contract';
 import { formatMoment } from '@/lib/orders';
@@ -92,7 +92,9 @@ export function operatorBlock(): Record<string, string> {
   const block: Record<string, string> = { brand: BRAND_NAME };
   const fields: [string, string][] = [
     ['legal_name', OPERATOR.legalName],
-    ['cui', OPERATOR.cui],
+    // With the RO prefix for a VAT payer, the way the fiscal code is
+    // written on documents.
+    ['cui', has('cui') ? fiscalCode() : ''],
     ['reg_com', OPERATOR.regCom],
     ['address', OPERATOR.address],
     ['email', OPERATOR.email],

@@ -45,6 +45,10 @@ export const contactCopy = {
     legalName: 'Denumire',
     cui: 'CUI',
     regCom: 'Registrul comerțului',
+    euid: 'EUID',
+    vat: 'TVA',
+    vatPayer: 'Plătitoare de TVA',
+    vatNonPayer: 'Neplătitoare de TVA',
     address: 'Sediu',
   },
   missing: {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/app/top-bar';
 import { Card } from '@/components/ui/primitives';
-import { OPERATOR, has } from '@/config/company';
+import { OPERATOR, has, operatorPhoneHref } from '@/config/company';
 import { ROUTES } from '@/config/routes';
 import { HELP_SECTIONS, helpCopy } from '@/content/ajutor';
 import { requireAccountContext } from '@/lib/auth/account';
@@ -151,7 +151,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             <dt className="text-muted">{c.support.phone}:</dt>
             <dd>
               {has('phone') ? (
-                <a href={`tel:${OPERATOR.phone}`} className="link-accent">
+                <a href={operatorPhoneHref()} className="link-accent">
                   {OPERATOR.phone}
                 </a>
               ) : (

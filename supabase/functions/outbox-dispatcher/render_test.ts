@@ -8,7 +8,7 @@ import {
 } from "./render.ts";
 import { renderValues } from "./send.ts";
 import { TEMPLATES, WITHOUT_PRODUCER } from "./templates.ts";
-import { BRAND_NAME } from "../_shared/brand.ts";
+import { BRAND_NAME, OPERATOR_LINE } from "../_shared/brand.ts";
 
 /**
  * The two things worth testing about an e-mail nobody will read twice:
@@ -238,7 +238,19 @@ Deno.test("the header carries the mark beside the name, as decoration", () => {
   // not a broken icon and not the name twice.
   assertStringIncludes(mail.html, `<img src="${SITE}/brand/mark-email.png" width="32" height="32" alt=""`);
   assertStringIncludes(mail.html, `>${BRAND_NAME}</td>`);
-  assert(mail.text.endsWith(BRAND_NAME));
+  assert(mail.text.endsWith(`${BRAND_NAME}\n${OPERATOR_LINE}`));
+});
+
+Deno.test("every e-mail says who sends it: the operator, under the message", () => {
+  for (const [name, template] of Object.entries(TEMPLATES)) {
+    const values = Object.fromEntries(templateVariables(template).map((v) => [v, "x"]));
+    const mail = render(name, template, renderValues(values, SITE));
+    assertStringIncludes(mail.html, escapeHtml(OPERATOR_LINE), name);
+    assert(mail.text.endsWith(OPERATOR_LINE), name);
+  }
+  // The line is the operator's, not a placeholder.
+  assert(!OPERATOR_LINE.includes("[de completat]"));
+  assertStringIncludes(OPERATOR_LINE, "CUI RO ");
 });
 
 Deno.test("without a mark the header is the name alone", () => {

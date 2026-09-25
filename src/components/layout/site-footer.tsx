@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
+import { operatorShortLine } from '@/config/company';
 import { CONSUMER_REDRESS, REDRESS_LABEL, type RedressEntry } from '@/config/consumer-redress';
 import { FOOTER_NAV } from '@/lib/navigation';
 import { loadPublishedPages } from '@/lib/seo-pages-source';
@@ -24,7 +25,7 @@ export async function SiteFooter() {
         <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
           <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <Logo size={24} className="text-body text-foreground" />
-            <span>— bursă de transport auto pentru România și Europa.</span>
+            <span>— transport auto pentru România și Europa, cu firme verificate.</span>
           </p>
           <nav aria-label="Secundar" className="flex flex-wrap gap-5">
             {FOOTER_NAV.map((l) => (
@@ -39,6 +40,13 @@ export async function SiteFooter() {
             ) : null}
           </nav>
         </div>
+
+        {/* Who operates the site, on every page: the identification a
+            visitor is owed (Legea 365/2002, art. 5) without having to find
+            the contact page first. The full details are on /contact. */}
+        <p data-operator="" className="max-w-[72ch] [overflow-wrap:anywhere]">
+          Operat de {operatorShortLine()}.
+        </p>
 
         {/* Their own row, under a hairline, never among the links above:
             this is where a consumer looks for somebody who is not us. On

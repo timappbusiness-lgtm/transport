@@ -17,7 +17,7 @@ describe('the mark', () => {
       expect(html).toContain(`height="${size}"`);
       expect(html).toContain(`viewBox="0 0 ${MARK.grid} ${MARK.grid}"`);
       expect(html).toContain(`stroke-width="${markStroke(size)}"`);
-      expect(html).toContain(`d="${MARK.ramp}"`);
+      expect(html).toContain(`d="${MARK.car}"`);
       expect(html).toContain(`d="${MARK.deck}"`);
       // Decorative: the name is always beside it or in an sr-only span.
       expect(html).toContain('aria-hidden="true"');
@@ -33,11 +33,13 @@ describe('the mark', () => {
 
   it('in colour follows the surface; monochrome follows the text', () => {
     const colour = renderToStaticMarkup(<LogoMark tone="color" />);
-    expect(colour).toContain('stroke-accent');
-    expect(colour).toContain('in-data-[surface=dark]:stroke-accent-bright');
+    expect(colour).toContain('fill-accent');
+    expect(colour).toContain('in-data-[surface=dark]:fill-accent-bright');
     expect(colour).toContain('in-data-[surface=dark]:stroke-accent-on-dark');
+    // One colour: the car filled and the deck stroked with the text colour.
     const mono = renderToStaticMarkup(<LogoMark tone="mono" />);
-    expect(mono.match(/stroke-current/g)).toHaveLength(2);
+    expect(mono.match(/fill-current/g)).toHaveLength(1);
+    expect(mono.match(/stroke-current/g)).toHaveLength(1);
     expect(mono).not.toContain('accent');
   });
 
@@ -53,7 +55,7 @@ describe('the lockup', () => {
     const html = renderToStaticMarkup(<Logo layout={layout} />);
     expect(html).toContain(`data-logo="${layout}"`);
     expect(html).toContain(`>${BRAND_NAME}</span>`);
-    expect(html).toContain(`d="${MARK.ramp}"`);
+    expect(html).toContain(`d="${MARK.car}"`);
   });
 
   it('draws the word in the display face beside or under the mark', () => {

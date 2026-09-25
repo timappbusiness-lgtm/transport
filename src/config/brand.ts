@@ -1,13 +1,16 @@
 /**
- * The brand name is not trademark-checked yet, so it lives in exactly one
- * place. Never hardcode it in a component.
+ * The platform's name, decided on 25 September 2026. It lives in exactly
+ * one place: every page, e-mail, icon and document reads it from here, and
+ * `tests/unit/brand.test.ts` fails when it is written anywhere else. After
+ * changing it, run `pnpm brand`. Not yet checked against registered
+ * trademarks (OSIM, EUIPO).
  */
-export const BRAND_NAME = 'Coridor' as const;
+export const BRAND_NAME = 'Transauto Bursa' as const;
 
 /**
  * The name in lowercase ASCII letters and digits, for the places a name
  * has to be a token: a file name, a crawler's name in a robots.txt group.
- * „Rută Nouă" would be „rutanoua".
+ * „Rută Nouă" would be „rutanoua"; this one is „transautobursa".
  */
 export const BRAND_SLUG = BRAND_NAME.normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')

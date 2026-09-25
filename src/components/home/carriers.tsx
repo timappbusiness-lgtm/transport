@@ -16,6 +16,7 @@ import {
   cardFeatures,
   formatLei,
   highlightedPlan,
+  vatSentence,
   type Plan,
   type PricingSettings,
 } from '@/lib/plans';
@@ -93,6 +94,11 @@ export function CarriersBody({
                 </span>
                 <span className="text-body text-muted">{c.period}</span>
               </p>
+              {vatSentence(settings) ? (
+                <p data-vat="" className="mt-1 text-small text-muted">
+                  {vatSentence(settings)}
+                </p>
+              ) : null}
 
               {cardFeatures(plan).length > 0 ? (
                 <ul className="mt-6 grid gap-2.5">
