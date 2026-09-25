@@ -107,6 +107,7 @@ export function PricesView({
             {pricesCopy.table.notRunning(settings.not_running_surcharge_pct)}
           </p>
           <p className="max-w-[68ch]">{pricesCopy.table.note}</p>
+          <p className="max-w-[68ch]">{pricesCopy.table.vat}</p>
         </div>
       </section>
 

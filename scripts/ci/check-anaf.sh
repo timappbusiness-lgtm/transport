@@ -121,4 +121,18 @@ else
   say "  - \`Access-Control-Allow-Origin: ${allow}\`"
 fi
 
+# 5. The VAT sentence under the subscription prices ----------------------
+# ANAF says whether the operator pays VAT; whether the plan prices include
+# it is a sentence staff type in /admin/planuri (pricing_settings.vat_label),
+# shown under every subscription amount. Read the way any visitor reads it:
+# the anon key, a public row. An empty value is reported, never filled in.
+code=$(curl -s -o "$work/vat.json" -w '%{http_code}' --max-time 20 \
+  "https://${ref}.supabase.co/rest/v1/pricing_settings?select=vat_label" \
+  -H "apikey: ${anon}" -H "Authorization: Bearer ${anon}" || true)
+vat=$(jq -r 'if type == "array" and length > 0 then (.[0].vat_label // "(empty)") else "(no row)" end' "$work/vat.json" 2>/dev/null || echo "(unreadable)")
+say ""
+say "## VAT line under the plan prices"
+say ""
+say "- \`pricing_settings.vat_label\` on the project: HTTP \`${code}\`, value \`${vat}\`"
+
 exit 0

@@ -21,7 +21,7 @@ export const offersCopy = {
     vehicleHint: 'Doar vehiculele active cu actele în termen.',
     vehicleNone: 'Niciun vehicul cu actele în termen. Actualizează-le în Flotă.',
     conditions: 'Ce include prețul',
-    conditionsHint: 'Asigurare, taxe, ce nu este inclus. Cel mult 1000 de caractere.',
+    conditionsHint: 'Dacă prețul include TVA, asigurare, taxe, ce nu este inclus. Cel mult 1000 de caractere.',
     paymentTerm: 'Termen de plată (zile)',
     validity: 'Oferta este valabilă',
     validityHours: (h: number) => `${h} ore`,
@@ -33,7 +33,7 @@ export const offersCopy = {
     cancel: 'Renunță',
     sent: 'Oferta a fost trimisă. Clientul a fost anunțat.',
     priceRange: (low: string, high: string) =>
-      `Estimarea noastră pentru ruta asta: ${low} – ${high}. Este orientativă, nu o limită.`,
+      `Estimarea noastră pentru ruta asta: ${low} – ${high}. Este orientativă, nu o limită, și nu precizează dacă include TVA.`,
   },
 
   quota: {

@@ -4,7 +4,7 @@ import { pluralRo } from './requests';
 import { exemptVehicles, remindersLabel, requiredDocuments, type PublicRequirement } from './trust';
 import { STATIC_FAQ, type FaqEntry, type FaqGroup, type FaqGroupId } from '@/content/faq';
 import { ROUTES } from '@/config/routes';
-import { formatLei, type Plan } from './plans';
+import { formatLei, vatSentence, type Plan } from './plans';
 
 /**
  * The answers that describe a rule are built from the rule.
@@ -24,6 +24,8 @@ export interface FaqInput {
   /** The recommended carrier plan, or null when there is none to read. */
   plan: Plan | null;
   trialDays: number;
+  /** Whether the price includes VAT, as staff wrote it; null says nothing. */
+  vatLabel: string | null;
   reviewTimeLabel: string | null;
 }
 
@@ -51,7 +53,7 @@ export function buildFaq(input: FaqInput): FaqGroup[] {
   const documents = documentsEntry(input.requirements);
   if (documents) carriers.push(documents);
 
-  const price = priceEntry(input.plan, input.trialDays);
+  const price = priceEntry(input.plan, input.trialDays, input.vatLabel);
   if (price) carriers.push(price);
 
   const expiry = expiryEntry(input.requirements);
@@ -172,10 +174,12 @@ function vehicleNames(requirements: PublicRequirement[]): string {
  * it. No plan means no answer: a subscription price is not something to
  * state from memory.
  */
-function priceEntry(plan: Plan | null, trialDays: number): FaqEntry | null {
+function priceEntry(plan: Plan | null, trialDays: number, vatLabel: string | null): FaqEntry | null {
   if (!plan) return null;
 
   const answer = [`Planul ${plan.name} costă ${formatLei(plan.monthlyPrice)} pe lună.`];
+  const vat = vatSentence({ vatLabel });
+  if (vat) answer.push(vat);
   if (trialDays > 0) {
     answer.push(
       `Perioada gratuită de ${pluralRo(trialDays, 'zi', 'zile')} începe când firma este aprobată, nu când îți faci contul. Nu îți cerem card la înscriere.`,

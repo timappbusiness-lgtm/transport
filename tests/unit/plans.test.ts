@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { isQuotaError } from '@/lib/errors';
 import {
@@ -18,6 +19,7 @@ import {
   limitLabel,
   parseAudience,
   parseMonths,
+  vatSentence,
   plansFor,
   priceAt,
   savingLabel,
@@ -319,5 +321,29 @@ describe('a limit reached is not an error, it is a plan running out', () => {
   it('leaves an ordinary refusal alone', () => {
     expect(isQuotaError('Cont suspendat sau neverificat.')).toBe(false);
     expect(isQuotaError('Firma nu există')).toBe(false);
+  });
+});
+
+describe('VAT beside a subscription price', () => {
+  it('is the sentence staff wrote, closed with a full stop, or nothing', () => {
+    expect(vatSentence({ vatLabel: 'Prețurile nu includ TVA' })).toBe('Prețurile nu includ TVA.');
+    expect(vatSentence({ vatLabel: 'Prețurile includ TVA.' })).toBe('Prețurile includ TVA.');
+    expect(vatSentence({ vatLabel: '   ' })).toBeNull();
+    expect(vatSentence({ vatLabel: null })).toBeNull();
+  });
+
+  it('follows every amount the operator charges, wherever one is shown', () => {
+    // The operator pays VAT. Until 25 September the sentence was on the
+    // pricing cards only: the homepage, the confirmation before a plan
+    // request and the account's plan showed the amount alone.
+    for (const file of [
+      'src/components/plans/plan-card.tsx',
+      'src/components/plans/request-plan-button.tsx',
+      'src/components/home/carriers.tsx',
+      'src/app/cont/abonament/page.tsx',
+      'src/lib/faq.ts',
+    ]) {
+      expect(readFileSync(file, 'utf8'), file).toMatch(/vatSentence\(/);
+    }
   });
 });

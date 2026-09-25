@@ -10,6 +10,7 @@ import {
   priceAt,
   totalLabel,
   type BillingMonths,
+  vatSentence,
   type Plan,
   type PricingSettings,
 } from '@/lib/plans';
@@ -80,6 +81,11 @@ export function RequestPlanButton({
           {price ? (
             <p className="mt-1 font-mono text-body tabular-nums">
               {c.total(price.months === 1 ? totalLabel(price) : formatLei(price.total))}
+            </p>
+          ) : null}
+          {price && vatSentence(settings) ? (
+            <p data-vat="" className="mt-1 text-small text-muted">
+              {vatSentence(settings)}
             </p>
           ) : null}
           {settings.manualBilling ? (

@@ -23,9 +23,11 @@ export interface Pricing {
 }
 
 /**
- * The defaults the migration seeds, used only when there is no database to
- * ask. No plans means the pricing page says so and states no price — which
- * is the honest answer when we cannot read one.
+ * What the pages use when there is no database to ask. No plans means the
+ * pricing page says so and states no price — which is the honest answer
+ * when we cannot read one. The VAT sentence is null here although the
+ * migration seeds one: whether the prices include VAT is a statement
+ * staff make in /admin/planuri, never one the code makes for them.
  */
 export const DEFAULT_PRICING_SETTINGS: PricingSettings = {
   trialDays: 30,

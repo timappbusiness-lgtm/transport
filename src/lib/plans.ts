@@ -173,6 +173,18 @@ export function formatLei(value: number): string {
   return `${formatNumber(value)} lei`;
 }
 
+/**
+ * The VAT sentence from the settings, ready to follow another sentence,
+ * or null when staff left it empty. It is the only statement about VAT a
+ * subscription price carries, so every place that shows one shows this
+ * next to it; nothing computes or guesses a VAT amount.
+ */
+export function vatSentence(settings: Pick<PricingSettings, 'vatLabel'>): string | null {
+  const label = settings.vatLabel?.trim();
+  if (!label) return null;
+  return /[.!?]$/.test(label) ? label : `${label}.`;
+}
+
 /** "1.490 lei la 12 luni", or "149 lei pe lună" for the monthly rate. */
 export function totalLabel(price: PriceView): string {
   return price.months === 1

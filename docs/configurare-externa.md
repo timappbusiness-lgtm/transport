@@ -35,6 +35,7 @@ ordine.
 | 10 | Furnizor de SMS (opțional la pilot) | Decizie client | Confirmarea telefonului |
 | 11 | Cele două rotițe de potrivire, verificate | Madalin | Nimic — au valori implicite care funcționează |
 | 12 | Pictograma oficială ANPC SAL, descărcată și pusă în subsol | Madalin | Nimic tehnic; cerința legală, de la prima vânzare online către consumatori |
+| 13 | Domeniul propriu și tot ce se mută pe el | Edi + Madalin | Orice e-mail (pasul 1), adresa canonică, indexarea |
 
 ---
 
@@ -44,7 +45,7 @@ ordine.
 trimitem, verificat prin DNS.
 
 **Unde exact:**
-1. Resend → Domains → Add Domain → domeniul nostru (ex. `coridor.ro`).
+1. Resend → Domains → Add Domain → domeniul nostru (ex. `domeniul-vostru.ro`; încă nu îl avem, vezi pasul 13).
 2. Resend arată trei înregistrări DNS: un TXT pentru SPF, un CNAME (sau
    TXT) pentru DKIM, și opțional un TXT pentru DMARC. Se pun la
    registratorul domeniului.
@@ -105,7 +106,7 @@ Settings → Enable Custom SMTP. Cu Resend:
 | Username | `resend` |
 | Password | aceeași cheie ca `RESEND_API_KEY` |
 | Sender email | aceeași ca `MAIL_FROM` |
-| Sender name | `Coridor` |
+| Sender name | valoarea `BRAND_NAME` din `src/config/brand.ts` |
 
 Tot acolo, la „Rate Limits", ridică limita de e-mailuri pe oră.
 
@@ -134,7 +135,7 @@ Mai multe origini se separă prin virgulă — util cât timp există și un dom
 propriu pe lângă cel de pe Vercel:
 
 ```
-ALLOWED_ORIGIN = https://coridor.ro,https://www.coridor.ro
+ALLOWED_ORIGIN = https://domeniul-vostru.ro,https://www.domeniul-vostru.ro
 ```
 
 Dacă `ALLOWED_ORIGIN` lipsește, se folosește `SITE_URL`, dacă acela există.
@@ -208,7 +209,7 @@ npx web-push generate-vapid-keys
 |---|---|---|
 | `VAPID_PUBLIC_KEY` | Supabase → Edge Functions | Push-ul nu pleacă; dispecerul răspunde 503 numind variabila |
 | `VAPID_PRIVATE_KEY` | Supabase → Edge Functions | Același lucru |
-| `VAPID_SUBJECT` | Supabase → Edge Functions (`mailto:contact@coridor.ro`) | Același lucru |
+| `VAPID_SUBJECT` | Supabase → Edge Functions (`mailto:` + adresa de contact din `src/config/company.ts`) | Același lucru |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Vercel → Production (aceeași valoare ca publică) | Browserul nu se poate abona |
 | `IMPORT_IP_SALT` | Supabase → Edge Functions (șir aleator) | Importul din anunț merge doar cu cont |
 
@@ -218,32 +219,42 @@ test.
 
 ## 6. Datele firmei în cod
 
-**Ce:** cine operează platforma, legal. Sunt **goale intenționat** — un
-CUI inventat pe o pagină care e un contract e mai rău decât un loc gol.
+**Starea pe 25 septembrie 2026: completate.** Platforma este operată de
+MRO WEMAX SRL; toate câmpurile din `OPERATOR`, în
+`src/config/company.ts`, au valori reale: denumire, CUI (plătitoare de
+TVA, deci scris cu „RO"), număr de registrul comerțului, EUID, sediu,
+telefon și cele două adrese de e-mail.
 
-**Unde exact:** `src/config/company.ts`, obiectul `OPERATOR`:
+**Provizoriu:** ambele adrese de e-mail sunt o căsuță Gmail, până avem
+domeniul propriu. În cod stă un comentariu `TEMPORARY` chiar deasupra
+lor. Când există domeniul, se schimbă acolo (de exemplu `contact@` și
+`date-personale@`) și se pune aceeași adresă și în `MAIL_REPLY_TO`
+(pasul 2). Până atunci `MAIL_REPLY_TO` poate fi chiar adresa Gmail: un
+răspuns poate ajunge oriunde, doar expeditorul trebuie să fie pe domeniul
+verificat.
 
-```ts
-export const OPERATOR: LegalEntity = {
-  legalName: '',      // Denumirea completă, ca la registrul comerțului
-  cui: '',            // Doar cifre, fără „RO"
-  regCom: '',         // ex. J40/1234/2020
-  address: '',        // Sediul social, pe un rând
-  email: '',          // Unde se scrie despre platformă
-  privacyEmail: '',   // Unde se scrie despre date personale (poate fi aceeași)
-  phone: '',          // Opțional
-};
-```
+**Cine le citește:** `/contact` (inclusiv EUID și TVA), `/termeni`,
+`/confidentialitate`, subsolul fiecărei pagini („Operat de …"), subsolul
+fiecărui e-mail (prin copia generată de `pnpm brand` în
+`supabase/functions/_shared/brand.ts`), `/cont/ajutor` și punctul 2 al
+contractului de transport.
+
+**De știut:**
+- Contractul de transport, versiunea 1.0 a textului, nu scrie EUID-ul:
+  textul unei versiuni de contract nu se schimbă, iar blocul operatorului
+  din baza de date nu are câmpul. Intră în versiunea următoare a textului,
+  după ce îl citește avocatul.
+- Contractele generate *înainte* de 25 septembrie păstrează
+  `[de completat]` la punctul 2 pentru totdeauna. Pentru o comandă în
+  curs se generează o versiune nouă.
+- CI-ul verifică CUI-ul la ANAF la fiecare pull request (jobul „Company
+  lookup (ANAF), live", `scripts/ci/check-anaf.sh`) și scrie în rezumat
+  ce spune ANAF, câmp cu câmp. Nu schimbă nimic în cod.
 
 **Cum verifici:** `/contact`, `/termeni`, `/confidentialitate` și
-`/cookies` nu mai trebuie să conțină nicăieri `[de completat]`, iar banda
-galbenă de sus de pe `/contact` trebuie să dispară.
-
-**De știut:** contractele de transport generate *înainte* să fie completate
-datele păstrează `[de completat]` la punctul 2 pentru totdeauna — o
-versiune de contract nu se mai schimbă. Pentru o comandă în curs, se
-generează o versiune nouă după ce datele sunt în cod. Telefonul e opțional
-în cod, dar `/cont/ajutor` îl arată ca lipsă până e completat.
+`/cookies` nu conțin nicăieri `[de completat]`, iar banda galbenă de sus
+de pe `/contact` nu mai apare. `tests/e2e/date-operator.spec.ts` verifică
+exact asta.
 
 ## 7. Tarifele orientative
 
@@ -254,6 +265,21 @@ publicăm o listă de prețuri pe care piața o va corecta public.
 
 **Unde exact:** `/admin/preturi`, ca staff. Se schimbă rândurile, apoi se
 apasă publicarea. Ambele operațiuni scriu în `audit_log`.
+
+**TVA:** tarifele de azi nu au fost stabilite nici cu TVA, nici fără,
+așa că paginile spun exact asta: „nu precizează dacă includ TVA" (tabelul,
+calculatorul, banda de pe prima pagină, paginile `/transport-auto` și
+estimarea din formularul de ofertă). Când se publică tarifele reale, se
+alege o bază, se scriu toate pe ea și se schimbă propozițiile `vat` și
+`disclaimer` din `src/content/preturi.ts`, plus nota din
+`src/content/transport-auto.ts`. Nu se calculează nicio sumă de TVA.
+
+**Abonamentele** sunt altceva: sunt prețurile noastre, iar firma este
+plătitoare de TVA. Propoziția despre TVA de lângă fiecare preț de
+abonament este setarea „Mențiune despre TVA" din `/admin/planuri`
+(`pricing_settings.vat_label`). Migrația a pus „Prețurile nu includ TVA",
+pe care nu a confirmat-o nimeni: o confirmă sau o schimbă Edi, cu
+contabilul. Goală, prețurile nu spun nimic despre TVA.
 
 **Cum verifici:** `/preturi` trebuie să arate tabelul unui vizitator
 neautentificat (fereastră privată). Apoi pune înapoi „Prețuri" în meniul
@@ -389,6 +415,44 @@ imitat un semn oficial. SOL (platforma europeană) nu apare: s-a închis pe
 `/cont` și pe `/admin`; un clic deschide `reclamatiisal.anpc.ro` într-o filă
 nouă. Avocatul confirmă legătura și formularea — punctul 13 din
 `docs/09-verificare-juridica.md`.
+
+## 13. Domeniul propriu
+
+**Ce:** platforma rulează azi pe adresa Vercel
+(`transport-seven-sandy.vercel.app`) și are adrese de e-mail Gmail. Tot ce
+urmează așteaptă un domeniu înregistrat. Numele se verifică întâi la OSIM
+și EUIPO, ca marcă (`docs/21-sigla.md`), apoi se cumpără domeniul.
+
+| Ce | Unde | Ce se întâmplă până atunci |
+|---|---|---|
+| Domeniul verificat în Resend (SPF, DKIM, DMARC) | Resend + DNS la registrator (pasul 1) | **Nu pleacă niciun e-mail.** Resend nu trimite de pe o adresă Gmail |
+| `MAIL_FROM` | Supabase → Edge Functions (pasul 2) | Dispecerul răspunde 503 și numește variabila |
+| Adresa expeditorului în Supabase Auth → SMTP | Pasul 3 | Confirmarea contului pleacă de pe serverul Supabase, câteva pe oră |
+| `SITE_URL` | Supabase → Edge Functions | Merge și cu adresa Vercel. Linkurile din e-mailuri și sigla din antetul lor se iau de aici; după mutare, e-mailurile vechi duc la adresa veche |
+| `NEXT_PUBLIC_SITE_URL` | Vercel → Production | Adresa canonică, `og:url`, imaginile de distribuire, `sitemap.xml`, `robots.txt` și linkurile din e-mailurile de autentificare |
+| Site URL și Redirect URLs | Supabase → Authentication → URL Configuration | Linkurile de confirmare și de resetare a parolei trimit la adresa veche |
+| `ALLOWED_ORIGIN` | Supabase → Edge Functions (pasul 3b) | Cele trei funcții chemate din browser refuză orice altă origine |
+| `NEXT_PUBLIC_SEO_INDEXABLE=1` | Vercel (pasul 9) | **Nu se pornește înainte de domeniu.** Ce indexează Google pe adresa Vercel se pierde la mutare |
+| Adresele din `src/config/company.ts` | Cod, marcate `TEMPORARY` | Gmail, pe paginile juridice, pe `/contact`, în subsolul fiecărui e-mail |
+| `MAIL_REPLY_TO`, `VAPID_SUBJECT`, `NEXT_PUBLIC_SUPPORT_EMAIL` | Edge Functions; Vercel | Pot fi adresa Gmail până atunci. Fără `NEXT_PUBLIC_SUPPORT_EMAIL`, linkurile „scrie-ne" duc la `/contact`, care arată adresa reală |
+| Adresa de asistență pentru ștergeri și cea de facturare | `/admin/setari`, `/admin/planuri` | Se pun pe domeniu odată cu restul |
+| Domeniul în Vercel și în Google Search Console | Vercel → Domains; Search Console | — |
+
+**Ce se pierde la mutare, oricând s-ar face:** sesiunile (cookie-ul e
+legat de domeniu, deci toată lumea se autentifică din nou), abonările la
+push și aplicația instalată pe ecranul telefonului (sunt legate de
+origine) și ciornele păstrate doar în browser (cele din cont rămân). Cu
+cât mai devreme, cu atât mai puțini oameni.
+
+**Ce nu depinde de domeniu:** rândul ANPC din subsol duce la
+`reclamatiisal.anpc.ro` indiferent de adresa noastră; pictograma oficială
+(pasul 12) lipsește din alt motiv. Datele firmei, contractul PDF și
+sigla nu depind nici ele de domeniu.
+
+**Cum verifici:** după mutare, `https://<domeniu>/robots.txt` numește
+sitemap-ul de pe domeniu, un e-mail de test de pe `/admin/notificari`
+vine de pe adresa domeniului, iar un link de resetare a parolei deschide
+domeniul.
 
 ## Ce rămâne de decis, nu de configurat
 

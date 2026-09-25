@@ -31,7 +31,7 @@ export const seoCopy = {
     /** Takes "1.850 lei" or "620 €". */
     from: (amount: string) => `de la ${amount}`,
     note:
-      'Estimare calculată din tarifele pe kilometru publicate de noi. Prețul unei curse este cel din oferta transportatorului.',
+      'Estimare calculată din tarifele pe kilometru publicate de noi, care nu precizează dacă includ TVA. Prețul unei curse este cel din oferta transportatorului.',
     example:
       'Calculat pe o rută de referință, pentru că un coridor nu are o singură distanță. Folosește calculatorul pentru ruta ta.',
     unpublished:
