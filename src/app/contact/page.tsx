@@ -9,6 +9,7 @@ import {
   has,
   missingLegalFields,
   operatorField,
+  operatorPhoneHref,
 } from '@/config/company';
 
 export const metadata: Metadata = {
@@ -72,7 +73,7 @@ export default function Page() {
               label={c.channels.phone.label}
               hint={c.channels.phone.hint}
               value={OPERATOR.phone}
-              href={`tel:${OPERATOR.phone.replace(/\s/g, '')}`}
+              href={operatorPhoneHref()}
             />
           ) : null}
         </dl>

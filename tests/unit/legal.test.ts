@@ -13,6 +13,7 @@ import {
   missingLegalFields,
   operatorField,
   operatorLine,
+  operatorPhoneHref,
   operatorShortLine,
 } from '@/config/company';
 import { RETIRED_REDRESS } from '@/config/consumer-redress';
@@ -257,6 +258,16 @@ describe('the operator details', () => {
         'EUID ROONRC.J16/1561/2019, cu sediul în Str. Brăila 230, Craiova, jud. Dolj, cod poștal 200641, România',
     );
     expect(operatorShortLine()).toContain('MRO WEMAX SRL · CUI RO 41150110 · J16/1561/2019 · EUID ROONRC.J16/1561/2019');
+  });
+
+  it('dial as a tel: link with no spaces, on every page that shows the number', () => {
+    // /cont/ajutor linked `tel:0771 502 007`; RFC 3966 allows no spaces.
+    expect(operatorPhoneHref()).toBe('tel:0771502007');
+    for (const page of ['src/app/contact/page.tsx', 'src/app/cont/ajutor/page.tsx']) {
+      const source = readFileSync(page, 'utf8');
+      expect(source, page).toContain('href={operatorPhoneHref()}');
+      expect(source, page).not.toContain('tel:${OPERATOR.phone}');
+    }
   });
 
   it('mark the Gmail addresses as temporary, in the code', () => {

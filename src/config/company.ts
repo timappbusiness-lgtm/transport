@@ -91,6 +91,15 @@ export function operatorField(field: TextField): string {
 }
 
 /**
+ * The phone number as a `tel:` link. The number is written with spaces
+ * for reading; a `tel:` URI allows none (RFC 3966), and /cont/ajutor
+ * linked the spaced form until 25 September 2026.
+ */
+export function operatorPhoneHref(): string {
+  return `tel:${OPERATOR.phone.replace(/\s/g, '')}`;
+}
+
+/**
  * The operator, as one sentence, for the places that name it in passing.
  *
  * Reads correctly whether or not the details are filled in, which is the
