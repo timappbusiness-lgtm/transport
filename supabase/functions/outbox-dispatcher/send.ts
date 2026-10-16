@@ -161,3 +161,25 @@ export function renderValues(
   // of `src/config/brand.ts`, so no template spells it out.
   return { site_url: siteUrl, brand: BRAND_NAME, ...payload };
 }
+
+/**
+ * Where an e-mail's „stop these" link goes.
+ *
+ * Nowhere for a message a person may not switch off. A payload may name
+ * its own page — the memento reminders carry a link that switches off
+ * that one type without signing in — as a path on this site and nothing
+ * else: a value that is not a plain relative path falls back to the
+ * notification settings, so a payload can never point the link elsewhere.
+ */
+export function unsubscribeUrlFor(
+  unsubscribable: boolean,
+  payload: Record<string, unknown>,
+  siteUrl: string,
+): string | undefined {
+  if (!unsubscribable) return undefined;
+  const path = payload.unsubscribe_path;
+  if (typeof path === "string" && /^\/[a-z0-9/-]+(\?[a-z]+=[0-9a-f-]{36})?$/.test(path)) {
+    return `${siteUrl}${path}`;
+  }
+  return `${siteUrl}/cont/setari/notificari`;
+}

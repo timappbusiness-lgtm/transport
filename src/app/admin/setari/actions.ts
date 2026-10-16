@@ -4,9 +4,11 @@ import { revalidatePath, updateTag } from 'next/cache';
 import { ROUTES } from '@/config/routes';
 import { adminDirectoryCopy } from '@/content/admin-directory';
 import { personalDataCopy } from '@/content/date-personale';
+import { mementoCopy } from '@/content/memento';
 import { getAccountContext, redirectToSignIn } from '@/lib/auth/account';
 import { toAppError } from '@/lib/errors';
 import { DIRECTORY_TAG } from '@/lib/directory-source';
+import { parseReminderDays } from '@/lib/memento';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -121,4 +123,54 @@ export async function setDeletionSettingsAction(
   revalidatePath(ROUTES.adminSettings);
   revalidatePath(ROUTES.accountPersonalData);
   return { notice: personalDataCopy.admin.settings.saved };
+}
+
+/**
+ * The memento's limits, retention and default days. `memento_set_settings`
+ * checks staff membership itself and writes the before/after pair to
+ * `audit_log`; the table has no write grant at all.
+ */
+export async function setMementoSettingsAction(
+  _previous: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const context = await getAccountContext();
+  if (!context) return redirectToSignIn(ROUTES.admin);
+  if (!context.isStaff) return { error: personalDataCopy.admin.settings.noAccess };
+
+  const fields = {
+    max_vehicles_individual: [1, 500],
+    max_vehicles_company: [1, 5000],
+    vehicles_per_hour: [1, 1000],
+    imports_per_hour: [1, 100],
+    import_max_rows: [1, 5000],
+    ai_reads_per_day: [0, 1000],
+    history_days: [30, 3650],
+  } as const;
+  const values: Record<string, number> = {};
+  const fieldErrors: Record<string, string> = {};
+  for (const [name, [min, max]] of Object.entries(fields)) {
+    const value = whole(formData, name);
+    if (value === null || value < min || value > max) fieldErrors[name] = `Un număr întreg între ${min} și ${max}.`;
+    else values[name] = value;
+  }
+  const days = parseReminderDays(String(formData.get('default_days') ?? ''));
+  if (days === null || days.length === 0) fieldErrors.default_days = 'Între una și opt zile, 0–365, despărțite prin virgulă.';
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('memento_set_settings', {
+    p_max_vehicles_individual: values.max_vehicles_individual!,
+    p_max_vehicles_company: values.max_vehicles_company!,
+    p_vehicles_per_hour: values.vehicles_per_hour!,
+    p_imports_per_hour: values.imports_per_hour!,
+    p_import_max_rows: values.import_max_rows!,
+    p_ai_reads_per_day: values.ai_reads_per_day!,
+    p_history_days: values.history_days!,
+    p_default_days: days!,
+  });
+  if (error) return { error: toAppError(error, 'settings.memento').message };
+
+  revalidatePath(ROUTES.adminSettings);
+  return { notice: mementoCopy.admin.saved };
 }

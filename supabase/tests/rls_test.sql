@@ -13468,6 +13468,779 @@ select pg_temp.check('CON  a stranger does not set it', 'guard',
                  from public.companies where id = 'fc000000-0000-0000-0000-000000000001'$v$);
 
 
+-- =====================================================================
+-- MEM - memento expirări auto (20261016100000)
+--
+-- Dates a person declares for their own vehicles, with reminders. The
+-- block proves three things: only the owner (a firm's operators, the
+-- person responsible for a vehicle) reads and changes them, staff only
+-- read; the reminders go out on the right days through the existing
+-- nightly job; and **declared is not verified** — nothing here moves
+-- compliance, a firm's verification, matching or a public view.
+--
+--   ab..   memento vehicles     ac..   memento entries
+-- =====================================================================
+create or replace function pg_temp.mem_vehicle(
+  p_id uuid, p_user uuid, p_company uuid, p_plate text, p_responsible uuid default null
+) returns void language plpgsql as $$
+begin
+  insert into public.memento_vehicles (id, owner_user_id, owner_company_id, plate, responsible_user_id)
+  values (p_id, p_user, p_company, p_plate, p_responsible);
+end $$;
+
+-- An entry whose date is p_days from today, written p_set_days_ago ago.
+create or replace function pg_temp.mem_entry(
+  p_id uuid, p_vehicle uuid, p_kind text, p_days integer, p_set_days_ago integer default 300
+) returns void language plpgsql as $$
+begin
+  insert into public.memento_entries (id, vehicle_id, kind, valid_until, date_set_on)
+  values (p_id, p_vehicle, p_kind, public.memento_today() + p_days, public.memento_today() - p_set_days_ago);
+end $$;
+
+-- The reminders already given for an entry's current date.
+create or replace function pg_temp.mem_logged(p_entry uuid, p_milestones integer[]) returns void
+language plpgsql as $$
+begin
+  insert into public.memento_reminder_log (entry_id, valid_until, milestone, sent_on)
+  select p_entry, e.valid_until, m, public.memento_today() - 1
+  from public.memento_entries e, unnest(p_milestones) m where e.id = p_entry;
+end $$;
+
+-- --- who reads, who writes -------------------------------------------------
+select pg_temp.check('MEM  a person adds a vehicle, the plate written one way', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_vehicle('ab000000-0000-0000-0000-000000000001', null, ' b-123 abc ', 'Dacia', 'Logan', 'autoturism')$a$,
+  'allowed',
+  p_verify => $v$select plate = 'B123ABC' and owner_user_id = 'f0000000-0000-0000-0000-000000000006'
+                        and owner_company_id is null and make = 'Dacia'
+                 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('MEM  sending the same form twice keeps one vehicle', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_vehicle('ab000000-0000-0000-0000-000000000001', null, 'B123ABC');
+     select public.memento_save_vehicle('ab000000-0000-0000-0000-000000000001', null, 'B123ABC')$a$,
+  'allowed',
+  p_verify => $v$select count(*) = 1 from public.memento_vehicles
+                 where owner_user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('MEM  a visitor without an account does not', 'fix',
+  null, 'anon',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), null, 'B123ABC')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)$v$);
+
+select pg_temp.check('MEM  nobody writes the tables directly', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.memento_vehicles (owner_user_id, plate)
+     values ('f0000000-0000-0000-0000-000000000006', 'B999XYZ')$a$, 'blocked');
+
+select pg_temp.check('MEM  nor changes a date behind the functions', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$update public.memento_entries set valid_until = valid_until + 365$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000002', 'ab000000-0000-0000-0000-000000000002', 'rca', 40)$s$,
+  p_verify => $v$select valid_until = public.memento_today() + 40
+                 from public.memento_entries where id = 'ac000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MEM  the owner reads their vehicles and dates', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select 1 from public.memento_entries e join public.memento_vehicles v on v.id = e.vehicle_id
+     where v.id = 'ab000000-0000-0000-0000-000000000002'$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000002', 'ab000000-0000-0000-0000-000000000002', 'rca', 40)$s$);
+
+select pg_temp.check('MEM  another person does not', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select 1 from public.memento_entries where vehicle_id = 'ab000000-0000-0000-0000-000000000002'
+     union all
+     select 1 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000002'$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000002', 'ab000000-0000-0000-0000-000000000002', 'rca', 40)$s$);
+
+select pg_temp.check('MEM  nor adds a date to it', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000002', 'itp', current_date + 90)$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM')$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_entries
+                 where vehicle_id = 'ab000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('MEM  nor removes it', 'guard',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.memento_delete_vehicle('ab000000-0000-0000-0000-000000000002')$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM')$s$,
+  p_verify => $v$select exists (select 1 from public.memento_vehicles
+                 where id = 'ab000000-0000-0000-0000-000000000002')$v$);
+
+select pg_temp.check('MEM  staff read it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select 1 from public.memento_entries where vehicle_id = 'ab000000-0000-0000-0000-000000000002'$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000002', 'ab000000-0000-0000-0000-000000000002', 'rca', 40)$s$);
+
+select pg_temp.check('MEM  and only read it', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000002', 'rca', current_date + 400)$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000002', 'ab000000-0000-0000-0000-000000000002', 'rca', 40)$s$,
+  p_verify => $v$select valid_until = public.memento_today() + 40
+                 from public.memento_entries where id = 'ac000000-0000-0000-0000-000000000002'$v$);
+
+select pg_temp.check('MEM  a firm''s dispatcher adds to the firm''s fleet', 'fix',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select public.memento_save_vehicle('ab000000-0000-0000-0000-000000000003',
+       'fc000000-0000-0000-0000-000000000001', 'TM55MEM', 'Ford', 'Transit', 'duba')$a$, 'allowed',
+  p_verify => $v$select owner_company_id = 'fc000000-0000-0000-0000-000000000001' and owner_user_id is null
+                 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('MEM  a driver of the firm does not', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), 'fc000000-0000-0000-0000-000000000001', 'TM56MEM')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles where plate = 'TM56MEM')$v$);
+
+select pg_temp.check('MEM  another firm does not see the fleet', 'fix',
+  'f0000000-0000-0000-0000-000000000004', 'authenticated',
+  $a$select 1 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000003'$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000003', null, 'fc000000-0000-0000-0000-000000000001', 'TM55MEM')$s$);
+
+select pg_temp.check('MEM  a driver sees the vehicle the firm made them responsible for', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select 1 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000003'$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000003', null, 'fc000000-0000-0000-0000-000000000001',
+                  'TM55MEM', 'f0000000-0000-0000-0000-00000000000e')$s$);
+
+select pg_temp.check('MEM  and not the others', 'guard',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select 1 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000003'$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000003', null, 'fc000000-0000-0000-0000-000000000001', 'TM55MEM')$s$);
+
+select pg_temp.check('MEM  the responsible person must be in the firm', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_set_responsible('ab000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-000000000004')$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000003', null, 'fc000000-0000-0000-0000-000000000001', 'TM55MEM')$s$,
+  p_verify => $v$select responsible_user_id is null from public.memento_vehicles
+                 where id = 'ab000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('MEM  a manager names one', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_set_responsible('ab000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-00000000000e')$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000003', null, 'fc000000-0000-0000-0000-000000000001', 'TM55MEM')$s$,
+  p_verify => $v$select responsible_user_id = 'f0000000-0000-0000-0000-00000000000e' from public.memento_vehicles
+                 where id = 'ab000000-0000-0000-0000-000000000003'$v$);
+
+select pg_temp.check('MEM  the same plate twice is refused, by name', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), null, 'b2 mem')$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000006', null, 'B2MEM')$s$,
+  p_verify => $v$select count(*) = 1 from public.memento_vehicles where plate = 'B2MEM'$v$);
+
+-- --- declared is not verified ----------------------------------------------
+-- TM02RLS is A's platform with no verified document at all. Every memento
+-- date for the same plate, valid for months, and the sweep still finds it
+-- not compliant — and finds nothing new in `documents`.
+select pg_temp.check('MEM  a full memento does not make a vehicle compliant', 'fix',
+  null, 'service_role',
+  $a$select count(*) >= 0 from public.run_compliance_sweep()$a$, 'true',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000010', null, 'fc000000-0000-0000-0000-000000000001', 'TM02RLS');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000010', k, 300)
+                from unnest(array['rca', 'itp', 'rovinieta', 'casco', 'trusa_medicala', 'extinctor']) k$s$,
+  p_verify => $v$select not v.is_compliant
+                   and not exists (select 1 from public.documents d where d.vehicle_id = v.id)
+                   and exists (select 1 from public.v_vehicle_missing_documents m where m.vehicle_id = v.id)
+                 from public.vehicles v where v.id = 'fe000000-0000-0000-0000-000000000002'$v$);
+
+-- TM01RLS is compliant on its verified documents. Its verified RCA runs
+-- out; a memento RCA for the same plate, valid next year, does not keep it in.
+select pg_temp.check('MEM  nor keeps one compliant when its verified RCA runs out', 'fix',
+  null, 'service_role',
+  $a$select count(*) >= 0 from public.run_compliance_sweep()$a$, 'true',
+  p_setup => $s$update public.documents set valid_until = current_date - 1
+                where id = 'fa000000-0000-0000-0000-000000000006';
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000011', null, 'fc000000-0000-0000-0000-000000000001', 'TM01RLS');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000011', 'ab000000-0000-0000-0000-000000000011', 'rca', 365)$s$,
+  p_verify => $v$select not is_compliant from public.vehicles where id = 'fe000000-0000-0000-0000-000000000001'$v$);
+
+-- C is a draft firm with one approved ITP. A memento for its platform and
+-- a second one for a whole fleet: after the sweep every firm and every
+-- vehicle is exactly as it was before.
+select pg_temp.check('MEM  no firm''s verification and no vehicle''s compliance moves', 'fix',
+  null, 'service_role',
+  $a$select count(*) >= 0 from public.run_compliance_sweep()$a$, 'true',
+  p_setup => $s$select 1 from public.run_compliance_sweep();
+                create temp table mem_state on commit drop as
+                  select (select string_agg(id || verification_status::text || is_suspended::text, ',' order by id)
+                          from public.companies) as firms,
+                         (select string_agg(id || coalesce(is_compliant::text, '-'), ',' order by id)
+                          from public.vehicles) as vehicles,
+                         (select count(*) from public.documents) as documents;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000012', null, 'fc000000-0000-0000-0000-000000000003', 'TM03RLS');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000012', k, 300)
+                from unnest(array['rca', 'itp', 'rovinieta', 'casco']) k;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000013', 'f0000000-0000-0000-0000-00000000000a', null, 'TM04RLS');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000013', 'rca', 300)$s$,
+  p_verify => $v$select s.firms = (select string_agg(id || verification_status::text || is_suspended::text, ',' order by id)
+                                   from public.companies)
+                   and s.vehicles = (select string_agg(id || coalesce(is_compliant::text, '-'), ',' order by id)
+                                     from public.vehicles)
+                   and s.documents = (select count(*) from public.documents)
+                 from mem_state s$v$);
+
+-- A, verified and published, before and after a memento fleet and a
+-- sweep: its public profile and its public documents, byte for byte.
+select pg_temp.check('MEM  the public pages show none of it', 'fix',
+  null, 'anon',
+  $a$select exists (select 1 from public.v_public_companies where cui = '90000001')$a$, 'true',
+  p_setup => $s$update public.companies
+                set public_profile_enabled = true, verification_status = 'verified',
+                    is_suspended = false, verified_at = now()
+                where id = 'fc000000-0000-0000-0000-000000000001';
+                select 1 from public.run_compliance_sweep();
+                create temp table mem_public on commit drop as
+                  select (select md5(string_agg(c::text, '' order by c::text)) from public.v_public_companies c) as firms,
+                         (select md5(string_agg(d::text, '' order by d::text)) from public.v_public_company_documents d) as documents;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000014', null, 'fc000000-0000-0000-0000-000000000001', 'MEM0PUB1');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000014', k, 300)
+                from unnest(array['rca', 'itp', 'casco']) k;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000015', null, 'fc000000-0000-0000-0000-000000000003', 'MEM0PUB2');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000015', 'rca', 300)$s$,
+  p_after => $s$select 1 from public.run_compliance_sweep()$s$,
+  p_verify => $v$select p.firms is not null and p.documents is not null
+                   and p.firms = (select md5(string_agg(c::text, '' order by c::text)) from public.v_public_companies c)
+                   and p.documents = (select md5(string_agg(d::text, '' order by d::text)) from public.v_public_company_documents d)
+                 from mem_public p$v$);
+
+select pg_temp.check('MEM  a visitor reads no memento table', 'fix',
+  null, 'anon',
+  $a$select 1 from public.memento_vehicles union all select 1 from public.memento_entries$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000014', null, 'fc000000-0000-0000-0000-000000000001', 'MEM0PUB1');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000014', 'rca', 300)$s$);
+
+select pg_temp.check('MEM  matching answers the same with a memento fleet as without', 'fix',
+  null, 'service_role',
+  $a$select count(*) >= 0 from public.run_compliance_sweep()$a$, 'true',
+  p_setup => $s$create temp table mem_match on commit drop as
+                  select c.id as company_id, l.id as listing_id,
+                         public.company_matches_request(c.id, l.id) as matches
+                  from public.companies c cross join public.cargo_listings l;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000016', null, 'fc000000-0000-0000-0000-000000000003', 'MEM0TR1');
+                update public.memento_vehicles set vehicle_kind = 'transportor' where id = 'ab000000-0000-0000-0000-000000000016';
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000016', k, 300)
+                from unnest(array['rca', 'itp', 'rovinieta', 'casco']) k$s$,
+  p_verify => $v$select count(*) > 0 and bool_and(m.matches is not distinct from
+                   public.company_matches_request(m.company_id, m.listing_id))
+                 from mem_match m$v$);
+
+-- --- the reminders ---------------------------------------------------------
+select pg_temp.check('MEM  the nightly job reminds thirty days before', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30)$s$,
+  p_verify => $v$select count(*) = 1
+                   and bool_and(o.template = 'memento_expiry_reminder'
+                                and o.recipient_user_id = 'f0000000-0000-0000-0000-000000000006'
+                                and o.to_email = 'rls-pf@test.ro'
+                                and o.payload ->> 'document_label' = 'RCA'
+                                and o.payload ->> 'vehicle' = 'B20MEM'
+                                and o.payload ->> 'when' = 'expiră în 30 de zile'
+                                and o.payload ->> 'entry_ids' = 'ac000000-0000-0000-0000-000000000020'
+                                and o.payload ->> 'unsubscribe_path' like '/memento-expirari/dezabonare?t=%')
+                 from public.notification_outbox o where o.template like 'memento%'$v$);
+
+select pg_temp.check('MEM  a week before', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 7);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30}')$s$,
+  p_verify => $v$select payload ->> 'when' = 'expiră în 7 zile' from public.notification_outbox
+                 where template = 'memento_expiry_reminder'$v$);
+
+select pg_temp.check('MEM  the day before', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 1);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30,7}')$s$,
+  p_verify => $v$select payload ->> 'when' = 'expiră mâine' from public.notification_outbox
+                 where template = 'memento_expiry_reminder'$v$);
+
+select pg_temp.check('MEM  and on the day itself', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 0);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30,7,1}')$s$,
+  p_verify => $v$select payload ->> 'when' = 'expiră azi' from public.notification_outbox
+                 where template = 'memento_expiry_reminder'$v$);
+
+select pg_temp.check('MEM  the reminder the day before does not swallow the one on the day', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 1);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30,7}')$s$,
+  p_verify => $v$select array_agg(milestone order by milestone) = '{1,7,30}'
+                 from public.memento_reminder_log where entry_id = 'ac000000-0000-0000-0000-000000000020'$v$);
+
+select pg_temp.check('MEM  and nothing on a day in between', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 20);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30}')$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox where template like 'memento%')$v$);
+
+select pg_temp.check('MEM  a reminder whose day had passed when the date was written is not sent', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 20, 0)$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox where template like 'memento%')$v$);
+
+select pg_temp.check('MEM  a night the job did not run is caught up the next', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 29)$s$,
+  p_verify => $v$select payload ->> 'when' = 'expiră în 29 de zile' from public.notification_outbox
+                 where template = 'memento_expiry_reminder'$v$);
+
+select pg_temp.check('MEM  running the job twice queues one e-mail', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30);
+                select public.queue_expiry_reminders()$s$,
+  p_verify => $v$select count(*) = 1 from public.notification_outbox where template like 'memento%'$v$);
+
+select pg_temp.check('MEM  dates close together make one e-mail', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 7);
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000021', 'ab000000-0000-0000-0000-000000000020', 'itp', 9);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30}');
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000021', '{30}')$s$,
+  p_verify => $v$select count(*) = 1
+                   and bool_and(o.template = 'memento_expiry_digest'
+                                and o.payload ->> 'count_text' = '2 documente'
+                                and o.payload ->> 'items' like '%RCA%expiră în 7 zile%ITP%expiră în 9 zile%')
+                   -- …and the ITP's week reminder, given today, is not given again in two days.
+                   and exists (select 1 from public.memento_reminder_log
+                               where entry_id = 'ac000000-0000-0000-0000-000000000021' and milestone = 7)
+                 from public.notification_outbox o where o.template like 'memento%'$v$);
+
+select pg_temp.check('MEM  a date far from the others waits for its own day', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 7);
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000021', 'ab000000-0000-0000-0000-000000000020', 'itp', 15);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000020', '{30}');
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000021', '{30}')$s$,
+  p_verify => $v$select template = 'memento_expiry_reminder' and payload ->> 'document_label' = 'RCA'
+                 from public.notification_outbox where template like 'memento%'$v$);
+
+select pg_temp.check('MEM  a firm''s vehicle reminds the person responsible for it', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000022', null, 'fc000000-0000-0000-0000-000000000001',
+                  'TM22MEM', 'f0000000-0000-0000-0000-00000000000e');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000022', 'ab000000-0000-0000-0000-000000000022', 'itp', 30)$s$,
+  p_verify => $v$select array_agg(recipient_user_id::text) = array['f0000000-0000-0000-0000-00000000000e']
+                 from public.notification_outbox where template like 'memento%'$v$);
+
+select pg_temp.check('MEM  without one, the firm''s owner and admins', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000022', null, 'fc000000-0000-0000-0000-000000000001', 'TM22MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000022', 'ab000000-0000-0000-0000-000000000022', 'itp', 30)$s$,
+  p_verify => $v$select array_agg(recipient_user_id::text order by recipient_user_id)
+                        = array['f0000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-00000000000d']
+                 from public.notification_outbox where template like 'memento%'$v$);
+
+select pg_temp.check('MEM  memento e-mails switched off: no e-mail, and the day still counts as given', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.notification_preferences (user_id, type, email)
+                values ('f0000000-0000-0000-0000-000000000006', 'memento_expiry', false);
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30)$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox where template like 'memento%')
+                   and exists (select 1 from public.memento_reminder_log
+                               where entry_id = 'ac000000-0000-0000-0000-000000000020' and milestone = 30)$v$);
+
+select pg_temp.check('MEM  the e-mail waits for the end of quiet hours', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30)$s$,
+  p_verify => $v$select send_after = public.push_send_after('f0000000-0000-0000-0000-000000000006', 'memento_expiry', now())
+                 from public.notification_outbox where template like 'memento%'$v$);
+
+select pg_temp.check('MEM  a schedule for one document type replaces the default', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.memento_schedules (owner_user_id, kind, days)
+                values ('f0000000-0000-0000-0000-000000000006', 'rca', '{10}');
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 10);
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000021', 'ab000000-0000-0000-0000-000000000020', 'itp', 30)$s$,
+  p_verify => $v$select payload ->> 'items' like '%RCA%expiră în 10 zile%ITP%expiră în 30 de zile%'
+                 from public.notification_outbox where template = 'memento_expiry_digest'$v$);
+
+select pg_temp.check('MEM  an empty schedule switches a type off', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 0$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                insert into public.memento_schedules (owner_user_id, kind, days)
+                values ('f0000000-0000-0000-0000-000000000006', '*', '{}');
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30)$s$,
+  p_verify => $v$select not exists (select 1 from public.notification_outbox where template like 'memento%')$v$);
+
+select pg_temp.check('MEM  a person sets their schedule', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_set_schedule(null, 'itp', '{14,3,0,14}')$a$, 'allowed',
+  p_verify => $v$select days = '{14,3,0}' from public.memento_schedules
+                 where owner_user_id = 'f0000000-0000-0000-0000-000000000006' and kind = 'itp'$v$);
+
+select pg_temp.check('MEM  a firm''s schedule only its operators', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.memento_set_schedule('fc000000-0000-0000-0000-000000000001', '*', '{60}')$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.memento_schedules)$v$);
+
+-- The memento runs after the verified documents' reminders, in its own
+-- block. Broken on purpose here, it leaves them queued and says so in
+-- the job log staff read.
+select pg_temp.check('MEM  a failure in the memento does not stop the verified reminders', 'fix',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                update public.documents set valid_until = current_date + 30, status = 'approved'
+                where id = 'fa000000-0000-0000-0000-000000000006';
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000020', 'f0000000-0000-0000-0000-000000000006', null, 'B20MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000020', 'ab000000-0000-0000-0000-000000000020', 'rca', 30);
+                alter table public.memento_reminder_log rename to memento_reminder_log_off$s$,
+  p_verify => $v$select exists (select 1 from public.notification_outbox where template = 'document_expiry_reminder')
+                   and not exists (select 1 from public.notification_outbox where template like 'memento%')
+                   and exists (select 1 from public.job_run_log
+                               where workflow = 'nightly-expiry-reminders' and failed = 1
+                                 and details ? 'memento_error')$v$);
+
+select pg_temp.check('MEM  a browser does not run the reminders', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_queue_reminders(now())$a$, 'blocked');
+
+-- --- the link that stops them -------------------------------------------------
+select pg_temp.check('MEM  the link in the e-mail stops memento e-mails, without signing in', 'fix',
+  null, 'anon',
+  $a$select public.memento_unsubscribe('ad000000-0000-0000-0000-000000000001')$a$, 'true',
+  p_setup => $s$insert into public.memento_unsubscribe_tokens (user_id, token)
+                values ('f0000000-0000-0000-0000-000000000006', 'ad000000-0000-0000-0000-000000000001')$s$,
+  p_verify => $v$select not public.notification_channel_enabled('f0000000-0000-0000-0000-000000000006', 'memento_expiry', 'email')
+                   and public.notification_channel_enabled('f0000000-0000-0000-0000-000000000006', 'memento_expiry', 'inapp')
+                   and (select count(*) from public.notification_preferences
+                        where user_id = 'f0000000-0000-0000-0000-000000000006') = 1$v$);
+
+select pg_temp.check('MEM  an unknown token changes nothing', 'guard',
+  null, 'anon',
+  $a$select not public.memento_unsubscribe('ad000000-0000-0000-0000-0000000000ff')$a$, 'true',
+  p_verify => $v$select not exists (select 1 from public.notification_preferences where type = 'memento_expiry')$v$);
+
+select pg_temp.check('MEM  a visitor does not read the tokens', 'fix',
+  null, 'anon',
+  $a$select 1 from public.memento_unsubscribe_tokens$a$, 'blocked',
+  p_setup => $s$insert into public.memento_unsubscribe_tokens (user_id)
+                values ('f0000000-0000-0000-0000-000000000006')$s$);
+
+-- --- „Am reînnoit" -------------------------------------------------------------
+select pg_temp.check('MEM  renewing writes the new date and keeps the old one', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_renew('ac000000-0000-0000-0000-000000000030', current_date + 400)$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 3)$s$,
+  p_verify => $v$select e.valid_until = current_date + 400
+                   and e.date_set_on = public.memento_today()
+                   and (select array_agg(h.valid_until) from public.memento_history h where h.entry_id = e.id)
+                       = array[public.memento_today() + 3]
+                 from public.memento_entries e where e.id = 'ac000000-0000-0000-0000-000000000030'$v$);
+
+select pg_temp.check('MEM  pressing it twice is one renewal', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_renew('ac000000-0000-0000-0000-000000000030', current_date + 400);
+     select public.memento_renew('ac000000-0000-0000-0000-000000000030', current_date + 400)$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 3)$s$,
+  p_verify => $v$select count(*) = 1 from public.memento_history where entry_id = 'ac000000-0000-0000-0000-000000000030'$v$);
+
+select pg_temp.check('MEM  a new date before the current one is refused', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_renew('ac000000-0000-0000-0000-000000000030', current_date - 30)$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 3)$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_history)
+                   and (select valid_until from public.memento_entries where id = 'ac000000-0000-0000-0000-000000000030')
+                       = public.memento_today() + 3$v$);
+
+select pg_temp.check('MEM  somebody else does not renew it', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.memento_renew('ac000000-0000-0000-0000-000000000030', current_date + 400)$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 3)$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_history)$v$);
+
+select pg_temp.check('MEM  the person responsible for a firm''s vehicle does', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.memento_renew('ac000000-0000-0000-0000-000000000031', current_date + 400)$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000031', null, 'fc000000-0000-0000-0000-000000000001',
+                  'TM31MEM', 'f0000000-0000-0000-0000-00000000000e');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000031', 'ab000000-0000-0000-0000-000000000031', 'itp', 3)$s$,
+  p_verify => $v$select exists (select 1 from public.memento_history where entry_id = 'ac000000-0000-0000-0000-000000000031')$v$);
+
+select pg_temp.check('MEM  the renewed date is reminded again in its turn', 'guard',
+  null, 'service_role',
+  $a$select public.queue_expiry_reminders() >= 1$a$, 'true',
+  p_setup => $s$delete from public.notification_outbox;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 0);
+                select pg_temp.mem_logged('ac000000-0000-0000-0000-000000000030', '{30,7,1,0}');
+                insert into public.memento_history (entry_id, valid_until)
+                values ('ac000000-0000-0000-0000-000000000030', public.memento_today());
+                update public.memento_entries set valid_until = public.memento_today() + 30,
+                  date_set_on = public.memento_today() - 1
+                where id = 'ac000000-0000-0000-0000-000000000030'$s$,
+  p_verify => $v$select payload ->> 'when' = 'expiră în 30 de zile' from public.notification_outbox
+                 where template = 'memento_expiry_reminder'$v$);
+
+-- --- limits --------------------------------------------------------------------
+select pg_temp.check('MEM  an account has a maximum number of vehicles', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), null, 'B41MEM')$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set max_vehicles_individual = 1;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000040', 'f0000000-0000-0000-0000-000000000006', null, 'B40MEM')$s$,
+  p_verify => $v$select count(*) = 1 from public.memento_vehicles
+                 where owner_user_id = 'f0000000-0000-0000-0000-000000000006'$v$);
+
+select pg_temp.check('MEM  and so has a firm''s fleet', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), 'fc000000-0000-0000-0000-000000000001', 'TM41MEM')$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set max_vehicles_company = 1;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000040', null, 'fc000000-0000-0000-0000-000000000001', 'TM40MEM')$s$,
+  p_verify => $v$select count(*) = 1 from public.memento_vehicles
+                 where owner_company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('MEM  adding vehicles is limited per hour', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_vehicle(gen_random_uuid(), null, 'B42MEM')$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set vehicles_per_hour = 2;
+                insert into public.memento_events (actor, action)
+                select 'f0000000-0000-0000-0000-000000000006', 'vehicle' from generate_series(1, 2)$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles where plate = 'B42MEM')$v$);
+
+select pg_temp.check('MEM  a vehicle has a maximum number of dates', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000040', 'itp', current_date + 90)$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set max_entries_per_vehicle = 1;
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000040', 'f0000000-0000-0000-0000-000000000006', null, 'B40MEM');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000040', 'rca', 90)$s$,
+  p_verify => $v$select count(*) = 1 from public.memento_entries where vehicle_id = 'ab000000-0000-0000-0000-000000000040'$v$);
+
+select pg_temp.check('MEM  „Altceva" needs a name', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000040', 'altceva', current_date + 90, '  ')$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000040', 'f0000000-0000-0000-0000-000000000006', null, 'B40MEM')$s$);
+
+select pg_temp.check('MEM  a service is due by date or by kilometres', 'guard',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000040', 'revizie', null, null, 150000)$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000040', 'f0000000-0000-0000-0000-000000000006', null, 'B40MEM')$s$,
+  p_verify => $v$select due_km = 150000 and valid_until is null from public.memento_entries
+                 where vehicle_id = 'ab000000-0000-0000-0000-000000000040'$v$);
+
+select pg_temp.check('MEM  a firm imports its fleet with the dates', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.memento_import('fc000000-0000-0000-0000-000000000001',
+       '[{"line": 2, "plate": "TM 50 MEM", "make": "Ford", "dates": {"rca": "2027-01-10", "itp": "2027-03-01"}},
+         {"line": 3, "plate": "TM51MEM", "dates": {"rca": "2027-02-01", "rovinieta": ""}},
+         {"line": 4, "plate": "TM52MEM", "dates": {}}]'::jsonb) ->> 'dates_saved')::integer = 3$a$, 'true',
+  p_verify => $v$select count(*) = 3 and sum((select count(*) from public.memento_entries e where e.vehicle_id = v.id)) = 3
+                 from public.memento_vehicles v
+                 where v.owner_company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('MEM  a plate already there is updated, not doubled', 'guard',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select (public.memento_import('fc000000-0000-0000-0000-000000000001',
+       '[{"line": 2, "plate": "TM50MEM", "dates": {"rca": "2027-06-10"}}]'::jsonb) ->> 'vehicles_updated')::integer = 1$a$, 'true',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000050', null, 'fc000000-0000-0000-0000-000000000001', 'TM50MEM');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000050', 'rca', 10)$s$,
+  p_verify => $v$select count(*) = 1 and min(e.valid_until) = date '2027-06-10'
+                 from public.memento_vehicles v join public.memento_entries e on e.vehicle_id = v.id
+                 where v.owner_company_id = 'fc000000-0000-0000-0000-000000000001'$v$);
+
+select pg_temp.check('MEM  a bad line stops the import and nothing is half-imported', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_import('fc000000-0000-0000-0000-000000000001',
+       '[{"line": 2, "plate": "TM50MEM", "dates": {"rca": "2027-01-10"}},
+         {"line": 3, "plate": "TM51MEM", "dates": {"rca": "31.02.2027"}}]'::jsonb)$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)$v$);
+
+select pg_temp.check('MEM  an import has a maximum number of rows', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_import('fc000000-0000-0000-0000-000000000001',
+       '[{"line": 2, "plate": "TM50MEM"}, {"line": 3, "plate": "TM51MEM"}]'::jsonb)$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set import_max_rows = 1$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)$v$);
+
+select pg_temp.check('MEM  importing is limited per hour', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_import('fc000000-0000-0000-0000-000000000001', '[{"line": 2, "plate": "TM50MEM"}]'::jsonb)$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set imports_per_hour = 1;
+                insert into public.memento_events (actor, action) values ('f0000000-0000-0000-0000-000000000002', 'import')$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)$v$);
+
+select pg_temp.check('MEM  a driver does not import into the firm', 'fix',
+  'f0000000-0000-0000-0000-00000000000e', 'authenticated',
+  $a$select public.memento_import('fc000000-0000-0000-0000-000000000001', '[{"line": 2, "plate": "TM50MEM"}]'::jsonb)$a$, 'blocked',
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)$v$);
+
+select pg_temp.check('MEM  reading a photo automatically is limited per day', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select public.memento_claim_ai_read()$a$, 'blocked',
+  p_setup => $s$update public.memento_settings set ai_reads_per_day = 1;
+                insert into public.memento_events (actor, action) values ('f0000000-0000-0000-0000-000000000006', 'ai_read')$s$);
+
+select pg_temp.check('MEM  staff change the limits, and it is in the journal', 'fix',
+  'f0000000-0000-0000-0000-000000000001', 'authenticated',
+  $a$select public.memento_set_settings(10, 200, 20, 3, 100, 5, 180, '{30,7,1,0}')$a$, 'allowed',
+  p_verify => $v$select s.max_vehicles_individual = 10 and s.history_days = 180
+                   and exists (select 1 from public.audit_log where action = 'settings.memento')
+                 from public.memento_settings s$v$);
+
+select pg_temp.check('MEM  nobody else does', 'fix',
+  'f0000000-0000-0000-0000-000000000002', 'authenticated',
+  $a$select public.memento_set_settings(5000, 5000, 1000, 100, 5000, 1000, 3650, '{1}')$a$, 'blocked',
+  p_verify => $v$select max_vehicles_individual = 20 from public.memento_settings$v$);
+
+-- --- photos ----------------------------------------------------------------------
+select pg_temp.check('MEM  a person reads their own memento photo', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select 1 from storage.objects where bucket_id = 'memento'$a$, 'allowed',
+  p_setup => $s$insert into storage.objects (bucket_id, name)
+                values ('memento', 'f0000000-0000-0000-0000-000000000006/ae000000-0000-0000-0000-000000000001.jpg')$s$);
+
+select pg_temp.check('MEM  nobody else does', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select 1 from storage.objects where bucket_id = 'memento'$a$, 'blocked',
+  p_setup => $s$insert into storage.objects (bucket_id, name)
+                values ('memento', 'f0000000-0000-0000-0000-000000000006/ae000000-0000-0000-0000-000000000001.jpg')$s$);
+
+select pg_temp.check('MEM  a firm''s members read the fleet''s photos', 'guard',
+  'f0000000-0000-0000-0000-000000000003', 'authenticated',
+  $a$select 1 from storage.objects where bucket_id = 'memento'$a$, 'allowed',
+  p_setup => $s$insert into storage.objects (bucket_id, name)
+                values ('memento', 'fc000000-0000-0000-0000-000000000001/ae000000-0000-0000-0000-000000000002.jpg')$s$);
+
+select pg_temp.check('MEM  nobody puts a photo in somebody else''s folder', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$insert into storage.objects (bucket_id, name)
+     values ('memento', 'f0000000-0000-0000-0000-000000000006/ae000000-0000-0000-0000-000000000003.jpg')$a$, 'blocked');
+
+select pg_temp.check('MEM  nor attaches one from there to their own date', 'fix',
+  'f0000000-0000-0000-0000-000000000007', 'authenticated',
+  $a$select public.memento_save_entry('ab000000-0000-0000-0000-000000000060', 'rca', current_date + 90,
+       p_photo_path => 'f0000000-0000-0000-0000-000000000006/ae000000-0000-0000-0000-000000000001.jpg')$a$, 'blocked',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000060', 'f0000000-0000-0000-0000-000000000007', null, 'B60MEM')$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_entries)$v$);
+
+-- --- export, deletion, retention ---------------------------------------------------
+select pg_temp.check('MEM  the data export includes the vehicles, dates and history', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$select jsonb_array_length(x -> 'memento_vehicule') = 1
+            and x -> 'memento_vehicule' -> 0 ->> 'numar' = 'B30MEM'
+            and jsonb_array_length(x -> 'memento_documente') = 1
+            and x -> 'memento_documente' -> 0 ->> 'document' = 'RCA'
+            and jsonb_array_length(x -> 'memento_istoric') = 1
+     from (select public.my_data_export() as x) e$a$, 'true',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000030', 'f0000000-0000-0000-0000-000000000006', null, 'B30MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000030', 'ab000000-0000-0000-0000-000000000030', 'rca', 3);
+                insert into public.memento_history (entry_id, valid_until)
+                values ('ac000000-0000-0000-0000-000000000030', public.memento_today() - 362);
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000031', 'f0000000-0000-0000-0000-000000000007', null, 'B31MEM')$s$);
+
+select pg_temp.check('MEM  an account''s deletion takes its memento and its firm''s', 'fix',
+  null, 'service_role',
+  $a$select (public.complete_account_deletion(
+       (select id from public.account_deletion_requests
+        where user_id = 'f0000000-0000-0000-0000-00000000000a'))).status = 'completed'$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day');
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000070', 'f0000000-0000-0000-0000-00000000000a', null, 'B70MEM');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000070', 'rca', 30);
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000071', null, 'fc000000-0000-0000-0000-000000000003', 'TM71MEM');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000071', 'rca', 30);
+                insert into public.memento_unsubscribe_tokens (user_id) values ('f0000000-0000-0000-0000-00000000000a')$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles)
+                   and not exists (select 1 from public.memento_entries)
+                   and not exists (select 1 from public.memento_unsubscribe_tokens)$v$);
+
+select pg_temp.check('MEM  the deletion job removes the memento photos too', 'fix',
+  null, 'service_role',
+  $a$select count(*) = 2 from public.account_deletion_files(
+       (select id from public.account_deletion_requests where user_id = 'f0000000-0000-0000-0000-00000000000a'))
+     where bucket = 'memento'$a$, 'true',
+  p_setup => $s$insert into public.account_deletion_requests (user_id, company_id, kind, status, scheduled_for)
+                values ('f0000000-0000-0000-0000-00000000000a', 'fc000000-0000-0000-0000-000000000003',
+                        'user', 'scheduled', now() - interval '1 day');
+                insert into storage.objects (bucket_id, name) values
+                  ('memento', 'f0000000-0000-0000-0000-00000000000a/ae000000-0000-0000-0000-000000000010.jpg'),
+                  ('memento', 'fc000000-0000-0000-0000-000000000003/ae000000-0000-0000-0000-000000000011.jpg'),
+                  ('memento', 'f0000000-0000-0000-0000-000000000006/ae000000-0000-0000-0000-000000000012.jpg')$s$);
+
+select pg_temp.check('MEM  a firm''s erasure takes its fleet''s memento', 'fix',
+  null, 'service_role',
+  $a$select public.anonymise_company('fc000000-0000-0000-0000-000000000001')$a$, 'allowed',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000072', null, 'fc000000-0000-0000-0000-000000000001', 'TM72MEM');
+                select pg_temp.mem_entry(gen_random_uuid(), 'ab000000-0000-0000-0000-000000000072', 'rca', 30);
+                insert into public.memento_schedules (owner_company_id, kind, days)
+                values ('fc000000-0000-0000-0000-000000000001', '*', '{14}');
+                select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000073', 'f0000000-0000-0000-0000-000000000002', null, 'B73MEM')$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_vehicles where owner_company_id is not null)
+                   and not exists (select 1 from public.memento_schedules)
+                   -- The owner's own car is the owner's, not the firm's.
+                   and exists (select 1 from public.memento_vehicles where id = 'ab000000-0000-0000-0000-000000000073')$v$);
+
+select pg_temp.check('MEM  an expired date stays as history for the set period, then goes', 'fix',
+  null, 'service_role',
+  $a$select public.memento_purge(now()) >= 1$a$, 'true',
+  p_setup => $s$select pg_temp.mem_vehicle('ab000000-0000-0000-0000-000000000080', 'f0000000-0000-0000-0000-000000000006', null, 'B80MEM');
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000080', 'ab000000-0000-0000-0000-000000000080', 'rca', -400, 800);
+                select pg_temp.mem_entry('ac000000-0000-0000-0000-000000000081', 'ab000000-0000-0000-0000-000000000080', 'itp', -100, 800)$s$,
+  p_verify => $v$select not exists (select 1 from public.memento_entries where id = 'ac000000-0000-0000-0000-000000000080')
+                   and exists (select 1 from public.memento_entries where id = 'ac000000-0000-0000-0000-000000000081')$v$);
+
+select pg_temp.check('MEM  the memento form keeps a draft on the account', 'fix',
+  'f0000000-0000-0000-0000-000000000006', 'authenticated',
+  $a$insert into public.form_drafts (user_id, form_key, step, payload)
+     values ('f0000000-0000-0000-0000-000000000006', 'memento', 'documente', '{"plate": "B123ABC"}')$a$, 'allowed');
+
+
 select format(E'\n%s checks: %s passed, %s failed (fix %s/%s passed, guard %s/%s passed)',
               count(*), count(*) filter (where pass), count(*) filter (where not pass),
               count(*) filter (where pass and kind = 'fix'), count(*) filter (where kind = 'fix'),

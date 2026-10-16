@@ -167,6 +167,36 @@ export const TEMPLATES: Record<string, Template> = {
   },
 
   /** The same thing, once a day, for somebody who asked for that instead. */
+  // --- Memento expirări auto -------------------------------------------
+  //
+  // Dates a person wrote down for their own vehicles. Every one of these
+  // e-mails says so: the platform reminds, it does not check, and a
+  // memento must never read like a verified document.
+  memento_expiry_reminder: {
+    subject: "Memento: {{ document_label }} pentru {{ vehicle }} {{ when }}",
+    lines: [
+      "Bună ziua,",
+      "{{ document_label }} pentru {{ vehicle }} {{ when }}, pe {{ valid_until }}.",
+      "Dacă ați făcut deja reînnoirea, apăsați „Am reînnoit” și scrieți data nouă. Următorul memento va fi pentru ea.",
+      "Data este cea scrisă de dumneavoastră în Memento expirări auto; platforma nu o verifică.",
+    ],
+    action: { label: "Am reînnoit", href: "{{ site_url }}/cont/memento?reinnoieste={{ entry_ids }}" },
+    unsubscribable: true,
+  },
+
+  memento_expiry_digest: {
+    subject: "Memento: {{ count_text }} expiră curând",
+    lines: [
+      "Bună ziua,",
+      "Termenele care se apropie pentru vehiculele dumneavoastră:",
+      "{{ items }}",
+      "Pentru cele reînnoite deja, apăsați „Am reînnoit” și scrieți data nouă.",
+      "Datele sunt cele scrise de dumneavoastră în Memento expirări auto; platforma nu le verifică.",
+    ],
+    action: { label: "Vezi și reînnoiește", href: "{{ site_url }}/cont/memento?reinnoieste={{ entry_ids }}" },
+    unsubscribable: true,
+  },
+
   saved_search_digest: {
     subject: "{{ search_name }}: {{ count }} cereri noi",
     lines: [

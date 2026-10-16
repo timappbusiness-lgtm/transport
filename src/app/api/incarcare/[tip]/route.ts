@@ -14,6 +14,7 @@ import {
   isDuplicateRow,
   isUploadKind,
   isUuid,
+  mementoPhotoPath,
   requestPhotoPath,
 } from '@/lib/uploads/paths';
 
@@ -83,6 +84,8 @@ export async function POST(
       return evidence(supabase, context, id, bytes, form);
     case 'atasament':
       return attachment(supabase, context, id, bytes, form);
+    case 'memento':
+      return mementoPhoto(supabase, context, id, bytes, form);
   }
 }
 
@@ -218,4 +221,19 @@ async function attachment(supabase: Supabase, context: AccountContext, id: strin
 
   revalidatePath(`${ROUTES.accountMessages}/${conversationId}`);
   return answer(200, { ok: true, id, path });
+}
+
+/**
+ * A memento photo: an object only, in the folder of the vehicle's owner —
+ * the person, or a firm they belong to. The entry gets its path when the
+ * person saves the date; nothing is recorded before that, and nothing is
+ * ever a verified document.
+ */
+async function mementoPhoto(supabase: Supabase, context: AccountContext, id: string, bytes: Buffer, form: FormData) {
+  const folder = field(form, 'folder');
+  const mine = folder === context.user.id || context.memberships.some((m) => m.company.id === folder);
+  if (!isUuid(folder) || !mine) return answer(403, { error: 'Poza nu poate fi pusă la acest vehicul.' });
+  const path = mementoPhotoPath(folder, id);
+  const failed = await store(supabase, 'memento', path, bytes, 'memento');
+  return failed ?? answer(200, { ok: true, path });
 }

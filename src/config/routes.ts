@@ -80,6 +80,17 @@ export const ROUTES = {
    * person opening it has no account yet — making one is what it is for.
    */
   claimAccount: '/revendica',
+  /**
+   * Memento expirări auto: the public page that starts one without an
+   * account, and the link in a reminder that stops them by e-mail.
+   */
+  memento: '/memento-expirari',
+  mementoUnsubscribe: '/memento-expirari/dezabonare',
+  // The memento in the account: the list or the fleet, adding, a CSV, the days.
+  accountMemento: '/cont/memento',
+  accountMementoAdd: '/cont/memento/adauga',
+  accountMementoImport: '/cont/memento/import',
+  accountMementoSettings: '/cont/memento/setari',
 
   // Staff
   admin: '/admin',
@@ -110,6 +121,11 @@ export const ROUTES = {
 
 export type RouteKey = keyof typeof ROUTES;
 export type Route = (typeof ROUTES)[RouteKey];
+
+/** One memento vehicle: its dates, photos, history and responsible person. */
+export function mementoVehicleRoute(vehicleId: string): string {
+  return `${ROUTES.accountMemento}/${vehicleId}`;
+}
 
 /**
  * One vehicle's page. A function rather than an entry in ROUTES, which
@@ -196,6 +212,6 @@ export const UNBUILT_ROUTES: readonly Route[] = [] as const;
  * before storing: a request's photos, a driver's evidence, a message's
  * images. One route per kind, `src/app/api/incarcare/[tip]/route.ts`.
  */
-export function uploadRoute(kind: 'poza-cerere' | 'dovada' | 'atasament'): string {
+export function uploadRoute(kind: 'poza-cerere' | 'dovada' | 'atasament' | 'memento'): string {
   return `/api/incarcare/${kind}`;
 }

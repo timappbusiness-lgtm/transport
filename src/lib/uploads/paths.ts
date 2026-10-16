@@ -11,7 +11,7 @@
  * Free of the server and of the browser, so the rules are tested alone.
  */
 
-export const UPLOAD_KINDS = ['poza-cerere', 'dovada', 'atasament'] as const;
+export const UPLOAD_KINDS = ['poza-cerere', 'dovada', 'atasament', 'memento'] as const;
 export type UploadKind = (typeof UPLOAD_KINDS)[number];
 
 export function isUploadKind(value: string): value is UploadKind {
@@ -53,6 +53,14 @@ export function evidencePath(orderId: string, id: string): string {
 /** A message's image, in the conversation's folder, named after its message. */
 export function attachmentPath(conversationId: string, messageId: string, id: string): string {
   return `${conversationId}/${messageId}-${id}.jpg`;
+}
+
+/**
+ * A memento photo, in the folder of whoever owns the vehicle: the person's
+ * id, or the firm's. The `memento` bucket's policies read the same folder.
+ */
+export function mementoPhotoPath(ownerId: string, id: string): string {
+  return `${ownerId}/${id}.jpg`;
 }
 
 /**

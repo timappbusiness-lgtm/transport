@@ -37,6 +37,7 @@ const KNOWN_CODES = new Set([
   '23514', // check_violation — platform overbooked, invalid combination
   'P0002', // no_data_found — record missing
   '22023', // invalid_parameter_value
+  '53400', // configuration_limit_exceeded — a maximum or a rate limit, said in Romanian
 ]);
 
 interface PostgrestLike {

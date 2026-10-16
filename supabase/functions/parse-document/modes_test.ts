@@ -1,9 +1,23 @@
-import { isCalendarDate, isDocumentPath, mayRead, readableMime, readRequest, withDeclaredDate } from "./modes.ts";
+import {
+  isCalendarDate,
+  isDocumentPath,
+  isMementoPath,
+  mayRead,
+  mementoAnswer,
+  mementoHint,
+  readableMime,
+  readRequest,
+  withDeclaredDate,
+} from "./modes.ts";
 
 function assertEquals<T>(actual: T, expected: T, message?: string): void {
   const a = JSON.stringify(actual);
   const e = JSON.stringify(expected);
   if (a !== e) throw new Error(`${message ?? "assertEquals"}: expected ${e}, got ${a}`);
+}
+
+function assert(condition: boolean, message?: string): void {
+  if (!condition) throw new Error(message ?? "assert");
 }
 
 const DOC = "d0000000-0000-4000-8000-000000000001";
@@ -76,4 +90,67 @@ Deno.test("paths and dates", () => {
   assertEquals(isDocumentPath(`${COMPANY}/${DOC}`), false);
   assertEquals(isCalendarDate("2028-02-29"), true);
   assertEquals(isCalendarDate("2027-02-29"), false);
+});
+
+// --- memento ---------------------------------------------------------------
+
+const OWNER = "0b6f2a3c-1111-4a2b-9c3d-000000000001";
+const FILE = "7e1d9c2b-2222-4f3e-8a1b-000000000002";
+
+Deno.test("memento takes a JPEG in the memento bucket's shape and a known kind", () => {
+  assertEquals(readRequest({ mode: "memento", file_path: `${OWNER}/${FILE}.jpg`, kind: "rovinieta" }), {
+    mode: "memento",
+    filePath: `${OWNER}/${FILE}.jpg`,
+    kind: "rovinieta",
+  });
+});
+
+Deno.test("memento refuses anything else", () => {
+  for (const body of [
+    { mode: "memento", file_path: `${OWNER}/${FILE}.pdf`, kind: "rca" },
+    { mode: "memento", file_path: `../${OWNER}/${FILE}.jpg`, kind: "rca" },
+    { mode: "memento", file_path: `${OWNER}/${FILE}.jpg`, kind: "licenta_comunitara" },
+    { mode: "memento", file_path: `${OWNER}/${FILE}.jpg` },
+    { mode: "memento", kind: "rca" },
+  ]) {
+    assert("error" in readRequest(body), JSON.stringify(body));
+  }
+  assert(!isMementoPath(`${OWNER}/${FILE}.JPG`));
+  assert(isMementoPath(`${OWNER}/${FILE}.jpg`));
+});
+
+Deno.test("the model is told what the person said the photo is", () => {
+  assertEquals(mementoHint("rca"), "rca");
+  assert(mementoHint("rovinieta")!.includes("chitanță"));
+  assertEquals(mementoHint("altceva"), null);
+});
+
+Deno.test("only the date, the series and the plate leave the function", () => {
+  const answer = mementoAnswer({
+    detected_kind: "rca",
+    document_number: " RO/25/ABC123 ",
+    valid_until: "2027-03-25",
+    holder_name: "Ion Popescu",
+    holder_cui: "123456",
+    plate_number: "B123ABC",
+    confidence: 0.92,
+    issues: [],
+  });
+  assertEquals(answer, {
+    valid_until: "2027-03-25",
+    document_number: "RO/25/ABC123",
+    plate_number: "B123ABC",
+    confidence: 0.92,
+  });
+});
+
+Deno.test("a date the model got wrong is no date, not a wrong one", () => {
+  assertEquals(mementoAnswer({ valid_until: "2027-02-30" }).valid_until, null);
+  assertEquals(mementoAnswer({ valid_until: "25.03.2027" }).valid_until, null);
+  assertEquals(mementoAnswer(null), {
+    valid_until: null,
+    document_number: null,
+    plate_number: null,
+    confidence: null,
+  });
 });

@@ -59,6 +59,7 @@ const ALL: FeatureMap = {
   members: true,
   subscription: true,
   companyProfile: true,
+  memento: true,
 };
 
 /** Nothing on, to check that every kind of account still has a menu. */
@@ -78,6 +79,7 @@ const NONE: FeatureMap = {
   members: false,
   subscription: false,
   companyProfile: false,
+  memento: false,
 };
 
 function hrefs(ctx: NavContext, features: FeatureMap = FEATURES): string[] {
@@ -211,6 +213,9 @@ describe('what a role may see', () => {
       ROUTES.account,
       ROUTES.accountTransports,
       ROUTES.accountMessages,
+      // The memento: the vehicles the firm made them responsible for, and
+      // their own car if they want it there.
+      ROUTES.accountMemento,
       // A driver has their own help section — „Ce văd eu, ca șofer?" —
       // and is the account type most likely to be handed a phone with
       // no explanation attached.
@@ -253,6 +258,8 @@ describe('what a role may see', () => {
       ROUTES.accountTransports,
       // The dispatcher writes to a driver about the order they are on.
       ROUTES.accountMessages,
+      // A driver responsible for a vehicle receives its reminders.
+      ROUTES.accountMemento,
       ROUTES.accountHelp,
       ROUTES.accountProfile,
       // A driver gets notifications like anybody else: their own documents
@@ -720,6 +727,7 @@ describe('what each kind of account gets in the account menu', () => {
       ROUTES.account,
       ROUTES.accountTransports,
       ROUTES.accountRatings,
+      ROUTES.accountMemento,
       ROUTES.accountAlerts,
       ROUTES.accountHelp,
       ROUTES.accountProfile,
@@ -739,6 +747,9 @@ describe('what each kind of account gets in the account menu', () => {
       ROUTES.newRequest,
       ROUTES.accountFleet,
       ROUTES.accountDocuments,
+      // Beside the verified documents, and a different thing: dates the
+      // firm keeps for itself, never part of its verification.
+      ROUTES.accountMemento,
       ROUTES.accountMembers,
       ROUTES.accountSubscription,
       ROUTES.accountCompany,
@@ -765,6 +776,7 @@ describe('what each kind of account gets in the account menu', () => {
     expect(menu(DRIVER)).toEqual([
       ROUTES.account,
       ROUTES.accountMessages,
+      ROUTES.accountMemento,
       ROUTES.accountHelp,
       ROUTES.accountProfile,
       ROUTES.accountNotificationSettings,

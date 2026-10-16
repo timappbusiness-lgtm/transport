@@ -1,4 +1,4 @@
-import { CONFIDENTIALITATE_1_1 } from './confidentialitate-1.1';
+import { CONFIDENTIALITATE_1_2 } from './confidentialitate-1.2';
 import { COOKIES_1_1 } from './cookies-1.1';
 import { TERMENI_1_1 } from './termeni-1.1';
 import type { LegalDocument } from './document';
@@ -13,7 +13,7 @@ import type { LegalDocument } from './document';
  */
 export const LEGAL_DOCUMENTS = {
   termeni: TERMENI_1_1,
-  confidentialitate: CONFIDENTIALITATE_1_1,
+  confidentialitate: CONFIDENTIALITATE_1_2,
   cookies: COOKIES_1_1,
 } as const satisfies Record<string, LegalDocument>;
 

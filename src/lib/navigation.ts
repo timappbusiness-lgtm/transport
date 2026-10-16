@@ -31,6 +31,9 @@ export interface NavItem {
   priority: number;
 }
 
+/** One name for the memento in every menu, short enough for the bottom bar. */
+export const MEMENTO_LABEL = 'Memento auto';
+
 export type NavGroup = 'principal' | 'transport' | 'expeditii' | 'firma' | 'cont' | 'platforma';
 
 export const GROUP_LABELS: Record<NavGroup, string> = {
@@ -83,6 +86,11 @@ function driverNav(features: FeatureMap): NavItem[] {
       group: 'principal',
       priority: 85,
     });
+  }
+  // A driver the firm made responsible for a vehicle receives its
+  // reminders and renews its dates, and may keep their own car's here.
+  if (features.memento) {
+    items.push({ href: ROUTES.accountMemento, label: MEMENTO_LABEL, group: 'principal', priority: 20 });
   }
   items.push({ href: ROUTES.accountHelp, label: 'Ajutor', group: 'cont', priority: 5 });
   items.push({ href: ROUTES.accountProfile, label: 'Profil', group: 'cont', priority: 10 });
@@ -150,6 +158,9 @@ function individualNav(features: FeatureMap): NavItem[] {
   // The public board is not a feature of the account, but for somebody with
   // nothing else to look at yet it is the one useful destination.
   items.push({ href: ROUTES.routes, label: 'Trasee disponibile', group: 'principal', priority: 60 });
+  if (features.memento) {
+    items.push({ href: ROUTES.accountMemento, label: MEMENTO_LABEL, group: 'principal', priority: 50 });
+  }
   if (features.savedSearches) {
     items.push({ href: ROUTES.accountAlerts, label: 'Alerte', group: 'cont', priority: 11 });
   }
@@ -332,6 +343,11 @@ export function buildNav(
   items.push({ href: ROUTES.accountHelp, label: 'Ajutor', group: 'cont', priority: 5 });
   if (features.documents) {
     items.push({ href: ROUTES.accountDocuments, label: 'Documente', group: 'firma', priority: 45 });
+  }
+  // Beside the documents, and never one of them: the verified ones are
+  // reviewed by staff; these are dates the firm keeps for itself.
+  if (features.memento) {
+    items.push({ href: ROUTES.accountMemento, label: MEMENTO_LABEL, group: 'firma', priority: 44 });
   }
 
   // Billing and the team are the owner's and the admin's. A dispatcher runs
@@ -802,6 +818,9 @@ export const FOOTER_NAV_PLATFORM: readonly PublicLink[] = [
   { href: ROUTES.plans, label: 'Abonamente' },
   { href: ROUTES.faq, label: 'Cum funcționează' },
   { href: ROUTES.prices, label: 'Prețuri orientative' },
+  // Free, for anybody with a car: the way in for somebody who has no
+  // transport to order yet.
+  { href: ROUTES.memento, label: 'Memento expirări auto' },
   { href: ROUTES.verification, label: 'Cum verificăm firmele' },
   { href: ROUTES.carrierSignup, label: 'Pentru transportatori' },
 ];

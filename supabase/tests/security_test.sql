@@ -15,6 +15,8 @@
 --   6. drept de scriere acordat lui `anon` oriunde
 --   7. drept de scriere pe o vedere, unde RLS nu are cum să îl țină
 --   8. o vedere citibilă de `anon` care nu filtrează nimic
+--   9. datele declarate din memento citite de ceva din afara lui —
+--      conformitate, verificare, potrivire, vederi publice
 --
 -- **Relațiile se numără dintr-un singur loc.** C2 — `anon` ștergea
 -- firme prin `v_public_companies` — a trecut pe lângă audit, pe lângă
@@ -194,6 +196,10 @@ select pg_temp.guard(
          'assisted_onboarding_preview',
          -- Anularea unei ștergeri programate, tot de pe un link.
          'cancel_account_deletion_by_token',
+         -- „Nu mai trimite mementouri pe e-mail", de pe linkul din
+         -- mementoul trimis. Token uuid aleator, unul de persoană; tot ce
+         -- poate face este să oprească acest singur tip de e-mail.
+         'memento_unsubscribe',
          -- Numere agregate pentru prima pagină și pentru paginile de
          -- destinație. Niciunul nu numește pe nimeni.
          'category_counts', 'directory_stats', 'homepage_activity',
@@ -352,6 +358,52 @@ select pg_temp.guard(
 -- ---------------------------------------------------------------------
 -- Raportul
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+-- 9. Mementoul stă deoparte
+--
+-- Datele din „Memento expirări auto" sunt declarate de om, nu verificate
+-- de echipă. Nu au voie să ajungă în conformitate, în verificarea firmei,
+-- în potrivirea cererilor sau în ce se vede public. Regula se ține din
+-- structură: tabelele `memento_*` sunt citite numai de funcțiile
+-- mementoului și de cele trei funcții de cont care trebuie să le atingă
+-- (jobul de noapte care îl cheamă, exportul datelor și ștergerea
+-- contului). Nicio vedere și nicio politică din afara lor nu le citește.
+-- O funcție nouă care le-ar citi pentru alt scop oprește CI-ul.
+-- ---------------------------------------------------------------------
+select pg_temp.guard(
+  'tabelele mementoului sunt citite numai de memento, export, ștergere și jobul de noapte',
+  $q$select string_agg(p.proname, ', ' order by p.proname)
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosrc ~ '\mmemento_(vehicles|entries|history|reminder_log|schedules|events|settings|unsubscribe_tokens)\M'
+       and p.proname !~ '^memento_'
+       and p.proname not in ('queue_expiry_reminders', 'my_data_export', 'account_deletion_files')$q$);
+
+select pg_temp.guard(
+  'nicio vedere nu citește tabelele mementoului',
+  $q$select string_agg(c.relname, ', ' order by c.relname)
+     from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind in ('v', 'm')
+       and pg_get_viewdef(c.oid) ~ '\mmemento_'$q$);
+
+select pg_temp.guard(
+  'nicio politică din afara mementoului nu citește tabelele lui',
+  $q$select string_agg(p.schemaname || '.' || p.tablename || '.' || p.policyname, ', ')
+     from pg_policies p
+     where p.tablename !~ '^memento_'
+       and p.policyname !~ '^memento_'
+       and (coalesce(p.qual, '') ~ '\mmemento_' or coalesce(p.with_check, '') ~ '\mmemento_')$q$);
+
+select pg_temp.guard(
+  'jobul de noapte cheamă mementoul numai după documentele verificate, într-un bloc separat',
+  $q$select 'queue_expiry_reminders'
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname = 'queue_expiry_reminders'
+       and not (p.prosrc ~ 'document_expiry_reminder'
+                and position('document_expiry_reminder' in p.prosrc)
+                    < position('memento_queue_reminders' in p.prosrc)
+                and p.prosrc ~ 'exception when others')$q$);
+
 select format('%s  %s%s',
               case when pass then 'PASS' else 'FAIL' end, label,
               case when pass then '' else E'\n      -> ' || coalesce(detail, '') end)

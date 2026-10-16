@@ -122,8 +122,13 @@ export function render(
 
   const canUnsubscribe = template.unsubscribable && options.unsubscribeUrl !== undefined;
 
+  // A line can carry several rows of its own — a digest's list, one item
+  // per row. HTML folds a newline into a space, so it becomes a break;
+  // escaped first, so the break is the only markup a value can bring.
   const htmlLines = lines
-    .map((line) => `<p style="margin:0 0 16px;line-height:1.6">${escapeHtml(line)}</p>`)
+    .map((line) =>
+      `<p style="margin:0 0 16px;line-height:1.6">${escapeHtml(line).replace(/\r?\n/g, '<br>')}</p>`
+    )
     .join('\n      ');
 
   const htmlAction = action
