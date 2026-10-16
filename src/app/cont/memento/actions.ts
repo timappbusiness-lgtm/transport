@@ -446,16 +446,21 @@ export async function readMementoPhotoAction(path: string, kind: string): Promis
   const allowed = folder === context.user.id || context.memberships.some((m) => m.company.id === folder);
   if (!allowed || !/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/.test(path)) return { status: 'unavailable' };
 
+  // The function claims the reading against the daily limit itself, with
+  // this session's token: the limit holds whoever calls it.
   const supabase = await createClient();
-  const claim = await supabase.rpc('memento_claim_ai_read');
-  if (claim.error) return { status: 'unavailable', message: toAppError(claim.error, 'memento.claimRead').message };
-
   const { data, error } = await supabase.functions.invoke('parse-document', {
     body: { mode: 'memento', file_path: path, kind },
   });
   if (error) {
     const response = (error as { context?: unknown }).context;
     if (response instanceof Response && response.status === 422) return { status: 'unreadable' };
+    if (response instanceof Response && response.status === 429) {
+      const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+      // The database's own sentence, in Romanian, when it is one.
+      const message = typeof body?.error === 'string' && /[ăâîșț]/i.test(body.error) ? body.error : undefined;
+      return message ? { status: 'unavailable', message } : { status: 'unavailable' };
+    }
     return { status: 'unavailable' };
   }
   const body = (data ?? {}) as { ok?: boolean; extracted?: { valid_until?: unknown; document_number?: unknown } };

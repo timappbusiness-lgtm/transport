@@ -81,8 +81,9 @@ Optional. Uploaded through `/api/incarcare/memento` (EXIF stripped,
 re-encoded to JPEG) into the private `memento` bucket under the owner's
 folder. `parse-document` mode `memento` reads it with the caller's token,
 writes nothing, and returns only the date, the series and the plate. The
-date goes into the form; the person saves it. `memento_claim_ai_read()`
-counts it against `ai_reads_per_day` (0 = off). Without the function or
+date goes into the form; the person saves it. The function calls
+`memento_claim_ai_read()` with the caller's token before reading, so every
+reading counts against `ai_reads_per_day` (0 = off) whoever calls it. Without the function or
 the key the screen says to type the date — the form is the manual one.
 
 Rovinietă: there is no public API. Nothing claims an automatic check.

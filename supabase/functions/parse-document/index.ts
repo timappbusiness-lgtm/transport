@@ -236,9 +236,15 @@ Deno.serve(async (req: Request) => {
   // form, where the person confirms or corrects the date, and nothing is
   // written anywhere. The memento bucket's own policy decides who may
   // read the photo — its owner, or the members of the firm whose folder
-  // it is in. The daily limit is claimed by the app before it calls.
+  // it is in. Every reading counts against the person's daily limit,
+  // claimed here with their own token, so a call that skips the app is
+  // counted too.
   if (request.mode === "memento") {
     try {
+      const claim = await caller.rpc("memento_claim_ai_read");
+      if (claim.error) {
+        return jsonResponse(req, { error: claim.error.message, reason: "limit" }, 429);
+      }
       const { data: file, error } = await caller.storage.from("memento").download(request.filePath);
       if (error || !file) return jsonResponse(req, { error: "Fișierul nu este accesibil" }, 403);
       const { extracted } = await askModel(new Uint8Array(await file.arrayBuffer()), "image/jpeg", mementoHint(request.kind));
