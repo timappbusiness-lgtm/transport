@@ -24,6 +24,13 @@ import {
 } from '@/components/proba/public-sections';
 import { AdminFiltersSection } from '@/components/proba/admin-filter-sections';
 import {
+  MementoAddSection,
+  MementoFleetSection,
+  MementoImportSection,
+  MementoPersonalSection,
+  MementoPhotoSection,
+} from '@/components/proba/memento-sections';
+import {
   AntetSection,
   CereriTransportatorSection,
   probaRole,
@@ -125,6 +132,23 @@ const SECTIONS: readonly ProbaSection[] = [
   { slug: 'evaluari', title: 'Evaluări', render: () => <EvaluariSection /> },
   { slug: 'cont-mobil', title: 'Contul pe telefon: bara de jos', render: () => <ContMobilSection /> },
   { slug: 'dashboard', title: 'Acasă, pentru un transportator', render: () => <DashboardSection /> },
+  { slug: 'memento', title: 'Memento expirări auto: mașinile mele', render: () => <MementoPersonalSection /> },
+  {
+    slug: 'memento-flota',
+    title: 'Memento expirări auto: flota firmei',
+    render: (params) => <MementoFleetSection params={params} />,
+  },
+  {
+    slug: 'memento-adauga',
+    title: 'Memento expirări auto: un vehicul nou',
+    render: (params) => <MementoAddSection params={params} />,
+  },
+  {
+    slug: 'memento-poza',
+    title: 'Memento expirări auto: o dată, cu poză',
+    render: (params) => <MementoPhotoSection params={params} />,
+  },
+  { slug: 'memento-import', title: 'Memento expirări auto: import CSV', render: () => <MementoImportSection /> },
 ];
 
 /**

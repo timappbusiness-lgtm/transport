@@ -45,6 +45,8 @@ const PUBLIC_SCREENS = [
   '/termeni',
   '/confidentialitate',
   '/cookies',
+  '/memento-expirari',
+  '/memento-expirari/dezabonare',
   '/proba/incarcari',
   '/pagina-care-nu-exista',
 ];
@@ -71,6 +73,11 @@ export const HARNESS_SECTIONS = [
   'evaluari',
   'cont-mobil',
   'dashboard',
+  'memento',
+  'memento-flota',
+  'memento-adauga',
+  'memento-poza',
+  'memento-import',
 ];
 
 const SCREENS = [

@@ -37,13 +37,16 @@ export function FleetControls({
   view,
   filter,
   sort,
+  keep = {},
 }: {
   basePath: string;
   view: string | undefined;
   filter: FleetFilter;
   sort: FleetSort;
+  /** Parameters every link carries as they are: the harness's section. */
+  keep?: Record<string, string>;
 }) {
-  const base = { vedere: view, filtru: filter, ordine: sort };
+  const base = { ...keep, vedere: view, filtru: filter, ordine: sort };
   const chip = (active: boolean) =>
     cn(
       'rounded-pill border px-3 py-1.5 text-small',
