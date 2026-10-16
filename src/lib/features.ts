@@ -53,6 +53,12 @@ export interface FeatureMap {
   members: boolean;
   subscription: boolean;
   companyProfile: boolean;
+  /**
+   * Memento expirări auto: dates a person or a firm keeps for their own
+   * vehicles, with reminders. Declared, never verified — see
+   * `src/lib/memento.ts`.
+   */
+  memento: boolean;
 }
 
 export const FEATURES: FeatureMap = {
@@ -71,4 +77,5 @@ export const FEATURES: FeatureMap = {
   members: true,
   subscription: true,
   companyProfile: true,
+  memento: true,
 };

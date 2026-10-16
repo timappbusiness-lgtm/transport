@@ -26,7 +26,7 @@ export const LOCAL_DRAFT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 export const SERVER_DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** The forms that keep a draft. A name here is a promise that one is written. */
-export const DRAFT_FORMS = ['cerere', 'traseu', 'oferta', 'vehicul', 'firma', 'inscriere-asistata'] as const;
+export const DRAFT_FORMS = ['cerere', 'traseu', 'oferta', 'vehicul', 'firma', 'inscriere-asistata', 'memento'] as const;
 export type DraftForm = (typeof DRAFT_FORMS)[number];
 
 export function isDraftForm(value: unknown): value is DraftForm {

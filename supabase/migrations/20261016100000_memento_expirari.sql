@@ -584,13 +584,13 @@ begin
     end if;
     select count(*) into v_count from public.memento_vehicles where owner_company_id = p_company_id;
     if v_count >= v_settings.max_vehicles_company then
-      raise exception 'Flota are deja % de vehicule, cât se poate ține aici. Scrie-ne dacă ai nevoie de mai multe.',
+      raise exception 'Flota a ajuns la numărul maxim de vehicule din memento (%). Scrie-ne dacă ai nevoie de mai multe.',
         v_settings.max_vehicles_company using errcode = '53400';
     end if;
   else
     select count(*) into v_count from public.memento_vehicles where owner_user_id = v_uid;
     if v_count >= v_settings.max_vehicles_individual then
-      raise exception 'Ai deja % vehicule, cât se poate ține pe un cont. Scrie-ne dacă ai nevoie de mai multe.',
+      raise exception 'Ai ajuns la numărul maxim de vehicule din memento pe un cont (%). Scrie-ne dacă ai nevoie de mai multe.',
         v_settings.max_vehicles_individual using errcode = '53400';
     end if;
   end if;
@@ -745,7 +745,7 @@ begin
   select * into v_settings from public.memento_settings where id;
   select count(*) into v_count from public.memento_entries where vehicle_id = p_vehicle_id;
   if v_count >= v_settings.max_entries_per_vehicle then
-    raise exception 'Vehiculul are deja % documente în memento.', v_count using errcode = '53400';
+    raise exception 'Vehiculul a ajuns la numărul maxim de documente în memento (%).', v_count using errcode = '53400';
   end if;
 
   v_id := coalesce(p_entry_id, gen_random_uuid());
@@ -889,7 +889,7 @@ begin
 
   select * into v_settings from public.memento_settings where id;
   if jsonb_array_length(p_rows) > v_settings.import_max_rows then
-    raise exception 'Se pot importa cel mult % de rânduri odată. Împarte fișierul.',
+    raise exception 'Fișierul trece de numărul maxim de rânduri la un import (%). Împarte-l și importă-l pe bucăți.',
       v_settings.import_max_rows using errcode = '53400';
   end if;
   perform public.memento_note_event('import', v_settings.imports_per_hour, interval '1 hour');
@@ -914,7 +914,7 @@ begin
                  else owner_company_id = p_company_id end;
       if v_count >= (case when p_company_id is null then v_settings.max_vehicles_individual
                           else v_settings.max_vehicles_company end) then
-        raise exception 'Rândul %: s-a atins numărul maxim de vehicule (%).', v_line, v_count
+        raise exception 'Rândul %: s-a ajuns la numărul maxim de vehicule din memento (%).', v_line, v_count
           using errcode = '53400';
       end if;
       insert into public.memento_vehicles
@@ -961,7 +961,7 @@ begin
         if not found then
           select count(*) into v_count from public.memento_entries where vehicle_id = v_vehicle_id;
           if v_count >= v_settings.max_entries_per_vehicle then
-            raise exception 'Rândul %: vehiculul % are deja % documente.', v_line, v_plate, v_count
+            raise exception 'Rândul %: vehiculul % a ajuns la numărul maxim de documente (%).', v_line, v_plate, v_count
               using errcode = '53400';
           end if;
           insert into public.memento_entries (vehicle_id, kind, valid_until, date_set_on)

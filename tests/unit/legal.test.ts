@@ -155,6 +155,18 @@ describe('the privacy notice', () => {
     expect(text).toContain('Jurnalul deciziilor platformei rămâne');
   });
 
+  it('says what the memento keeps, that it is never public, and how long', () => {
+    // `memento_settings.history_days` defaults to 365 in 20261016100000,
+    // and `memento_purge` deletes by it. Declared dates are never part of
+    // a firm's verification or of matching; the notice says so.
+    expect(text).toContain('Memento expirări auto');
+    expect(text).toContain('Nu apar nicăieri public');
+    expect(text).toContain('nu sunt folosite la potrivirea cererilor');
+    expect(text).toContain('365 de zile');
+    const migration = readFileSync('supabase/migrations/20261016100000_memento_expirari.sql', 'utf8');
+    expect(migration).toContain('history_days integer not null default 365');
+  });
+
   it('points at the page where deletion actually happens', () => {
     const links = privacy.sections.flatMap((s) => (s.link ? [s.link.href] : []));
     expect(links).toContain('/cont/setari/date-personale');

@@ -24,6 +24,7 @@ import { formatWindow } from '@/lib/departures';
 import { isOnBoard, type MyRequest } from '@/lib/my-requests';
 import { loadMyRequests } from '@/lib/my-requests-source';
 import { HandoverBanner } from '@/components/onboarding/handover-banner';
+import { MementoNotice } from '@/components/memento/memento-notice';
 import { loadHandover } from '@/lib/onboarding-source';
 import { loadMyOrders } from '@/lib/orders-source';
 import { loadMyRatings } from '@/lib/ratings-source';
@@ -49,6 +50,7 @@ export default async function Page() {
           second one under it for the same thing splits the eye. The quick
           actions below repeat it in the role's order. */}
       <TopBar title={h.greeting(firstName)} actions={[]} />
+      <MementoNotice context={context} />
       <Body context={context} />
     </div>
   );

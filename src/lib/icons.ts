@@ -423,6 +423,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   [ROUTES.accountNotificationSettings]: Bell,
   [ROUTES.accountPersonalData]: ScrollText,
   [ROUTES.accountHelp]: CircleHelp,
+  [ROUTES.accountMemento]: AlarmClock,
   [ROUTES.requests]: CarFront,
   [ROUTES.routes]: Route,
   [ROUTES.companies]: Building2,

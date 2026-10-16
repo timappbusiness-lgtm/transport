@@ -17,6 +17,7 @@ import {
   isUploadKind,
   isUuid,
   newUploadId,
+  mementoPhotoPath,
   requestPhotoPath,
 } from '@/lib/uploads/paths';
 import {
@@ -311,7 +312,7 @@ describe('where a file goes: named by the id the device chose', () => {
   });
 
   it('knows the three kinds the route takes, and nothing else', () => {
-    expect(['poza-cerere', 'dovada', 'atasament'].every(isUploadKind)).toBe(true);
+    expect(['poza-cerere', 'dovada', 'atasament', 'memento'].every(isUploadKind)).toBe(true);
     expect(isUploadKind('documente')).toBe(false);
   });
 
@@ -322,5 +323,16 @@ describe('where a file goes: named by the id the device chose', () => {
     expect(isDuplicateObject(null)).toBe(false);
     expect(isDuplicateRow({ code: '23505' })).toBe(true);
     expect(isDuplicateRow({ code: '42501' })).toBe(false);
+  });
+});
+
+describe('a memento photo', () => {
+  it('lands in the folder of whoever owns the vehicle, as a JPEG named after its id', () => {
+    const owner = '0b6f2a3c-1111-4a2b-9c3d-000000000001';
+    const id = '7e1d9c2b-2222-4f3e-8a1b-000000000002';
+    // The same shape `memento_entries.photo_path` and parse-document's
+    // memento mode accept: `<uuid>/<uuid>.jpg`, nothing else.
+    expect(mementoPhotoPath(owner, id)).toBe(`${owner}/${id}.jpg`);
+    expect(mementoPhotoPath(owner, id)).toMatch(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/);
   });
 });
