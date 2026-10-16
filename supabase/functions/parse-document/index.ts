@@ -14,6 +14,8 @@
 //      say what an unregistered file is — the gallery upload; writes nothing
 // POST { "mode": "declare", "document_id": "<uuid>", "valid_until": "YYYY-MM-DD" }
 //      keep the expiry date the carrier confirmed, beside the model's
+// POST { "mode": "memento", "file_path": "<owner>/<id>.jpg", "kind": "rca" }
+//      propose the date on a memento photo; writes nothing, verifies nothing
 // See modes.ts for which of these may run on which document.
 // =====================================================================
 
@@ -21,7 +23,14 @@ import { corsFor } from "../_shared/security.ts";
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { encodeBase64 } from "jsr:@std/encoding@^1/base64";
-import { mayRead, readableMime, readRequest, withDeclaredDate } from "./modes.ts";
+import {
+  mayRead,
+  mementoAnswer,
+  mementoHint,
+  readableMime,
+  readRequest,
+  withDeclaredDate,
+} from "./modes.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -220,6 +229,26 @@ Deno.serve(async (req: Request) => {
 
   const request = readRequest(await req.json().catch(() => ({})));
   if ("error" in request) return jsonResponse(req, { error: request.error }, 400);
+
+  // --- memento: a photo for a date the person keeps for themselves -----
+  //
+  // Not a document of the firm and never one: the answer goes back to the
+  // form, where the person confirms or corrects the date, and nothing is
+  // written anywhere. The memento bucket's own policy decides who may
+  // read the photo — its owner, or the members of the firm whose folder
+  // it is in. The daily limit is claimed by the app before it calls.
+  if (request.mode === "memento") {
+    try {
+      const { data: file, error } = await caller.storage.from("memento").download(request.filePath);
+      if (error || !file) return jsonResponse(req, { error: "Fișierul nu este accesibil" }, 403);
+      const { extracted } = await askModel(new Uint8Array(await file.arrayBuffer()), "image/jpeg", mementoHint(request.kind));
+      return jsonResponse(req, { ok: true, extracted: mementoAnswer(extracted) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("parse-document memento failed", { message });
+      return jsonResponse(req, { error: message }, 500);
+    }
+  }
 
   // --- classify: a file the person has not said anything about --------
   if (request.mode === "classify") {

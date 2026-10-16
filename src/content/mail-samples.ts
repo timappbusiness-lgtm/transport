@@ -36,6 +36,8 @@ export const MAIL_TEMPLATES: readonly MailTemplate[] = [
   { id: 'request_match_alert', label: 'Cerere nouă pe traseul tău' },
   { id: 'saved_search_alert', label: 'Potrivire pentru o căutare salvată' },
   { id: 'saved_search_digest', label: 'Rezumatul zilnic al unei căutări' },
+  { id: 'memento_expiry_reminder', label: 'Memento: un document expiră' },
+  { id: 'memento_expiry_digest', label: 'Memento: mai multe documente expiră' },
   { id: 'report_closed', label: 'Răspuns la o sesizare' },
   { id: 'offer_received', label: 'Ofertă nouă pe o cerere' },
   { id: 'offer_withdrawn', label: 'Ofertă retrasă' },
@@ -138,6 +140,11 @@ export const MAIL_SAMPLE_PAYLOAD: Record<string, string> = {
   days: '30',
   route: 'Cluj-Napoca → Timișoara',
   client_name: 'Expediții Ardeal SRL',
+  vehicle: 'B 123 EXE · Dacia Logan (exemplu)',
+  when: 'expiră în 7 zile',
+  entry_ids: '00000000-0000-4000-8000-000000000008',
+  count_text: '2 documente',
+  items: '· RCA · B 123 EXE · 23.10.2026 · expiră în 7 zile\n· ITP · B 123 EXE · 25.10.2026 · expiră în 9 zile',
   loading_from: '24 septembrie 2026',
 };
 

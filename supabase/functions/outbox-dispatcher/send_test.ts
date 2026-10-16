@@ -1,5 +1,12 @@
 import { assert, assertEquals } from "jsr:@std/assert@^1";
-import { formatSender, isHardBounce, isPermanent, renderValues, sendEmail } from "./send.ts";
+import {
+  formatSender,
+  isHardBounce,
+  isPermanent,
+  renderValues,
+  sendEmail,
+  unsubscribeUrlFor,
+} from "./send.ts";
 
 /**
  * No network anywhere here. The fetch is injected, and the only thing
@@ -208,4 +215,33 @@ Deno.test("the provider's own words survive into the error", async () => {
   );
   assert(result.error?.includes("401"));
   assert(result.error?.includes("domain not verified"));
+});
+
+Deno.test("a memento reminder's stop link goes to its own page", () => {
+  const token = "6f1d0c7a-0000-4000-8000-00000000abcd";
+  assertEquals(
+    unsubscribeUrlFor(true, { unsubscribe_path: `/memento-expirari/dezabonare?t=${token}` }, "https://exemplu.ro"),
+    `https://exemplu.ro/memento-expirari/dezabonare?t=${token}`,
+  );
+});
+
+Deno.test("every other e-mail's goes to the notification settings", () => {
+  assertEquals(
+    unsubscribeUrlFor(true, {}, "https://exemplu.ro"),
+    "https://exemplu.ro/cont/setari/notificari",
+  );
+});
+
+Deno.test("a payload cannot point the stop link off the site", () => {
+  for (const path of ["https://rau.ro/x", "//rau.ro/x", "/x?t=<script>", "/../x", "x", 42]) {
+    assertEquals(
+      unsubscribeUrlFor(true, { unsubscribe_path: path }, "https://exemplu.ro"),
+      "https://exemplu.ro/cont/setari/notificari",
+      String(path),
+    );
+  }
+});
+
+Deno.test("a message nobody may switch off has no stop link, whatever the payload says", () => {
+  assertEquals(unsubscribeUrlFor(false, { unsubscribe_path: "/memento-expirari/dezabonare" }, "https://x.ro"), undefined);
 });

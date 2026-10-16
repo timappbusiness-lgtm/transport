@@ -2485,6 +2485,391 @@ export type Database = {
         }
         Relationships: []
       }
+      memento_entries: {
+        Row: {
+          created_at: string
+          custom_name: string | null
+          date_set_on: string
+          due_km: number | null
+          id: string
+          kind: string
+          note: string | null
+          photo_path: string | null
+          reference: string | null
+          updated_at: string
+          valid_until: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_name?: string | null
+          date_set_on?: string
+          due_km?: number | null
+          id?: string
+          kind: string
+          note?: string | null
+          photo_path?: string | null
+          reference?: string | null
+          updated_at?: string
+          valid_until?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_name?: string | null
+          date_set_on?: string
+          due_km?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          photo_path?: string | null
+          reference?: string | null
+          updated_at?: string
+          valid_until?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "memento_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_events: {
+        Row: {
+          action: string
+          actor: string
+          at: string
+          id: number
+        }
+        Insert: {
+          action: string
+          actor: string
+          at?: string
+          id?: never
+        }
+        Update: {
+          action?: string
+          actor?: string
+          at?: string
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_events_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_history: {
+        Row: {
+          due_km: number | null
+          entry_id: string
+          id: string
+          photo_path: string | null
+          reference: string | null
+          renewed_at: string
+          renewed_by: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          due_km?: number | null
+          entry_id: string
+          id?: string
+          photo_path?: string | null
+          reference?: string | null
+          renewed_at?: string
+          renewed_by?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          due_km?: number | null
+          entry_id?: string
+          id?: string
+          photo_path?: string | null
+          reference?: string | null
+          renewed_at?: string
+          renewed_by?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_history_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "memento_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_history_renewed_by_fkey"
+            columns: ["renewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_reminder_log: {
+        Row: {
+          entry_id: string
+          milestone: number
+          sent_on: string
+          valid_until: string
+        }
+        Insert: {
+          entry_id: string
+          milestone: number
+          sent_on: string
+          valid_until: string
+        }
+        Update: {
+          entry_id?: string
+          milestone?: number
+          sent_on?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_reminder_log_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "memento_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_schedules: {
+        Row: {
+          days: number[]
+          id: string
+          kind: string
+          owner_company_id: string | null
+          owner_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          days: number[]
+          id?: string
+          kind: string
+          owner_company_id?: string | null
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          days?: number[]
+          id?: string
+          kind?: string
+          owner_company_id?: string | null
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_schedules_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_schedules_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_schedules_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "memento_schedules_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "memento_schedules_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_settings: {
+        Row: {
+          ai_reads_per_day: number
+          default_days: number[]
+          group_window_days: number
+          history_days: number
+          id: boolean
+          import_max_rows: number
+          imports_per_hour: number
+          max_entries_per_vehicle: number
+          max_vehicles_company: number
+          max_vehicles_individual: number
+          updated_at: string
+          vehicles_per_hour: number
+        }
+        Insert: {
+          ai_reads_per_day?: number
+          default_days?: number[]
+          group_window_days?: number
+          history_days?: number
+          id?: boolean
+          import_max_rows?: number
+          imports_per_hour?: number
+          max_entries_per_vehicle?: number
+          max_vehicles_company?: number
+          max_vehicles_individual?: number
+          updated_at?: string
+          vehicles_per_hour?: number
+        }
+        Update: {
+          ai_reads_per_day?: number
+          default_days?: number[]
+          group_window_days?: number
+          history_days?: number
+          id?: boolean
+          import_max_rows?: number
+          imports_per_hour?: number
+          max_entries_per_vehicle?: number
+          max_vehicles_company?: number
+          max_vehicles_individual?: number
+          updated_at?: string
+          vehicles_per_hour?: number
+        }
+        Relationships: []
+      }
+      memento_unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_unsubscribe_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memento_vehicles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          make: string | null
+          model: string | null
+          owner_company_id: string | null
+          owner_user_id: string | null
+          plate: string
+          responsible_user_id: string | null
+          updated_at: string
+          vehicle_kind: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          make?: string | null
+          model?: string | null
+          owner_company_id?: string | null
+          owner_user_id?: string | null
+          plate: string
+          responsible_user_id?: string | null
+          updated_at?: string
+          vehicle_kind?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          make?: string | null
+          model?: string | null
+          owner_company_id?: string | null
+          owner_user_id?: string | null
+          plate?: string
+          responsible_user_id?: string | null
+          updated_at?: string
+          vehicle_kind?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memento_vehicles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_companies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_compliance"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_owner_company_id_fkey"
+            columns: ["owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "v_company_missing_documents"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memento_vehicles_responsible_user_id_fkey"
+            columns: ["responsible_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           bytes: number | null
@@ -7916,6 +8301,138 @@ export type Database = {
       }
       mask_phone_tail: {
         Args: { p_phone: string }
+        Returns: string
+      }
+      memento_check_date: {
+        Args: { p_date: string; p_label?: string }
+        Returns: undefined
+      }
+      memento_claim_ai_read: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      memento_count_text: {
+        Args: { p_count: number }
+        Returns: string
+      }
+      memento_days_for: {
+        Args: {
+          p_kind: string
+          p_owner_company_id: string
+          p_owner_user_id: string
+        }
+        Returns: number[]
+      }
+      memento_delete_entry: {
+        Args: { p_entry_id: string }
+        Returns: string[]
+      }
+      memento_delete_vehicle: {
+        Args: { p_id: string }
+        Returns: string[]
+      }
+      memento_folder: {
+        Args: { p_vehicle_id: string }
+        Returns: string
+      }
+      memento_import: {
+        Args: { p_company_id: string; p_rows: Json }
+        Returns: Json
+      }
+      memento_kind_label: {
+        Args: { p_custom_name?: string; p_kind: string }
+        Returns: string
+      }
+      memento_may_manage: {
+        Args: { p_vehicle_id: string }
+        Returns: boolean
+      }
+      memento_may_renew: {
+        Args: { p_vehicle_id: string }
+        Returns: boolean
+      }
+      memento_note_event: {
+        Args: { p_action: string; p_limit: number; p_window: unknown }
+        Returns: undefined
+      }
+      memento_plate: {
+        Args: { p_plate: string }
+        Returns: string
+      }
+      memento_purge: {
+        Args: { p_now?: string }
+        Returns: number
+      }
+      memento_queue_reminders: {
+        Args: { p_now?: string }
+        Returns: number
+      }
+      memento_renew: {
+        Args: {
+          p_due_km?: number
+          p_entry_id: string
+          p_photo_path?: string
+          p_reference?: string
+          p_valid_until: string
+        }
+        Returns: string
+      }
+      memento_save_entry: {
+        Args: {
+          p_custom_name?: string
+          p_due_km?: number
+          p_entry_id?: string
+          p_kind: string
+          p_note?: string
+          p_photo_path?: string
+          p_reference?: string
+          p_valid_until: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
+      memento_save_vehicle: {
+        Args: {
+          p_company_id: string
+          p_id: string
+          p_make?: string
+          p_model?: string
+          p_plate: string
+          p_vehicle_kind?: string
+        }
+        Returns: string
+      }
+      memento_set_responsible: {
+        Args: { p_user_id: string; p_vehicle_id: string }
+        Returns: undefined
+      }
+      memento_set_schedule: {
+        Args: { p_company_id: string; p_days: number[]; p_kind: string }
+        Returns: undefined
+      }
+      memento_set_settings: {
+        Args: {
+          p_ai_reads_per_day: number
+          p_default_days: number[]
+          p_history_days: number
+          p_import_max_rows: number
+          p_imports_per_hour: number
+          p_max_vehicles_company: number
+          p_max_vehicles_individual: number
+          p_vehicles_per_hour: number
+        }
+        Returns: undefined
+      }
+      memento_today: {
+        Args: { p_now?: string }
+        Returns: string
+      }
+      memento_unsubscribe: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
+      memento_when: {
+        Args: { p_days: number }
         Returns: string
       }
       my_company_ids: {

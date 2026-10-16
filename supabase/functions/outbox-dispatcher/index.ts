@@ -27,7 +27,7 @@ import { BRAND_NAME } from "../_shared/brand.ts";
 import { secretsMatch } from "../_shared/security.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { MissingVariable, render } from "./render.ts";
-import { renderValues, type SendResult, sendEmail } from "./send.ts";
+import { renderValues, type SendResult, sendEmail, unsubscribeUrlFor } from "./send.ts";
 import { TEMPLATES } from "./templates.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -138,9 +138,7 @@ Deno.serve(async (req: Request) => {
           result = { ok: false, error: "rândul nu are adresă de e-mail", permanent: true };
         } else {
           try {
-            const unsubscribeUrl = template.unsubscribable
-              ? `${SITE_URL}/cont/setari/notificari`
-              : undefined;
+            const unsubscribeUrl = unsubscribeUrlFor(template.unsubscribable, row.payload, SITE_URL!);
             const mail = render(row.template, template, renderValues(row.payload, SITE_URL!), {
               unsubscribeUrl,
               markUrl: `${SITE_URL}/brand/mark-email.png`,

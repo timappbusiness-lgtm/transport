@@ -82,6 +82,11 @@ const SAMPLE: Record<string, string> = {
   route: "Cluj-Napoca → Timișoara",
   client_name: "Expediții Ardeal SRL",
   loading_from: "24 septembrie 2026",
+  vehicle: "B 123 ABC · Dacia Logan",
+  when: "expiră în 7 zile",
+  entry_ids: "3a7c9e21-0000-4000-8000-000000000008",
+  count_text: "3 documente",
+  items: "· RCA · B 123 ABC · 23.10.2026 · expiră în 7 zile\n· ITP · B 123 ABC · 25.10.2026 · expiră în 9 zile",
 };
 
 interface QueueRow {
@@ -335,6 +340,8 @@ Deno.test("every template a queueing function names exists", () => {
     "listing_expiring_soon",
     "saved_search_alert",
     "saved_search_digest",
+    "memento_expiry_reminder",
+    "memento_expiry_digest",
     "report_closed",
     "offer_received",
     "offer_withdrawn",

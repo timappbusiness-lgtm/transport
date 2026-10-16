@@ -271,3 +271,29 @@ Deno.test("no template spells the name out: it arrives as {{ brand }}", () => {
   );
   assertStringIncludes(invitation.text, `firmei X SRL pe ${BRAND_NAME}, cu rolul dispecer`);
 });
+
+// ---------------------------------------------------------------------
+// A list inside a line
+// ---------------------------------------------------------------------
+
+Deno.test("a line with several rows keeps them as rows in the html", () => {
+  // The digests put one item per row into a single variable. HTML folds a
+  // newline into a space, and the three reminders read as one sentence;
+  // the plain-text part already kept them apart.
+  const mail = render("memento_expiry_digest", TEMPLATES.memento_expiry_digest!, {
+    count_text: "2 documente",
+    items: "· RCA · B 1 ABC · 23.10.2026 · expiră în 7 zile\n· ITP <b> · 25.10.2026 · expiră în 9 zile",
+    entry_ids: "a,b",
+    site_url: SITE,
+  });
+  assertStringIncludes(mail.html, "expiră în 7 zile<br>· ITP &lt;b&gt;");
+  assertStringIncludes(mail.text, "expiră în 7 zile\n· ITP <b>");
+});
+
+Deno.test("a memento says it is the person's own date, not a checked one", () => {
+  for (const name of ["memento_expiry_reminder", "memento_expiry_digest"]) {
+    const all = TEMPLATES[name]!.lines.join(" ");
+    assertStringIncludes(all, "platforma nu", name);
+    assert(!/verificat|certificat|confirmat de platformă/i.test(all), `${name} sounds verified`);
+  }
+});
